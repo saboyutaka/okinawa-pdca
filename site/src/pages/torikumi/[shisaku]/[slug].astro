@@ -434,7 +434,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <ul class="rm-list">
         {rm.map((x) => (
           <li class="item">
-            <a href={kankoShisakuHref(x.rm)}><span class="plan-tag">{KANKO.short}</span> 施策 {x.rm.code} {x.rm.name}</a>
+            <div class="name-row"><span><span class="plan-tag">{KANKO.short}</span> 施策 <a href={kankoShisakuHref(x.rm)}>{x.rm.name}</a></span><span class="code-no">施策 {x.rm.code}</span></div>
             <div class="small secondary">
               {Object.values(x.row.years).sort((a, b) => a.year - b.year).map((r, k) => <>{k > 0 && '　'}{yearLabel(r.year)}: {statusOf(r)}</>)}
               {x.row.latest.name !== t.name && <>（観光ロードマップでの名前: {x.row.latest.name}）</>}

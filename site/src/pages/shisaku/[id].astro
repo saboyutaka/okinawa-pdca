@@ -154,7 +154,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     {rmShisaku.length > 0 && (
       <p class="small rm-note">
         <span class="plan-tag">{KANKO.short}</span> この施策の主な取組の一部は、県の観光の<a href="/keikaku/">個別計画</a>でも評価されています:
-        {rmShisaku.map((r, i) => <>{i > 0 && '、'}<a href={kankoShisakuHref(r)}>施策 {r.code} {r.name}</a></>)}
+        {rmShisaku.map((r, i) => <>{i > 0 && '、'}<a href={kankoShisakuHref(r)}>{r.name}</a> <span class="code-no">施策 {r.code}</span></>)}
       </p>
     )}
     <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />

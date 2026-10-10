@@ -26,7 +26,7 @@ const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[year
   ) : <div />}
   <div class="small">決算見込額（{yearLabel(t.year)}）: {t.budget != null ? yen(t.budget) : (t.budget_raw || '—')}</div>
   {g.pdca.length > 0 ? (
-    <div class="small pdca">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a href={p.href}>施策 {p.shisaku.code} の「{p.name ?? t.name}」</a></>)}</div>
+    <div class="small pdca">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a href={p.href}>{p.name ?? t.name}</a> <span class="code-no">施策 {p.shisaku.code}</span></>)}</div>
   ) : <div class="small secondary">沖縄県PDCAの主な取組には、同じ名前の取組がありません。</div>}
   {t.year !== RM_LATEST && <div class="small secondary">{yearLabel(t.year + 1)}の報告には、この名前の取組はありません。</div>}
   {t.summary && t.summary !== '―' && (

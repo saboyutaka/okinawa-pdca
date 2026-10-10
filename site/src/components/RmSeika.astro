@@ -45,7 +45,7 @@ const hasPlan = (x.plan_raw || []).some(Boolean);
     </table>
   </div>
   {g.pdca.length > 0 && (
-    <p class="small pdca">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a href={p.href}>施策 {p.shisaku.code} {p.shisaku.name}</a></>)}</p>
+    <p class="small pdca">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, i) => <>{i > 0 && '、'}施策 <a href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
   )}
   {(x.explanation || x.dept) && (
     <details>

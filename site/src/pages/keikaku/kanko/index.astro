@@ -47,7 +47,7 @@ const sources = planSources('kanko');
     <div class="bubble-row says">
       <span class="avatar" aria-hidden="true">!</span>
       <div class="bubble small">
-        <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>施策の番号（例: 1-ア-①）はこのロードマップのもので、沖縄県PDCAの施策の番号（例: 1-(1)-ア-①）とは違います。</p>
+        <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>報告書の施策の番号（例: 1-ア-①）はこのロードマップのもので、沖縄県PDCAの施策の番号（例: 1-(1)-ア-①）とは違います。</p>
         <p>主な取組の多くは、沖縄県PDCAでも主な取組として評価されている同じ事業で、進捗状況も同じです。成果指標は、観光の計画にしか無いもの（観光客の満足度、県民の観光への理解など）が多くあります。</p>
       </div>
     </div>
@@ -91,14 +91,14 @@ const sources = planSources('kanko');
     <p class="small secondary lead">観光ロードマップの6つの基本施策と30の施策展開です。棒は{yearLabel(RM_LATEST)}の主な取組の進捗状況の内訳です。施策展開を押すと、施策ごとの成果指標・主な取組・県の分析を見られます。</p>
     {kihon.map((k) => (
       <>
-        <h3>基本施策 {k.code}　{k.name}</h3>
+        <h3>{k.name} <span class="code-no">基本施策 {k.code}</span></h3>
         <ul class="list">
           {tenkai.filter((t) => t.kihon_id === k.id).map((t) => {
             const ts = latestOf(t);
             const ss = t.shisaku.flatMap((s) => s.seika.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
             return (
               <li class="item">
-                <div><span class="code">施策展開 {t.code}</span> <a href={kankoTenkaiHref(t.id)}>{t.name}</a></div>
+                <div class="name-row"><a href={kankoTenkaiHref(t.id)}>{t.name}</a><span class="code-no">施策展開 {t.code}</span></div>
                 <div class="row">
                   <div class="small secondary">施策 {fmt(t.shisaku.length)}・主な取組 {fmt(ts.length)}件・成果指標 {fmt(ss.length)}（前進 {fmt(ss.filter((s) => s.judgement === '前進').length)}）</div>
                   <StatusBar categories={STATUSES} counts={countBy(ts, statusOf, statusKeys)} context={`${t.name} 主な取組 `} size="mini" />

@@ -26,18 +26,19 @@ const i = all.findIndex((x) => x.id === t.id);
 const prev = all[i - 1];
 const next = all[i + 1];
 ---
-<Base title={`${t.name}（${KANKO.short} 施策展開 ${t.code}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: `施策展開 ${t.code}` }]} />
+<Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
 
   <header class="sticker head">
-    <div class="tags"><span class="plan-tag">{KANKO.short}</span><span class="code">施策展開 {t.code}</span></div>
+    <span class="code-no code-corner" title="観光ロードマップの報告書での番号">施策展開 {t.code}</span>
+    <div class="tags"><span class="plan-tag">{KANKO.short}</span><span class="small secondary">の施策展開</span></div>
     <h1>{t.name}</h1>
-    <p class="small secondary meta">基本施策 {kihon?.code} {kihon?.name}</p>
+    <p class="small secondary meta">基本施策「{kihon?.name}」</p>
     <p class="small secondary meta">これは<Term word="観光ロードマップ" />の施策展開です。施策の番号は沖縄県PDCAの施策とは別です。</p>
   </header>
 
   <nav class="toc" aria-label="このページの施策">
-    {t.shisaku.map((s) => <a href={`#rm-${s.id}`}>{s.code}</a>)}
+    {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
@@ -51,8 +52,7 @@ const next = all[i + 1];
     const past = Object.values(s.years).filter((r) => r.year !== s.year && (r.check || r.action)).sort((a, b) => b.year - a.year);
     return (
       <section class="rm-shisaku" aria-labelledby={`rm-${s.id}`}>
-        <div class="code">{KANKO.short} 施策 {s.code}</div>
-        <h2 id={`rm-${s.id}`} class="anchor">{s.name}</h2>
+        <div class="name-row"><h2 id={`rm-${s.id}`} class="anchor">{s.name}</h2><span class="code-no" title="観光ロードマップの報告書での番号">施策 {s.code}</span></div>
         <p class="small secondary meta">関係部等: {depts.length ? depts.map((d, k) => <>{k > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</p>
         {s.houkou && (
           <div class="muted-box houkou">
@@ -93,7 +93,7 @@ const next = all[i + 1];
           </details>
         ))}
         <p class="small src">
-          出典: {Object.values(s.years).sort((a, b) => b.year - a.year).map((r, k) => {
+          出典（観光ロードマップの報告書での番号は<span class="report-no">施策 {s.code}</span>）: {Object.values(s.years).sort((a, b) => b.year - a.year).map((r, k) => {
             const a = planSourceLink('kanko', r.source, r.page);
             return <>{k > 0 && '、'}{a ? <a href={a.href} rel="noopener">{yearLabel(r.year)} 実施報告書 {r.page}ページ</a> : yearLabel(r.year)}</>;
           })}
@@ -103,20 +103,21 @@ const next = all[i + 1];
   })}
 
   <nav class="pager" aria-label="ほかの施策展開">
-    {prev ? <a class="button" href={kankoTenkaiHref(prev.id)}>← {prev.code} {prev.name}</a> : <span />}
+    {prev ? <a class="button" href={kankoTenkaiHref(prev.id)}>← {prev.name}</a> : <span />}
     <a href={KANKO.href}>観光ロードマップの一覧</a>
-    {next ? <a class="button" href={kankoTenkaiHref(next.id)}>{next.code} {next.name} →</a> : <span />}
+    {next ? <a class="button" href={kankoTenkaiHref(next.id)}>{next.name} →</a> : <span />}
   </nav>
 </Base>
 
 <style>
-  .head { display: grid; gap: 6px; margin-top: 12px; }
+  .head { position: relative; display: grid; gap: 6px; margin-top: 12px; padding-top: 30px; }
   .head h1 { margin: 0; }
   .tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
   .meta { margin: 0; }
   .rm-shisaku { margin-top: 36px; padding-top: 4px; border-top: 2.5px solid var(--line); }
-  .rm-shisaku > .code { margin-top: 14px; }
-  .rm-shisaku h2 { margin: 2px 0 6px; }
+  .rm-shisaku > .name-row { margin-top: 18px; }
+  .rm-shisaku h2 { margin: 0 0 6px; }
+  .report-no { white-space: nowrap; }
   .rm-shisaku h3 { margin: 1.4em 0 0.5em; }
   .houkou { margin-top: 10px; }
   .houkou .label { font-weight: 700; }
