@@ -1,8 +1,11 @@
 // Cloudflare Workers の静的アセットとして site/dist をそのまま置く（Worker のコードは無い）。
-// GitHub 連携（Workers Builds）で main に push するたびに、ビルド後に `npx wrangler deploy` で公開される
+// GitHub 連携（Workers Builds）で main に push するたびに、ビルド後に `npx wrangler deploy` で公開される。
+// main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる
 {
   "name": "okinawa-pdca",
   "compatibility_date": "2026-09-01",
+  // プレビューの設定。`npx wrangler preview` にはこの枠が要る。本番と分ける設定（変数・バインディング）は無いので空
+  "previews": {},
   "assets": {
     "directory": "./dist",
     // 無いページには Astro が書き出した 404.html を返す
