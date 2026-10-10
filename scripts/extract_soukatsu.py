@@ -3,7 +3,7 @@
 
 使い方（解析用コンテナ内で実行する。ホストには pdfplumber が無い）:
   docker compose run --rm tools python scripts/extract_soukatsu.py
-  docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025
+  docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025   # R7 だけ読み直して差し替える
 
 入力: data/raw/soukatsu/<年度>/ の PDF と、data/interim/soukatsu/<年度>/ に展開した zip 内の PDF
   （先に scripts/expand_zips.py を実行しておく）。どのファイルが「将来像」「付属資料」かは
@@ -47,15 +47,22 @@ JUDGE_LABELS = {
     "G": "大幅遅れ",
 }
 SECTION_RE = re.compile(r"^(Ⅰ|Ⅱ|Ⅲ|Ⅳ)\s*")
+# pdfplumber は文字に変換できないグリフ（改行やタブの記号など）を「(cid:10)」のように出す。データには残さない
+CID_RE = re.compile(r"\(cid:\d+\)")
 DEPT_RE = re.compile(r"^(知事公室|県警本部|警察本部|教育庁|企業局|病院事業局|.+?部)")
 
 
 # ---------------------------------------------------------------- 文字列の正規化
 
 
+def uncid(s: str | None) -> str:
+    """「(cid:10)」などの変換できなかったグリフを取り除く。"""
+    return CID_RE.sub("", s or "")
+
+
 def clean(s: str | None) -> str:
     """表のセル: 改行や空白を詰める（PDFの折り返しで入ったもの）。"""
-    return re.sub(r"\s+", "", s or "")
+    return re.sub(r"\s+", "", uncid(s))
 
 
 def parse_code(s: str) -> dict | None:
@@ -187,7 +194,7 @@ def section_lines(page, tables_bboxes) -> list[tuple[float, float, float, str]]:
         cy = (top + bottom) / 2
         if any(b[0] - 2 <= ln["x0"] and ln["x1"] <= b[2] + 2 and b[1] - 2 <= cy <= b[3] + 2 for b in tables_bboxes):
             continue
-        lines.append((top, ln["x0"], ln["x1"], ln["text"]))
+        lines.append((top, ln["x0"], ln["x1"], uncid(ln["text"])))
     return lines
 
 
@@ -275,7 +282,7 @@ class BodyParser:
             left = [b for b, _ in boxes if b[2] <= x0 and b[1] < bottom and b[3] > top]
             lx = max((b[2] for b in left), default=x0 - 50)
             ind_x0 = min((b[0] for b in left), default=lx)
-            label = "".join(w["text"] for w in sorted(words, key=lambda w: (round(w["top"]), w["x0"]))
+            label = "".join(uncid(w["text"]) for w in sorted(words, key=lambda w: (round(w["top"]), w["x0"]))
                             if lx - 2 <= w["x0"] and w["x1"] <= x0 + 2 and top - 4 <= w["top"] <= bottom + 4)
             num_words = [w["text"] for w in words if w["x1"] <= ind_x0 + 2 and top - 4 <= w["top"] <= bottom + 4]
             num = next((parse_code(f"1-(1)-ア-{w[0]}") for w in num_words if re.match(r"^[①-⑳]", w)), None)
@@ -331,9 +338,11 @@ class BodyParser:
         code = parse_code(cells.get("施策", [""])[0])
         if not code or code["num"] is None:
             print(f"警告: 施策コードを読めない {self.src['id']} p{page_no}: {cells.get('施策')}", file=sys.stderr)
+            # 前の施策のままにすると、この施策の取組・成果指標・本文が前の施策に付いてしまう
+            state.update(shisaku=None, group=None, pending=None, section=None)
             return
         sid = shisaku_id(code)
-        houkou = next((r[1] for r in rows if r and clean(r[0]) == "施策の方向"), "") or ""
+        houkou = uncid(next((r[1] for r in rows if r and clean(r[0]) == "施策の方向"), "") or "")
         kankei = (cells.get("関係部等") or [""])[0]
         # 施策の方向が長いと、続きが関係部等の欄に食い込んで読める（R5 の 3-(9)-ア-①）。句点までは施策の方向に戻す
         if "。" in kankei:
@@ -381,7 +390,7 @@ class BodyParser:
                     "budget_raw": c[2],
                     "budget": parse_num(c[2]),
                     "indicator": c[3],
-                    "summary": (r[6] or "").replace("\n", "").strip(),
+                    "summary": uncid(r[6]).replace("\n", "").strip(),
                     **self.ref(page_no),
                 }
                 continue
@@ -452,7 +461,7 @@ class BodyParser:
             if c0 == "担当部課名":
                 dept = next((clean(x) for x in r[1:] if clean(x)), "")
             if c0 == "達成状況の説明" and j + 1 < len(rows):
-                expl = (rows[j + 1][0] or "").strip()
+                expl = uncid(rows[j + 1][0]).strip()
         for s in self.seika:
             if s["shisaku_id"] == cur["id"] and "dept" not in s:
                 s["dept"], s["explanation"] = dept, expl
@@ -502,10 +511,10 @@ def read_fuzoku(year: int, src: dict) -> tuple[list[dict], list[dict]]:
                             "year": year,
                             "kihon_id": f"{shouraizou}-{n}",
                             "name": c[1],
-                            "base_raw": (r[cols["base"]] or "").strip(),
-                            "actual_raw": (r[cols["actual"]] or "").strip(),
-                            "target_raw": (r[cols["target"]] or "").strip(),
-                            "judgement": (r[cols["judge"]] or "").strip(),
+                            "base_raw": uncid(r[cols["base"]]).strip(),
+                            "actual_raw": uncid(r[cols["actual"]]).strip(),
+                            "target_raw": uncid(r[cols["target"]]).strip(),
+                            "judgement": uncid(r[cols["judge"]]).strip(),
                             "source": src["id"],
                             "page": i + 1,
                         })
@@ -580,9 +589,18 @@ def main() -> int:
     result["torikumi"].sort(key=lambda t: (t["year"], order(t["shisaku_id"]), t["no"]))
     result["seika"].sort(key=lambda s: (s["year"], order(s["shisaku_id"])))
 
+    # --year で絞ったときは、出力ファイルにある他の年度の行を残して、その年度だけ差し替える
+    def merged(name: str, rows: list[dict]) -> list[dict]:
+        path = out / f"{name}.json"
+        if not args.year or not path.exists():
+            return rows
+        keep = [r for r in json.loads(path.read_text(encoding="utf-8")) if r["year"] not in years]
+        return sorted(keep + rows, key=lambda r: r["year"])  # 年度内の並びは保つ（sort は安定）
+
     for name in ("shouraizou", "kihon", "shisaku", "torikumi", "seika", "shuyou"):
+        result[name] = merged(name, result[name])
         write_json(out / f"{name}.json", result[name])
-    write_json(out / "sources.json", sources)
+    write_json(out / "sources.json", merged("sources", sources))
     for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou"):
         counts = defaultdict(int)
         for r in result[name]:

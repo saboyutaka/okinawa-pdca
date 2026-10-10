@@ -31,20 +31,54 @@ sys.path.insert(0, str(Path(__file__).parent))
 from extract_soukatsu import FIRST_YEAR, clean, name_key, parse_code, parse_num, shisaku_id, write_json  # noqa: E402
 
 YEAR_DIR = re.compile(r"^(\d{4})-")
-# 桁の誤記の疑い: 同じ行の3つの金額のうち1つだけが、他の金額の最大値の SUSPECT_RATIO 倍以上・SUSPECT_MIN 以上
+# 桁の誤記の疑い: 同じ行の3つの金額のうち1つが、0でない他の金額の最大値の SUSPECT_RATIO 倍以上・SUSPECT_MIN 以上。
+# 事業の終了・開始の年は他の金額が0になるので、0は比べない（比べられる金額が無ければ判定しない）。
+# さらに、同じ予算事業・同じ年度の金額が他の年度の報告にあり（例: R6の決算見込額とR7の報告のR6決算額）、
+# CONFIRM_RATIO 倍以内なら裏付けがあるとして疑いを外す（confirm_suspects）
 SUSPECT_MIN = 1_000_000  # 千円（10億円）
 SUSPECT_RATIO = 50
+CONFIRM_RATIO = 10
 AMOUNTS = ("settled", "estimate", "initial")
+OFFSET = {"settled": -1, "estimate": 0, "initial": 1}  # 報告年度からみた金額の年度
 
 
 def suspect_kinds(row: dict) -> list[str]:
     vals = {k: row[k] for k in AMOUNTS if row[k] is not None}
     out = []
     for k, v in vals.items():
-        others = [x for kk, x in vals.items() if kk != k]
-        if v >= SUSPECT_MIN and others and v >= SUSPECT_RATIO * max(max(others), 1):
+        others = [x for kk, x in vals.items() if kk != k and x]
+        if v >= SUSPECT_MIN and others and v >= SUSPECT_RATIO * max(others):
             out.append(k)
     return out
+
+
+def budget_key(name: str) -> str:
+    return re.sub(r"\s", "", unicodedata.normalize("NFKC", name or ""))
+
+
+def confirm_suspects(rows: list[dict]) -> None:
+    """疑いのある金額を、他の年度の報告にある同じ予算事業・同じ年度の金額と照らし合わせる。"""
+    seen = {}  # (予算事業名, 金額の年度) → [(報告年度, 金額)]
+    for b in rows:
+        for blk in b["budgets"]:
+            for r in blk["rows"]:
+                for k in AMOUNTS:
+                    name = budget_key(blk["name_next"] or blk["name"]) if k == "initial" else budget_key(blk["name"])
+                    if r[k] and name not in ("", "ー", "―", "-", "－"):
+                        seen.setdefault((name, b["year"] + OFFSET[k]), []).append((b["year"], r[k]))
+    for b in rows:
+        for blk in b["budgets"]:
+            for r in blk["rows"]:
+                kept = []
+                for k in r["suspect"]:
+                    name = budget_key(blk["name_next"] or blk["name"]) if k == "initial" else budget_key(blk["name"])
+                    v = r[k]
+                    others = [x for y, x in seen.get((name, b["year"] + OFFSET[k]), []) if y != b["year"]]
+                    if any(v / CONFIRM_RATIO <= x <= v * CONFIRM_RATIO for x in others):
+                        r.setdefault("suspect_cleared", []).append(k)
+                    else:
+                        kept.append(k)
+                r["suspect"] = kept
 
 
 def is_overview(rows) -> bool:
@@ -149,7 +183,8 @@ def section_of(rows) -> str:
 def read_file(args: tuple[str, str, int, str]) -> tuple[dict, list[dict]]:
     path, source, year, rel = args
     out = []
-    info = {"id": rel, "source": source, "year": year, "pages": 0, "torikumi": 0, "with_budget": 0, "error": ""}
+    info = {"id": rel, "source": source, "year": year, "pages": 0, "torikumi": 0, "with_budget": 0,
+            "overview_failed": 0, "error": ""}
     try:
         doc = pymupdf.open(path)
         info["pages"] = doc.page_count
@@ -169,11 +204,17 @@ def read_file(args: tuple[str, str, int, str]) -> tuple[dict, list[dict]]:
                             cur = {"year": year, "dept_source": source, **ov, "section": "", "budgets": [],
                                    "source": rel, "page": i + 1}
                             out.append(cur)
+                        else:
+                            # 見出しを読めなかった取組。前の取組のままにすると、この取組の予算が前の取組に付いてしまう
+                            cur = None
+                            info["overview_failed"] += 1
                     if cur is not None:
                         if not cur["section"]:
                             cur["section"] = section_of(rows)
                         if any(clean(r[0]) == "予算事業名" for r in rows if r):
-                            cur["budgets"].extend(read_budget(rows))
+                            for blk in read_budget(rows):
+                                blk["page"] = i + 1  # 予算の表があるページ（取組の見出しのページとは別のことがある）
+                                cur["budgets"].append(blk)
     except Exception as e:  # 壊れたPDFなど。件数の確認で分かるように記録して続ける
         info["error"] = f"{type(e).__name__}: {e}"
     info["torikumi"] = len(out)
@@ -220,8 +261,19 @@ def main() -> int:
             print(f"{info['year']} {info['source']:16s} {info['torikumi']:3d}取組 {info['with_budget']:3d}予算 {info['id']}"
                   + (f"  ! {info['error']}" if info["error"] else ""), file=sys.stderr)
 
-    rows.sort(key=lambda r: (r["year"], r["shisaku_id"], r["source"], r["page"]))
     out = Path(args.out)
+    # --year・--source で絞ったときは、出力ファイルにある他の年度・取得元の行を残して差し替える
+    if args.year or args.source:
+        def keep(r):
+            return not ((not args.year or r["year"] in args.year)
+                        and (not args.source or (r.get("dept_source") or r.get("source")) in args.source))
+        if (out / "torikumi_budget.json").exists():
+            rows += [r for r in json.loads((out / "torikumi_budget.json").read_text(encoding="utf-8")) if keep(r)]
+        if (out / "files.json").exists():
+            files += [f for f in json.loads((out / "files.json").read_text(encoding="utf-8")) if keep(f)]
+    confirm_suspects(rows)
+    rows.sort(key=lambda r: (r["year"], r["shisaku_id"], r["source"], r["page"]))
+    files.sort(key=lambda f: (f["year"], f["id"]))
     write_json(out / "torikumi_budget.json", rows)
     write_json(out / "files.json", files)
     by_year = {}
