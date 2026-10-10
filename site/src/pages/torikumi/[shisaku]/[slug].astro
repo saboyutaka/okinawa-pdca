@@ -1,6 +1,6 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
-// ①いまの状態（進捗・活動指標・予算・対応する成果指標） ②年度ごとの進捗 ③年度別計画 ④予算の推移 ⑤年度ごとの PDCA。表と原文は畳む
+// 頭は親の施策の札の下にぶら下げる。①いまの状態（進捗・活動指標・予算・対応する成果指標） ②年度ごとの進捗 ③年度別計画 ④予算の推移 ⑤年度ごとの PDCA。表と原文は畳む
 import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
 import Icon from '../../../components/Icon.astro';
@@ -11,8 +11,9 @@ import Sz from '../../../components/Sz.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import { themeIdsOfItem } from '../../../lib/themes.js';
+import { JUDGE_UI } from '../../../lib/icons.js';
 import {
-  YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
+  YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
   deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS,
 } from '../../../lib/data.js';
 import { yen } from '../../../lib/format.js';
@@ -59,6 +60,8 @@ const secHref = deptHref(t.section);
 const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 const latestStatus = statusOf(t);
 const latestTone = toneOfStatus(latestStatus);
+// 親の施策の判定（施策の判定だけを丸いハンコで出し、取組の進捗状況は横長の札で出して見分ける）
+const pj = judgeOf(s.judges[LATEST]);
 
 // 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「目標 10件 → 実績 54件」のように同じ単位の数から計算する
 const qty = (raw) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
@@ -98,24 +101,32 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: `施策 ${s.code}` }, { label: t.name }]} />
 
+  <a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
+    <span class="p-kind">この取組が入っている施策</span>
+    <span class="p-row">
+      <span class:list={['p-stamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
+      <span class="p-name"><span class="p-code"><Sz id={s.shouraizou} /> 施策 {s.code}</span> {s.name}</span>
+      <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
+    </span>
+  </a>
+
   <header class="sticker head">
-    <div class="head-main">
-      <div class="code"><Sz id={s.shouraizou} /> <Term word="主な取組" />　／　施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>
-      <h1>{t.name}</h1>
-      <div class="meta">
-        <span>所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}</span>
-        {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
+    <div class="kind"><Term word="主な取組" /></div>
+    <h1>{t.name}</h1>
+    <div class="meta">
+      <span>所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}</span>
+      {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
+      <ThemeTags ids={themeIdsOfItem(s.id, t.name)} />
+    </div>
+    <div class="now">
+      <div class="now-l">
+        <span class:list={['now-pill', `tone-${latestTone}`]}><Icon tone={latestTone} size={16} />{latestStatus}</span>
+        <span class="now-sb">{yearLong(t.year)}の<Term word="進捗状況" /></span>
       </div>
-      <div class="tags"><ThemeTags ids={themeIdsOfItem(s.id, t.name)} /></div>
-    </div>
-    <div class:list={['stamp-big', `tone-${latestTone}`]}>
-      <div class="circle" aria-hidden="true"><Icon tone={latestTone} size={30} /></div>
-      <div class="lb">{latestStatus}</div>
-      <div class="sb">{yearLong(t.year)}の<Term word="進捗状況" /></div>
-    </div>
-    <div class="head-years">
-      <div class="small secondary label">4年間の進捗状況</div>
-      <Stamps items={stamps} label="4年間の進捗状況" />
+      <div class="now-years">
+        <span class="now-yl">4年間</span>
+        <Stamps items={stamps} label="4年間の進捗状況" size="small" />
+      </div>
     </div>
     {latestRec?.activity && (
       <div class="bubble-row says">
@@ -438,25 +449,49 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 </Base>
 
 <style>
-  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 24px; align-items: start; margin-top: 12px; }
-  .head h1 { margin: 6px 0 8px; }
-  .head .code { font-size: 0.9375rem; }
-  .meta { display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .tags { margin-top: 8px; }
-  .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; min-width: 8em; }
-  .stamp-big .circle {
-    display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--line);
-    background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 4px 4px 0 var(--shadow); transform: rotate(-6deg);
+  /* 親の施策の札。取組のステッカーはその下に少し下げて置き、カギ形の線でつなぐ */
+  .parent {
+    display: grid; gap: 2px; margin-top: 12px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px;
+    background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
   }
-  .stamp-big .lb { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
-  .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); }
-  .head-years, .says { grid-column: 1 / -1; }
+  .parent:hover { background: var(--sky); }
+  .parent:hover .p-name { text-decoration: underline; }
+  .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+  .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+  .p-stamp {
+    display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
+    font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; flex: none;
+  }
+  .p-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--link); flex: 1 1 10em; min-width: 0; }
+  .p-code { color: var(--ink-2); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
+  .head { position: relative; display: grid; gap: 12px; margin: 14px 0 0 32px; }
+  .head::before {
+    content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
+    border-left: 3px solid var(--line); border-bottom: 3px solid var(--line); border-bottom-left-radius: 12px;
+  }
+  .head h1 { margin: 0; }
+  .kind { font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); margin-bottom: -6px; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
+  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; background: var(--bg); border-radius: 16px; padding: 10px 16px; }
+  .now-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+  .now-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px; border: 2.5px solid var(--line); border-radius: 999px;
+    background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 2px 2px 0 var(--shadow);
+    font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+  }
+  .now-sb { font-size: 0.875rem; color: var(--ink-2); }
+  .now-years { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; max-width: 340px; }
+  .now-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .now-years :global(.stamps) { flex: 1; }
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
-    .head { grid-template-columns: 1fr; }
-    .stamp-big { justify-items: start; grid-template-columns: auto minmax(0, 1fr); text-align: left; align-items: center; gap: 2px 16px; }
-    .stamp-big .circle { grid-row: span 2; width: 76px; height: 76px; }
+    .head { margin-left: 20px; }
+    .head::before { left: -12px; width: 10px; }
+    .now { gap: 10px; }
+    .now-years { max-width: none; }
   }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 18px; }
   .fact { display: grid; gap: 6px; align-content: start; }
