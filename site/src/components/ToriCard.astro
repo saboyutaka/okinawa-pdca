@@ -1,11 +1,10 @@
 ---
-// 主な取組1つ（施策ページ）。4年のスタンプ・活動指標・対応する成果指標。予算と活動の中身は畳む
+// 主な取組1つ（施策ページ）。4年のスタンプ・活動指標・対応する成果指標・その年にやったこと。予算は取組のページで見せる
 import Stamps from './Stamps.astro';
 import Chunk from './Chunk.astro';
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
-import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, fundOf, deptHref, seikaHrefByName, torikumiHref } from '../lib/data.js';
-import { yen } from '../lib/format.js';
+import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, deptHref, seikaHrefByName, torikumiHref } from '../lib/data.js';
 import { themeIdsOfItem } from '../lib/themes.js';
 
 interface Props { row: any; shisakuId: string }
@@ -21,7 +20,6 @@ const tq = qty(t.target);
 const aq = qty(t.actual);
 const comparable = tq && aq && tq.v > 0 && tq.u === aq.u;
 const ratio = comparable ? aq.v / tq.v : 0;
-const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
 ---
 <article class="sticker tcard">
   <h3><a href={href}>{t.name}</a></h3>
@@ -37,23 +35,13 @@ const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw
     </div>
   )}
   {b?.seika_name && <div class="small">対応する成果指標: {seikaHref ? <a href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div>}
-  <details>
-    <summary>予算事業と決算見込額（{yearLabel(t.year)}）</summary>
-    {b?.budgets.length ? (
-      <ul class="budget">
-        {b.budgets.map((blk) => <li>{blk.name || '—'}<br /><span class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${amountText(r)}`).join('、') || '—'}</span></li>)}
-      </ul>
-    ) : <p class="small">{yen(t.budget)}（総括報告書の値）</p>}
-    {b?.matchedByName && <p class="small secondary">部局票では別の施策（{b.shisaku_id}）に載っている記載です。</p>}
-    <p class="small secondary">同じ予算事業が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。</p>
-  </details>
   {t.summary && (
-    <details>
-      <summary>{yearLabel(t.year)}にやったこと</summary>
-      <p class="small">{t.summary}</p>
-    </details>
+    <div class="did">
+      <div class="did-l">{yearLabel(t.year)}にやったこと</div>
+      <p>{t.summary}</p>
+    </div>
   )}
-  <a class="to-page" href={href}>この取組の4年分の活動・検証・改善案</a>
+  <a class="to-page" href={href}>この取組の4年分の活動・予算・検証・改善案</a>
 </article>
 
 <style>
@@ -65,7 +53,8 @@ const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw
   .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; }
   .act-l { color: var(--ink-2); font-weight: 700; }
   .act-name { font-weight: 700; }
-  .budget { margin: 0; padding-left: 1.2em; font-size: 0.875rem; display: grid; gap: 4px; }
+  .did { font-size: 0.875rem; display: grid; gap: 2px; }
+  .did-l { color: var(--ink-2); font-weight: 700; }
+  .did p { margin: 0; line-height: 1.7; }
   .to-page { font-size: 0.875rem; font-weight: 700; }
-  details p { margin: 4px 0; }
 </style>
