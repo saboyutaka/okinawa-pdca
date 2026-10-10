@@ -94,13 +94,19 @@ make dev           # http://localhost:4321/
 make build         # site/dist に書き出し
 ```
 
-[Cloudflare Pages](https://developers.cloudflare.com/pages/) の設定（Git 連携の場合）:
+### Cloudflare での公開
+
+[Cloudflare Workers の静的アセット](https://developers.cloudflare.com/workers/static-assets/)として置く（Worker のコードは無く、`site/dist` をそのまま配る）。設定は [site/wrangler.jsonc](site/wrangler.jsonc)、配るときのヘッダーは [site/public/_headers](site/public/_headers)。GitHub 連携（[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)）で、main に push するたびに Cloudflare 側でビルドして公開する。
+
+ダッシュボードの「Workers & Pages」→「Create application」→「Import a repository」で `saboyutaka/okinawa-pdca` を選び、次のように設定する:
 
 | 項目 | 値 |
 |---|---|
+| プロジェクト名 | `okinawa-pdca`（`site/wrangler.jsonc` の `name` と同じにする） |
+| 本番ブランチ | `main` |
 | ルートディレクトリ | `site` |
 | ビルドコマンド | `npm run build` |
-| 出力ディレクトリ | `dist` |
-| Node | `site/.node-version`（24） |
+| デプロイコマンド | `npx wrangler deploy` |
+| Node | `site/.node-version`（24）。読まれないときは環境変数 `NODE_VERSION=24` |
 
-ビルドは `../data/extracted` を読むので、リポジトリ全体がチェックアウトされている必要がある。
+ビルドは `../data/extracted` と `../data/reference` を読むので、リポジトリ全体がチェックアウトされている必要がある（Workers Builds はリポジトリ全体を取得する）。
