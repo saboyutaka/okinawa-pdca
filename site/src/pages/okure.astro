@@ -102,7 +102,7 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
                 <div class="o-head">
                   <a class="o-name" href={g.href}>{t.name}</a>
                   <div class="o-sec">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</div>
-                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a></div>
+                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /><span class="o-sname">施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></span></div>
                   <ThemeTags ids={themes} />
                 </div>
                 <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
@@ -153,6 +153,7 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
   .o-sec, .o-shisaku { font-size: 0.875rem; color: var(--ink-2); }
   .o-sec a { color: var(--ink-2); }
   .o-shisaku { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
+  .o-sname { flex: 1 1 12em; min-width: 0; }
   .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 2px; align-self: start; }
   .act-l { color: var(--ink-2); font-weight: 700; }
   .act :global(.chunk) { margin-top: 4px; }

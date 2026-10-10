@@ -96,7 +96,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 
   function render(row: Data['rows'][number]) {
     const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href, themes] = row;
-    const [, sname, sz] = data.shisaku[sid];
+    const [code, sname, sz] = data.shisaku[sid];
     const li = el('li', 'item');
     const head = el('div', 'head');
     const n = el('a', 'name', name) as HTMLAnchorElement;
@@ -115,7 +115,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
     const a = el('a', '', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
-    s.append(a);
+    s.append(a, ' ', el('span', 'code-no', code));
     const years = el('div', 'years');
     data.years.forEach((y, i) => {
       const box = el('span');

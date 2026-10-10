@@ -103,6 +103,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 
   <a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
     <span class="p-kind">この取組が入っている施策</span>
+    <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <span class="p-row">
       <span class:list={['p-stamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
       <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
@@ -424,7 +425,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <h2 id="repost">同じ取組が載っている施策</h2>
       <p class="small secondary">総括報告書では、1つの取組が複数の施策に載っていることがあります（再掲）。</p>
       <ul class="reposts">
-        {reposts.map((o) => <li><a class="tag" href={o.href}><Sz id={o.shisaku.shouraizou} />施策 {o.shisaku.name}</a></li>)}
+        {reposts.map((o) => <li><a class="tag" href={o.href}><Sz id={o.shisaku.shouraizou} />施策 {o.shisaku.name} <span class="code-no">{o.shisaku.code}</span></a></li>)}
       </ul>
     </section>
   )}
@@ -452,12 +453,12 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 <style>
   /* 親の施策の札。取組のステッカーはその下に少し下げて置き、カギ形の線でつなぐ */
   .parent {
-    display: grid; gap: 2px; margin-top: 12px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px;
+    position: relative; display: grid; gap: 2px; margin-top: 12px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px;
     background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
   }
   .parent:hover { background: var(--sky); }
   .parent:hover .p-name { text-decoration: underline; }
-  .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+  .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
   .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
   .p-stamp {
     display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 34px; border-radius: 50%;

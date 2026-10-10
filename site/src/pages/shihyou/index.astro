@@ -82,7 +82,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       if (!items.length) return null;
       return (
         <section data-group>
-          <h2 class="group-title"><Sz id={k.shouraizou} /> <a href={`/kihon/${k.id}/`}>{k.name}</a></h2>
+          <h2 class="group-title"><Sz id={k.shouraizou} /> <span class="gt-name"><a href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span></h2>
           <ul class="list">
             {items.map((r) => {
               const x = r.latest;
@@ -106,7 +106,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
                     {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
                   </div>
                   <div class="small">
-                    施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a>
+                    施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a> <span class="code-no">{r.shisaku.code}</span>
                     　担当 {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : <span class="secondary">{x.dept || '—'}</span>}
                   </div>
                   <div class="vals small">
@@ -136,6 +136,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   .search-form .q { flex-basis: 100%; }
   .search-form .q input { font-size: 1rem; min-height: 44px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
+  .gt-name { flex: 1 1 12em; min-width: 0; }
   .ind-name { font-family: var(--font-display); font-weight: 700; }
   .item { display: grid; gap: 4px; }
   .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }

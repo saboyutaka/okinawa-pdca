@@ -34,7 +34,10 @@ const progressRows = YEARS.map((y) => ({
 <Base title={`${k.name}（基本施策）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
   <header class="k-head">
-    <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/future/${k.shouraizou}/`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
+    <div class="k-top">
+      <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/future/${k.shouraizou}/`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
+      <span class="code-no" title="県の報告書での番号">基本施策 {k.code}</span>
+    </div>
     <div class="secondary small"><Term word="基本施策" /></div>
     <h1>{k.name}</h1>
   </header>
@@ -86,7 +89,7 @@ const progressRows = YEARS.map((y) => ({
             const j = judgeOf(s.judges[LATEST]);
             return (
               <li class="item">
-                <div><a href={`/shisaku/${s.id}/`}>{s.name}</a></div>
+                <div class="name-row"><a href={`/shisaku/${s.id}/`}>{s.name}</a><span class="code-no">{s.code}</span></div>
                 <div class="row">
                   {j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}
                   <div class="mini"><StatusBar categories={STATUSES} counts={countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys)} context={`${s.name} 主な取組 `} /></div>
@@ -116,7 +119,9 @@ const progressRows = YEARS.map((y) => ({
   .row :global(.chip) { white-space: normal; }
   .links { margin-top: 6px; color: var(--ink-2); }
   .k-head { margin-top: 12px; }
-  .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; margin-bottom: 10px; }
+  .k-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
+  .k-top .code-no { margin-left: auto; }
+  .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; }
   .item { display: grid; gap: 4px; }
   .report-no { white-space: nowrap; }
   @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }

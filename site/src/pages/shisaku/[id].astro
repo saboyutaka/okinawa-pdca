@@ -63,6 +63,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: s.name }]} />
 
   <header class="sticker head">
+    <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <div class="head-main">
       <div class="kind">施策展開「{s.tenkai_name}」の<Term word="施策" /></div>
       <h1>{s.name}</h1>
@@ -207,7 +208,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 </Base>
 
 <style>
-  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; }
+  .head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; padding-top: 30px; }
   .head h1 { margin: 4px 0 8px; }
   .kind { font-size: 0.9375rem; color: var(--ink-2); }
   .report-no { white-space: nowrap; }

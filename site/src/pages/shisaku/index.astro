@@ -67,7 +67,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
       <section class="group" data-group>
         <h2 class="group-title">
           <Sz id={k.shouraizou} />
-          <a href={`/kihon/${k.id}/`}>{k.name}</a>
+          <span class="gt-name"><a href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span>
         </h2>
         <ul class="list">
           {items.map((s) => (
@@ -96,4 +96,5 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
   .filters { margin-top: 16px; }
   .filters label .own { margin-left: 4px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.08rem; margin: 2em 0 0.6em; }
+  .gt-name { flex: 1 1 12em; min-width: 0; }
 </style>
