@@ -134,13 +134,13 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <ul class="kcards">
       {kihonCards.map((k) => (
         <li class="sticker kcard">
-          <a class="k-name" href={`/kihon/${k.id}/`}><span class="code">{k.code}</span> {k.name}</a>
+          <div class="name-row"><a class="k-name" href={`/kihon/${k.id}/`}>{k.name}</a><span class="code-no">{k.code}</span></div>
           <div class="k-row">
             <span class="small">主な取組 <b>{fmt(k.ok)}/{fmt(k.n)}件</b>が順調</span>
             <span class="big k-pv">{pct(k.ok, k.n)}</span>
           </div>
-          {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.code} ${k.name} 主な取組 `} size="mini" />}
-          <div class="small secondary">施策 {fmt(k.shisaku)}（成果が遅れている C・D {fmt(k.cd)}）・<a href={`/shisaku/?q=${encodeURIComponent(k.code)}`}>施策を見る</a></div>
+          {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
+          <div class="small secondary">施策 {fmt(k.shisaku)}（成果が遅れている C・D {fmt(k.cd)}）・<a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策を見る</a></div>
           {k.shuyou.length > 0 && (
             <ul class="shuyou">
               {k.shuyou.map((r) => {
@@ -246,7 +246,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .kcards { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .kcard { display: grid; gap: 8px; align-content: start; }
   .k-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--ink); }
-  .k-name .code { margin-right: 4px; }
   .k-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .k-pv { font-size: 1.3rem; }
   .shuyou { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 8px; }

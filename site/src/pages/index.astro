@@ -156,7 +156,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
               {m.rows.slice(0, 4).map((g) => (
                 <li>
                   <a class="ex-name" href={g.href}>{g.latest.name}</a>
-                  <span class="ex-sub">施策 {g.shisaku.code} {g.shisaku.name}</span>
+                  <span class="ex-sub">施策 {g.shisaku.name} <span class="code-no">{g.shisaku.code}</span></span>
                   <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
                 </li>
               ))}

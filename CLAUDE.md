@@ -54,6 +54,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 太い線と硬い影の「ステッカー」を並べるポップな見た目。色はすべて `styles/global.css` のトークンで参照する。はじめは端末の設定に関係なくライトで表示し、ダークはヘッダーのボタンで選んだとき（`data-theme="dark"`）だけ。
 - 状態（順調〜大幅遅れ、判定 A〜G）は青信号系の色に加えて、形（● ◆ ▲ ■、判定 E・F は ▼ と斜線）と文字で出す。色だけで伝えない。形は `lib/icons.js` を通して出す（`Icon`・`Chip`）。
 - 施策と主な取組を見た目で取り違えないようにする。大きな丸いハンコは施策の判定（A〜G）だけに使い、取組の進捗状況は横長の札と線でつないだ4年分のスタンプで出す。取組のページの頭は、親の施策の札の下にカギ形の線でぶら下げる。
+- 報告書の施策の番号（`1-(1)-ア-①`・基本施策の `1-(1)`）は名前より目立たせない。ページの頭のステッカーと一覧のカードでは右上の隅に、カードの無い一覧のリンクや見出しでは名前の後ろに、小さく薄い字で置く（`styles/global.css` の `.code-no`・`.code-corner`・`.name-row`）。パンくずとページの題名は名前だけにする。施策・基本施策・取組のページの最後の「出典」の節に「県の報告書での番号」として説明を置く（報告書の PDF をこの番号で探せる）。検索の文字（`data-text`・`/torikumi/data.json`）にも番号を入れ、番号でも探せるようにする。
 - 将来像の色は基本計画パンフレットの色（`--sz-1`〜`--sz-5`）。番号の印と見出しの帯だけに使い、状態の色（棒・印）とは混ぜない。
 - くらしのテーマは**このサイト独自の分類**で、県の計画の分類ではない。画面では必ずそうと分かるように出す（「このサイト独自の分類」の印・ピンクのラベル `ThemeTags`）。どの施策もいずれかのテーマに入るように `themes.json` を保つ（入らない施策があるとビルドで警告する）。主な取組・成果指標は、施策のテーマに加えて名前に当たるテーマにも入る。
 - 情報は減らさず「ひとめで → くわしく → 表と原文は畳む（`details`）」の順にする。図には必ず「表で見る」を付ける。棒の区間ごとにタブで止めない。用語は `Term` で説明を出す。
@@ -66,6 +67,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 公開
 
-Cloudflare Workers の静的アセットとして `site/dist` を置く（`site/wrangler.jsonc`。GitHub 連携で main に push すると、ビルドしてから `wrangler deploy` される）。配信時のヘッダーは `site/public/_headers`。いまは公開前（ステルス）なので検索エンジンに載せない設定（`Base.astro` の `NOINDEX` と `_headers` の `X-Robots-Tag: noindex, nofollow`）。robots.txt では止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
+Cloudflare Workers の静的アセットとして `site/dist` を置く（`site/wrangler.jsonc`。GitHub 連携で main に push すると、ビルドしてから `wrangler deploy` される。main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになり、`wrangler.jsonc` に `previews` の枠が要る）。配信時のヘッダーは `site/public/_headers`。いまは公開前（ステルス）なので検索エンジンに載せない設定（`Base.astro` の `NOINDEX` と `_headers` の `X-Robots-Tag: noindex, nofollow`）。robots.txt では止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
 
 ライセンスは県に確認してから決定。

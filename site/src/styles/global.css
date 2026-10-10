@@ -327,7 +327,13 @@ a.ttag:hover { background: var(--sky); }
 .active-chip:hover { background: var(--paper); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 16px; min-width: 0; }
-.code { font-family: var(--font); font-size: 0.875rem; color: var(--ink-2); font-weight: 400; font-variant-numeric: tabular-nums; }
+/* 報告書の施策・基本施策の番号（1-(1)-ア-①）。名前より目立たせず、ステッカー・カードの右上の隅か、名前の後ろに小さく薄く置く */
+.code-no { font-family: var(--font); font-size: 0.75rem; font-weight: 400; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.code-corner { position: absolute; top: 7px; right: 16px; }
+/* カードの名前の行。名前を左に、番号を右上に置く */
+.name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 2px 10px; }
+.name-row > :first-child { min-width: 0; }
+.name-row > .code-no { flex: none; padding-top: 0.3em; }
 .years { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 
