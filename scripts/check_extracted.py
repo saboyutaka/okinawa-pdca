@@ -115,7 +115,7 @@ def main() -> int:
             print(f"  {'OK ' if not diff else '警告'} 施策の推進状況 " + (f"差（抽出/公表）: {diff}" if diff else "一致"))
 
     # 部局別の検証票（予算）が総括報告書のどの取組に結び付いたか（参考）
-    budget_path = d.parent / "bukyoku" / "torikumi_budget.json"
+    budget_path = d.parent / "bukyoku" / "torikumi.json"
     if budget_path.exists():
         budget = json.loads(budget_path.read_text(encoding="utf-8"))
         print("== 部局別の検証票（予算）")

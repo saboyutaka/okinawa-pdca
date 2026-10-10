@@ -82,7 +82,7 @@ class Report:
         self.kihon = load(s / "kihon.json")
         self.sources = {x["id"]: x for x in load(s / "sources.json")}
         b = ex / "bukyoku"
-        budget = load(b / "torikumi_budget.json") if (b / "torikumi_budget.json").exists() else []
+        budget = load(b / "torikumi.json") if (b / "torikumi.json").exists() else []
         # 同じ取組が複数の部局のファイルに載っているときは最初の1件だけ使う（サイトの data.js と同じ）
         seen = set()
         self.budget = []
@@ -226,6 +226,25 @@ class Report:
         self.count("A8", "施策の推進状況（A〜G）が無い", Counter(s["year"] for s in rows), "「判定なし」「未公表」と表示")
         self.p(f"R4 は施策ごとの判定が公表されていない（施策総括表が無い）ため全{sum(1 for s in rows if s['year'] == 2022)}施策が該当。"
                f"R5 以降で該当するのは {sum(1 for s in rows if s['year'] > 2022)} 施策。")
+
+        self.h(3, "A9. 部局票の欄が空、または読み取れなかった取組")
+        self.p("部局の主な取組検証票（様式1）から取組のページに出している欄のうち、空になっているもの。"
+               "取組のページでは欄ごと出さない。元の票でも空欄のものと、表の形が崩れていて読めなかったものが混ざっている。"
+               "金額の行が無い予算事業は「予算と財源」の合計に入らない。")
+        fields = {"activity_done": "活動内容", "basis": "判定の根拠", "improvements": "改善案の反映状況", "check": "検証（Check）", "action": "改善案（Action）"}
+        rows, years = [], Counter()
+        for b in self.budget:
+            miss = [label for k, label in fields.items() if not b.get(k)]
+            miss += [f"予算事業「{blk['name']}」の金額" for blk in b["budgets"] if not blk["rows"]]
+            if miss:
+                years[b["year"]] += 1
+                rows.append([rlabel(b["year"]), b["section"] or b["dept_source"], self.shisaku_name.get((b["year"], b["shisaku_id"]), b["shisaku_id"]),
+                             b["name"], "、".join(dict.fromkeys(miss)), self.link(b["source"], b.get("do_page") or b["page"])])
+        self.count("A9", "部局票の欄が空・読み取れない", years, "その欄を出さない")
+        self.table(["報告", "担当", "施策", "取組", "空の欄", "出典"], rows)
+        nxt = Counter(b["year"] for b in self.budget if not b.get("activity_next"))
+        self.p("このほか、翌年度の「活動計画」が空の取組が " + "、".join(f"{rlabel(y)} {n}件" for y, n in sorted(nxt.items()))
+               + " ある。多くは事業が終わった取組（活動内容の欄に「事業終了」などとある）で、元の票でも空欄。")
 
     # ------------------------------------------------------------ 誤りの疑い
 

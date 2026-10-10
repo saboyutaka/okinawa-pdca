@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
 const cache = new Map();
-// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi_budget' のように指定する
+// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi' のように指定する
 function load(name) {
   const rel = name.includes('/') ? name : `soukatsu/${name}`;
   if (!cache.has(rel)) {
@@ -398,7 +398,7 @@ export function getBudgetRecords() {
   if (budgetRecords) return budgetRecords;
   const seen = new Set();
   budgetRecords = [];
-  for (const b of load('bukyoku/torikumi_budget')) {
+  for (const b of load('bukyoku/torikumi')) {
     const k = `${b.year}|${b.shisaku_id}|${b.key}`;
     if (seen.has(k)) continue;
     seen.add(k);
