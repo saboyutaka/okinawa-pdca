@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import FilterMore from '../../components/FilterMore.astro';
 import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { getThemes } from '../../lib/themes.js';
@@ -10,15 +11,13 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
-  <p class="secondary">
-    令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。部局は最新の報告での所管部局です。
-  </p>
-  <p><a class="tag" href="/okure/">遅れが続いている取組を見る</a></p>
+  <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。<a href="/okure/">遅れが続いている取組</a>のまとめもあります。</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q" data-label="キーワード">キーワード
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
+    <FilterMore id="tori-more">
     <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
@@ -55,10 +54,11 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
+    </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
-  <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
+  <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（名前が変わった取組は別の行）。部局は最新の報告での所管部局です。</p>
 
   <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
@@ -184,6 +184,10 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     shown = 0;
     showMore();
     renderActive();
+    // キーワード以外で入っている条件の数を、条件のボタン（components/FilterMore.astro）に送る
+    const changed = [...f.entries()].filter(([k, v]) => k !== 'q' && v !== '').length;
+    form.dataset.filterN = String(changed);
+    form.dispatchEvent(new CustomEvent('filters:change', { detail: { n: changed } }));
     const params = new URLSearchParams([...f.entries()].filter(([, v]) => v !== '').map(([k, v]) => [k, String(v)]));
     const qs = params.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);

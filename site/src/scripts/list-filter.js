@@ -7,6 +7,7 @@
 // [data-group] は中に表示中の項目が無ければ隠す。その中の [data-group-count] には表示中の件数を入れる。
 // いまの条件は data-summary の場所に「くらしのテーマ: 子ども・子育て ×」のように並べ、1つずつ外せる（条件の名前は入力を囲む [data-label]）。
 // 条件は URL のクエリに残すので、そのまま共有できる。
+// 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
 const norm = (s) => s.normalize('NFKC').toLowerCase();
 
 for (const form of document.querySelectorAll('form[data-filter]')) {
@@ -17,6 +18,14 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
   const empty = document.querySelector(form.dataset.empty);
   const summary = form.dataset.summary && document.querySelector(form.dataset.summary);
   const inputsOf = (name) => [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+  // 初めの選択のままの条件か（成果指標の「対象: R7の報告にある指標」のように、初めから選んである条件は数えない）
+  const isDefault = (name, value) => {
+    const first = inputsOf(name)[0];
+    if (!first) return false;
+    if (first.tagName === 'SELECT') return value === ([...first.options].find((o) => o.defaultSelected) || first.options[0])?.value;
+    if (first.type === 'checkbox' || first.type === 'radio') return inputsOf(name).some((x) => x.value === value && x.defaultChecked);
+    return value === first.defaultValue;
+  };
 
   const conditions = () => {
     const conds = new Map();
@@ -113,6 +122,9 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
     if (count) count.textContent = String(n);
     if (empty) empty.hidden = n > 0;
     renderSummary(conds);
+    const changed = [...conds].filter(([k]) => k !== 'q').reduce((s, [k, values]) => s + values.filter((v) => !isDefault(k, v)).length, 0);
+    form.dataset.filterN = String(changed);
+    form.dispatchEvent(new CustomEvent('filters:change', { detail: { n: changed } }));
     const params = new URLSearchParams();
     for (const [k, values] of conds) for (const v of values) params.append(k, v);
     const qs = params.toString();

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
+import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
 import {
@@ -25,16 +26,13 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
 <Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・くらしのテーマ・将来像・達成率・見通し・担当部局でさがせます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 成果指標をさがす</nav>
   <h1>成果指標をさがす</h1>
-  <p class="secondary">
-    成果指標は、施策（339）ごとの成果をはかるために県が決めている指標です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。
-    目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の目標年度（R9）、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の目標年度（R6）のものです。
-    基本施策ごとの主要指標は<a href="/future/">将来像</a>・基本施策のページにあります。
-  </p>
+  <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。</p>
 
   <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）
       <input type="search" name="q" placeholder="例: 観光、離島、子ども、二酸化炭素" />
     </label>
+    <FilterMore id="seika-more">
     <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
@@ -72,10 +70,14 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
         <option value="">すべて</option>
       </select>
     </label>
+    </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">{latestCount}</span>指標を表示</p>
-  <p class="small secondary"><Term word="達成率" />はその年度の計画値に対する割合、見通しは目標値に届くかの県の見立てです。</p>
+  <p class="small secondary">
+    <Term word="達成率" />はその年度の計画値に対する割合、見通しは目標値に届くかの県の見立てです。
+    目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
+  </p>
 
   <div id="seika-list">
     {kihon.map((k) => {
@@ -132,7 +134,6 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
 <script src="../../scripts/list-filter.js"></script>
 
 <style>
-  .search-form .q { flex-basis: 100%; }
   .search-form .q input { font-size: 1rem; min-height: 44px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
   .gt-name { flex: 1 1 12em; min-width: 0; }

@@ -47,7 +47,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ページ: トップ、`/theme/`（くらしのテーマ）、`/future/`（将来像の一覧と将来像1〜5）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`、`/okure/`、`/bukyoku/`、`/yosan/`、`/about/`、`/code-for-okinawa/`（作っている団体と問い合わせ先）。前の `/kihon/`（一覧）は `/future/` へ転送する（`astro.config.mjs` の `redirects`）。パンくずは計画の体系「トップ › 将来像N › 基本施策 › 施策」「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`。スマホでは、すぐ下の見出しと同じいまのページの名前を見せない）。
 - ブラウザのスクリプト（`src/scripts/`）:
   - `charts.js`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。
-  - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。
+  - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。キーワード以外の条件は `components/FilterMore.astro` で畳み（初めは閉じる。最初の画面に一覧が入るように）、初めの選択から変えた条件の数をボタンに出す（スクリプトがフォームの `data-filter-n` と `filters:change` で知らせる。取組の検索も同じ）。
   - `disclosure.js`（すべて開く・`[data-clamp]` の続きを読む・# の行き先が閉じた details の中なら開く）、`tooltip.js` / `tip.js`、`terms.js`、`theme.js`。
   - `scroll-hint.js`: 横にすべらせる帯（`[data-scroll-hint]`。いまはヘッダーのナビ）の、続きがある側の端をぼかす。
 
