@@ -48,7 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ブラウザのスクリプト（`src/scripts/`）:
   - `charts.js`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。
   - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。キーワード以外の条件は `components/FilterMore.astro` で畳み（初めは閉じる。最初の画面に一覧が入るように）、初めの選択から変えた条件の数をボタンに出す（スクリプトがフォームの `data-filter-n` と `filters:change` で知らせる。取組の検索も同じ）。
-  - `disclosure.js`（すべて開く・`[data-clamp]` の続きを読む・# の行き先が閉じた details の中なら開く）、`tooltip.js` / `tip.js`、`terms.js`、`theme.js`。
+  - `disclosure.js`（すべて開く・# の行き先が閉じた details の中なら開く。最新の年度の県のふりかえり・活動と検証は途中で切らずに全部出す）、`tooltip.js` / `tip.js`、`terms.js`、`theme.js`。
   - `scroll-hint.js`: 横にすべらせる帯（`[data-scroll-hint]`。いまはヘッダーのナビ）の、続きがある側の端をぼかす。
 
 ## デザインの決まり（ユーザーと決めたこと）

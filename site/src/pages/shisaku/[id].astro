@@ -156,8 +156,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         <span class="avatar" aria-hidden="true">県</span>
         <div class="bubble">
           <h3>ふりかえり（{yearLong(LATEST)}・Check）</h3>
-          <div data-clamp id="clamp-check"><Prose text={latest.check} /></div>
-          <button type="button" class="more" data-clamp-toggle="clamp-check" aria-controls="clamp-check" aria-expanded="false" hidden>続きを読む</button>
+          <Prose text={latest.check} />
         </div>
       </div>
     )}
@@ -166,8 +165,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         <span class="avatar" aria-hidden="true">県</span>
         <div class="bubble">
           <h3>これからどうする（{yearLong(LATEST)}・Action）</h3>
-          <div data-clamp id="clamp-action"><Prose text={latest.action} /></div>
-          <button type="button" class="more" data-clamp-toggle="clamp-action" aria-controls="clamp-action" aria-expanded="false" hidden>続きを読む</button>
+          <Prose text={latest.action} />
         </div>
       </div>
     )}
