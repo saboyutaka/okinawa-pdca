@@ -25,6 +25,7 @@ python3 scripts/fetch_pdca.py --source kikaku  # 取得元を絞る（--list-sou
 | kigyo | 企業局 | eb.pref.okinawa.jp /torikumi/115/137 |
 | byoin | 病院事業局 | byoinjigyokyoku.pref.okinawa.jp /data/pdca/ |
 
+- 県企業局のサイトは robots.txt で自動取得が禁止されているため、PDF はブラウザで手動ダウンロードし、`python3 scripts/import_manual.py <フォルダ> --source kigyo --since 2022` で取り込む（台帳に `fetched_by: manual` と記録される）。
 - 知事部局は一覧ページから自動検出する。保存名は県のページIDで固定しているため、部局名が変わってもフォルダは分かれない（環境部は新旧2ページとも kankyo）。未登録のIDは `dept-<ID>` で保存し警告を出す。
 
 ## ディレクトリ構成
