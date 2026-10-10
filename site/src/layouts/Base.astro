@@ -22,6 +22,14 @@ const NAV = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <script is:inline>
+      // 選んだ配色を最初に反映する（scripts/theme.js が切り替えと記憶を受け持つ）
+      try {
+        const t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />
@@ -39,6 +47,7 @@ const NAV = [
             <a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href)) ? 'page' : undefined}>{label}</a>
           ))}
         </nav>
+        <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
       </div>
     </header>
     <main class="wrap" id="main">
@@ -50,5 +59,6 @@ const NAV = [
       </div>
     </footer>
     <script src="../scripts/tooltip.js"></script>
+    <script src="../scripts/theme.js"></script>
   </body>
 </html>
