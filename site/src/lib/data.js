@@ -1,5 +1,6 @@
 // 抽出済みデータ（data/extracted/soukatsu）をビルド時に読み込み、ページで使う形にまとめる。
 // ブラウザには JSON を配らず、各ページの HTML として書き出す（県民のスマホで重くしないため）。
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -221,10 +222,98 @@ export function getTorikumiGroups() {
         statuses,
         inAllYears: statuses.every(Boolean),
         delayYears: statuses.filter((x) => DELAYS.has(x)).length,
+        href: torikumiHref(s.id, row.key),
       };
     }),
   );
+  const hrefs = new Set();
+  for (const g of torikumiGroups) {
+    if (hrefs.has(g.href)) throw new Error(`取組のページの URL が重複している: ${g.href}`);
+    hrefs.add(g.href);
+  }
   return torikumiGroups;
+}
+
+// 取組のページの URL: /torikumi/<施策ID>/<取組名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
+export const torikumiSlug = (key) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
+export const torikumiHref = (shisakuId, key) => `/torikumi/${shisakuId}/${torikumiSlug(key)}/`;
+
+// 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）
+let groupHrefs;
+export function torikumiPage(shisakuId, key) {
+  groupHrefs ??= new Set(getTorikumiGroups().map((g) => g.href));
+  const h = torikumiHref(shisakuId, key);
+  return groupHrefs.has(h) ? h : null;
+}
+
+// 同じ名前の取組が別の施策にも載っているもの（総括報告書の「再掲」）
+let groupsByKey;
+export function repostsOf(g) {
+  if (!groupsByKey) {
+    groupsByKey = new Map();
+    for (const x of getTorikumiGroups()) {
+      if (!groupsByKey.has(x.key)) groupsByKey.set(x.key, []);
+      groupsByKey.get(x.key).push(x);
+    }
+  }
+  return groupsByKey.get(g.key).filter((x) => x.shisaku.id !== g.shisaku.id);
+}
+
+// 名前が変わった（または分割・統合された）可能性のある取組。同じ施策で、この取組が最後に載った年度の翌年度から載り始めた取組（またはその逆）のうち、
+// 部局票に同じ予算事業名があるもの、または名前が似ているもの（文字の2つ組の一致率 0.5 以上）。年度をまたぐ照合は名前だけなので、その補い
+const NO_BUDGET = /^([ー―\-－]|なし|県事業なし|)$/;
+const budgetNameCache = new Map();
+function budgetNamesOf(g) {
+  const k = `${g.shisaku.id}|${g.key}`;
+  if (!budgetNameCache.has(k)) {
+    const m = new Map();
+    for (const y of YEARS) {
+      if (!g.years[y]) continue;
+      for (const b of budgetOf(y, g.shisaku.id, g.key)?.budgets || []) {
+        for (const n of [b.name, b.name_next]) if (!NO_BUDGET.test(budgetKey(n))) m.set(budgetKey(n), n);
+      }
+    }
+    budgetNameCache.set(k, m);
+  }
+  return budgetNameCache.get(k);
+}
+const bigrams = (s) => {
+  const k = nameKey(s);
+  return new Set([...k].slice(0, -1).map((c, i) => c + k[i + 1]));
+};
+const similarity = (a, b) => {
+  const [x, y] = [bigrams(a), bigrams(b)];
+  if (!x.size || !y.size) return 0;
+  return (2 * [...x].filter((v) => y.has(v)).length) / (x.size + y.size);
+};
+export const firstYearOf = (g) => YEARS.find((y) => g.years[y]);
+export function renameCandidates(g) {
+  const last = g.latest.year;
+  const first = firstYearOf(g);
+  const mine = budgetNamesOf(g);
+  const out = [];
+  for (const o of getTorikumiGroups()) {
+    if (o.shisaku.id !== g.shisaku.id || o.key === g.key) continue;
+    const after = last < LATEST && firstYearOf(o) === last + 1;
+    const before = first > YEARS[0] && o.latest.year === first - 1;
+    if (!after && !before) continue;
+    const shared = [...budgetNamesOf(o)].filter(([k]) => mine.has(k)).map(([, n]) => n);
+    const sim = similarity(g.latest.name, o.latest.name);
+    if (shared.length || sim >= 0.5) out.push({ group: o, after, shared, sim });
+  }
+  return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
+}
+
+// 部局票の「対応する成果指標」（名前）から、施策ページの成果指標の見出しへのリンクを探す（名前の空白・記号の違いは無視）
+export function seikaHrefByName(shisakuId, name) {
+  const s = getShisaku(shisakuId);
+  const n = nameKey(name || '');
+  if (!s || !n) return null;
+  const row = seikaRows(s).find((r) => {
+    const m = nameKey(r.latest.name);
+    return m === n || n.includes(m) || m.includes(n);
+  });
+  return row ? seikaHref(shisakuId, row.key) : null;
 }
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
@@ -313,11 +402,13 @@ export function sourceOf(id) {
   return sources.get(id);
 }
 
+let bukyokuFiles;
 // 県のPDFへのリンク。zip の中のPDFはページ指定できないので zip へのリンクにする
 export function sourceLink(id, page) {
   // 部局票（data/raw/<部局>/...）は bukyoku/files.json に URL がある
   if (!id.startsWith('soukatsu/')) {
-    const f = load('bukyoku/files').find((x) => x.id === id);
+    bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
+    const f = bukyokuFiles.get(id);
     if (!f?.file_url) return null;
     const text = (f.link_text || '').replace(/\s*（\s*(PDF|zip|Excel)[^）]*）\s*$/i, '');
     return { href: `${f.file_url}#page=${page}`, label: `${text} ${page}ページ` };

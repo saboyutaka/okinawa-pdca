@@ -51,7 +51,7 @@ const sections = [
             {sec.rows.map((g) => (
               <tr>
                 <td>
-                  {g.latest.name}<br />
+                  <a href={g.href}>{g.latest.name}</a><br />
                   <small class="secondary">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</small><br />
                   <small>施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></small>
                 </td>
