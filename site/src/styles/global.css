@@ -141,23 +141,6 @@ small, .small { font-size: 0.875rem; }
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-/* サブメニューのあるナビ（施策・取組・予算）。文字はリンク、「▾」でナビの下にサブメニューを1段で出す */
-.nav-split { flex: none; display: inline-flex; align-items: stretch; border: 2px solid transparent; border-radius: 999px; }
-.nav-split > a { border: 0 !important; box-shadow: none !important; background: none !important; padding-right: 6px; }
-.nav-split.on { border-color: var(--line); background: var(--paper); box-shadow: 2px 2px 0 var(--shadow); }
-.nav-split.on > a { font-weight: 700; }
-.nav-split:not(.on):hover { border-color: var(--hair); background: var(--paper); }
-.nav-toggle {
-  font: inherit; font-size: 1.05rem; line-height: 1; color: var(--ink-2); background: none; border: 0; border-left: 1.5px solid var(--hair);
-  border-radius: 0 999px 999px 0; padding: 0 10px 0 7px; min-width: 34px; cursor: pointer;
-}
-.nav-toggle[aria-expanded="true"] { color: var(--ink); background: var(--sky); }
-.nav-toggle[hidden] { display: none; }
-.subnav { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 4px; padding: 8px 10px; background: var(--paper); border: 2px solid var(--line); border-radius: 16px; }
-.subnav[hidden] { display: none; }
-.subnav a { font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 2px 12px; min-height: 36px; display: inline-flex; align-items: center; border-radius: 999px; border: 2px solid transparent; }
-.subnav a:hover { border-color: var(--hair); }
-.subnav a[aria-current="page"] { background: var(--sky); border-color: var(--line); font-weight: 700; }
 @media (max-width: 720px) { .theme-label { display: none; } }
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }

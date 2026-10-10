@@ -7,21 +7,19 @@ const SITE = '沖縄県PDCAダッシュボード';
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
-// サイト内のナビ。sub があるものは「▾」でサブメニューを開ける（そのグループのページにいるときは開いたまま）
+// サイト内のナビ。計画の体系（将来像 → 基本施策 → 施策 → 取組）の順に並べる。also のページにいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
   { href: '/theme/', label: 'くらしのテーマ' },
-  { href: '/shisaku/', label: '施策', id: 'shisaku', sub: [['/shisaku/', '施策をさがす'], ['/kihon/', '基本施策の一覧（将来像・基本施策から）']] },
-  { href: '/torikumi/', label: '取組', id: 'torikumi', sub: [['/torikumi/', '取組をさがす'], ['/okure/', '遅れが続いている取組']] },
+  { href: '/kihon/', label: '基本施策' },
+  { href: '/shisaku/', label: '施策' },
+  { href: '/torikumi/', label: '取組', also: ['/okure/'] },
   { href: '/shihyou/', label: '成果指標' },
   { href: '/bukyoku/', label: '部局' },
-  { href: '/yosan/', label: '予算', id: 'yosan', sub: [['/yosan/', '予算と財源'], ['/yosan/zaigen/', '予算の財源のしくみ']] },
+  { href: '/yosan/', label: '予算' },
   { href: '/about/', label: 'データについて' },
 ];
-const inItem = (n) => (n.href === '/' ? path === '/' : (n.sub || [[n.href]]).some(([h]) => path.startsWith(h)) || path.startsWith(n.href));
-const openSub = NAV.find((n) => n.sub && inItem(n));
-// サブメニューの中のいまのページ（/yosan/zaigen/ のときに /yosan/ を選ばないよう、いちばん長く一致するもの）
-const subCurrent = (n) => n.sub.filter(([h]) => path.startsWith(h)).sort((a, b) => b[0].length - a[0].length)[0]?.[0];
+const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || [])].some((h) => path.startsWith(h)));
 ---
 <!doctype html>
 <html lang="ja">
@@ -51,20 +49,16 @@ const subCurrent = (n) => n.sub.filter(([h]) => path.startsWith(h)).sort((a, b) 
         <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}<small>（非公式）</small></span></a>
         <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
         <nav class="site-nav" aria-label="サイト内">
-          {NAV.map((n) => n.sub ? (
-            <span class:list={['nav-split', inItem(n) && 'on']}>
-              <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>
-              <button type="button" class="nav-toggle" aria-expanded={openSub === n ? 'true' : 'false'} aria-controls={`sub-${n.id}`} aria-label={`${n.label}のメニュー`} hidden>▾</button>
-            </span>
-          ) : (
-            <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>
-          ))}
+          {NAV.map((n) => <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>)}
         </nav>
-        {NAV.filter((n) => n.sub).map((n) => (
-          <nav class="subnav" id={`sub-${n.id}`} aria-label={`${n.label}のページ`} hidden={openSub !== n} data-default-open={openSub === n ? '' : undefined}>
-            {n.sub.map(([h, l]) => <a href={h} aria-current={subCurrent(n) === h ? 'page' : undefined}>{l}</a>)}
-          </nav>
-        ))}
+        <script is:inline>
+          // スマホでナビが横にはみ出すとき、いまいるページの項目が見えるようにナビだけを横にずらす（ページは動かさない）
+          (() => {
+            const nav = document.currentScript.previousElementSibling;
+            const cur = nav && nav.querySelector('[aria-current="page"]');
+            if (cur && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2;
+          })();
+        </script>
       </div>
     </header>
     <main class="wrap" id="main">
@@ -78,7 +72,6 @@ const subCurrent = (n) => n.sub.filter(([h]) => path.startsWith(h)).sort((a, b) 
     </footer>
     <script src="../scripts/tooltip.js"></script>
     <script src="../scripts/theme.js"></script>
-    <script src="../scripts/nav.js"></script>
     <script src="../scripts/terms.js"></script>
     <script src="../scripts/disclosure.js"></script>
     <script src="../scripts/charts.js"></script>

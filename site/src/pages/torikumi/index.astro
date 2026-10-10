@@ -13,6 +13,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <p class="secondary">
     令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。部局は最新の報告での所管部局です。
   </p>
+  <p><a class="tag" href="/okure/">遅れが続いている取組を見る</a></p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q" data-label="キーワード">キーワード
