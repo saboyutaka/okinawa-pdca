@@ -25,7 +25,7 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 <li class="s-item" {...attrs}>
   <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} aria-hidden="true">{j ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
   <div class="name-row">
-    <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
+    <a class="item-name name-link" href={`/shisaku/${s.id}/`}>{s.name}</a>
     <span class="code-no">{s.code}</span>
   </div>
   <div class="facts small">
@@ -51,7 +51,7 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 <style>
   .s-item { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 2px 12px; align-items: start; }
   .jstamp { grid-row: span 2; margin-top: 2px; }
-  .item-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1.5; }
+  .item-name { font-size: 1rem; line-height: 1.5; }
   .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px; color: var(--ink-2); line-height: 1.6; }
   .facts b { color: var(--ink); }
   .kihon { flex-basis: 100%; }

@@ -99,11 +99,11 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const [code, sname, sz] = data.shisaku[sid];
     const li = el('li', 't-row');
     const head = el('div', 'head');
-    const n = el('a', 'name', name) as HTMLAnchorElement;
+    const n = el('a', 'name name-link', name) as HTMLAnchorElement;
     n.href = href;
     head.append(n);
     if (data.depts[dept]) {
-      const d = el('a', 'sec', section) as HTMLAnchorElement;
+      const d = el('a', 'sec sub-link', section) as HTMLAnchorElement;
       d.href = `/bukyoku/${data.depts[dept]}/`;
       head.append(d);
     } else {
@@ -113,7 +113,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const badge = el('span', `badge-sz sz-${sz}`, String(sz));
     badge.setAttribute('aria-hidden', 'true');
     s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
-    const a = el('a', '', sname) as HTMLAnchorElement;
+    const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
     const years = el('div', 'years');
@@ -234,7 +234,6 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 <style>
   #results :global(.t-row) { display: grid; gap: 2px; }
   #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  #results :global(.name) { font-family: var(--font-display); font-weight: 700; }
   #results :global(.sec) { font-size: 0.875rem; color: var(--ink-2); }
   #results :global(.years) { margin: 4px 0 2px; }
 </style>

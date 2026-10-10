@@ -23,8 +23,8 @@ const ratio = comparable ? aq.v / tq.v : 0;
 ---
 <article class="sticker tcard">
   <div class="th">
-    <h3><a href={href}>{t.name}</a></h3>
-    <div class="sec">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+    <h3><a class="name-link" href={href}>{t.name}</a></h3>
+    <div class="sec">{deptHref(t.section) ? <a class="sub-link" href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
     <ThemeTags ids={themeIdsOfItem(shisakuId, t.name)} />
   </div>
   <Stamps items={stamps} label="4年の進捗状況" size="small" />
@@ -36,7 +36,7 @@ const ratio = comparable ? aq.v / tq.v : 0;
       {comparable && <Chunk frac={ratio} tone={ratio >= 1 ? 'good' : ratio >= 0.75 ? 'warning' : 'serious'} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
     </div>
   ) : <div />}
-  {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}
+  {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a class="sub-link" href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}
   {t.summary ? (
     <div class="did">
       <div class="did-l">{yearLabel(t.year)}にやったこと</div>
@@ -51,9 +51,7 @@ const ratio = comparable ? aq.v / tq.v : 0;
   .tcard { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 10px; align-content: start; padding: 16px; }
   .th { display: grid; gap: 4px; align-content: start; }
   h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
-  h3 a { color: var(--ink); }
   .sec { font-size: 0.875rem; color: var(--ink-2); }
-  .sec a { color: var(--ink-2); }
   .th :global(.ttags) { margin-top: 2px; }
   .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; align-self: start; }
   .act-l { color: var(--ink-2); font-weight: 700; }

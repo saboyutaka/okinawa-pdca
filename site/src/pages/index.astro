@@ -155,7 +155,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
             <ul class="ex-list">
               {m.rows.slice(0, 4).map((g) => (
                 <li>
-                  <a class="ex-name" href={g.href}>{g.latest.name}</a>
+                  <a class="ex-name name-link" href={g.href}>{g.latest.name}</a>
                   <span class="ex-sub">施策 {g.shisaku.name} <span class="code-no">{g.shisaku.code}</span></span>
                   <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
                 </li>
@@ -175,7 +175,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
-          <a class="v-name" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
+          <a class="v-name name-link" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
           <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
           <span class="v-pv"><span class="big">{pct(v.ok, v.n)}</span><small>{fmt(v.ok)}/{fmt(v.n)}件</small></span>
         </li>
@@ -286,7 +286,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
   .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
-  .v-name { grid-area: name; font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
+  .v-name { grid-area: name; line-height: 1.5; }
   .vision :global(.chunk) { grid-area: bar; }
   .v-pv { grid-area: pv; display: grid; justify-items: end; line-height: 1.2; }
   .v-pv .big { font-size: 1.15rem; }

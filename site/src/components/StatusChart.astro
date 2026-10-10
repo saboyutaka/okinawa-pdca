@@ -32,7 +32,7 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
     {rows.map((r) => (
       <div class="row">
         <div class="row-label">
-          {r.href ? <a href={r.href}>{r.label}</a> : r.label}
+          {r.href ? <a class="name-link" href={r.href}>{r.label}</a> : r.label}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
         <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />

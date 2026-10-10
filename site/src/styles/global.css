@@ -88,6 +88,16 @@ body {
 }
 a { color: var(--link); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
 a:hover { text-decoration-thickness: 2.5px; }
+/* リンクは3種類。文章の中のリンクは上の青と下線のまま（黒の太字にすると強調と見分けがつかないため）。
+   .name-link … 名前のリンク（一覧の行の名前・カードの見出し・図の行の名前）。見出しとして読むので黒の太字にし、押せることは薄い下線で伝える。
+                書体は角ゴシック（見出しの丸ゴシックは太さが1つしかなく、太字にならないため）
+   .sub-link  … 補足の行の部局・施策の名前。灰色にして、名前より目立たせない
+   どちらも、カーソルを乗せても色は青にしない（名前が別の種類の文字に変わったように見え、一覧ではちらつくため）。
+   乗せたときは下線を黒く太くして、押せることを伝える（太さは上の a:hover） */
+.name-link { color: var(--ink); font-family: var(--font); font-weight: 700; text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
+.sub-link { color: var(--ink-2); text-decoration-color: var(--hair); }
+.name-link:hover { text-decoration-color: var(--ink); }
+.sub-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
 :focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
 /* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり） */
 h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; word-break: auto-phrase; }

@@ -24,7 +24,7 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
 <article class="sticker scard" id={id}>
   <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
   <p class="small secondary meta">
-    担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
+    担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
     {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
   </p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}

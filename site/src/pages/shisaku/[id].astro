@@ -67,7 +67,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
       <div class="kind">施策展開「{s.tenkai_name}」の<Term word="施策" /></div>
       <h1>{s.name}</h1>
       <div class="meta">
-        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
+        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
         {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
     </div>

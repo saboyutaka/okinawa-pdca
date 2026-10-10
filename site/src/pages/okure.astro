@@ -95,8 +95,8 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
                 data-text={`${t.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name} ${t.indicator || ''}`}
               >
                 <div class="o-main">
-                  <a class="o-name" href={g.href}>{t.name}</a>
-                  <div class="small secondary">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}・施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
+                  <a class="o-name name-link" href={g.href}>{t.name}</a>
+                  <div class="small secondary">{deptHref(g.section) ? <a class="sub-link" href={deptHref(g.section)}>{g.section}</a> : g.section}・施策 <a class="sub-link" href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
                   {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {t.target || '—'} → 実績 <b>{t.actual || '—'}</b></div>}
                 </div>
                 <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
@@ -134,7 +134,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .row-list { margin-top: 12px; }
   .o-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
   .o-main { display: grid; gap: 2px; min-width: 0; }
-  .o-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
+  .o-name { line-height: 1.5; }
   .o-main b { color: var(--ink); }
   @media (max-width: 640px) { .o-row { grid-template-columns: 1fr; } .o-row :global(.stamps) { max-width: 260px; } }
   .by-dept { margin-top: 28px; }

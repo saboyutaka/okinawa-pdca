@@ -116,7 +116,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <div class="kind"><Term word="主な取組" /></div>
     <h1>{t.name}</h1>
     <div class="meta">
-      <span>所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}</span>
+      <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       <ThemeTags ids={themeIdsOfItem(s.id, t.name)} />
     </div>
@@ -163,7 +163,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <div class="tile-label">対応する<Term word="成果指標" /></div>
       {seikaName ? (
         <>
-          <div class="f-name">{seikaHref ? <a href={seikaHref}>{seikaName}</a> : seikaName}</div>
+          <div class="f-name">{seikaHref ? <a class="name-link" href={seikaHref}>{seikaName}</a> : seikaName}</div>
           {seikaRate && <Chip tone={seikaTone} text={`${seikaRate}（${yearLabel(LATEST)}）`} />}
           <div class="tile-sub">この取組で成果を出そうとしている、施策の成果指標です。</div>
         </>
@@ -454,7 +454,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
   }
   .parent:hover { background: var(--sky); }
-  .parent:hover .p-name { text-decoration: underline; }
+  .parent:hover .p-name, .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
   .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
   .p-stamp {
@@ -462,7 +462,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
     font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; flex: none;
   }
-  .p-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--link); flex: 1 1 10em; min-width: 0; }
+  .p-name { font-weight: 700; line-height: 1.5; flex: 1 1 10em; min-width: 0; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
   .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
   .report-no { white-space: nowrap; }
@@ -502,7 +502,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .cands { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 8px; }
   .cand { display: grid; gap: 2px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); text-decoration: none; color: var(--ink); }
   .cand:hover { background: var(--sky); }
-  .c-name { font-family: var(--font-display); font-weight: 700; color: var(--link); text-decoration: underline; }
+  .c-name { font-weight: 700; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   section h2 { scroll-margin-top: 72px; }
   .ycards { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .ycard { display: grid; gap: 6px; align-content: start; padding: 14px 16px; }
