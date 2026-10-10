@@ -2,11 +2,9 @@
 import Base from '../layouts/Base.astro';
 import BarList from '../components/BarList.astro';
 import Stamps from '../components/Stamps.astro';
-import Chunk from '../components/Chunk.astro';
 import Icon from '../components/Icon.astro';
 import Sz from '../components/Sz.astro';
 import Term from '../components/Term.astro';
-import ThemeTags from '../components/ThemeTags.astro';
 import { YEARS, LATEST, yearLabel, DEPTS, DELAYS, toneOfStatus, getTorikumiGroups, getShouraizou, deptHref } from '../lib/data.js';
 import { getThemes, themeIdsOfItem } from '../lib/themes.js';
 import { fmt } from '../lib/format.js';
@@ -33,9 +31,6 @@ const sections = [
 ];
 const depts = DEPTS.filter((d) => sections.some((s) => s.rows.some((g) => g.dept === d.name)));
 const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }));
-// 活動指標の「目標 10件 → 実績 4件」が同じ単位の数のときだけ、目標に対する割合を棒にする
-const qty = (raw) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
-const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); return a && b && b.v > 0 && a.u === b.u ? a.v / b.v : null; };
 ---
 <Base title="遅れが続いている取組" description="沖縄県PDCAで、令和4〜7年度に進捗の遅れが続いている主な取組と、遅れから順調に戻った取組の一覧です。くらしのテーマ・部局・将来像で絞り込めます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/torikumi/">取組をさがす</a> › 遅れが続いている取組</nav>
@@ -84,37 +79,27 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
   <div id="okure-list">
     {sections.map((sec) => (
       <section class="anchor" id={sec.id} data-group aria-labelledby={`h-${sec.id}`}>
-        <h2 id={`h-${sec.id}`} class="sec-h"><Icon tone={sec.tone} size={18} />{sec.title}（<span data-group-count>{fmt(sec.rows.length)}</span>件）</h2>
+        <h2 id={`h-${sec.id}`} class="sec-h"><Icon tone={sec.tone} size={18} /><span>{sec.title}（<span data-group-count>{fmt(sec.rows.length)}</span>件）</span></h2>
         <p class="small secondary">{sec.desc}</p>
-        <ul class="ocards">
+        <ul class="rows">
           {sec.rows.map((g) => {
             const t = g.latest;
-            const ratio = ratioOf(t);
             const themes = themeIdsOfItem(g.shisaku.id, t.name);
             return (
               <li
-                class="sticker ocard"
+                class="o-row"
                 data-item
                 data-theme={themes.join('|')}
                 data-dept={g.dept}
                 data-s={String(g.shisaku.shouraizou)}
                 data-text={`${t.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name} ${t.indicator || ''}`}
               >
-                <div class="o-head">
+                <div class="o-main">
                   <a class="o-name" href={g.href}>{t.name}</a>
-                  <div class="o-sec">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</div>
-                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /><span class="o-sname">施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></span></div>
-                  <ThemeTags ids={themes} />
+                  <div class="small secondary">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}・施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
+                  {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {t.target || '—'} → 実績 <b>{t.actual || '—'}</b></div>}
                 </div>
                 <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
-                {t.indicator ? (
-                  <div class="act">
-                    <div class="act-l">活動指標（{yearLabel(t.year)}）</div>
-                    <div>{t.indicator}</div>
-                    <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>
-                    {ratio != null && <Chunk frac={ratio} tone={ratio >= 0.9 ? 'good' : ratio >= 0.75 ? 'warning' : ratio >= 0.6 ? 'serious' : 'critical'} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
-                  </div>
-                ) : <div />}
               </li>
             );
           })}
@@ -145,18 +130,12 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
   .sum-n { font-size: 2.3rem; line-height: 1.1; }
   .sum-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
   .sec-h { display: flex; align-items: center; gap: 8px; }
-  .ocards { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  /* 並んだカードで段（名前など・スタンプ・活動指標）の高さをそろえる */
-  .ocard { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 8px; padding: 16px; }
-  .ocard[hidden] { display: none; }
-  .o-head { display: grid; gap: 8px; align-content: start; }
-  .o-name { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; line-height: 1.5; color: var(--ink); }
-  .o-sec, .o-shisaku { font-size: 0.875rem; color: var(--ink-2); }
-  .o-sec a { color: var(--ink-2); }
-  .o-shisaku { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
-  .o-sname { flex: 1 1 12em; min-width: 0; }
-  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 2px; align-self: start; }
-  .act-l { color: var(--ink-2); font-weight: 700; }
-  .act :global(.chunk) { margin-top: 4px; }
+  /* 1件を1行に。左に名前・所管と施策・活動指標、右に4年のスタンプ。テーマは絞り込みと取組のページに任せる */
+  .rows { margin-top: 12px; }
+  .o-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
+  .o-main { display: grid; gap: 2px; min-width: 0; }
+  .o-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
+  .o-main b { color: var(--ink); }
+  @media (max-width: 640px) { .o-row { grid-template-columns: 1fr; } .o-row :global(.stamps) { max-width: 260px; } }
   .by-dept { margin-top: 28px; }
 </style>

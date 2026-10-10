@@ -228,6 +228,13 @@ details[open] > summary { margin-bottom: 8px; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
 .chip.empty { color: var(--ink-2); }
+/* 施策の判定（A〜G）の小さな丸いハンコ。一覧の行と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
+.jstamp {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
+  font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; line-height: 1;
+}
+.rows:empty { display: none; }
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
 /* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */

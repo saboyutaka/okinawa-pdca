@@ -60,7 +60,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
   <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
 
-  <ul class="list" id="results"></ul>
+  <ul class="rows" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/shisaku/">施策の一覧</a>から各施策のページで取組を見ることもできます。</p></noscript>
 </Base>
@@ -95,9 +95,9 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   }
 
   function render(row: Data['rows'][number]) {
-    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href, themes] = row;
+    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
     const [code, sname, sz] = data.shisaku[sid];
-    const li = el('li', 'item');
+    const li = el('li', 't-row');
     const head = el('div', 'head');
     const n = el('a', 'name', name) as HTMLAnchorElement;
     n.href = href;
@@ -131,14 +131,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       years.append(box);
     });
     const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
-    const tags = el('div', 'ttags');
-    tags.append(el('span', 'sr-only', 'くらしのテーマ（このサイト独自の分類）:'));
-    for (const i of themes) {
-      const t = el('a', 'ttag', data.themes[i][1]) as HTMLAnchorElement;
-      t.href = `/theme/${data.themes[i][0]}/`;
-      tags.append(t);
-    }
-    li.append(head, s, tags, years, ind);
+    // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
+    li.append(head, s, years, ind);
     return li;
   }
 
@@ -238,8 +232,9 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 </script>
 
 <style>
+  #results :global(.t-row) { display: grid; gap: 2px; }
   #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   #results :global(.name) { font-family: var(--font-display); font-weight: 700; }
   #results :global(.sec) { font-size: 0.875rem; color: var(--ink-2); }
-  #results :global(.years) { margin: 6px 0 4px; }
+  #results :global(.years) { margin: 4px 0 2px; }
 </style>

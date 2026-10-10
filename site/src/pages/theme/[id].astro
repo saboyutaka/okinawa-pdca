@@ -70,8 +70,8 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
     {visions.map((v) => (
       <>
         <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><a href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a>（{v.items.length}）</h3>
-        <ul class="list">
-          {v.items.map((s) => <ShisakuItem s={s} />)}
+        <ul class="rows">
+          {v.items.map((s) => <ShisakuItem s={s} kihon />)}
         </ul>
       </>
     ))}

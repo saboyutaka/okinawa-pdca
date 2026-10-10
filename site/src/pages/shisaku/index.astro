@@ -70,7 +70,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
           <Sz id={k.shouraizou} />
           <span class="gt-name"><a href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span>
         </h2>
-        <ul class="list">
+        <ul class="rows">
           {items.map((s) => (
             <ShisakuItem
               s={s}

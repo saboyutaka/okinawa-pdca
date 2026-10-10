@@ -2,11 +2,10 @@
 import Base from '../../layouts/Base.astro';
 import Chip from '../../components/Chip.astro';
 import Sz from '../../components/Sz.astro';
-import ThemeTags from '../../components/ThemeTags.astro';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, toneOfJudgement, seikaDept,
-  getSeikaGroups, getKihonList, getShouraizou, withUnit, deptHref, seikaHref,
+  getSeikaGroups, getKihonList, getShouraizou, withUnit, seikaHref,
 } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { LINKS } from '../../lib/links.js';
@@ -84,7 +83,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       return (
         <section data-group>
           <h2 class="group-title"><Sz id={k.shouraizou} /> <span class="gt-name"><a href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span></h2>
-          <ul class="list">
+          <ul class="rows">
             {items.map((r) => {
               const x = r.latest;
               const bin = rateBin(x);
@@ -92,7 +91,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
               const past = x.year !== LATEST;
               return (
                 <li
-                  class="item"
+                  class="m-row"
                   data-item
                   data-period={past ? 'past' : 'latest'}
                   data-s={String(r.shisaku.shouraizou)}
@@ -102,24 +101,22 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
                   data-theme={themeIdsOfItem(r.shisaku.id, x.name).join('|')}
                   data-text={`${x.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`}
                 >
-                  <div class="ind-name">
-                    <a href={seikaHref(r.shisaku.id, r.key)}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
-                    {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
-                  </div>
-                  <div class="small">
-                    施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a> <span class="code-no">{r.shisaku.code}</span>
-                    　担当 {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : <span class="secondary">{x.dept || '—'}</span>}
+                  <div class="m-head">
+                    <span class="ind-name">
+                      <a href={seikaHref(r.shisaku.id, r.key)}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
+                      {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
+                    </span>
+                    <span class="tags">
+                      <Chip tone={toneOfBin(bin)} text={`${rateText(x)}（${yearLabel(x.year)}）`} />
+                      {x.judgement && <Chip tone={jt} text={`見通し: ${x.judgement}`} />}
+                    </span>
                   </div>
                   <div class="vals small">
                     <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
                     <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
                     <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
                   </div>
-                  <ThemeTags ids={themeIdsOfItem(r.shisaku.id, x.name)} />
-                  <div class="tags">
-                    <Chip tone={toneOfBin(bin)} text={`${rateText(x)}（${yearLabel(x.year)}）`} />
-                    {x.judgement && <Chip tone={jt} text={`見通し: ${x.judgement}`} />}
-                  </div>
+                  <div class="small secondary">施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a> <span class="code-no">{r.shisaku.code}</span></div>
                 </li>
               );
             })}
@@ -138,9 +135,11 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   .search-form .q input { font-size: 1rem; min-height: 44px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
   .gt-name { flex: 1 1 12em; min-width: 0; }
-  .ind-name { font-family: var(--font-display); font-weight: 700; }
-  .item { display: grid; gap: 4px; }
+  /* 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・テーマは絞り込みと施策のページに任せる */
+  .m-row { display: grid; gap: 2px; }
+  .m-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+  .ind-name { font-family: var(--font-display); font-weight: 700; min-width: 0; }
   .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
-  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; margin: 4px 0; }
-  .tags { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; }
 </style>
