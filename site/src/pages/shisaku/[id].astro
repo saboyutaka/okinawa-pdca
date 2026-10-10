@@ -6,7 +6,7 @@ import Bullet from '../../components/Bullet.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, planLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy,
   getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, budgetOf, fundOf,
-  planIndex, withUnit, deptHref, seikaDept, seikaAnchor,
+  planIndex, withUnit, deptHref, seikaDept, seikaAnchor, seikaHrefByName, torikumiHref,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
 
@@ -28,13 +28,6 @@ const progressRows = YEARS.map((y) => ({
 }));
 
 const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
-// 部局票の「対応する成果指標」から、このページの成果指標の見出しを探す（名前の空白・記号の違いは無視）
-const norm = (v) => (v || '').normalize('NFKC').replace(/[\s・、，,。（）()]/g, '');
-const seikaLink = (name) => {
-  const n = norm(name);
-  const row = n && sRows.find((r) => norm(r.latest.name) === n || n.includes(norm(r.latest.name)) || norm(r.latest.name).includes(n));
-  return row ? `#${seikaAnchor(s.id, row.key)}` : null;
-};
 // 決算見込額。「17,314の一部」のように数値にできない表記は、元の表記のまま出す
 const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
 const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
@@ -159,6 +152,7 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
     <h2 id="torikumi">主な取組</h2>
     <p class="small secondary">
       県が実施計画で、この施策を進める手段として選んだ事業です。施策で行われる事業のすべてではなく、主な取組に入っていない県の事業や、国・市町村の事業もあります（<a href="/about/#torikumi">データについて</a>）。
+      取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。
       進捗状況は、活動指標の実績が年度の計画に対してどこまで進んだかの県の判定です。
       予算事業と決算見込額は各部局の検証票から取ったもので、同じ予算事業が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。<a href="/yosan/">予算と財源</a>では重複を除いて集計しています。
     </p>
@@ -178,12 +172,12 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
             return (
               <tr>
                 <td class="tori-name">
-                  {t.name}<br />
+                  <a href={torikumiHref(s.id, row.key)}>{t.name}</a><br />
                   <small class="secondary">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</small>
                   {(() => {
                     const b = budgetOf(t.year, t.shisaku_id, t.key);
                     if (!b?.seika_name) return null;
-                    const href = seikaLink(b.seika_name);
+                    const href = seikaHrefByName(s.id, b.seika_name);
                     return <><br /><small>対応する成果指標: {href ? <a href={href}>{b.seika_name}</a> : b.seika_name}</small></>;
                   })()}
                   {t.summary && (

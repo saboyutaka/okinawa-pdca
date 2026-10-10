@@ -10,8 +10,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
   <p class="secondary">
-    令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。
-    部局は最新の報告での所管部局です。
+    令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。部局は最新の報告での所管部局です。
   </p>
 
   <form class="filters" id="tf" role="search" aria-label="取組の絞り込み">
@@ -62,7 +61,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     statuses: [string, string][];
     shisaku: Record<string, [string, string, number]>;
     depts: Record<string, string>;
-    rows: [string, string, string, string, (number | null)[], string, string, string, number][];
+    rows: [string, string, string, string, (number | null)[], string, string, string, number, string][];
   };
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -84,11 +83,13 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   }
 
   function render(row: Data['rows'][number]) {
-    const [sid, name, section, dept, sts, indicator, target, actual, latestYear] = row;
+    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
     const [code, sname] = data.shisaku[sid];
     const li = el('li', 'item');
     const head = el('div', 'head');
-    head.append(el('span', 'name', name));
+    const n = el('a', 'name', name) as HTMLAnchorElement;
+    n.href = href;
+    head.append(n);
     if (data.depts[dept]) {
       const d = el('a', 'sec', section) as HTMLAnchorElement;
       d.href = `/bukyoku/${data.depts[dept]}/`;

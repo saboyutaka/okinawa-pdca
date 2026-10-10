@@ -144,7 +144,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
         </ul>
         <p class="small"><a href="/yosan/">予算と財源</a>・<a href="/yosan/zaigen/">財源のしくみ</a></p>
       </>
-    ) : <p class="secondary">この部局の検証票（予算）は手に入っていません（<a href="/yosan/">予算と財源</a>の「部局票がある範囲」）。</p>}
+    ) : <p class="secondary">この部局の検証票（予算）は手に入っていません（<a href="/yosan/#coverage">予算と財源</a>の「部局票がある範囲」）。</p>}
   </section>
 
   <section aria-labelledby="okure">
@@ -153,7 +153,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
       <ul class="list">
         {delayed.map((g) => (
           <li class="item">
-            <div><strong>{g.latest.name}</strong> <small class="secondary">{g.section}</small></div>
+            <div><a href={g.href}><strong>{g.latest.name}</strong></a> <small class="secondary">{g.section}</small></div>
             <div class="small">施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
             <div class="row-years"><YearStatuses statuses={g.statuses} /></div>
             <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}</div>
