@@ -48,7 +48,7 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
       <div class="tile-label">主な取組のうち「順調」（{yearLong(LATEST)}）</div>
       <div class="tile-value">{pct(toriOk, tori.length)}</div>
       <Chunk frac={tori.length ? toriOk / tori.length : 0} label={`主な取組 ${tori.length}件のうち順調 ${toriOk}件`} thin />
-      <div class="tile-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件。<a href={`/torikumi/?theme=${t.id}`}>取組をさがす</a>{delay3 > 0 && <>・<a href={`/okure/?theme=${t.id}`}>3年以上遅れ {fmt(delay3)}件</a></>}</div>
+      <div class="tile-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件。<a href={`/torikumi/?theme=${t.id}`}>取組をさがす</a>{delay3 > 0 && <>・<a href={`/torikumi/?theme=${t.id}&pat=delay3`}>3年以上遅れ {fmt(delay3)}件</a></>}</div>
     </div>
     <div class="sticker fact">
       <div class="tile-label">成果指標のうち計画値に到達（{yearLong(LATEST)}）</div>

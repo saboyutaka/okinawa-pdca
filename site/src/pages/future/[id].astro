@@ -75,7 +75,7 @@ const L = YEARS.length - 1;
 const moves = [
   { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調').length, href: `/torikumi/?s=${v.id}&pat=recover` },
   { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => ['順調', '概ね順調'].includes(g.statuses[L - 1]) && DELAYS.has(g.statuses[L])).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
-  { tone: 'critical', title: '3年以上、遅れが続いている', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length, href: `/okure/?s=${v.id}` },
+  { tone: 'critical', title: '3年以上、遅れが続いている', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length, href: `/torikumi/?s=${v.id}&pat=delay3` },
 ];
 
 // くらしのテーマ（この将来像の施策が多い順）

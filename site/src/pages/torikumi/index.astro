@@ -1,17 +1,26 @@
 ---
 import Base from '../../layouts/Base.astro';
 import FilterMore from '../../components/FilterMore.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
+import Icon from '../../components/Icon.astro';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, DELAYS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { getThemes } from '../../lib/themes.js';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
+// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。4年とも報告にある取組だけを数える）
+const L = YEARS.length - 1;
+const pats = [
+  { pat: 'delay4', tone: 'critical', label: '4年とも遅れ', n: groups.filter((g) => g.inAllYears && g.delayYears === 4).length },
+  { pat: 'delay3', tone: 'serious', label: '3年以上遅れ', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length },
+  { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に`, n: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調').length },
+];
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
-  <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。<a href="/okure/">遅れが続いている取組</a>のまとめもあります。</p>
+  <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
+  <p class="small pats"><span class="secondary">遅れの様子:</span>{pats.map((p) => <a href={`?pat=${p.pat}`}><Icon tone={p.tone} />{p.label} {fmt(p.n)}件</a>)}</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q" data-label="キーワード">キーワード
@@ -58,7 +67,10 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
-  <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（名前が変わった取組は別の行）。部局は最新の報告での所管部局です。</p>
+  <p class="small secondary">
+    遅れ＝「やや遅れ」「大幅遅れ」「未着手」。「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。遅れの理由は、取組のページの「年度ごとの活動と検証」にあります。
+    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
+  </p>
 
   <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
@@ -96,44 +108,50 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 
   function render(row: Data['rows'][number]) {
     const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
-    const [code, sname, sz] = data.shisaku[sid];
+    const [code, sname] = data.shisaku[sid];
     const li = el('li', 't-row');
-    const head = el('div', 'head');
+    const main = el('div', 't-main');
     const n = el('a', 'name name-link', name) as HTMLAnchorElement;
     n.href = href;
-    head.append(n);
+    const s = el('div', 'small secondary');
     if (data.depts[dept]) {
-      const d = el('a', 'sec sub-link', section) as HTMLAnchorElement;
+      const d = el('a', 'sub-link', section) as HTMLAnchorElement;
       d.href = `/bukyoku/${data.depts[dept]}/`;
-      head.append(d);
+      s.append(d);
     } else {
-      head.append(el('span', 'sec', section));
+      s.append(section);
     }
-    const s = el('div', 'small');
-    const badge = el('span', `badge-sz sz-${sz}`, String(sz));
-    badge.setAttribute('aria-hidden', 'true');
-    s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
+    s.append('・施策 ');
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
-    const years = el('div', 'years');
-    data.years.forEach((y, i) => {
-      const box = el('span');
-      box.append(el('span', 'yl', `R${y - 2018}`));
-      const st = sts[i];
-      if (st == null) box.append(el('span', 'secondary small', '—'));
-      else {
-        const chip = el('span', 'chip');
-        chip.insertAdjacentHTML('beforeend', iconSvg(data.statuses[st][1]));
-        chip.append(el('span', '', data.statuses[st][0]));
-        box.append(chip);
-      }
-      years.append(box);
-    });
-    const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
+    main.append(n, s);
+    if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
-    li.append(head, s, years, ind);
+    li.append(main, stamps(sts));
     return li;
+  }
+
+  // 4年のスタンプ（components/Stamps.astro の size="small" と同じ形。見た目は styles/global.css の .stamps）
+  function stamps(sts: (number | null)[]) {
+    const ol = el('ol', 'stamps small-stamps');
+    ol.setAttribute('aria-label', '4年の進捗状況');
+    data!.years.forEach((y, i) => {
+      const st = sts[i];
+      const yl = `R${y - 2018}`;
+      const li = el('li', `stamp${i > 0 ? ' seg' : ''}${i > 0 && (st == null || sts[i - 1] == null) ? ' seg-dash' : ''}`);
+      const tone = st == null ? 'blank' : data!.statuses[st][1];
+      const c = el('span', `c tone-${tone}`);
+      c.setAttribute('aria-hidden', 'true');
+      c.insertAdjacentHTML('beforeend', st == null ? iconSvg('blank', 'ring', 12) : iconSvg(tone, undefined, 12));
+      const cw = el('span', 'cw');
+      cw.append(c);
+      const t = el('span', 't');
+      t.append(el('span', 'sr-only', `${yl}: `), st == null ? '報告なし' : data!.statuses[st][0]);
+      li.append(el('span', 'y', yl), cw, t);
+      ol.append(li);
+    });
+    return ol;
   }
 
   function showMore() {
@@ -236,8 +254,14 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 </script>
 
 <style>
-  #results :global(.t-row) { display: grid; gap: 2px; }
-  #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  #results :global(.sec) { font-size: 0.875rem; color: var(--ink-2); }
-  #results :global(.years) { margin: 4px 0 2px; }
+  .pats { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
+  .pats a { display: inline-flex; align-items: center; gap: 6px; }
+  /* 1件を1行に。左に名前・所管と施策・活動指標、右に4年のスタンプ */
+  #results :global(.t-row) { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
+  #results :global(.t-main) { display: grid; gap: 2px; min-width: 0; }
+  #results :global(.name) { line-height: 1.5; }
+  @media (max-width: 640px) {
+    #results :global(.t-row) { grid-template-columns: 1fr; }
+    #results :global(.stamps) { max-width: 260px; }
+  }
 </style>

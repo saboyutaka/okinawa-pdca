@@ -10,13 +10,13 @@ const NOINDEX = true;
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
-// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。also のページ（基本施策・遅れが続いている取組）にいるときも、その項目をいまの場所にする
+// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
   { href: '/theme/', label: 'くらしのテーマ' },
   { href: '/future/', label: '将来像', also: ['/kihon/'] },
   { href: '/shisaku/', label: '施策' },
-  { href: '/torikumi/', label: '取組', also: ['/okure/'] },
+  { href: '/torikumi/', label: '取組' },
   { href: '/shihyou/', label: '成果指標' },
   { href: '/bukyoku/', label: '部局' },
   { href: '/yosan/', label: '予算' },

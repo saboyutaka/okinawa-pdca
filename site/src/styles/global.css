@@ -288,6 +288,19 @@ a.ttag:hover { background: var(--sky); }
 }
 .stamp .c .k { display: flex; align-items: center; gap: 3px; }
 .stamp .t { font-size: 0.8125rem; font-weight: 700; line-height: 1.3; text-align: center; }
+ol.stamps { list-style: none; padding: 0; margin: 0; }
+.stamps .cw { display: grid; place-items: center; }
+/* 小さいスタンプ（components/Stamps.astro の size="small"・取組の検索）。丸を横の線でつなぐ */
+.small-stamps { gap: 4px; flex-wrap: nowrap; }
+.small-stamps .stamp { min-width: 0; gap: 1px; }
+.small-stamps .cw { justify-self: stretch; position: relative; }
+.small-stamps .c { position: relative; z-index: 1; width: 32px; height: 32px; border-width: 2px; font-size: 0.875rem; }
+/* 前の年度の丸の中心からこの丸の中心まで（丸は同じ幅の枠の真ん中にあるので、枠の幅＋すき間）。報告のない年度にかかる線は点線 */
+.small-stamps .seg .cw::before {
+  content: ''; position: absolute; top: 50%; right: 50%; width: calc(100% + 4px); height: 3px; transform: translateY(-50%);
+  background: var(--line);
+}
+.small-stamps .seg-dash .cw::before { background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px); }
 /* 太いメーター（割合） */
 .chunk { height: 18px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); overflow: hidden; }
 .chunk > span { display: block; height: 100%; background: var(--tone); border-right: 2px solid var(--line); }
