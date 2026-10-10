@@ -12,7 +12,7 @@ const { items } = Astro.props;
       <li>
         {i > 0 && <span class="sep" aria-hidden="true">›</span>}
         {it.href
-          ? <a href={it.href} class:list={[it.sz && ['crumb-sz', `sz-${it.sz}`]]}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</a>
+          ? <a href={it.href} class:list={[it.sz && ['crumb-sz', `sz-${it.sz}`]]} title={it.sz ? undefined : it.label}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</a>
           : <span class="here" aria-current="page" title={it.label}>{it.label}</span>}
       </li>
     ))}
@@ -25,4 +25,5 @@ const { items } = Astro.props;
   .crumb-sz { display: inline-flex; align-items: center; gap: 4px; padding-left: 3px !important; background: var(--szw) !important; }
   .crumb-sz :global(.badge-sz) { width: 1.45em; height: 1.45em; font-size: 0.75rem; border-width: 1.5px; }
   .here { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(28em, 100%); }
+  a:not(.crumb-sz) { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16em; vertical-align: bottom; }
 </style>

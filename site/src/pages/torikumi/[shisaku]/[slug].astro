@@ -99,13 +99,13 @@ const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 ---
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: `施策 ${s.code}` }, { label: t.name }]} />
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: t.name }]} />
 
   <a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
     <span class="p-kind">この取組が入っている施策</span>
     <span class="p-row">
       <span class:list={['p-stamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
-      <span class="p-name"><span class="p-code"><Sz id={s.shouraizou} /> 施策 {s.code}</span> {s.name}</span>
+      <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
       <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
     </span>
   </a>
@@ -444,6 +444,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         );
       })}
     </ul>
+    <p class="small">この取組が入っている施策の、県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
     <p class="small"><a href={`/shisaku/${s.id}/#torikumi`}>施策「{s.name}」の主な取組の一覧</a></p>
   </section>
 </Base>
@@ -464,8 +465,9 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; flex: none;
   }
   .p-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--link); flex: 1 1 10em; min-width: 0; }
-  .p-code { color: var(--ink-2); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
   .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
+  .report-no { white-space: nowrap; }
   .head { position: relative; display: grid; gap: 12px; margin: 14px 0 0 32px; }
   .head::before {
     content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
