@@ -93,7 +93,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
   <h2>主な取組の進捗状況</h2>
   <StatusChart title="年度別" categories={STATUSES} rows={progressRows} />
   {sectionRows.length > 1 && (
-    <StatusChart title={`課ごと（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} />
+    <StatusChart title={`課ごと（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} legend={false} />
   )}
 
   <section aria-labelledby="seika">
