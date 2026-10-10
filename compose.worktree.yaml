@@ -1,0 +1,17 @@
+# git worktree（.claude/worktrees/<名前>）で動かすときに compose.yaml に重ねる設定。
+# Makefile が worktree の中かを見分けて docker compose -f compose.yaml -f compose.worktree.yaml で呼び、
+# WORKTREE_NAME（worktree の名前）と SITE_PORT（名前から決めたポート）を渡す。
+#
+# - プロジェクト名を worktree ごとに分ける → コンテナと node_modules のボリュームが main や他の worktree と混ざらない
+# - ポートは compose.yaml の SITE_PORT で変わる → main（4321）と並べて開発サーバーを立てられる
+name: okinawa-pdca-${WORKTREE_NAME:?Makefile から呼ぶか WORKTREE_NAME を指定する}
+
+services:
+  site:
+    # worktree の node_modules（ボリューム）は作ったばかりだと空なので、astro が無ければ先に npm ci してから
+    # 渡されたコマンドを動かす（make site-install の npm ci のときは二度入れないようそれに任せる）
+    entrypoint:
+      - sh
+      - -c
+      - 'set -e; [ -x node_modules/.bin/astro ] || [ "$$*" = "npm ci" ] || npm ci; exec "$$@"'
+      - --

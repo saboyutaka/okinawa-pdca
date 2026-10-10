@@ -97,9 +97,11 @@ make check     # 突き合わせだけ（ホストの python3）
 
 ```sh
 make site-install  # 初回のみ
-make dev           # http://localhost:4321/
+make dev           # http://localhost:4321/（SITE_PORT=4400 make dev でポートを変えられる）
 make build         # site/dist に書き出し
 ```
+
+git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使うと、`compose.worktree.yaml` を重ねて、コンテナと node_modules を worktree ごとに分け、開発サーバーを worktree の名前から決めたポート（4322〜4921、`make help` に出る）で立てる。main と並べて動かせる。node_modules は初めて動かすときに自動で入る。worktree を消す前に `make down` でコンテナと node_modules のボリュームを片付ける。
 
 ### Cloudflare での公開
 

@@ -6,7 +6,8 @@ services:
       - .:/work
     working_dir: /work
 
-  # 公開サイト（Astro）。node_modules はホストと混ぜないよう名前付きボリュームに置く
+  # 公開サイト（Astro）。node_modules はホストと混ぜないよう名前付きボリュームに置く。
+  # ポートは SITE_PORT で変えられる（中と外を同じ番号にして、Astro が出す URL と合わせる）
   site:
     image: node:24-alpine
     volumes:
@@ -17,8 +18,8 @@ services:
       ASTRO_TELEMETRY_DISABLED: "1"
       NPM_CONFIG_UPDATE_NOTIFIER: "false"
     ports:
-      - "4321:4321"
-    command: npm run dev -- --host 0.0.0.0
+      - "${SITE_PORT:-4321}:${SITE_PORT:-4321}"
+    command: npm run dev -- --host 0.0.0.0 --port ${SITE_PORT:-4321}
 
 volumes:
   site_node_modules:

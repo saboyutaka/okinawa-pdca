@@ -16,10 +16,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `make extract` | zip 展開 → 総括報告書と部局別の検証票の抽出 → 公表値との突き合わせ → `docs/issues.md` の作り直し |
 | `make check` | 抽出結果を概要版の公表値と突き合わせるだけ（ホストの python3）。`NG` は件数の不一致 |
 | `make issues` | 取れていないデータ・誤りの疑いの一覧（`docs/issues.md`）を作り直す |
-| `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/）・`site/dist` への書き出し・書き出したものの確認 |
+| `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/。`SITE_PORT=4400 make dev` で変えられる）・`site/dist` への書き出し・書き出したものの確認 |
+| `make down` | コンテナを止めて消す（worktree ではその worktree の node_modules のボリュームも消す） |
 
 - 一部だけ読み直す: `docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025`、部局票は `scripts/extract_bukyoku.py --source kigyo --year 2025` のように絞る（出力の他の年度・取得元の行は残る）。
 - 県企業局は robots.txt で自動取得できないので、ブラウザでダウンロードして `python3 scripts/import_manual.py <フォルダ> --source kigyo --since 2022` で取り込む。
+- git worktree（`.claude/worktrees/<名前>`）の中では、Makefile が `compose.worktree.yaml` を重ねて、コンテナと node_modules のボリュームを worktree ごとに分け（`okinawa-pdca-<名前>`）、開発サーバーのポートを名前から決める（4322〜4921。番号は `make help` に出る）。コマンドは main と同じで、node_modules は初めて動かすときに自動で入る。片付ける前に `make down`。PDF（`data/raw`・`data/interim`）は git に入れていないので worktree には無く、`make extract` は main で行う。
 - テストはない。データを変えたら `make check`、サイトを変えたら `make build` を通す。見た目の変更は、書き出した `site/dist` をローカルで配信して PC 幅とスマホ幅（390px）で確かめる。
 
 ## データの流れ
