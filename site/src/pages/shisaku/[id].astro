@@ -70,22 +70,19 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
         <a class:list={['sz-ribbon', 'sz-link', `sz-${s.shouraizou}`]} href={`/future/${s.shouraizou}/`}><Sz id={s.shouraizou} sr={false} />将来像{s.shouraizou} {shou?.name}</a>
         <span>基本施策 <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a></span>
+        {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
-      {themes.length > 0 && (
-        <div class="themes">
-          <ThemeTags ids={themes.map((t) => t.id)} label={false} />
-          <span class="small secondary">（<Term word="くらしのテーマ" label="テーマ" />はこのサイト独自の分類）</span>
-        </div>
-      )}
     </div>
-    <div class:list={['stamp-big', `tone-${j ? j.tone : 'blank'}`]}>
-      <div class:list={['circle', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
-      <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
-      <div class="sb">{yearLong(LATEST)}の県の判定（<Term word="推進状況" />）</div>
-    </div>
-    <div class="head-years">
-      <div class="small secondary label">4年間の判定</div>
-      <Stamps items={judgeStamps} label="4年間の判定" />
+    <div class="head-side">
+      <div class:list={['stamp-big', `tone-${j ? j.tone : 'blank'}`]}>
+        <div class:list={['circle', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
+        <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
+        <div class="sb">{yearLong(LATEST)}の<Term word="推進状況" label="県の判定" /></div>
+      </div>
+      <div class="head-years">
+        <div class="small secondary label">4年間の判定</div>
+        <Stamps items={judgeStamps} label="4年間の判定" size="small" />
+      </div>
     </div>
     {s.houkou && (
       <div class="bubble-row says">
@@ -216,20 +213,25 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .sz-link { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; padding-block: 2px; box-shadow: 2px 2px 0 var(--shadow); }
   .sz-link:hover { filter: brightness(1.04); text-decoration: underline; }
-  .themes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
-  .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; max-width: 12em; }
+  .head-side { display: grid; justify-items: center; gap: 14px; width: 232px; }
+  .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; }
   .stamp-big .circle {
     display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; border: 3px solid var(--line);
     background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 4px 4px 0 var(--shadow); transform: rotate(-6deg);
   }
   .stamp-big .k { font-family: var(--font-num); font-weight: 600; font-size: 2.6rem; line-height: 1; display: flex; align-items: center; gap: 6px; }
   .stamp-big .lb { font-family: var(--font-display); font-weight: 700; line-height: 1.45; }
-  .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); }
-  .head-years, .says { grid-column: 1 / -1; }
+  .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
+  .head-years { width: 100%; }
+  .head-years .label { text-align: center; }
+  .says { grid-column: 1 / -1; }
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
     .head { grid-template-columns: 1fr; }
+    .head-side { width: auto; justify-items: start; }
+    .head-years { max-width: 280px; }
+    .head-years .label { text-align: left; }
     .stamp-big { justify-items: start; grid-template-columns: auto minmax(0, 1fr); text-align: left; align-items: center; gap: 2px 16px; max-width: none; }
     .stamp-big .circle { grid-row: span 2; width: 84px; height: 84px; }
     .stamp-big .k { font-size: 2rem; }
