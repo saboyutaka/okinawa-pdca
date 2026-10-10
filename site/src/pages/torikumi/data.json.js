@@ -13,7 +13,7 @@ export function GET() {
     depts: Object.fromEntries(DEPTS.map((d) => [d.name, d.slug])), // 部局名 → 部局ページの slug
     shisaku: Object.fromEntries(getShisakuList().map((s) => [s.id, [s.code, s.name, s.shouraizou]])),
     themes: themes.map((t) => [t.id, t.label]), // くらしのテーマ（このサイト独自の分類）
-    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes'],
+    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns'],
     rows: getTorikumiGroups().map((g) => [
       g.shisaku.id,
       g.latest.name,
@@ -26,6 +26,7 @@ export function GET() {
       g.latest.year,
       g.href,
       themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)),
+      g.patterns, // 4年間の様子（lib/data.js の PATTERNS のうち当てはまるもの）
     ]),
   };
   return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });

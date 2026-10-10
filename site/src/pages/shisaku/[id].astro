@@ -9,17 +9,17 @@ import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
-import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
+  getShisakuList, getShisaku, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
 } from '../../lib/data.js';
 import { JUDGE_UI } from '../../lib/icons.js';
 import { themesOf } from '../../lib/themes.js';
 import { joinLines, firstSentence } from '../../lib/text.js';
 import { fmt } from '../../lib/format.js';
+import ExtLink from '../../components/ExtLink.astro';
 
 export function getStaticPaths() {
   return getShisakuList().map((s) => ({ params: { id: s.id } }));
@@ -27,7 +27,6 @@ export function getStaticPaths() {
 
 const s = getShisaku(Astro.params.id);
 const kihon = getKihonList().find((k) => k.id === s.kihon_id);
-const shou = getShouraizou().find((x) => x.id === s.shouraizou);
 const tRows = torikumiRows(s);
 const sRows = seikaRows(s);
 const statusKeys = STATUSES.map((x) => x.key);
@@ -60,17 +59,15 @@ const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 ---
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: s.name }]} />
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} />
 
-  <header class="sticker head">
+  <header class="sticker lift head">
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <div class="head-main">
       <div class="kind">施策展開「{s.tenkai_name}」の<Term word="施策" /></div>
       <h1>{s.name}</h1>
       <div class="meta">
-        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
-        <a class:list={['sz-ribbon', 'sz-link', `sz-${s.shouraizou}`]} href={`/future/${s.shouraizou}/`}><Sz id={s.shouraizou} sr={false} />将来像{s.shouraizou} {shou?.name}</a>
-        <span>基本施策 <a href={`/kihon/${s.kihon_id}/`}>{kihon?.name}</a></span>
+        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
         {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
     </div>
@@ -114,18 +111,18 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   </div>
 
   <nav class="toc" aria-label="このページの内容">
-    <a href="#seika">成果指標</a>
-    <a href="#torikumi">主な取組</a>
-    <a href="#check">県のふりかえり</a>
-    <a href="#source">出典</a>
+    <div class="toc-links" data-scroll-hint>
+      <a href="#seika">成果指標</a>
+      <a href="#torikumi">主な取組</a>
+      <a href="#check">県のふりかえり</a>
+      <a href="#source">出典</a>
+    </div>
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
-    <p class="small secondary lead">
-      施策の効果をはかる指標です。スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。実績値は報告の時点で分かっている最新の値で、統計の都合で前の年度の値のことがあります。
-    </p>
+    <p class="small secondary lead">スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
     {seikaPast.length > 0 && (
       <details class="past">
@@ -136,11 +133,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   </section>
 
   <section aria-labelledby="torikumi">
-    <h2 id="torikumi" class="anchor">主な取組</h2>
-    <p class="small secondary lead">
-      県が実施計画で、この施策を進める手段として選んだ事業です。施策で行われる事業のすべてではなく、主な取組に入っていない県の事業や、国・市町村の事業もあります（<a href="/about/#torikumi">データについて</a>）。
-      スタンプは各年度の<Term word="進捗状況" />（県の判定）です。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。
-    </p>
+    <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
+    <p class="small secondary lead">スタンプは各年度の<Term word="進捗状況" />です。名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。</p>
     <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
     <div class="tcards">
       {toriActive.map((row) => <ToriCard row={row} shisakuId={s.id} />)}
@@ -164,8 +158,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         <span class="avatar" aria-hidden="true">県</span>
         <div class="bubble">
           <h3>ふりかえり（{yearLong(LATEST)}・Check）</h3>
-          <div data-clamp id="clamp-check"><Prose text={latest.check} /></div>
-          <button type="button" class="more" data-clamp-toggle="clamp-check" aria-controls="clamp-check" aria-expanded="false" hidden>続きを読む</button>
+          <Prose text={latest.check} />
         </div>
       </div>
     )}
@@ -174,8 +167,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         <span class="avatar" aria-hidden="true">県</span>
         <div class="bubble">
           <h3>これからどうする（{yearLong(LATEST)}・Action）</h3>
-          <div data-clamp id="clamp-action"><Prose text={latest.action} /></div>
-          <button type="button" class="more" data-clamp-toggle="clamp-action" aria-controls="clamp-action" aria-expanded="false" hidden>続きを読む</button>
+          <Prose text={latest.action} />
         </div>
       </div>
     )}
@@ -198,8 +190,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         const b = r?.summary_ref && sourceLink(r.summary_ref.source, r.summary_ref.page);
         return (
           <li>
-            {yearLong(y)}: {a ? <a href={a.href} rel="noopener">施策検証票（{a.label}）</a> : '—'}
-            {b && <>、<a href={b.href} rel="noopener">施策総括表（{b.label}）</a></>}
+            {yearLong(y)}: {a ? <ExtLink href={a.href}>施策検証票（{a.label}）</ExtLink> : '—'}
+            {b && <>、<ExtLink href={b.href}>施策総括表（{b.label}）</ExtLink></>}
           </li>
         );
       })}
@@ -208,15 +200,18 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 </Base>
 
 <style>
-  .head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; padding-top: 30px; }
+  /* 右の判定（ハンコと4年間の判定）は縦に長いので、県の吹き出しは左の列に入れて並べる（左の下が空かないように） */
+  .head {
+    position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr;
+    grid-template-areas: "main side" "says side"; gap: 16px 24px; align-items: start; margin-top: 12px; padding-top: 30px;
+  }
+  .head-main { grid-area: main; }
   .head h1 { margin: 4px 0 8px; }
   .kind { font-size: 0.9375rem; color: var(--ink-2); }
   .report-no { white-space: nowrap; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .sz-link { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; padding-block: 2px; box-shadow: 2px 2px 0 var(--shadow); }
-  .sz-link:hover { filter: brightness(1.04); text-decoration: underline; }
-  .head-side { display: grid; justify-items: center; gap: 14px; width: 232px; }
+  .head-side { grid-area: side; display: grid; justify-items: center; gap: 14px; width: 232px; }
   .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; }
   .stamp-big .circle {
     display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; border: 3px solid var(--line);
@@ -227,11 +222,11 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
   .head-years { width: 100%; }
   .head-years .label { text-align: center; }
-  .says { grid-column: 1 / -1; }
+  .says { grid-area: says; }
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
-    .head { grid-template-columns: 1fr; }
+    .head { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "main" "side" "says"; }
     .head-side { width: auto; justify-items: start; }
     .head-years { max-width: 280px; }
     .head-years .label { text-align: left; }

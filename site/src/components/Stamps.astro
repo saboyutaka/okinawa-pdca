@@ -1,5 +1,6 @@
 ---
-// 年度ごとのスタンプ（判定・進捗状況）。items は年度の順。size="small" は小さい丸を横の線でつなぐ（報告のない年度にかかる線は点線）
+// 年度ごとのスタンプ（判定・進捗状況）。items は年度の順。size="small" は小さい丸を横の線でつなぐ（報告のない年度にかかる線は点線）。
+// 見た目は styles/global.css の .stamps（取組の検索のように、ブラウザのスクリプトで同じ形を描くところがあるため）
 import Icon from './Icon.astro';
 import { yearLabel } from '../lib/data.js';
 
@@ -22,17 +23,3 @@ const small = size === 'small';
   ))}
 </ol>
 
-<style>
-  ol.stamps { list-style: none; padding: 0; margin: 0; }
-  .cw { display: grid; place-items: center; }
-  .small-stamps { gap: 4px; flex-wrap: nowrap; }
-  .small-stamps .stamp { min-width: 0; gap: 1px; }
-  .small-stamps .cw { justify-self: stretch; position: relative; }
-  .small-stamps .c { position: relative; z-index: 1; width: 32px; height: 32px; border-width: 2px; font-size: 0.875rem; }
-  /* 前の年度の丸の中心からこの丸の中心まで（丸は同じ幅の枠の真ん中にあるので、枠の幅＋すき間） */
-  .small-stamps .seg .cw::before {
-    content: ''; position: absolute; top: 50%; right: 50%; width: calc(100% + 4px); height: 3px; transform: translateY(-50%);
-    background: var(--line);
-  }
-  .small-stamps .seg-dash .cw::before { background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px); }
-</style>

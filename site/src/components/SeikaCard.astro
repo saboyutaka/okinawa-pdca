@@ -26,7 +26,7 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 <article class="sticker scard" id={id}>
   <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
   <p class="small secondary meta">
-    担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
+    担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
     {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
   </p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
@@ -96,11 +96,7 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
   .meta { margin: -4px 0 4px; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   .say { font-weight: 700; margin: 10px 0; }
-  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
-  .kv div { background: var(--bg); border-radius: 12px; padding: 6px 10px; min-width: 0; }
-  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-  .kv dd { margin: 0; }
-  .kv dd.big { font-size: 1.1rem; }
+  .kv { margin: 12px 0; }
   /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
   td.num { white-space: normal; min-width: 5em; max-width: 14em; }
 </style>

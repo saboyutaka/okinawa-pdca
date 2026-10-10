@@ -1,0 +1,56 @@
+---
+// 一覧の絞り込みで、キーワード以外の条件を畳む（施策・取組・成果指標をさがす）。「条件で絞り込む」のボタンで開け閉めする。
+// ページを開いたときは閉じておく（最初の画面に一覧が入るように）。条件が入っているときは、一覧の上の「絞り込み中」の札と、
+// ボタンの数で分かる。数は、絞り込みのスクリプト（scripts/list-filter.js・取組の検索）がフォームの data-filter-n に残し、filters:change で知らせる
+// （どちらのスクリプトが先に動いても数が出るように、準備のときに data-filter-n も読む）
+interface Props { id: string }
+const { id } = Astro.props;
+---
+<button type="button" class="more-toggle" aria-expanded="false" aria-controls={id} data-filter-toggle>
+  <span>条件で絞り込む</span><span class="mf-n" data-filter-count hidden></span><svg class="chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+</button>
+<div class="more-body" id={id} hidden><slot /></div>
+
+<script>
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-filter-toggle]')) {
+    const body = document.getElementById(btn.getAttribute('aria-controls') || '');
+    const badge = btn.querySelector<HTMLElement>('[data-filter-count]');
+    if (!body) continue;
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      body.hidden = !open;
+    });
+    // 入っている条件の数（キーワードを除く）をボタンに出す
+    const show = (n: number) => {
+      if (!badge) return;
+      badge.hidden = n === 0;
+      const num = document.createElement('span');
+      num.setAttribute('aria-hidden', 'true');
+      num.textContent = String(n);
+      const sr = document.createElement('span');
+      sr.className = 'sr-only';
+      sr.textContent = `（入っている条件 ${n}）`;
+      badge.replaceChildren(num, sr);
+    };
+    btn.form?.addEventListener('filters:change', (e) => show((e as CustomEvent<{ n: number }>).detail.n));
+    if (btn.form?.dataset.filterN) show(Number(btn.form.dataset.filterN));
+  }
+</script>
+
+<style>
+  .more-toggle {
+    flex: none; align-self: end; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 16px;
+    font: inherit; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); background: var(--paper);
+    border: 2px solid var(--line); border-radius: 999px; box-shadow: 2px 2px 0 var(--shadow); cursor: pointer;
+  }
+  .more-toggle:hover { background: var(--sky); }
+  .more-toggle[aria-expanded="true"] { background: var(--sky); font-weight: 700; }
+  .mf-n {
+    display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; padding: 0 4px; border-radius: 999px;
+    background: var(--pop); color: var(--pop-ink); font-family: var(--font-num); font-size: 0.8125rem; font-weight: 600; line-height: 1;
+  }
+  .chev { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s; }
+  .more-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .more-body { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+</style>
