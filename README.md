@@ -2,6 +2,8 @@
 
 [沖縄県PDCA](https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html)（[新・沖縄21世紀ビジョン実施計画](https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/index.html)などの「主な取組」の進捗評価）を構造化し、分野・部局・進捗で絞り込めるようにするシビックテックプロジェクト。
 
+[Code for Okinawa](https://code4okinawa.org/) のプロジェクトとして、[saboyutaka](https://x.com/saboyutaka) が管理している。沖縄県の公式のものではない。
+
 ### 関連する県のページ
 
 | ページ | 内容 |

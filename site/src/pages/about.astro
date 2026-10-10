@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import { YEARS, LATEST, yearLabel, yearLong, getTorikumi, amountEntries, getFinanceReference, getBudgetRecords } from '../lib/data.js';
 import { fmt } from '../lib/format.js';
 import fs from 'node:fs';
-import { LINKS } from '../lib/links.js';
+import { LINKS, PROJECT } from '../lib/links.js';
 import { TERMS } from '../lib/terms.js';
 import { getThemes, unthemed } from '../lib/themes.js';
 import path from 'node:path';
@@ -86,7 +86,7 @@ const themes = getThemes();
 
   <h2>注意点</h2>
   <ul>
-    <li><strong>非公式のサイトです。</strong>PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。</li>
+    <li><strong>非公式のサイトです。</strong><a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。</li>
     <li><strong>主な取組の進捗の内訳が、概要版と数件ずれることがあります。</strong>報告書の進捗状況の欄が空欄や「-」の取組（{blanks.map(([y, n]) => `${yearLabel(y)}で${n}件`).join('、')}）は、このサイトでは「記載なし」としています。県の集計ではこれらも「順調」「未着手」などに数えられています。</li>
     <li><strong>施策の推進状況（A〜G）は、施策総括表に印字された判定をそのまま使っています。</strong>区分ごとの件数は概要版と数件ずれます（「概ね順調」がこのサイトの方が少ないなど）。県は一部の施策を集計で「その他」に回していますが、それだけではずれを説明できず、原因は分かっていません。R4は施策ごとの判定が公表されていないため「未公表」としています。</li>
     <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>R7から目標値・計画値が新しくなったため、R6以前とR7以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>

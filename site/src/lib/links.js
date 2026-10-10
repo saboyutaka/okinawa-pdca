@@ -7,4 +7,16 @@ export const LINKS = {
   jisshiKeikaku: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/index.html', // 沖縄21世紀ビジョン実施計画（一覧）
   zenki: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/1014251.html', // 実施計画（前期: R4〜R6）
   chuki: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/1034436.html', // 実施計画（中期: R7〜R9）
+  kikakuChousei: 'https://enq.pref.okinawa.lg.jp/cgi-bin/contacts/G030010010', // 企画部企画調整課（沖縄県PDCAの担当）の問い合わせフォーム
+};
+
+// このサイトを作っている団体と管理者
+export const PROJECT = {
+  org: 'Code for Okinawa',
+  orgUrl: 'https://code4okinawa.org/',
+  orgGithub: 'https://github.com/CodeforOkinawa',
+  brigades: 'https://www.code4japan.org/brigade', // Code for Japan のブリゲード（地域のコミュニティ）の一覧
+  maintainerName: '立花 豊',
+  maintainer: 'saboyutaka',
+  maintainerX: 'https://x.com/saboyutaka',
 };
