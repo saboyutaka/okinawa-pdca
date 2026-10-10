@@ -4,7 +4,7 @@ import Road from './Road.astro';
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { YEARS, LATEST, yearLabel, planIndex, withUnit, deptHref, seikaDept, toneOfJudgement } from '../lib/data.js';
+import { YEARS, LATEST, yearLabel, planIndex, withUnit, deptHref, seikaDept, toneOfJudgement, sourceLink } from '../lib/data.js';
 import { joinLines } from '../lib/text.js';
 
 interface Props { row: any; id: string }
@@ -20,6 +20,8 @@ const prev = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((
 const worse = [x.base, x.actual, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base && (x.actual - x.base) / (x.target - x.base) < 0;
 const dept = seikaDept(x);
 const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
+// 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
+const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
 <article class="sticker scard" id={id}>
   <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
@@ -41,12 +43,17 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
     </p>
   )}
   <dl class="kv">
-    <div><dt><Term word="基準値" /></dt><dd class="big">{withUnit(x.base_raw, u)}</dd></div>
+    <div><dt><Term word="基準値" /></dt><dd class="big">{withUnit(x.base_raw, u)}</dd>{x.base_fix && <dd class="small secondary">部局の検証票の値</dd>}</div>
     <div><dt>実績値（{yearLabel(x.year)}報告）</dt><dd class="big">{withUnit(x.actual_raw, u)}</dd>{x.actual_ref_year && <dd class="small secondary">{x.actual_ref_year}の値</dd>}</div>
     <div><dt>計画値（{yearLabel(x.year)}）</dt><dd class="big">{withUnit(planRaw, u)}</dd></div>
     <div><dt><Term word="目標値" />（{x.target_year}）</dt><dd class="big">{withUnit(x.target_raw, u)}</dd></div>
     <div><dt>目標の見通し</dt><dd>{x.judgement ? <Chip tone={toneOfJudgement(x.judgement)} text={x.judgement} /> : '—'}</dd></div>
   </dl>
+  {x.base_fix && (
+    <p class="small">
+      基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
+    </p>
+  )}
   <SeikaChart row={row} unit={u} />
   <details>
     <summary>表で見る</summary>
@@ -62,7 +69,7 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
             return (
               <tr>
                 <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
-                <td class="num">{withUnit(r.base_raw, r.unit)}</td>
+                <td class="num">{withUnit(r.base_raw, r.unit)}{r.base_fix && <><br /><small class="secondary">部局の検証票の値</small></>}</td>
                 <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
                 <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
                 <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
