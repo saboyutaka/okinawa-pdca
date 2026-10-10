@@ -18,7 +18,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from check_extracted import EXPECTED, STATUSES, expected_plans, expected_rate, plan_matches, rate_matches  # noqa: E402
+from check_extracted import EXPECTED, STATUSES, expected_plans, expected_rate, plan_index, plan_matches, rate_matches  # noqa: E402
 
 JST = dt.timezone(dt.timedelta(hours=9))
 AMOUNT_LABEL = {"settled": "前年度決算額", "estimate": "決算見込額", "initial": "翌年度当初予算額"}
@@ -82,7 +82,15 @@ class Report:
         self.kihon = load(s / "kihon.json")
         self.sources = {x["id"]: x for x in load(s / "sources.json")}
         b = ex / "bukyoku"
-        self.budget = load(b / "torikumi_budget.json") if (b / "torikumi_budget.json").exists() else []
+        budget = load(b / "torikumi_budget.json") if (b / "torikumi_budget.json").exists() else []
+        # 同じ取組が複数の部局のファイルに載っているときは最初の1件だけ使う（サイトの data.js と同じ）
+        seen = set()
+        self.budget = []
+        for r in budget:
+            k = (r["year"], r["shisaku_id"], r["key"])
+            if k not in seen:
+                seen.add(k)
+                self.budget.append(r)
         self.files = {x["id"]: x for x in load(b / "files.json")} if (b / "files.json").exists() else {}
         self.shisaku_name = {(x["year"], x["id"]): f"{x['code']} {x['name']}" for x in self.shisaku}
         self.out: list[str] = []
@@ -223,8 +231,12 @@ class Report:
 
     def budget_suspects(self):
         self.h(3, "B1. 予算の金額の桁の誤記の疑い")
-        self.p("部局票の同じ行の3つの金額（前年度決算額・決算見込額・翌年度当初予算額）のうち1つだけが、他の50倍以上かつ10億円以上のもの。"
-               "「予算と財源」の合計から除いている。")
+        self.p("部局票の同じ行の3つの金額（前年度決算額・決算見込額・翌年度当初予算額）のうち1つが、0でない他の金額の50倍以上かつ10億円以上で、"
+               "他の年度の報告にある同じ予算事業・同じ年度の金額でも裏付けられない（10倍以内の値が無い）もの。「予算と財源」の合計から除いている。")
+        cleared = [(b, blk, r, k) for b in self.budget for blk in b["budgets"] for r in blk["rows"] for k in r.get("suspect_cleared", [])]
+        if cleared:
+            self.p("次の金額は、同じ行の他の金額と大きく違うが、他の年度の報告で裏付けられたので合計に入れている: "
+                   + "、".join(f"{rlabel(b['year'])} {blk['name']}（{AMOUNT_LABEL[k]} {r[k + '_raw']}千円）" for b, blk, r, k in cleared) + "。")
         rows = []
         for b in self.budget:
             for blk in b["budgets"]:
@@ -232,7 +244,7 @@ class Report:
                     for k in r.get("suspect", []):
                         others = "、".join(f"{AMOUNT_LABEL[x]} {r[x + '_raw']}" for x in AMOUNT_LABEL if x != k and r[x] is not None)
                         rows.append([rlabel(b["year"]), blk["name"], b["name"], AMOUNT_LABEL[k], f"{r[k + '_raw']}千円", others,
-                                     self.link(b["source"], b["page"])])
+                                     self.link(b["source"], blk.get("page") or b["page"])])
         self.count("B1", "予算の金額の桁の誤記の疑い", Counter(int(r[0][1:]) + 2018 for r in rows), "合計から除外")
         self.table(["報告", "予算事業", "取組", "種類", "記載の金額", "同じ行の他の金額", "出典"], rows)
 
@@ -250,7 +262,7 @@ class Report:
                     for k in AMOUNT_LABEL:
                         if r[k]:
                             groups[(b["year"], name, "".join(r["source"].split()))][k].add(r[k])
-                            where[(b["year"], name, "".join(r["source"].split()), k, r[k])].append(b)
+                            where[(b["year"], name, "".join(r["source"].split()), k, r[k])].append({**b, "page": blk.get("page") or b["page"]})
         rows = []
         for (year, name, source), kinds in groups.items():
             for k, vals in kinds.items():
@@ -271,7 +283,7 @@ class Report:
         self.count("B3", "成果指標の達成率が式と合わない", Counter(s["year"] for s in rows), "報告書の値のまま")
         self.table(["報告", "施策", "成果指標", "基準値", "実績値", "計画値", "報告書の達成率", "式での値", "出典"],
                    [[rlabel(s["year"]), self.shisaku_name.get((s["year"], s["shisaku_id"])), s["name"], s["base_raw"], s["actual_raw"],
-                     s["plan_raw"][s["year"] - (2022 if s["year"] <= 2024 else 2025)] if s["plan_raw"] else "",
+                     s["plan_raw"][plan_index(s["year"])] if s["plan_raw"] else "",
                      s["rate_raw"], f"{expected_rate(s):.1f}%", self.link(s["source"], s["page"])] for s in rows])
 
         self.h(3, "B4. 計画値が、概要版の式と合わない")
@@ -300,7 +312,8 @@ class Report:
                 if diff:
                     rows.append([rlabel(year), "施策の推進状況（A〜G）", "、".join(f"{k}:{a}" for k, (a, _) in diff.items()),
                                  "、".join(f"{k}:{b}" for k, (_, b) in diff.items()),
-                                 "県は一部の施策を集計で「その他」に回している（施策総括表には A〜G が印字されている）"])
+                                 "原因は特定できていない。県は一部の施策を集計で「その他」に回しているが、それだけでは B（概ね順調）が公表値より少ないことを説明できない。"
+                                 "施策総括表の印字は読み直しても同じ（文字単位と文字の塊単位の読み取りが一致）"])
         self.table(["報告", "項目", "このデータ（順調/概ね/やや/大幅/未着手）", "概要版", "理由"], rows, fold_over=99)
 
     # ------------------------------------------------------------ 全体
