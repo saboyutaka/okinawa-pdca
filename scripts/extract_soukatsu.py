@@ -9,6 +9,7 @@
   （先に scripts/expand_zips.py を実行しておく）。どのファイルが「将来像」「付属資料」かは
   manifest.jsonl のリンク文言で判定する。
 出力: data/extracted/soukatsu/
+  shouraizou.json 将来像（年度×5）
   kihon.json     基本施策（年度×36）
   shisaku.json   施策（年度×339）。推進状況（A〜G）は施策総括表があるR5以降のみ
   torikumi.json  主な取組（年度×約1,535）
@@ -162,7 +163,9 @@ def find_inputs(raw: Path, interim: Path, manifest: dict, year: int) -> list[dic
         kind = classify(r["referrers"][0]["link_text"]) if r.get("referrers") else None
         if not kind:
             continue
-        base = {"kind": kind, "file_url": r["file_url"], "link_text": r["referrers"][0]["link_text"]}
+        ref = r["referrers"][0]
+        base = {"kind": kind, "file_url": r["file_url"], "link_text": ref["link_text"],
+                "page_url": ref["page_url"], "page_title": ref["page_title"]}
         if local_path.endswith(".pdf"):
             out.append({**base, "id": local_path, "path": raw / local_path})
         elif local_path.endswith(".zip"):
@@ -459,8 +462,9 @@ class BodyParser:
 # ---------------------------------------------------------------- 付属資料（主要指標一覧）
 
 
-def read_fuzoku(year: int, src: dict) -> list[dict]:
-    out = []
+def read_fuzoku(year: int, src: dict) -> tuple[list[dict], list[dict]]:
+    """主要指標一覧の行と、将来像（5つ）の名前を返す。"""
+    out, names = [], []
     with pdfplumber.open(src["path"]) as pdf:
         cols = None
         shouraizou = None
@@ -483,6 +487,9 @@ def read_fuzoku(year: int, src: dict) -> list[dict]:
                         continue
                     if m := re.match(r"^【将来像】将来像(\S)", c[0]):
                         shouraizou = int(unicodedata.normalize("NFKC", m.group(1)))
+                        name = next((x for x in c[1:] if x), "")
+                        if name and shouraizou not in {n["id"] for n in names}:
+                            names.append({"year": year, "id": shouraizou, "name": name, "source": src["id"], "page": i + 1})
                         continue
                     if c[0].isdigit() and shouraizou:
                         n = int(c[0])
@@ -497,7 +504,7 @@ def read_fuzoku(year: int, src: dict) -> list[dict]:
                             "source": src["id"],
                             "page": i + 1,
                         })
-    return out
+    return out, names
 
 
 # ---------------------------------------------------------------- 出力
@@ -537,9 +544,12 @@ def main() -> int:
             continue
         for src in inputs:
             print(f"{year} {src['kind']:6s} {src['id']}", file=sys.stderr)
-            sources.append({k: src[k] for k in ("id", "file_url", "link_text", "kind")} | {"year": year, "zip_member": src.get("zip_member")})
+            sources.append({k: src[k] for k in ("id", "file_url", "link_text", "page_url", "page_title", "kind")}
+                           | {"year": year, "zip_member": src.get("zip_member")})
             if src["kind"] == "fuzoku":
-                result["shuyou"].extend(read_fuzoku(year, src))
+                rows, names = read_fuzoku(year, src)
+                result["shuyou"].extend(rows)
+                result["shouraizou"].extend(names)
                 continue
             p = BodyParser(year, src)
             p.run()
@@ -565,7 +575,7 @@ def main() -> int:
     result["torikumi"].sort(key=lambda t: (t["year"], order(t["shisaku_id"]), t["no"]))
     result["seika"].sort(key=lambda s: (s["year"], order(s["shisaku_id"])))
 
-    for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou"):
+    for name in ("shouraizou", "kihon", "shisaku", "torikumi", "seika", "shuyou"):
         write_json(out / f"{name}.json", result[name])
     write_json(out / "sources.json", sources)
     for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou"):
