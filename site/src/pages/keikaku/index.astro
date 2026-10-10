@@ -1,15 +1,12 @@
 ---
-// 個別計画の入口。沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別に、県が計画・事業ごとに公表している評価をまとめる
+// 個別計画の入口。沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別に、県が分野ごとの計画について公表している評価をまとめる。
+// 一括交付金の事後評価・評価検証報告書は個別計画ではないので、ここには置かない（施策・基本施策のページと「データについて」）
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import StatusBar from '../../components/StatusBar.astro';
-import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
 import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.js';
-import {
-  KANKO, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoTenkaiList,
-  IKKATSU_YEARS, ikkatsuRows, GRADES, HYOKA,
-} from '../../lib/plans.js';
+import { KANKO, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.js';
 import { LINKS } from '../../lib/links.js';
 import { fmt } from '../../lib/format.js';
 
@@ -20,11 +17,8 @@ const seika = kankoSeika(RM_LATEST);
 const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
 const overlap = tori.filter((t) => t.pdca.length).length;
 const tenkai = kankoTenkaiList();
-const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
-const ik = ikkatsuRows(ikYear);
-const ikCounts = countBy(ik, (j) => j.grade_label, GRADES.map((g) => g.key));
 ---
-<Base title="個別計画" description="沖縄県PDCAとは別に、県が分野ごとの計画や交付金事業について公表している評価（観光ロードマップPDCA・一括交付金の事後評価・基本計画の評価検証報告書など）をまとめています。">
+<Base title="個別計画" description="沖縄県PDCAとは別に、県が分野ごとの計画（個別計画）について公表している評価をまとめています。いまは観光ロードマップPDCAを載せています。">
   <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '個別計画' }]} />
   <h1>個別計画</h1>
   <p class="lead">
@@ -59,26 +53,6 @@ const ikCounts = countBy(ik, (j) => j.grade_label, GRADES.map((g) => g.key));
     <a class="button" href={KANKO.href}>観光ロードマップを見る（{fmt(tenkai.length)}の施策展開）</a>
   </article>
 
-  <section aria-labelledby="inpages">
-    <h2 id="inpages">施策・基本施策のページに入れている評価</h2>
-    <div class="cards">
-      <article class="card">
-        <h3><Term word="一括交付金の事後評価" label="一括交付金（ソフト）の事後評価" /></h3>
-        <p class="small">県が一括交付金を使った事業ごとに、成果目標の達成状況を評価したものです。事業ごとに新・沖縄21世紀ビジョン基本計画の施策が書かれているので、<strong>施策のページの「一括交付金」</strong>に、その施策の事業の成果目標・評価・予算の執行を載せています（R4〜R6）。</p>
-        <div class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ik.length)}事業）</div>
-        <StatusBar categories={GRADES} counts={ikCounts} unit="事業" context={`一括交付金の事後評価 ${yearLabel(ikYear)} `} size="mini" />
-        <ul class="legend">{GRADES.map((g) => <li><Chip tone={g.tone} shape={g.shape} text={`${g.mark} ${g.key} ${fmt(ikCounts[g.key] || 0)}`} title={g.note} /></li>)}</ul>
-        <p class="small"><a href={LINKS.ikkatsu} rel="noopener">県の公表ページ（総務部 財政課）</a></p>
-      </article>
-      <article class="card">
-        <h3><Term word="評価検証報告書" label={HYOKA.name} /></h3>
-        <p class="small">基本計画の折り返しに合わせて、県が{HYOKA.period}の成果と課題を36の基本施策ごとにまとめた報告書です（{HYOKA.published}）。<strong>基本施策のページの「県による4年間のふりかえり」</strong>に、基本施策ごとの成果・主要指標の状況・課題を載せています。</p>
-        <p class="small">例: 基本施策「<a href="/kihon/1-1/">世界に誇れる島しょ型環境モデル地域の形成</a>」</p>
-        <p class="small"><a href={LINKS.hyoka} rel="noopener">県の公表ページ（企画部 企画調整課）</a></p>
-      </article>
-    </div>
-  </section>
-
 </Base>
 
 <style>
@@ -89,6 +63,4 @@ const ikCounts = countBy(ik, (j) => j.grade_label, GRADES.map((g) => g.key));
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 20px; }
   .fact { display: grid; gap: 4px; align-content: start; }
   .plan .button { justify-self: start; }
-  .card h3 { margin: 0 0 6px; }
-  .legend { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
 </style>

@@ -1,8 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
 import BarList from '../../components/BarList.astro';
+import Term from '../../components/Term.astro';
 import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.js';
 import { fmt, yen, pct } from '../../lib/format.js';
+import { IKKATSU_YEARS, ikkatsuRows } from '../../lib/plans.js';
+import { LINKS } from '../../lib/links.js';
 
 const ref = getFinanceReference();
 const shinko = ref.okinawa_shinko;
@@ -14,6 +17,9 @@ const estimate = amountEntries(LATEST, 'estimate');
 const total = estimate.reduce((s, e) => s + e.amount, 0);
 const lines = getBudgetLines().filter((l) => l.report === LATEST);
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
+// 一括交付金（ソフト）の事後評価（事業ごとの成果目標の評価。施策のページに出している）
+const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
+const ikCount = ikkatsuRows(ikYear).length;
 const funds = FUNDS.map((f) => {
   const es = estimate.filter((e) => e.fund === f.key);
   const byName = new Map();
@@ -77,6 +83,12 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
             <dt>誰が負担するか</dt><dd>{f.who}</dd>
           </dl>
           <p class="small">{f.desc}</p>
+          {f.key === '一括交付金（ソフト）' && (
+            <p class="small ik-note">
+              県はこの交付金を使った事業ごとに成果目標を立て、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています（<a href={LINKS.ikkatsu} rel="noopener">県の公表ページ</a>。{yearLabel(ikYear)}は{fmt(ikCount)}事業）。
+              事業ごとの評価（◎○△未）・成果目標・予算の執行は、各施策のページの「一括交付金（ソフト）の事業」で見られます（例: <a href="/shisaku/3-2-a-1/#ikkatsu">「安全・安心の島」の構築に向けた受入体制等の整備</a>）。
+            </p>
+          )}
           {f.top.length > 0 && (
             <div class="small">
               <div class="secondary">金額の大きい予算事業</div>
@@ -162,6 +174,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
   .points ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
   .funds { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .funds .card + .card { margin-top: 0; }
+  .ik-note { background: var(--bg); border-radius: 12px; padding: 8px 12px; }
   .fund h3 { margin: 0 0 4px; }
   .fund h3 .swatch { font-size: 1rem; font-weight: 700; }
   .fund-amount { margin: 0; font-size: 1.1rem; }
