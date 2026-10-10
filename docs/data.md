@@ -124,6 +124,7 @@ zip は `data/interim/soukatsu/<年度>/<zip名>/` に展開し、出典は zip 
 | R5 の 3-(9)-ア-① で「施策の方向」の続きが「関係部等」の欄に食い込んで読める | 関係部等の値に句点があれば、句点までを施策の方向に戻す |
 | 進捗状況の欄が空欄・「-」（R5: 3件、R6: 15件、R7: 3件） | 「記載なし」として残す（6.6） |
 | R5 の空欄のうち1件は、PDF 上に文字自体が無い（県の集計では「順調」） | 補わない |
+| R5〜R7 の 5-(5)-イ-① の成果指標「宿泊事業者（正規雇用者）一人当たりの平均年収」の基準値が、列の幅が足りず「########」と印字されている | 文化観光スポーツ部の「成果指標」検証票に印字された値（3,129,946円。R4 の総括報告書と同じ）で補い、印字と出典を `base_fix` に残す（`extract_soukatsu.py` の `BASE_FIXES`）。補正表に無い「#」だけの基準値は警告を出す |
 
 ## 5. 出力ファイル（`data/extracted/soukatsu/`）
 
@@ -135,7 +136,7 @@ zip は `data/interim/soukatsu/<年度>/<zip名>/` に展開し、出典は zip 
 | `kihon.json` | 年度×基本施策 | `id`(例 `1-1`), `code`, `name`, `mezasu`（目指す姿） |
 | `shisaku.json` | 年度×施策 | `id`, `code`, `name`, `kihon_id`, `tenkai_id`, `tenkai_name`, `kankei`（関係部等）, `houkou`（施策の方向）, `check`, `action`, `judge`（A〜G）, `judge_label`, `summary_counts`, `summary_ref` |
 | `torikumi.json` | 年度×主な取組 | `shisaku_id`, `no`, `name`, `key`（年度をまたぐ照合用）, `section`（所管部課）, `dept`（所管部）, `group`, `budget`（決算見込額・千円）, `budget_raw`, `indicator`（活動指標）, `target`, `actual`, `status`, `status_raw`, `summary`（活動概要） |
-| `seika.json` | 年度×成果指標 | `shisaku_id`, `name`, `unit`, `base`/`base_raw`, `actual`/`actual_raw`, `actual_year`, `actual_ref_year`, `actual_series`, `plan`/`plan_raw`（計画期間3年分）, `target`/`target_raw`, `target_year`, `rate`/`rate_raw`, `judgement`（見通し）, `dept`（担当部課）, `explanation` |
+| `seika.json` | 年度×成果指標 | `shisaku_id`, `name`, `unit`, `base`/`base_raw`, `actual`/`actual_raw`, `actual_year`, `actual_ref_year`, `actual_series`, `plan`/`plan_raw`（計画期間3年分）, `target`/`target_raw`, `target_year`, `rate`/`rate_raw`, `judgement`（見通し）, `dept`（担当部課）, `explanation`, `base_fix`（基準値を部局票の値で補ったときだけ: `printed`（総括報告書の印字）, `source`, `page`） |
 | `shuyou.json` | 年度×主要指標の行 | `kihon_id`, `name`, `base_raw`, `actual_raw`, `target_raw`, `judgement` |
 | `sources.json` | 入力ファイル | `id`, `file_url`, `link_text`, `page_url`, `page_title`, `kind`, `zip_member` |
 
