@@ -1,0 +1,99 @@
+---
+// 成果指標1つ（施策ページ）。①道のり ②推移の図 ③年度ごとの表と県の説明（畳む）
+import Road from './Road.astro';
+import SeikaChart from './SeikaChart.astro';
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import { YEARS, LATEST, yearLabel, planIndex, withUnit, deptHref, seikaDept, toneOfJudgement } from '../lib/data.js';
+import { joinLines } from '../lib/text.js';
+
+interface Props { row: any; id: string }
+const { row, id } = Astro.props;
+const x = row.latest;
+const u = x.unit;
+const pi = planIndex(x.year);
+const plan = x.plan?.[pi];
+const planRaw = x.plan_raw?.[pi];
+const yearsDesc = [...YEARS].reverse();
+// 計画期間をまたいで目標値が変わった（R6→R7）
+const prev = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
+const worse = [x.base, x.actual, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base && (x.actual - x.base) / (x.target - x.base) < 0;
+const dept = seikaDept(x);
+const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
+---
+<article class="sticker scard" id={id}>
+  <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
+  <p class="small secondary meta">
+    担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
+    {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
+  </p>
+  {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
+  <Road x={x} plan={plan} planRaw={planRaw} unit={u} />
+  <p class="say">
+    {x.rate != null
+      ? <>{yearLabel(x.year)}の<Term word="計画値" /> {withUnit(planRaw, u)} に対して、実績値は {withUnit(x.actual_raw, u)}{ref}。<Term word="達成率" />は {x.rate}% です。</>
+      : <>実績値は {withUnit(x.actual_raw, u)}{ref}。達成率は「{x.rate_raw || '—'}」です。</>}
+    {worse && <strong> 基準値より悪くなっています。</strong>}
+  </p>
+  {prev && (
+    <p class="small">
+      {yearLabel(x.year)}から中期<Term word="実施計画" />の基準値・目標値に変わりました（目標値 {withUnit(prev.target_raw, u)}（{prev.target_year}） → {withUnit(x.target_raw, u)}（{x.target_year}））。達成率は計画期間をまたいで比べられません。
+    </p>
+  )}
+  <dl class="kv">
+    <div><dt><Term word="基準値" /></dt><dd class="big">{withUnit(x.base_raw, u)}</dd></div>
+    <div><dt>実績値（{yearLabel(x.year)}報告）</dt><dd class="big">{withUnit(x.actual_raw, u)}</dd>{x.actual_ref_year && <dd class="small secondary">{x.actual_ref_year}の値</dd>}</div>
+    <div><dt>計画値（{yearLabel(x.year)}）</dt><dd class="big">{withUnit(planRaw, u)}</dd></div>
+    <div><dt><Term word="目標値" />（{x.target_year}）</dt><dd class="big">{withUnit(x.target_raw, u)}</dd></div>
+    <div><dt>目標の見通し</dt><dd>{x.judgement ? <Chip tone={toneOfJudgement(x.judgement)} text={x.judgement} /> : '—'}</dd></div>
+  </dl>
+  <SeikaChart row={row} unit={u} />
+  <details>
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">{x.name}の年度別の値</caption>
+        <thead>
+          <tr><th>報告年度</th><th class="num">基準値</th><th class="num">実績値</th><th class="num">その年度の計画値</th><th class="num">目標値</th><th class="num">達成率</th><th>見通し</th></tr>
+        </thead>
+        <tbody>
+          {yearsDesc.filter((y) => row.years[y]).map((y) => {
+            const r = row.years[y];
+            return (
+              <tr>
+                <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
+                <td class="num">{withUnit(r.base_raw, r.unit)}</td>
+                <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
+                <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
+                <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
+                <td class="num">{r.rate != null ? `${r.rate}%` : r.rate_raw || '—'}</td>
+                <td>{r.judgement || '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {x.explanation && (
+    <details>
+      <summary>県による説明（{yearLabel(x.year)}・{x.dept}）</summary>
+      <p class="prose small">{joinLines(x.explanation)}</p>
+    </details>
+  )}
+</article>
+
+<style>
+  .scard { margin-top: 18px; }
+  .scard h3 { margin-top: 0; }
+  .meta { margin: -4px 0 4px; }
+  .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
+  .say { font-weight: 700; margin: 10px 0; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
+  .kv div { background: var(--bg); border-radius: 12px; padding: 6px 10px; min-width: 0; }
+  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+  .kv dd { margin: 0; }
+  .kv dd.big { font-size: 1.1rem; }
+  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
+  td.num { white-space: normal; min-width: 5em; max-width: 14em; }
+</style>

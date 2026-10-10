@@ -1,14 +1,22 @@
 ---
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
+import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
-import Bullet from '../../components/Bullet.astro';
+import Icon from '../../components/Icon.astro';
+import Stamps from '../../components/Stamps.astro';
+import Term from '../../components/Term.astro';
+import SeikaCard from '../../components/SeikaCard.astro';
+import ToriCard from '../../components/ToriCard.astro';
+import Prose from '../../components/Prose.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, planLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy,
-  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, budgetOf, fundOf,
-  planIndex, withUnit, deptHref, seikaDept, seikaAnchor, seikaHrefByName, torikumiHref,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
+  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
 } from '../../lib/data.js';
-import { yen } from '../../lib/format.js';
+import { JUDGE_UI } from '../../lib/icons.js';
+import { themesOf } from '../../lib/themes.js';
+import { joinLines, firstSentence } from '../../lib/text.js';
+import { fmt } from '../../lib/format.js';
 
 export function getStaticPaths() {
   return getShisakuList().map((s) => ({ params: { id: s.id } }));
@@ -21,219 +29,167 @@ const tRows = torikumiRows(s);
 const sRows = seikaRows(s);
 const statusKeys = STATUSES.map((x) => x.key);
 const yearsDesc = [...YEARS].reverse();
+const themes = themesOf(s.id);
 
 const progressRows = YEARS.map((y) => ({
   label: yearLabel(y),
+  sub: y <= 2024 ? '前期' : '中期',
   counts: countBy(s.torikumi.filter((t) => t.year === y), statusOf, statusKeys),
 }));
-
+const toriLatest = s.torikumi.filter((t) => t.year === LATEST);
+const toriCounts = countBy(toriLatest, statusOf, statusKeys);
+const seikaLatest = sRows.filter((r) => r.latest.year === LATEST);
+const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
+const reached = seikaLatest.filter((r) => rateBin(r.latest) === '100%以上').length;
+const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
-// 決算見込額。「17,314の一部」のように数値にできない表記は、元の表記のまま出す
-const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
-const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
+
+const j = judgeOf(s.judges[LATEST]);
+const judgeStamps = YEARS.map((y) => {
+  const jj = judgeOf(s.judges[y]);
+  if (!jj) return { year: y, tone: null, text: y === YEARS[0] ? '未公表' : '判定なし' };
+  const ui = JUDGE_UI[jj.key];
+  return { year: y, tone: jj.tone, shape: ui.shape, key: jj.key, text: ui.short, hatch: ui.hatch };
+});
+const latest = s.years[LATEST];
+const pastYears = yearsDesc.filter((y) => y !== LATEST && s.years[y] && (s.years[y].check || s.years[y].action));
+const toriActive = tRows.filter((r) => r.years[LATEST]);
+const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 ---
 <Base title={`${s.name}（施策 ${s.code}）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
   <nav class="breadcrumb">
     <a href="/">トップ</a> › <a href="/shisaku/">施策をさがす</a> › <a href={`/kihon/#shouraizou-${s.shouraizou}`}>将来像{s.shouraizou}</a> › <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
   </nav>
 
-  <header class="head">
-    <div class="code">施策 {s.code}　／　施策展開 {s.tenkai_name}</div>
-    <h1>{s.name}</h1>
-    <div class="secondary small">
-      関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}
-      　／　将来像{s.shouraizou} {shou?.name}
+  <header class="sticker head">
+    <div class="head-main">
+      <div class="code">施策 {s.code}　／　施策展開 {s.tenkai_name}</div>
+      <h1>{s.name}</h1>
+      <div class="meta">
+        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
+        <span><span class="badge-sz" aria-hidden="true">{s.shouraizou}</span> 将来像{s.shouraizou} {shou?.name}</span>
+      </div>
+      {themes.length > 0 && (
+        <div class="themes">
+          <span class="small secondary"><Term word="くらしのテーマ" />:</span>
+          {themes.map((t) => <a class="tag" href={`/theme/${t.id}/`}>{t.label}</a>)}
+        </div>
+      )}
     </div>
-    <nav class="toc" aria-label="このページの内容">
-      <a href="#judge">推進状況</a>
-      <a href="#seika">成果指標</a>
-      <a href="#torikumi">主な取組</a>
-      <a href="#check">県の分析と今後の方向</a>
-      <a href="#source">出典</a>
-    </nav>
+    <div class:list={['stamp-big', `tone-${j ? j.tone : 'blank'}`]}>
+      <div class:list={['circle', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
+      <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
+      <div class="sb">{yearLong(LATEST)}の県の判定（<Term word="推進状況" />）</div>
+    </div>
+    <div class="head-years">
+      <div class="small secondary label">4年間の判定</div>
+      <Stamps items={judgeStamps} label="4年間の判定" />
+    </div>
+    {s.houkou && (
+      <div class="bubble-row says">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          <div class="small secondary label">ひとことで言うと（実施計画の「施策の方向」から）</div>
+          <p class="first">{firstSentence(s.houkou)}</p>
+          <details>
+            <summary>施策の方向をすべて読む</summary>
+            <p class="prose small">{joinLines(s.houkou)}</p>
+          </details>
+        </div>
+      </div>
+    )}
   </header>
 
-  <section aria-labelledby="judge">
-    <h2 id="judge">県による推進状況の判定</h2>
-    <ol class="timeline">
-      {YEARS.map((y) => {
-        const j = judgeOf(s.judges[y]);
-        return (
-          <li>
-            <span class="tl-year">{yearLabel(y)}</span>
-            {j ? <Chip tone={j.tone} text={`${j.key} ${j.label}`} /> : <Chip text={y === 2022 ? '施策ごとの判定は未公表' : '判定なし'} />}
-          </li>
-        );
-      })}
-    </ol>
-    <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
-  </section>
+  <div class="facts">
+    <div class="sticker fact">
+      <div class="tile-label"><Term word="主な取組" />（{yearLabel(LATEST)}）</div>
+      <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}<small>件が順調</small></div>
+      {toriLatest.length > 0 && <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} size="mini" />}
+    </div>
+    <div class="sticker fact">
+      <div class="tile-label"><Term word="成果指標" />（{yearLabel(LATEST)}）</div>
+      <div class="tile-value">{fmt(reached)}/{fmt(seikaLatest.length)}<small>が計画値に到達</small></div>
+      <div class="chips">{seikaLatest.map((r) => <Chip tone={toneOfBin(r.latest)} text={`達成率 ${rateText(r.latest)}`} />)}</div>
+    </div>
+  </div>
 
-  {s.houkou && (
-    <section aria-labelledby="houkou">
-      <h2 id="houkou">施策の方向</h2>
-      <details>
-        <summary>実施計画に書かれている施策の方向を読む</summary>
-        <p class="prose muted-box">{s.houkou}</p>
-      </details>
-    </section>
-  )}
+  <nav class="toc" aria-label="このページの内容">
+    <a href="#seika">成果指標</a>
+    <a href="#torikumi">主な取組</a>
+    <a href="#check">県のふりかえり</a>
+    <a href="#source">出典</a>
+    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
+  </nav>
 
   <section aria-labelledby="seika">
-    <h2 id="seika">成果指標</h2>
-    <p class="small secondary">施策の効果をはかる指標です。実績値は報告の時点で分かっている最新の値で、統計の都合で前の年度の値のことがあります。{planLabel(2022)}と{planLabel(2025)}で目標値が変わっています。</p>
-    {sRows.map((row) => {
-      const x = row.latest;
-      const plan = x.plan?.[planIndex(x.year)];
-      const dept = seikaDept(x);
-      return (
-        <article class="card seika" id={seikaAnchor(s.id, row.key)}>
-          <h3>{x.name}{x.unit && <span class="secondary small">（{x.unit}）</span>}</h3>
-          <p class="small seika-links">
-            担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
-            {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
-          </p>
-          {x.year !== LATEST && <p class="small secondary">この指標は{yearLabel(x.year)}まで使われていました（{planLabel(x.year)}）。</p>}
-          <dl class="kv">
-            <div><dt>基準値</dt><dd>{withUnit(x.base_raw, x.unit)}</dd></div>
-            <div><dt>実績値（{yearLabel(x.year)}報告）</dt><dd><strong>{withUnit(x.actual_raw, x.unit)}</strong><small class="secondary">{refText(x)}</small></dd></div>
-            <div><dt>目標値（{x.target_year}）</dt><dd>{withUnit(x.target_raw, x.unit)}</dd></div>
-            <div><dt>計画値に対する達成率</dt><dd>{rateText(x)}</dd></div>
-            <div><dt>目標の見通し</dt><dd>{x.judgement || '—'}</dd></div>
-          </dl>
-          <Bullet
-            base={x.base}
-            actual={x.actual}
-            plan={plan}
-            target={x.target}
-            labels={{
-              base: withUnit(x.base_raw, x.unit),
-              actual: withUnit(x.actual_raw, x.unit),
-              plan: plan != null ? `${withUnit(x.plan_raw[planIndex(x.year)], x.unit)}（${yearLabel(x.year)}の計画値）` : undefined,
-              target: withUnit(x.target_raw, x.unit),
-            }}
-          />
-          <div class="table-wrap">
-            <table>
-              <caption class="sr-only">{x.name}の年度別の実績</caption>
-              <thead>
-                <tr><th>報告年度</th><th class="num">基準値</th><th class="num">実績値</th><th class="num">その年度の計画値</th><th class="num">目標値</th><th class="num">達成率</th><th>見通し</th></tr>
-              </thead>
-              <tbody>
-                {yearsDesc.filter((y) => row.years[y]).map((y) => {
-                  const r = row.years[y];
-                  return (
-                    <tr>
-                      <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
-                      <td class="num">{withUnit(r.base_raw, r.unit)}</td>
-                      <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
-                      <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
-                      <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
-                      <td class="num">{rateText(r)}</td>
-                      <td>{r.judgement || '—'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {x.explanation && (
-            <details>
-              <summary>県による説明（{yearLabel(x.year)}・{x.dept}）</summary>
-              <p class="prose">{x.explanation}</p>
-            </details>
-          )}
-        </article>
-      );
-    })}
+    <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
+    <p class="small secondary lead">
+      施策の効果をはかる指標です。スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。実績値は報告の時点で分かっている最新の値で、統計の都合で前の年度の値のことがあります。
+    </p>
+    {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
+    {seikaPast.length > 0 && (
+      <details class="past">
+        <summary>R6まで使われていた成果指標（{seikaPast.length}）</summary>
+        {seikaPast.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
+      </details>
+    )}
   </section>
 
   <section aria-labelledby="torikumi">
-    <h2 id="torikumi">主な取組</h2>
-    <p class="small secondary">
+    <h2 id="torikumi" class="anchor">主な取組</h2>
+    <p class="small secondary lead">
       県が実施計画で、この施策を進める手段として選んだ事業です。施策で行われる事業のすべてではなく、主な取組に入っていない県の事業や、国・市町村の事業もあります（<a href="/about/#torikumi">データについて</a>）。
-      取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。
-      進捗状況は、活動指標の実績が年度の計画に対してどこまで進んだかの県の判定です。
-      予算事業と決算見込額は各部局の検証票から取ったもので、同じ予算事業が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。<a href="/yosan/">予算と財源</a>では重複を除いて集計しています。
+      スタンプは各年度の<Term word="進捗状況" />（県の判定）です。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。
     </p>
-    <div class="table-wrap">
-      <table class="tori">
-        <thead>
-          <tr>
-            <th>取組（所管課）</th>
-            {YEARS.map((y) => <th>{yearLabel(y)}</th>)}
-            <th>活動指標（最新）</th>
-            <th>予算事業と決算見込額（最新）</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tRows.map((row) => {
-            const t = row.latest;
-            return (
-              <tr>
-                <td class="tori-name">
-                  <a href={torikumiHref(s.id, row.key)}>{t.name}</a><br />
-                  <small class="secondary">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</small>
-                  {(() => {
-                    const b = budgetOf(t.year, t.shisaku_id, t.key);
-                    if (!b?.seika_name) return null;
-                    const href = seikaHrefByName(s.id, b.seika_name);
-                    return <><br /><small>対応する成果指標: {href ? <a href={href}>{b.seika_name}</a> : b.seika_name}</small></>;
-                  })()}
-                  {t.summary && (
-                    <details>
-                      <summary>{yearLabel(t.year)}の活動</summary>
-                      <p class="small">{t.summary}</p>
-                    </details>
-                  )}
-                </td>
-                {YEARS.map((y) => {
-                  const r = row.years[y];
-                  return <td>{r ? <Chip tone={toneOfStatus(statusOf(r))} text={statusOf(r)} /> : <span class="secondary small">—</span>}</td>;
-                })}
-                <td class="small">
-                  {t.indicator}<br />
-                  <span class="secondary">目標 {t.target || '—'} → 実績 {t.actual || '—'}</span>
-                </td>
-                <td class="small budget-cell">
-                  {(() => {
-                    const b = budgetOf(t.year, t.shisaku_id, t.key);
-                    if (!b?.budgets.length) return <>{yen(t.budget)}<br /><small class="secondary">{yearLabel(t.year)}・総括報告書の値</small></>;
-                    const note = b.matchedByName ? <small class="secondary">部局票では別の施策（{b.shisaku_id}）に載っている記載</small> : null;
-                    return [...b.budgets.map((blk) => (
-                      <div>
-                        {blk.name || '—'}<br />
-                        <small class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${amountText(r)}`).join('、') || '—'}（{yearLabel(t.year)}）</small>
-                      </div>
-                    )), note];
-                  })()}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
+    <div class="tcards">
+      {toriActive.map((row) => <ToriCard row={row} shisakuId={s.id} />)}
     </div>
-    <p class="small secondary">「—」はその年度の報告にその名前の取組が無いことを表します（R7の中期実施計画で取組が入れ替わったり、名前が変わったりしたもの）。</p>
+    {toriEnded.length > 0 && (
+      <details class="past">
+        <summary>R7の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
+        <p class="small secondary">R7の中期実施計画で取組が入れ替わったり、名前が変わったりしたものです。</p>
+        <div class="tcards">
+          {toriEnded.map((row) => <ToriCard row={row} shisakuId={s.id} />)}
+        </div>
+      </details>
+    )}
   </section>
 
   <section aria-labelledby="check">
-    <h2 id="check">県の分析と今後の方向</h2>
-    {yearsDesc.map((y) => {
-      const r = s.years[y];
-      if (!r || !(r.check || r.action)) return null;
-      return (
-        <details class="card cad" open={y === LATEST}>
-          <summary>{yearLong(y)}</summary>
-          {r.check && (<><h3>施策の推進状況の分析（Check）</h3><p class="prose">{r.check}</p></>)}
-          {r.action && (<><h3>施策の推進戦略案（Action）</h3><p class="prose">{r.action}</p></>)}
-        </details>
-      );
-    })}
+    <h2 id="check" class="anchor">県のふりかえりと、これから</h2>
+    <p class="small secondary lead">施策検証票に県が書いた、施策の推進状況の分析（Check）と推進戦略案（Action）です。</p>
+    {latest && latest.check && (
+      <div class="bubble-row voice">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          <h3>ふりかえり（{yearLong(LATEST)}・Check）</h3>
+          <div data-clamp id="clamp-check"><Prose text={latest.check} /></div>
+          <button type="button" class="more" data-clamp-toggle="clamp-check" aria-controls="clamp-check" aria-expanded="false" hidden>続きを読む</button>
+        </div>
+      </div>
+    )}
+    {latest && latest.action && (
+      <div class="bubble-row voice">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          <h3>これからどうする（{yearLong(LATEST)}・Action）</h3>
+          <div data-clamp id="clamp-action"><Prose text={latest.action} /></div>
+          <button type="button" class="more" data-clamp-toggle="clamp-action" aria-controls="clamp-action" aria-expanded="false" hidden>続きを読む</button>
+        </div>
+      </div>
+    )}
+    {pastYears.map((y) => (
+      <details class="sticker cad">
+        <summary>{yearLong(y)}のふりかえり</summary>
+        {s.years[y].check && <><h3>施策の推進状況の分析（Check）</h3><Prose text={s.years[y].check} /></>}
+        {s.years[y].action && <><h3>施策の推進戦略案（Action）</h3><Prose text={s.years[y].action} /></>}
+      </details>
+    ))}
   </section>
 
   <section aria-labelledby="source">
-    <h2 id="source">出典</h2>
+    <h2 id="source" class="anchor">出典</h2>
     <ul class="small">
       {yearsDesc.map((y) => {
         const r = s.years[y];
@@ -251,31 +207,37 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
 </Base>
 
 <style>
-  .head { margin-top: 12px; }
-  .head .code { font-size: 0.85rem; color: var(--ink-2); }
-  .timeline { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; }
-  .timeline li { display: flex; gap: 12px; align-items: baseline; }
-  .timeline :global(.chip) { white-space: normal; }
-  .tl-year { width: 2.5em; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .seika { margin-top: 16px; }
-  .seika h3 { margin-top: 0; }
-  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 16px; margin: 8px 0 12px; }
-  .kv div { min-width: 0; }
-  .kv dt { font-size: 0.8rem; color: var(--ink-2); }
-  .kv dd { margin: 0; }
-  .seika table { margin-top: 12px; }
-  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
-  .seika td.num { white-space: normal; min-width: 5em; max-width: 14em; }
-  .tori { min-width: 760px; }
-  .tori-name { min-width: 16em; }
-  .budget-cell { min-width: 12em; }
-  .seika-links { margin: -4px 0 8px; color: var(--ink-2); }
-  .seika { scroll-margin-top: 16px; }
-  .toc { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; font-size: 0.9rem; }
-  .budget-cell div + div { margin-top: 6px; }
-  .tori :global(.chip) { font-size: 0.8rem; }
-  .cad { margin-top: 12px; }
-  .cad > summary { font-weight: 700; color: var(--ink); font-size: 1rem; }
-  .cad h3 { font-size: 0.95rem; }
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; }
+  .head h1 { margin: 4px 0 8px; }
+  .head .code { font-size: 0.9375rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
+  .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .themes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+  .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; max-width: 12em; }
+  .stamp-big .circle {
+    display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; border: 3px solid var(--line);
+    background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 4px 4px 0 var(--shadow); transform: rotate(-6deg);
+  }
+  .stamp-big .k { font-family: var(--font-num); font-weight: 600; font-size: 2.6rem; line-height: 1; display: flex; align-items: center; gap: 6px; }
+  .stamp-big .lb { font-family: var(--font-display); font-weight: 700; line-height: 1.45; }
+  .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); }
+  .head-years, .says { grid-column: 1 / -1; }
+  .label { font-weight: 700; margin-bottom: 4px; }
+  .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
+  @media (max-width: 640px) {
+    .head { grid-template-columns: 1fr; }
+    .stamp-big { justify-items: start; grid-template-columns: auto minmax(0, 1fr); text-align: left; align-items: center; gap: 2px 16px; max-width: none; }
+    .stamp-big .circle { grid-row: span 2; width: 84px; height: 84px; }
+    .stamp-big .k { font-size: 2rem; }
+  }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
+  .fact { display: grid; gap: 6px; align-content: start; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .tcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; margin-top: 18px; }
+  .past { margin-top: 18px; }
+  .voice { margin-top: 16px; }
+  .voice h3 { margin: 0 0 4px; font-size: 1.02rem; }
+  .cad { margin-top: 14px; }
+  .cad > summary { font-family: var(--font-display); color: var(--ink); font-size: 1rem; }
+  .cad h3 { font-size: 0.98rem; }
 </style>

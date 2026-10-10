@@ -1,0 +1,68 @@
+---
+// 主な取組1つ（施策ページ）。4年のスタンプ・活動指標・対応する成果指標。予算と活動の中身は畳む
+import Stamps from './Stamps.astro';
+import Chunk from './Chunk.astro';
+import Term from './Term.astro';
+import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, fundOf, deptHref, seikaHrefByName, torikumiHref } from '../lib/data.js';
+import { yen } from '../lib/format.js';
+
+interface Props { row: any; shisakuId: string }
+const { row, shisakuId } = Astro.props;
+const t = row.latest;
+const b = budgetOf(t.year, t.shisaku_id, t.key);
+const seikaHref = b?.seika_name ? seikaHrefByName(shisakuId, b.seika_name) : null;
+const href = torikumiHref(shisakuId, row.key);
+const stamps = YEARS.map((y) => (row.years[y] ? { year: y, tone: toneOfStatus(statusOf(row.years[y])), text: statusOf(row.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+// 「目標 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
+const qty = (raw) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
+const tq = qty(t.target);
+const aq = qty(t.actual);
+const comparable = tq && aq && tq.v > 0 && tq.u === aq.u;
+const ratio = comparable ? aq.v / tq.v : 0;
+const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
+---
+<article class="sticker tcard">
+  <h3><a href={href}>{t.name}</a></h3>
+  <div class="sec">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+  <Stamps items={stamps} label="4年の進捗状況" size="small" />
+  {t.indicator && (
+    <div class="act">
+      <div class="act-l"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
+      <div class="act-name">{t.indicator}</div>
+      <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　目標クリア</strong>}</div>
+      {comparable && <Chunk frac={ratio} tone={ratio >= 1 ? 'good' : ratio >= 0.75 ? 'warning' : 'serious'} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
+    </div>
+  )}
+  {b?.seika_name && <div class="small">対応する成果指標: {seikaHref ? <a href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div>}
+  <details>
+    <summary>予算事業と決算見込額（{yearLabel(t.year)}）</summary>
+    {b?.budgets.length ? (
+      <ul class="budget">
+        {b.budgets.map((blk) => <li>{blk.name || '—'}<br /><span class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${amountText(r)}`).join('、') || '—'}</span></li>)}
+      </ul>
+    ) : <p class="small">{yen(t.budget)}（総括報告書の値）</p>}
+    {b?.matchedByName && <p class="small secondary">部局票では別の施策（{b.shisaku_id}）に載っている記載です。</p>}
+    <p class="small secondary">同じ予算事業が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。</p>
+  </details>
+  {t.summary && (
+    <details>
+      <summary>{yearLabel(t.year)}にやったこと</summary>
+      <p class="small">{t.summary}</p>
+    </details>
+  )}
+  <a class="to-page" href={href}>この取組の4年分の活動・検証・改善案</a>
+</article>
+
+<style>
+  .tcard { display: grid; gap: 10px; align-content: start; padding: 16px; }
+  h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
+  h3 a { color: var(--ink); }
+  .sec { font-size: 0.875rem; color: var(--ink-2); margin-top: -6px; }
+  .sec a { color: var(--ink-2); }
+  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; }
+  .act-l { color: var(--ink-2); font-weight: 700; }
+  .act-name { font-weight: 700; }
+  .budget { margin: 0; padding-left: 1.2em; font-size: 0.875rem; display: grid; gap: 4px; }
+  .to-page { font-size: 0.875rem; font-weight: 700; }
+  details p { margin: 4px 0; }
+</style>

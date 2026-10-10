@@ -1,0 +1,33 @@
+---
+// 成果指標の報告年度ごとの推移（実績値・計画値・目標値・基準値）。図は scripts/charts.js が表示幅で描く。値は「表で見る」にもある
+import { YEARS, yearLabel, planIndex, withUnit } from '../lib/data.js';
+
+interface Props { row: any; unit?: string }
+const { row, unit = '' } = Astro.props;
+const years = YEARS.filter((y) => row.years[y]).map((y) => {
+  const r = row.years[y];
+  return { y, actual: r.actual, actual_raw: r.actual_raw, ref: r.actual_ref_year || '', plan: r.plan || [], plan_raw: r.plan_raw || [], target: r.target, target_raw: r.target_raw, target_year: r.target_year, base: r.base };
+});
+const drawable = years.some((r) => r.actual != null) && years.some((r) => r.target != null);
+const data = JSON.stringify({ unit, years }).replace(/</g, '\\u003c');
+const aria = `${row.latest.name}の推移。${years.map((r) => `${yearLabel(r.y)}報告 実績値 ${withUnit(r.actual_raw, unit)}${r.ref ? `（${r.ref}の値）` : ''}、計画値 ${withUnit(r.plan_raw[planIndex(r.y)], unit)}、目標値 ${withUnit(r.target_raw, unit)}`).join('。')}。左右の矢印キーで年度を移れます`;
+---
+{drawable && (
+  <div class="seika-chart">
+    <div class="chart-title">これまでの動き</div>
+    <ul class="chart-key" aria-hidden="true">
+      <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+      <li><span class="k-ring"></span>計画値</li>
+      <li><span class="k-line" style="--k:var(--ink)"></span>目標値（ゴール）</li>
+      <li><span class="k-line" style="--k:var(--none)"></span>基準値</li>
+    </ul>
+    <div class="chart" data-chart="seika" tabindex="0" role="img" aria-label={aria}>
+      <script type="application/json" is:inline set:html={data}></script>
+    </div>
+  </div>
+)}
+
+<style>
+  .seika-chart { margin-top: 10px; }
+  .chart-title { font-family: var(--font-display); font-weight: 700; }
+</style>
