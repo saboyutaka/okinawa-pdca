@@ -1,0 +1,20 @@
+---
+// 施策・基本施策・主な取組のページの終わり（出典の前）に置く、意見を書くための枠。
+// X に、そのページの名前と URL と #okinawa_pdca を付けて書ける。県に届ける方法は /iken/ に案内する
+import XPost from './XPost.astro';
+import { shortName } from '../lib/iken.js';
+
+interface Props { kind: string; name: string }
+const { kind, name } = Astro.props;
+---
+<section class="sticker iken-box" aria-labelledby="iken">
+  <h2 id="iken">この{kind}について、思うことは？</h2>
+  <p class="small">X に <strong>#okinawa_pdca</strong> を付けて書けます（このページへのリンクも付きます）。X に書いたことは県には届きません。県に伝えたいときは「<a href="/iken/">意見を伝えたい人へ</a>」を見てください。</p>
+  <XPost text={`${kind}「${shortName(name)}」について`} withUrl />
+</section>
+
+<style>
+  .iken-box { margin-top: 2.2em; background: var(--lilac); }
+  .iken-box h2 { margin: 0 0 0.3em; font-size: 1.15rem; }
+  .iken-box p { margin: 0 0 12px; max-width: 46em; }
+</style>

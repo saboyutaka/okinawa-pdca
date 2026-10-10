@@ -9,6 +9,7 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
+import XPost from '../components/XPost.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
@@ -18,6 +19,7 @@ import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.js';
 import { fmt, pct } from '../lib/format.js';
 import { LINKS } from '../lib/links.js';
 import ExtLink from '../components/ExtLink.astro';
+import { BOSHU, boshuState, dayText } from '../lib/iken.js';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
@@ -63,6 +65,8 @@ const trend = YEARS.map((y) => {
 });
 const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y), statusOf, statusKeys) }));
 const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y), rateBin, RATE_BINS.map((b) => b.key)) }));
+// 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
+const boshu = boshuState();
 ---
 <Base>
   <section class="hero sticker lift" aria-labelledby="hero-h">
@@ -184,6 +188,21 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
     </p>
   </section>
 
+  <section class="sticker iken" aria-labelledby="iken-h">
+    <h2 id="iken-h">意見を伝えるには</h2>
+    <p>
+      {yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）は、
+      {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
+      {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
+      {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
+      県にいつでも意見を送れる窓口や、X で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
+    </p>
+    <div class="iken-actions">
+      <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
+      <XPost />
+    </div>
+  </section>
+
 </Base>
 
 <style>
@@ -257,5 +276,10 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
+
+  .iken { margin-top: 2.6em; background: var(--lilac); }
+  .iken h2 { margin: 0 0 0.3em; }
+  .iken p { max-width: 46em; }
+  .iken-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 
 </style>

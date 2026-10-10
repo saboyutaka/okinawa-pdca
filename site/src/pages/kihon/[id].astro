@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Crumbs from '../../components/Crumbs.astro';
+import IkenBox from '../../components/IkenBox.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import Chip from '../../components/Chip.astro';
@@ -136,6 +137,8 @@ const progressRows = YEARS.map((y) => ({
       </>
     ))}
   </section>
+
+  <IkenBox kind="基本施策" name={k.name} />
 
   <section aria-labelledby="source">
     <h2 id="source">出典</h2>

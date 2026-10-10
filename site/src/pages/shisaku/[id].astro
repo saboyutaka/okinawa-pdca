@@ -11,6 +11,7 @@ import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
+import IkenBox from '../../components/IkenBox.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
   getShisakuList, getShisaku, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
@@ -179,6 +180,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
       </details>
     ))}
   </section>
+
+  <IkenBox kind="施策" name={s.name} />
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>

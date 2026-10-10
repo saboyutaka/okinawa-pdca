@@ -1,0 +1,25 @@
+---
+// X の投稿画面を別のタブで開くボタン。#okinawa_pdca を付け、withUrl なら見ているページの URL も付ける
+// （本番のドメインはビルド時に決まっていないので、URL はブラウザで付ける。スクリプトが動かないときは URL なしで開く）
+import { xIntent } from '../lib/iken.js';
+
+interface Props { text?: string; withUrl?: boolean; label?: string }
+const { text = '', withUrl = false, label = 'X に書く' } = Astro.props;
+---
+<a class="button x-btn" href={xIntent(text)} target="_blank" rel="noopener" data-xpost-url={withUrl ? '' : undefined}>
+  <svg class="x-logo" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+  <span>{label}</span><span class="x-tag">#okinawa_pdca</span><span class="sr-only">（別のタブで開きます）</span>
+</a>
+
+<script>
+  for (const a of document.querySelectorAll('a[data-xpost-url]')) {
+    a.href += `&url=${encodeURIComponent(location.origin + location.pathname)}`;
+  }
+</script>
+
+<style>
+  .x-btn { background: var(--ink); color: var(--bg); flex-wrap: wrap; gap: 2px 8px; }
+  .x-btn:hover { background: var(--ink); opacity: 0.88; }
+  .x-logo { flex: none; fill: currentColor; }
+  .x-tag { font-family: var(--font); font-weight: 400; font-size: 0.875rem; opacity: 0.85; }
+</style>

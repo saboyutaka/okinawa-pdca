@@ -1,0 +1,103 @@
+---
+// 意見を伝えたい人へ。県民意見募集（パブリックコメント）の受付の状態、いつでも使える県の窓口、X で #okinawa_pdca を付けて話す方法
+import Base from '../layouts/Base.astro';
+import ExtLink from '../components/ExtLink.astro';
+import XPost from '../components/XPost.astro';
+import { yearLong } from '../lib/data.js';
+import { LINKS, PROJECT } from '../lib/links.js';
+import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, X_SEARCH, boshuState, dayText, periodText } from '../lib/iken.js';
+
+// 受付中かどうかはビルドした日で決まる（lib/iken.js）
+const state = boshuState();
+const STATE_LABEL = { before: '受付前', open: '受付中', closed: '受付終了' };
+---
+<Base title="意見を伝えたい人へ" description="沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、X で #okinawa_pdca を付けて話す方法">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 意見を伝えたい人へ</nav>
+  <h1>意見を伝えたい人へ</h1>
+  <p class="lead">
+    県の施策や主な取組について、思うことや気づいたことがあるときに使える方法をまとめました。県に届く方法（県民意見募集・県民ご意見箱）と、X で <strong>#okinawa_pdca</strong> を付けて話す方法があります。
+  </p>
+
+  <section class="sticker boshu" aria-labelledby="boshu-h">
+    <div class="boshu-top">
+      <span class:list={['state', `state-${state}`]}>{STATE_LABEL[state]}</span>
+      <span class="small secondary">パブリックコメント（県民意見募集）</span>
+    </div>
+    <h2 id="boshu-h">{yearLong(BOSHU.year)}の沖縄県PDCA実施結果への県民意見募集</h2>
+    {state === 'closed' && <p class="big-msg">この募集は終了しました。</p>}
+    {state === 'open' && <p class="big-msg">{dayText(BOSHU.end, false)}まで受け付けています。</p>}
+    {state === 'before' && <p class="big-msg">{dayText(BOSHU.start)}から受け付けます。</p>}
+    <dl class="facts">
+      <div><dt>募集期間</dt><dd>{periodText(BOSHU)}</dd></div>
+      <div><dt>募集したところ</dt><dd>沖縄県 企画部 企画調整課</dd></div>
+      <div><dt>出し方</dt><dd>県の「意見提出用紙」で、郵送・FAX・電子メール・電子申請</dd></div>
+      <div><dt>意見のゆくえ</dt><dd>企画調整課がとりまとめて、その施策や取組を担当する部局へ送ります。意見の概要と県の考え方は、後日、県のホームページで公表するとしています。</dd></div>
+    </dl>
+    {state === 'open' && <p><ExtLink href={BOSHU.form}>県の電子申請で意見を送る</ExtLink>（意見提出用紙は県の募集のページにあります）</p>}
+    {state === 'closed' && <p>これまでは毎年、結果の公表のあとに募集が行われています（時期は年によって違います）。</p>}
+    <p class="small"><ExtLink href={BOSHU.page}>県の募集のページ（沖縄県PDCA実施結果 対象年度：{yearLong(BOSHU.year)}）</ExtLink>。期間・出し方・意見のゆくえは、そこにある県の「県民意見募集実施要項」によります。</p>
+    <details>
+      <summary>これまでの募集</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>結果の対象年度</th><th>募集期間</th></tr></thead>
+          <tbody>
+            {[...BOSHU_PAST].reverse().map((b) => <tr><th>{yearLong(b.year)}</th><td>{periodText(b)}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+      <p class="small secondary">
+        期間は各年度の結果のページの記載によります。結果のページに載っている「県民意見の概要と県の考え方」は、<ExtLink href={KANGAEKATA.href}>{KANGAEKATA.label}対象の分</ExtLink>がいちばん新しいものです（寄せられた意見は{KANGAEKATA.count}件。2026年10月10日に確認）。
+      </p>
+    </details>
+  </section>
+
+  <h2>募集の期間でなくても、県に伝えるには</h2>
+  <ul class="ways">
+    <li>
+      <strong>県民ご意見箱</strong>（知事公室 広報課）: 県政への意見や提言を、いつでも受け付けています。県内20か所のご意見箱への投函のほか、郵送・FAX・電子メールでも送れます。<ExtLink href={GOIKENBAKO}>県民ご意見箱とは（県のページ）</ExtLink>
+    </li>
+    <li>
+      <strong>沖縄県PDCAの担当</strong>（企画部 企画調整課）: 報告書の内容についての問い合わせは、<ExtLink href={LINKS.kikakuChousei}>企画調整課の問い合わせフォーム</ExtLink>から送れます。
+    </li>
+  </ul>
+  <p class="small secondary">このサイトは県のものではないので、このサイトから県へ意見を送ることはできません。</p>
+
+  <h2>X で話す <span class="tag-word">#okinawa_pdca</span></h2>
+  <p>
+    このサイトを見て思ったこと・気づいたことを、X にハッシュタグ <strong>#okinawa_pdca</strong> を付けて書いてみませんか。同じタグで、ほかの人の声も読めます。施策・主な取組・基本施策のページの下にある「X に書く」からは、そのページへのリンクを付けて書けます。
+  </p>
+  <div class="x-row">
+    <XPost />
+    <ExtLink href={X_SEARCH}>#okinawa_pdca のポストを見る</ExtLink>
+  </div>
+  <p class="x-note small">X に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
+
+  <h2>このサイトへの意見</h2>
+  <p>
+    このサイトのまちがいや、わかりにくいところは、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください（<a href="/code-for-okinawa/">Code for Okinawa とは</a>）。このサイトの集計・表示について、沖縄県へは問い合わせないでください。
+  </p>
+</Base>
+
+<style>
+  .boshu { margin-top: 18px; max-width: 46em; }
+  .boshu-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .state {
+    display: inline-flex; align-items: center; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.6;
+    border: 2px solid var(--line); border-radius: 8px; padding: 1px 12px; background: var(--paper); color: var(--ink);
+  }
+  .state-open { background: var(--pop); color: var(--pop-ink); }
+  .state-closed { background: var(--ink); color: var(--bg); }
+  .boshu h2 { margin: 0.4em 0 0.2em; font-size: 1.15rem; }
+  .big-msg { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin: 0.2em 0 0.4em; }
+  .facts { display: grid; gap: 8px; margin: 8px 0 12px; }
+  .facts > div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 2px 16px; }
+  .facts dt { font-family: var(--font-display); font-weight: 700; }
+  .facts dd { margin: 0; }
+  @media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; } }
+  .ways { max-width: 46em; padding-left: 1.2em; }
+  .ways li + li { margin-top: 8px; }
+  .tag-word { font-family: var(--font); font-size: 1rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+  .x-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin: 12px 0; }
+  .x-note { max-width: 46em; background: var(--paper); border: 2px solid var(--hair); border-radius: 14px; padding: 10px 16px; }
+</style>
