@@ -19,6 +19,7 @@ import { getThemes, unthemed } from '../lib/themes.js';
 import { JUDGE_GROUPS, judgeGroupOf, SHAPES } from '../lib/icons.js';
 import { fmt, pct } from '../lib/format.js';
 import { LINKS } from '../lib/links.js';
+import ExtLink from '../components/ExtLink.astro';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
@@ -85,7 +86,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
     <span class="tag">{yearLong(LATEST)}の結果</span>
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
-      沖縄県は毎年、「<a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
+      沖縄県は毎年、「<ExtLink href={LINKS.jisshiKeikaku}>新・沖縄21世紀ビジョン実施計画</ExtLink>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
     </p>
     <div class="donuts">
       <div class="donut-card">
@@ -229,7 +230,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
       <StatusChart title="成果指標の達成状況" caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
     <p class="small secondary">
-      R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
+      R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
     </p>
   </section>
 

@@ -19,6 +19,7 @@ import {
 import { getThemes } from '../../lib/themes.js';
 import { fmt, pct, yen } from '../../lib/format.js';
 import { LINKS } from '../../lib/links.js';
+import ExtLink from '../../components/ExtLink.astro';
 
 export function getStaticPaths() {
   return getShouraizou().map((v) => ({ params: { id: String(v.id) } }));
@@ -191,7 +192,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={torikumiRows} />
       <StatusChart title="成果指標の達成状況" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
-    <p class="small secondary">R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
+    <p class="small secondary">R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
   </section>
 
   <section aria-labelledby="moves-h">

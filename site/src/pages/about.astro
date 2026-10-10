@@ -7,6 +7,7 @@ import { LINKS, PROJECT } from '../lib/links.js';
 import { TERMS } from '../lib/terms.js';
 import { getThemes, unthemed } from '../lib/themes.js';
 import path from 'node:path';
+import ExtLink from '../components/ExtLink.astro';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）
 const sources = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), '../data/extracted/soukatsu/sources.json'), 'utf-8'));
@@ -27,8 +28,8 @@ const themes = getThemes();
 
   <h2>沖縄県PDCAとは</h2>
   <p>
-    沖縄県は「<a href={LINKS.kihonKeikaku} rel="noopener">新・沖縄21世紀ビジョン基本計画</a>」を進めるため、<a href={LINKS.jisshiKeikaku} rel="noopener">実施計画</a>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
-    その検証結果が「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」で、毎年夏ごろに前年度分が公表されます（例: 令和7年度対象の結果は令和8年8月公表）。仕組みは県の「<a href={LINKS.pdcaGaiyou} rel="noopener">沖縄県PDCAの概要</a>」で説明されています。
+    沖縄県は「<ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>」を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
+    その検証結果が「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」で、毎年夏ごろに前年度分が公表されます（例: 令和7年度対象の結果は令和8年8月公表）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou}>沖縄県PDCAの概要</ExtLink>」で説明されています。
   </p>
   <ul>
     <li><strong>将来像（5）</strong> → <strong>基本施策（36）</strong> → 施策展開 → <strong>施策（339）</strong> → <strong>主な取組（約1,500）</strong>の階層になっています。</li>
@@ -41,7 +42,7 @@ const themes = getThemes();
       「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
     </li>
     <li><strong>主要指標</strong>は基本施策の最終的な成果、<strong>成果指標</strong>は施策の成果、<strong>活動指標</strong>は主な取組の活動量をはかる指標です。</li>
-    <li>R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>（目標年度R6）、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
+    <li>R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度R6）、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
 
   <h2 id="yougo">用語</h2>
@@ -60,9 +61,9 @@ const themes = getThemes();
   </p>
 
   <h2>出典</h2>
-  <p>沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<a href={LINKS.pdca} rel="noopener">沖縄県PDCA</a>の各部局のページ）です。</p>
+  <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
   <ul>
-    {pages.map((p) => <li>{yearLong(p.year)}: <a href={p.page_url} rel="noopener">{p.page_title}</a></li>)}
+    {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink></li>)}
   </ul>
   <p>各施策・各取組のページの「出典」から、元のPDFの該当ページを開けます（zipで公開されている年度はzipへのリンクです）。</p>
 
@@ -103,7 +104,7 @@ const themes = getThemes();
     <li>将来像の番号の印は、新・沖縄21世紀ビジョン基本計画のパンフレットの将来像の色（1 緑・2 青・3 橙・4 ピンク・5 青緑）に合わせています。文字が読みやすいよう、色を少し濃く・明るくしているものがあります。</li>
     <li>くらしのテーマのラベルはピンクの地で表示しています（このサイト独自の分類のしるし）。</li>
     <li>図には「表で見る」を付けています。図の値は表でも読めます。</li>
-    <li>数字の表示に、丸い英字フォント <a href="https://github.com/hafontia/Fredoka-One" rel="noopener">Fredoka</a>（数字と記号だけに絞ったもの。<a href="/fonts/Fredoka-OFL.txt">SIL Open Font License 1.1</a>）を使っています。日本語の文字は、お使いの端末のフォントで表示します。</li>
+    <li>数字の表示に、丸い英字フォント <ExtLink href="https://github.com/hafontia/Fredoka-One">Fredoka</ExtLink>（数字と記号だけに絞ったもの。<a href="/fonts/Fredoka-OFL.txt">SIL Open Font License 1.1</a>）を使っています。日本語の文字は、お使いの端末のフォントで表示します。</li>
   </ul>
 </Base>
 

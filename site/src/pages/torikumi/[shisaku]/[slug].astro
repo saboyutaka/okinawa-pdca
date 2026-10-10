@@ -17,6 +17,7 @@ import {
   deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS,
 } from '../../../lib/data.js';
 import { yen } from '../../../lib/format.js';
+import ExtLink from '../../../components/ExtLink.astro';
 
 export function getStaticPaths() {
   return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: torikumiSlug(g.key) }, props: { g } }));
@@ -280,7 +281,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
           ))}
         </div>
       ))}
-      {okUrl(latestRec?.url) && <p class="small">関連ページ: <a href={latestRec.url} rel="noopener">{latestRec.url}</a></p>}
+      {okUrl(latestRec?.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
     </section>
   )}
 
@@ -408,13 +409,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
           <h3 class="cad-h">{yearLong(y)}の報告 <Chip tone={toneOfStatus(st)} text={st} /></h3>
           <div data-clamp id={`clamp-${y}`}>{body}</div>
           <button type="button" class="more" data-clamp-toggle={`clamp-${y}`} aria-controls={`clamp-${y}`} aria-expanded="false" hidden>続きを読む</button>
-          {src && <p class="small"><a href={src.href} rel="noopener">主な取組検証票（{src.label}）</a></p>}
+          {src && <p class="small"><ExtLink href={src.href}>主な取組検証票（{src.label}）</ExtLink></p>}
         </div>
       ) : (
         <details class="sticker cad">
           <summary>{yearLong(y)}の報告 <Chip tone={toneOfStatus(st)} text={st} /></summary>
           {body}
-          {src && <p class="small"><a href={src.href} rel="noopener">主な取組検証票（{src.label}）</a></p>}
+          {src && <p class="small"><ExtLink href={src.href}>主な取組検証票（{src.label}）</ExtLink></p>}
         </details>
       );
     })}
@@ -439,8 +440,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         const b = recs[y] && sourceLink(recs[y].source, recs[y].page);
         return (
           <li>
-            {yearLong(y)}: {a ? <a href={a.href} rel="noopener">総括報告書（{a.label}）</a> : '—'}
-            {b ? <>、<a href={b.href} rel="noopener">主な取組検証票（{b.label}）</a></> : '、主な取組検証票なし'}
+            {yearLong(y)}: {a ? <ExtLink href={a.href}>総括報告書（{a.label}）</ExtLink> : '—'}
+            {b ? <>、<ExtLink href={b.href}>主な取組検証票（{b.label}）</ExtLink></> : '、主な取組検証票なし'}
           </li>
         );
       })}

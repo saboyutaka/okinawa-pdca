@@ -8,6 +8,7 @@ import Crumbs from '../../components/Crumbs.astro';
 import Term from '../../components/Term.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import { themesOf } from '../../lib/themes.js';
+import ExtLink from '../../components/ExtLink.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, statusOf, countBy,
   getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, deptHref, seikaHref, seikaKeyOf,
@@ -61,7 +62,7 @@ const progressRows = YEARS.map((y) => ({
             return (
               <tr>
                 <th>{yearLabel(y)}</th>
-                <td>{r.name}{src && <><br /><a class="small" href={src.href} rel="noopener">出典</a></>}</td>
+                <td>{r.name}{src && <><br /><ExtLink class="small" href={src.href}>出典</ExtLink></>}</td>
                 <td class="prose small">{r.base_raw}</td>
                 <td class="prose">{r.actual_raw}</td>
                 <td class="prose small">{r.target_raw}</td>
@@ -110,7 +111,7 @@ const progressRows = YEARS.map((y) => ({
   <section aria-labelledby="source">
     <h2 id="source">出典</h2>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
-    {src && <p class="small">{yearLong(LATEST)}: <a href={src.href} rel="noopener">総括報告書（{src.label}）</a>。主要指標の出典は、表の各行にあります。</p>}
+    {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、表の各行にあります。</p>}
   </section>
 </Base>
 

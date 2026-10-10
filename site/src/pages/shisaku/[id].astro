@@ -20,6 +20,7 @@ import { JUDGE_UI } from '../../lib/icons.js';
 import { themesOf } from '../../lib/themes.js';
 import { joinLines, firstSentence } from '../../lib/text.js';
 import { fmt } from '../../lib/format.js';
+import ExtLink from '../../components/ExtLink.astro';
 
 export function getStaticPaths() {
   return getShisakuList().map((s) => ({ params: { id: s.id } }));
@@ -198,8 +199,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         const b = r?.summary_ref && sourceLink(r.summary_ref.source, r.summary_ref.page);
         return (
           <li>
-            {yearLong(y)}: {a ? <a href={a.href} rel="noopener">施策検証票（{a.label}）</a> : '—'}
-            {b && <>、<a href={b.href} rel="noopener">施策総括表（{b.label}）</a></>}
+            {yearLong(y)}: {a ? <ExtLink href={a.href}>施策検証票（{a.label}）</ExtLink> : '—'}
+            {b && <>、<ExtLink href={b.href}>施策総括表（{b.label}）</ExtLink></>}
           </li>
         );
       })}

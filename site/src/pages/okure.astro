@@ -11,6 +11,7 @@ import { YEARS, LATEST, yearLabel, DEPTS, DELAYS, toneOfStatus, getTorikumiGroup
 import { getThemes, themeIdsOfItem } from '../lib/themes.js';
 import { fmt } from '../lib/format.js';
 import { LINKS } from '../lib/links.js';
+import ExtLink from '../components/ExtLink.astro';
 
 const groups = getTorikumiGroups();
 const all = groups.filter((g) => g.inAllYears);
@@ -129,7 +130,7 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
   </details>
   <p class="small secondary">
     進捗状況は、活動指標（例: 説明会の開催回数、支援件数）が年度の計画に対してどこまで進んだかの県の判定です。遅れの理由は、取組のページの「年度ごとの活動と検証」や、施策のページの「県のふりかえり」に書かれています。
-    R7で<a href={LINKS.chuki} rel="noopener">中期実施計画</a>に切り替わったため、R7で名前が変わった取組は「4年とも報告にある」に入りません。
+    R7で<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>に切り替わったため、R7で名前が変わった取組は「4年とも報告にある」に入りません。
     <a href="/torikumi/?pat=delay3">取組をさがす</a>でも、ほかの条件と組み合わせて絞り込めます。
   </p>
 </Base>
