@@ -334,6 +334,11 @@ class BodyParser:
             return
         sid = shisaku_id(code)
         houkou = next((r[1] for r in rows if r and clean(r[0]) == "施策の方向"), "") or ""
+        kankei = (cells.get("関係部等") or [""])[0]
+        # 施策の方向が長いと、続きが関係部等の欄に食い込んで読める（R5 の 3-(9)-ア-①）。句点までは施策の方向に戻す
+        if "。" in kankei:
+            head, kankei = kankei.rsplit("。", 1)
+            houkou = houkou.rstrip() + head + "。"
         rec = {
             "year": self.year,
             "id": sid,
@@ -343,7 +348,7 @@ class BodyParser:
             "tenkai_id": tenkai_id(code),
             "tenkai_name": (cells.get("施策展開") or ["", ""])[1],
             "shouraizou": code["shouraizou"],
-            "kankei": (cells.get("関係部等") or [""])[0],
+            "kankei": kankei,
             "houkou": houkou.strip(),
             **self.ref(page_no),
         }
