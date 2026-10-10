@@ -129,7 +129,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />、その下は<Term word="主要指標" />の実績値と、R9の目標値に届くかの見通しです。</p>
+    <p class="small secondary lead">棒は主な取組の<Term word="進捗状況" />（{yearLong(LATEST)}）、下の箱は<Term word="主要指標" />の見通しです。</p>
     <ul class="kcards">
       {kihonCards.map((k) => (
         <li class="sticker kcard">
@@ -139,7 +139,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
             <span class="big k-pv">{pct(k.ok, k.n)}</span>
           </div>
           {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
-          <div class="small secondary">施策 {fmt(k.shisaku)}（成果が遅れている C・D {fmt(k.cd)}）・<a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策を見る</a></div>
+          <div class="small secondary"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a>（うち成果が遅れている {fmt(k.cd)}）</div>
           {k.shuyou.length > 0 && (
             <ul class="shuyou">
               {k.shuyou.map((r) => {

@@ -46,7 +46,7 @@ const visions = getShouraizou().map((v) => {
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} />将来像{v.id} {v.name}</a></h2>
       <div class="v-stats">
         <span>基本施策 <b class="big">{fmt(v.rows.length)}</b></span>
-        <span>施策 <b class="big">{fmt(v.shisaku)}</b>（成果が遅れている C・D <b class="big">{fmt(v.cd)}</b>）</span>
+        <span>施策 <b class="big">{fmt(v.shisaku)}</b>（うち成果が遅れている <b class="big">{fmt(v.cd)}</b>）</span>
         <span class="v-ok">主な取組のうち「順調」 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
       </div>
       <StatusChart title={`将来像${v.id}の基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} />
