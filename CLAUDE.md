@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## このリポジトリ
 
-沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策・主な取組の進捗評価）を、県が公開している報告書の PDF から構造化し、県民向けの静的サイト（Astro）で見せる非公式のシビックテック。対象は令和4〜7年度。README・docs・コードのコメント・コミットはすべて日本語。
+沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策・主な取組の進捗評価）を、県が公開している報告書の PDF から構造化し、県民向けの静的サイト（Astro）で見せる非公式のシビックテック。Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体・管理者・リポジトリの URL は `site/src/lib/links.js` の `PROJECT`）。対象は令和4〜7年度。README・docs・コードのコメント・コミットはすべて日本語。
 
 ## コマンド
 
@@ -43,7 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.js` が `data/extracted` を読み、施策の索引・年度をまたいだ取組のまとまり（`getTorikumiGroups`）・部局票との結び付け（`budgetOf`）・予算の重複除去（`amountEntries`）などページ用の形にする。ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。
 - ほかの lib: `themes.js`（くらしのテーマ）、`icons.js`（状態の形・判定 A〜G の形と短い言い方・テーマのアイコン）、`terms.js`（用語の説明）、`text.js`（PDF の改行の整形・県の分析の小見出し分け）。
-- ページ: トップ、`/theme/`（くらしのテーマ）、`/future/`（将来像の一覧と将来像1〜5）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`、`/okure/`、`/bukyoku/`、`/yosan/`、`/about/`。前の `/kihon/`（一覧）は `/future/` へ転送する（`astro.config.mjs` の `redirects`）。パンくずは計画の体系「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`）。
+- ページ: トップ、`/theme/`（くらしのテーマ）、`/future/`（将来像の一覧と将来像1〜5）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`、`/okure/`、`/bukyoku/`、`/yosan/`、`/about/`（ライセンスは `#license`）、`/code-for-okinawa/`（作っている団体と問い合わせ先）。前の `/kihon/`（一覧）は `/future/` へ転送する（`astro.config.mjs` の `redirects`）。パンくずは計画の体系「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`）。
 - ブラウザのスクリプト（`src/scripts/`）:
   - `charts.js`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。
   - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。
@@ -67,3 +67,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 公開
 
 Cloudflare Workers の静的アセットとして `site/dist` を置く（`site/wrangler.jsonc`。GitHub 連携で main に push すると、ビルドしてから `wrangler deploy` される）。配信時のヘッダーは `site/public/_headers`。いまは公開前（ステルス）なので検索エンジンに載せない設定（`Base.astro` の `NOINDEX` と `_headers` の `X-Robots-Tag: noindex, nofollow`）。robots.txt では止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
+
+ライセンスは、ソースコードが MIT（`LICENSE`）、このプロジェクトが作ったデータ（テーマの分類・ID と年度をまたいだ対応づけ・整理の仕方など）が CC BY 4.0。県の報告書から読み取った内容（名前・数値・判定・県の文章）は対象外で、県の文章の著作権は沖縄県にある（県のオープンデータ規約の CC BY 4.0 はオープンデータカタログサイトのものだけが対象で、PDCA の報告書は当たらない）。README の「ライセンス」と `/about/#license` を揃えて直す。

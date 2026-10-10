@@ -2,6 +2,8 @@
 
 [沖縄県PDCA](https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html)（[新・沖縄21世紀ビジョン実施計画](https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/index.html)などの「主な取組」の進捗評価）を構造化し、分野・部局・進捗で絞り込めるようにするシビックテックプロジェクト。
 
+[Code for Okinawa](https://code4okinawa.org/) のプロジェクトとして、[saboyutaka](https://x.com/saboyutaka) が管理している。沖縄県の公式のものではない。ソースコードは MIT License、このプロジェクトが作ったデータは CC BY 4.0（[ライセンス](#ライセンス)）。
+
 ### 関連する県のページ
 
 | ページ | 内容 |
@@ -119,3 +121,16 @@ git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使�
 | Node | `site/.node-version`（24）。読まれないときは環境変数 `NODE_VERSION=24` |
 
 ビルドは `../data/extracted` と `../data/reference` を読むので、リポジトリ全体がチェックアウトされている必要がある（Workers Builds はリポジトリ全体を取得する）。
+
+## ライセンス
+
+| 対象 | ライセンス |
+|---|---|
+| ソースコード（`scripts/`・`site/`・`docker/`・`Makefile` など） | [MIT License](LICENSE) |
+| このプロジェクトが作ったデータと文書（`data/reference/`（`finance.json` の数字の出典はファイルの中に記載）、`docs/`、`data/raw` の台帳、`data/extracted` のうちこのプロジェクトが加えた部分） | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)（クレジット: Code for Okinawa「沖縄県PDCAダッシュボード」） |
+| `data/extracted` のうち県の報告書から読み取った内容（施策・取組・指標の名前、数値、判定、県の分析・検証・改善案などの文章） | 対象外。出典は沖縄県「沖縄県PDCA実施結果」と各部局の検証票。県の文章の著作権は沖縄県にあり、[県のサイトの利用条件](https://www.pref.okinawa.lg.jp/about/1018114.html)に従う |
+| 数字のフォント（`site/public/fonts/`） | [SIL Open Font License 1.1](site/public/fonts/Fredoka-OFL.txt)（Fredoka） |
+
+- 「このプロジェクトが加えた部分」は、報告書に無いもの: くらしのテーマの分類、施策・取組・成果指標の ID と年度をまたいだ対応づけ（`key`）、表の形への整理、部局票との結び付け、予算の重複の除き方と誤記の疑いの判定など。
+- 県のオープンデータ利用規約（CC BY 4.0）は[県のオープンデータカタログサイト](https://www.pref.okinawa.jp/kensei/tokei/1016460/1016461.html)に載せたデータだけが対象で、沖縄県PDCAの報告書は対象ではない（2026-10-10 に確認）。
+- 県の報告書の内容を使うときは出典を書き、手を加えたものを県が作ったもののように見せない。
