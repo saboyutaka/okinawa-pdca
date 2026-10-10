@@ -165,6 +165,8 @@ small, .small { font-size: 0.875rem; }
   background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
 .sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
+/* ステッカーの中のステッカー（将来像の一覧の中の図など）は影を付けない */
+.sticker .sticker { box-shadow: none; }
 .inset, .muted-box { background: var(--bg); border-radius: 14px; padding: 12px 16px; }
 .card + .card { margin-top: 18px; }
 .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
