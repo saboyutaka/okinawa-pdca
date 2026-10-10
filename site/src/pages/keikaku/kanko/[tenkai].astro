@@ -4,6 +4,7 @@ import Base from '../../../layouts/Base.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
+import ExtLink from '../../../components/ExtLink.astro';
 import Prose from '../../../components/Prose.astro';
 import RmSeika from '../../../components/RmSeika.astro';
 import RmTorikumi from '../../../components/RmTorikumi.astro';
@@ -29,7 +30,7 @@ const next = all[i + 1];
 <Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
 
-  <header class="sticker head">
+  <header class="sticker lift head">
     <span class="code-no code-corner" title="観光ロードマップの報告書での番号">施策展開 {t.code}</span>
     <div class="tags"><span class="plan-tag">{KANKO.short}</span><span class="small secondary">の施策展開</span></div>
     <h1>{t.name}</h1>
@@ -38,7 +39,9 @@ const next = all[i + 1];
   </header>
 
   <nav class="toc" aria-label="このページの施策">
-    {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
+    <div class="toc-links" data-scroll-hint>
+      {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
+    </div>
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
@@ -53,9 +56,9 @@ const next = all[i + 1];
     return (
       <section class="rm-shisaku" aria-labelledby={`rm-${s.id}`}>
         <div class="name-row"><h2 id={`rm-${s.id}`} class="anchor">{s.name}</h2><span class="code-no" title="観光ロードマップの報告書での番号">施策 {s.code}</span></div>
-        <p class="small secondary meta">関係部等: {depts.length ? depts.map((d, k) => <>{k > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</p>
+        <p class="small secondary meta">関係部等: {depts.length ? depts.map((d, k) => <>{k > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</p>
         {s.houkou && (
-          <div class="muted-box houkou">
+          <div class="inset houkou">
             <div class="small secondary label">施策の方向</div>
             <p class="first">{firstSentence(s.houkou.replace(/^[〇○]\s*/, ''))}</p>
             <details>
@@ -95,7 +98,7 @@ const next = all[i + 1];
         <p class="small src">
           出典（観光ロードマップの報告書での番号は<span class="report-no">施策 {s.code}</span>）: {Object.values(s.years).sort((a, b) => b.year - a.year).map((r, k) => {
             const a = planSourceLink('kanko', r.source, r.page);
-            return <>{k > 0 && '、'}{a ? <a href={a.href} rel="noopener">{yearLabel(r.year)} 実施報告書 {r.page}ページ</a> : yearLabel(r.year)}</>;
+            return <>{k > 0 && '、'}{a ? <ExtLink href={a.href}>{yearLabel(r.year)} 実施報告書 {r.page}ページ</ExtLink> : yearLabel(r.year)}</>;
           })}
         </p>
       </section>
@@ -119,7 +122,7 @@ const next = all[i + 1];
   .rm-shisaku h2 { margin: 0 0 6px; }
   .report-no { white-space: nowrap; }
   .rm-shisaku h3 { margin: 1.4em 0 0.5em; }
-  .houkou { margin-top: 10px; }
+  .houkou { margin-top: 10px; padding: 10px 14px; }
   .houkou .label { font-weight: 700; }
   .houkou .first { margin: 2px 0 0; font-weight: 700; }
   .seika { display: grid; gap: 12px; }

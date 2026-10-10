@@ -5,6 +5,7 @@ import Crumbs from '../../../components/Crumbs.astro';
 import StatusChart from '../../../components/StatusChart.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
+import ExtLink from '../../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.js';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
@@ -38,17 +39,16 @@ const sources = planSources('kanko');
 <Base title={`${KANKO.name}（個別計画）`} description={`${KANKO.basis}の実施計画「${KANKO.name}」のPDCA（成果指標と主な取組の評価）を、施策展開ごとに整理しています。`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { label: KANKO.short }]} />
 
-  <header class="sticker head">
+  <header class="sticker lift head">
     <div><span class="plan-tag">個別計画</span></div>
     <h1>{KANKO.name}</h1>
     <p class="meta small">
-      {KANKO.basis}の実施計画・{KANKO.period}　所管: {KANKO.dept}　<a href={LINKS.kankoRm} rel="noopener">県のページ</a>
+      {KANKO.basis}の実施計画・{KANKO.period}　所管: {KANKO.dept}　<ExtLink href={LINKS.kankoRm}>県のページ</ExtLink>
     </p>
     <div class="bubble-row says">
       <span class="avatar" aria-hidden="true">!</span>
       <div class="bubble small">
-        <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>報告書の施策の番号（例: 1-ア-①）はこのロードマップのもので、沖縄県PDCAの施策の番号（例: 1-(1)-ア-①）とは違います。</p>
-        <p>主な取組の多くは、沖縄県PDCAでも主な取組として評価されている同じ事業で、進捗状況も同じです。成果指標は、観光の計画にしか無いもの（観光客の満足度、県民の観光への理解など）が多くあります。</p>
+        <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>施策の番号（例: 1-ア-①）も沖縄県PDCAとは別です。</p>
       </div>
     </div>
   </header>
@@ -73,10 +73,7 @@ const sources = planSources('kanko');
 
   <section aria-labelledby="progress">
     <h2 id="progress">年度ごとの進み具合</h2>
-    <p class="small secondary lead">
-      主な取組の<Term word="進捗状況" />の区分は沖縄県PDCAと同じです（活動指標の実績が計画の90%以上で「順調」）。
-      成果指標は、基準値と比べて良くなっていれば「前進」、変わらなければ「横ばい」、悪くなっていれば「後退」です。
-    </p>
+    <p class="small secondary lead">主な取組の<Term word="進捗状況" />は沖縄県PDCAと同じ区分で、成果指標は基準値と比べて良くなったか（前進・横ばい・後退）を見ます。</p>
     <StatusChart title="観光ロードマップの主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
     <StatusChart title="観光ロードマップの成果指標の達成状況（基準値との比較）" categories={RM_JUDGEMENTS} rows={seikaRows} unit="指標" />
     {unreadable.map((y) => (
@@ -88,17 +85,17 @@ const sources = planSources('kanko');
 
   <section aria-labelledby="list">
     <h2 id="list">基本施策と施策展開</h2>
-    <p class="small secondary lead">観光ロードマップの6つの基本施策と30の施策展開です。棒は{yearLabel(RM_LATEST)}の主な取組の進捗状況の内訳です。施策展開を押すと、施策ごとの成果指標・主な取組・県の分析を見られます。</p>
+    <p class="small secondary lead">棒は{yearLabel(RM_LATEST)}の主な取組の進捗状況の内訳です。</p>
     {kihon.map((k) => (
       <>
         <h3>{k.name} <span class="code-no">基本施策 {k.code}</span></h3>
-        <ul class="list">
+        <ul class="row-list">
           {tenkai.filter((t) => t.kihon_id === k.id).map((t) => {
             const ts = latestOf(t);
             const ss = t.shisaku.flatMap((s) => s.seika.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
             return (
-              <li class="item">
-                <div class="name-row"><a href={kankoTenkaiHref(t.id)}>{t.name}</a><span class="code-no">施策展開 {t.code}</span></div>
+              <li>
+                <div class="name-row"><a class="name-link" href={kankoTenkaiHref(t.id)}>{t.name}</a><span class="code-no">施策展開 {t.code}</span></div>
                 <div class="row">
                   <div class="small secondary">施策 {fmt(t.shisaku.length)}・主な取組 {fmt(ts.length)}件・成果指標 {fmt(ss.length)}（前進 {fmt(ss.filter((s) => s.judgement === '前進').length)}）</div>
                   <StatusBar categories={STATUSES} counts={countBy(ts, statusOf, statusKeys)} context={`${t.name} 主な取組 `} size="mini" />
@@ -114,8 +111,9 @@ const sources = planSources('kanko');
   <section aria-labelledby="pdca">
     <h2 id="pdca">沖縄県PDCAとの関係</h2>
     <ul class="small">
-      <li>観光ロードマップは、新・沖縄21世紀ビジョン基本計画を上位の計画とする「<a href={LINKS.kankoPlan} rel="noopener">{KANKO.basis}</a>」の施策を具体化した実施計画です。沖縄県PDCAの施策（339）とは別に、観光の施策（85）を立てています。</li>
+      <li>観光ロードマップは、新・沖縄21世紀ビジョン基本計画を上位の計画とする「<ExtLink href={LINKS.kankoPlan}>{KANKO.basis}</ExtLink>」の施策を具体化した実施計画です。沖縄県PDCAの施策（339）とは別に、観光の施策（85）を立てています。</li>
       <li>主な取組は、同じ年度に同じ名前の取組が沖縄県PDCAにもあれば、取組のページへのリンクを付けています（名前が少し違っても、よく似ていて決算見込額が同じものを含みます）。沖縄県PDCAの取組のページからも、観光ロードマップの施策をたどれます。</li>
+      <li>主な取組の多くは、沖縄県PDCAでも主な取組として評価されている同じ事業で、進捗状況も同じです。成果指標は、観光の計画にしか無いもの（観光客の満足度、県民の観光への理解など）が多くあります。</li>
       <li>観光ロードマップにしか無い取組は、観光統計の調査の項目ごとの活動など、沖縄県PDCAより細かい単位のものが多くあります。</li>
       <li><strong>決算見込額は合計しないでください。</strong>同じ予算（例: 観光統計の調査）が複数の取組に重ねて書かれています。このサイトの<a href="/yosan/">予算と財源</a>にも足していません。</li>
     </ul>
@@ -123,15 +121,16 @@ const sources = planSources('kanko');
 
   <section aria-labelledby="source">
     <h2 id="source">出典</h2>
-    <p class="small">沖縄県「<a href={LINKS.kankoRm} rel="noopener">{KANKO.name}</a>」の年度別の「沖縄観光推進ロードマップPDCA実施結果」のページ。</p>
+    <p class="small">沖縄県「<ExtLink href={LINKS.kankoRm}>{KANKO.name}</ExtLink>」の年度別の「沖縄観光推進ロードマップPDCA実施結果」のページ。</p>
     <ul class="small">
-      {RM_YEARS.map((y) => sources.filter((s) => s.year === y).map((s) => <li>{yearLong(y)}: <a href={s.file_url} rel="noopener">{s.link_text.replace(/\s*（\s*PDF[^）]*）\s*$/, '')}</a>（<a href={s.page_url} rel="noopener">掲載ページ</a>）</li>))}
+      {RM_YEARS.map((y) => sources.filter((s) => s.year === y).map((s) => <li>{yearLong(y)}: <ExtLink href={s.file_url}>{s.link_text.replace(/\s*（\s*PDF[^）]*）\s*$/, '')}</ExtLink>（<ExtLink href={s.page_url}>掲載ページ</ExtLink>）</li>))}
     </ul>
   </section>
 </Base>
 
 <style>
   .head { display: grid; gap: 8px; margin-top: 12px; }
+  .row-list { margin-top: 8px; }
   .head h1 { margin: 0; }
   .meta { margin: 0; color: var(--ink-2); }
   .says .bubble p { margin: 0 0 4px; }

@@ -15,7 +15,7 @@ const rate = x.rate != null ? `${x.rate}%` : x.rate_raw || '—';
 const past = Object.values(g.years).filter((r: any) => r.year !== x.year && r.judgement).sort((a: any, b: any) => a.year - b.year);
 const hasPlan = (x.plan_raw || []).some(Boolean);
 ---
-<article class="rm-seika">
+<article class="inset rm-seika">
   <h4>{x.name}{u && <span class="secondary small">（{u}）</span>}</h4>
   <div class="judge">
     {j ? <Chip tone={j.tone} shape={j.shape} text={`${x.judgement}（${yearLabel(x.year)}）`} title={j.note} /> : <Chip text={`判定なし（${yearLabel(x.year)}）`} />}
@@ -45,19 +45,19 @@ const hasPlan = (x.plan_raw || []).some(Boolean);
     </table>
   </div>
   {g.pdca.length > 0 && (
-    <p class="small pdca">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, i) => <>{i > 0 && '、'}施策 <a href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
+    <p class="small pdca">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, i) => <>{i > 0 && '、'}施策 <a class="sub-link" href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
   )}
   {(x.explanation || x.dept) && (
     <details>
       <summary>県の説明（{yearLabel(x.year)}）</summary>
-      {x.dept && <p class="small secondary">担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
+      {x.dept && <p class="small secondary">担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
       {x.explanation && <p class="prose small">{joinLines(x.explanation)}</p>}
     </details>
   )}
 </article>
 
 <style>
-  .rm-seika { background: var(--bg); border-radius: 14px; padding: 10px 14px; display: grid; gap: 6px; min-width: 0; }
+  .rm-seika { padding: 10px 14px; display: grid; gap: 6px; min-width: 0; }
   h4 { margin: 0; font-size: 0.98rem; line-height: 1.5; }
   .judge { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
   table { font-size: 0.875rem; background: var(--paper); border-radius: 10px; }

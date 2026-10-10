@@ -2,6 +2,7 @@
 // 一括交付金（ソフト）の事業1つ（施策ページ）。年度ごとの評価（◎○△未）のスタンプ、最新年度の成果目標と予算の執行、県の今後の方針
 import Stamps from './Stamps.astro';
 import Chip from './Chip.astro';
+import ExtLink from './ExtLink.astro';
 import { yearLabel } from '../lib/data.js';
 import { IKKATSU_YEARS, gradeOf, planSourceLink } from '../lib/plans.js';
 import { yen } from '../lib/format.js';
@@ -73,7 +74,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
     </details>
   )}
   <p class="small src">
-    出典: {src ? <a href={src.href} rel="noopener">総括表 {j.page}ページ</a> : '—'}{sheet && <>、<a href={sheet.href} rel="noopener">検証シート（{sheet.label}）</a></>}
+    出典: {src ? <ExtLink href={src.href}>総括表 {j.page}ページ</ExtLink> : '—'}{sheet && <>、<ExtLink href={sheet.href}>検証シート（{sheet.label}）</ExtLink></>}
     {j.shisaku_from && <span class="secondary">（{yearLabel(j.year)}の検証シートが読めないため、施策は{yearLabel(j.shisaku_from)}の記載によります）</span>}
   </p>
 </article>
