@@ -8,7 +8,7 @@ import Term from '../../components/Term.astro';
 import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.js';
 import {
   KANKO, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoTenkaiList,
-  IKKATSU_YEARS, ikkatsuRows, GRADES, HYOKA, getEvaluations,
+  IKKATSU_YEARS, ikkatsuRows, GRADES, HYOKA,
 } from '../../lib/plans.js';
 import { LINKS } from '../../lib/links.js';
 import { fmt } from '../../lib/format.js';
@@ -23,7 +23,6 @@ const tenkai = kankoTenkaiList();
 const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
 const ik = ikkatsuRows(ikYear);
 const ikCounts = countBy(ik, (j) => j.grade_label, GRADES.map((g) => g.key));
-const ev = getEvaluations();
 ---
 <Base title="個別計画" description="沖縄県PDCAとは別に、県が分野ごとの計画や交付金事業について公表している評価（観光ロードマップPDCA・一括交付金の事後評価・基本計画の評価検証報告書など）をまとめています。">
   <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '個別計画' }]} />
@@ -80,24 +79,6 @@ const ev = getEvaluations();
     </div>
   </section>
 
-  <section aria-labelledby="others">
-    <h2 id="others">ほかにも県が公表している評価</h2>
-    <p class="small secondary lead">このサイトでは中身を取り込んでいない評価です。リンク先は県の公表ページです（{ev.checked_at}に開けることを確かめました）。</p>
-    {ev.groups.map((g) => (
-      <>
-        <h3>{g.label}</h3>
-        <ul class="list">
-          {g.items.map((it) => (
-            <li class="item">
-              <a href={it.url} rel="noopener">{it.name}</a>
-              <div class="small secondary">{it.dept}　{it.what}</div>
-              {it.note && <div class="small">{it.note}</div>}
-            </li>
-          ))}
-        </ul>
-      </>
-    ))}
-  </section>
 </Base>
 
 <style>

@@ -444,8 +444,6 @@ R7 で指標そのものと基準値・目標値が見直されている。数�
 | ikkatsu | 沖縄振興特別推進交付金（ソフトの一括交付金）の事後評価 | [年度別の一覧](https://www.pref.okinawa.jp/kensei/yosan/1015205/1015216/index.html)（R4〜） | `extract_ikkatsu.py` → `data/extracted/ikkatsu/` | 施策のページの「一括交付金（ソフト）の事業」 |
 | hyoka | 新・沖縄21世紀ビジョン基本計画 評価検証報告書（R4〜R6。令和8年5月） | [公表ページ](https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html) | `extract_hyoka.py` → `data/extracted/hyoka/` | 基本施策のページの「県による4年間のふりかえり」 |
 
-ほかにも県が公表している評価（島づくり計画PDCA・DX推進計画・健康長寿ロードマップ・教育委員会の点検評価など）は、`data/reference/evaluations.json` に一覧だけを置き、個別計画のページにリンクを出している（中身は取り込んでいない）。
-
 ### 12.1 観光ロードマップPDCA
 
 - 実施報告書（本編）の「施策」総括表は、沖縄県PDCA の様式２とほぼ同じ形（Ⅰ 主な取組の進捗状況・Ⅱ 成果指標の達成状況・Ⅲ 分析（Check）・Ⅳ 推進戦略案（Action））。体系は観光ロードマップ独自の6基本施策・30施策展開・85施策。

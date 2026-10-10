@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `data/raw` は県から取ったまま（手で編集しない）。PDF・zip は git に入れず、台帳の `manifest.jsonl`・`pages.jsonl` だけコミットする。フォルダの年度は**対象年度**（`2025-r07` = 令和7年度対象、2026年8月公表）。
 - `data/extracted/*.json` はコミットする。**サイトはこれだけを読んでビルドする**ので、PDF が無くてもサイトは作れる。抽出結果は必ず出典（manifest の `file_url` と PDF のページ）を持つ。
-- `data/reference/` は人が用意した参照データ: `finance.json`（国・県の財政の数字、出典つき）、`themes.json`（くらしのテーマの定義）、`evaluations.json`（県が公表しているほかの評価の一覧。個別計画のページのリンク）。
+- `data/reference/` は人が用意した参照データ: `finance.json`（国・県の財政の数字、出典つき）、`themes.json`（くらしのテーマの定義）。
 - 沖縄県PDCA 以外の評価も取り込んでいる（`fetch_pdca.py` の `RELATED_SOURCES`。部局票ではない）: 観光ロードマップPDCA（`kanko-rm` → `extract_kanko.py` → `data/extracted/kanko`）、一括交付金（ソフト）の事後評価（`ikkatsu` → `extract_ikkatsu.py`）、基本計画の評価検証報告書（`hyoka` → `extract_hyoka.py`）。観光ロードマップの R4 の本編は文字に変換できないフォントで読めない。読み方は `docs/data.md` の12章。
 - 施策 ID は報告書のコードを正規化したもの（`1-(1)-ア-①` → `1-1-a-1`、ア→a・イ→b…）。年度をまたいだ同じ取組・成果指標は、同じ施策の中で正規化した名前（`key`）が同じものとみなす。
 - 年度による違いに注意する: R4〜R6 は前期実施計画、R7 からは中期（基準値・目標値・計画値が変わるので、達成率は計画期間をまたいで比べない）。R5 に部局の再編（部局の集計は取組の最新年度の所管部局に寄せる）。成果指標の実績値は前の年度の値のことが多い（`actual_ref_year`）。

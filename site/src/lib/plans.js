@@ -1,11 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページに、評価検証報告書は基本施策のページに出す
-import fs from 'node:fs';
-import path from 'node:path';
 import { load, getShisaku, getTorikumiGroups, torikumiPage, seikaHrefByName } from './data.js';
-
-// 県が公表しているほかの評価の一覧（data/reference/evaluations.json。人が調べて書いたもの）
-export const getEvaluations = () => JSON.parse(fs.readFileSync(path.resolve(process.cwd(), '../data/reference/evaluations.json'), 'utf-8'));
 
 // ---------------------------------------------------------------- 出典
 
