@@ -67,10 +67,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 日本語のウェブフォントは読み込まない。数字だけ丸い英字フォント Fredoka の部分集合（`public/fonts/`、SIL OFL）を使う。
 - ヘッダーのナビはサブメニューを使わず項目を並べる（開くと本文がずれるため）。トップにナビと重複する「くわしく見る」は置かない。スマホのヘッダーは「タイトル＋配色のボタン（その下に小さく（非公式）by Code for Okinawa）」と「ナビ」の2段に収める。
 
-## git
-
-- このリポジトリでは**作業ブランチを切らず、main に直接コミットする**（ユーザーの指定。ホームの CLAUDE.md の「main ではブランチを切る」より優先）。push はユーザーが頼んだときだけ。
-
 ## 公開
 
 Cloudflare Workers の静的アセットとして `site/dist` を置く（`site/wrangler.jsonc`。GitHub 連携で main に push すると、ビルドしてから `wrangler deploy` される。main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになり、`wrangler.jsonc` に `previews` の枠が要る）。配信時のヘッダーは `site/public/_headers`。いまは公開前（ステルス）なので検索エンジンに載せない設定（`Base.astro` の `NOINDEX` と `_headers` の `X-Robots-Tag: noindex, nofollow`）。robots.txt では止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
