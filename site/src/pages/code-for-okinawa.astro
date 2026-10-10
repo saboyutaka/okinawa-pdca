@@ -1,0 +1,57 @@
+---
+// このサイトを作っている団体（Code for Okinawa）と、サイトの運営・問い合わせ先・公開しているもの
+import Base from '../layouts/Base.astro';
+import { LINKS, PROJECT } from '../lib/links.js';
+---
+<Base title="Code for Okinawa とは" description="このサイトを作っている Code for Okinawa と、サイトの運営・問い合わせ先・公開しているソースコードとデータについて">
+  <nav class="breadcrumb"><a href="/">トップ</a> › Code for Okinawa とは</nav>
+  <h1>Code for Okinawa とは</h1>
+  <p class="lead">
+    このサイト「沖縄県PDCAダッシュボード」は、<strong>{PROJECT.org}</strong> の取り組みとして作っている非公式のサイトです。沖縄県が作ったものではありません。
+  </p>
+
+  <h2>Code for Okinawa</h2>
+  <p>
+    {PROJECT.org} は、沖縄で活動するシビックテックのコミュニティです。沖縄のオープンデータを広め、地域の課題を解決するアイデアを考えて、テクノロジーを使って解決に取り組んでいます。市民が参加する、開かれたコミュニティです。
+  </p>
+  <p>
+    全国各地の「Code for ○○」と同じく、Code for Japan のブリゲード（地域のコミュニティ）として活動しています。
+  </p>
+  <ul>
+    <li><a href={PROJECT.orgUrl} rel="noopener">Code for Okinawa のサイト</a></li>
+    <li><a href={PROJECT.orgGithub} rel="noopener">Code for Okinawa の GitHub</a></li>
+    <li><a href={PROJECT.brigades} rel="noopener">Code for Japan のブリゲードの一覧</a></li>
+  </ul>
+
+  <h3>シビックテックとは</h3>
+  <p>
+    市民（シビック）がテクノロジー（テック）を使って、地域や行政の課題に自分たちで取り組むことです。このサイトでは、県が PDF で公開している報告書を読み取って、県の施策や取組がどこまで進んだかを、ひとめで見られる形にまとめ直しています。
+  </p>
+
+  <h2>このサイトの運営</h2>
+  <dl class="facts sticker">
+    <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
+    <div><dt>管理している人</dt><dd>{PROJECT.maintainer}（X: <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a>）</dd></div>
+    <div><dt>ソースコードとデータ</dt><dd><a href={PROJECT.repo} rel="noopener">GitHub</a>（<a href="/about/#license">ライセンス</a>）</dd></div>
+  </dl>
+  <p>まちがいの報告やご意見は、X の <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a> へお寄せください。</p>
+  <p>
+    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<a href={LINKS.kikakuChousei} rel="noopener">企画部企画調整課</a>）へお問い合わせください。
+  </p>
+
+  <h2>公開しているもの</h2>
+  <p>このサイトのソースコードと、報告書から読み取ったデータは、誰でも見たり使ったりできるように公開しています。</p>
+  <ul>
+    <li><strong>ソースコード</strong>（PDF の読み取りと、このサイト）: <a href="https://opensource.org/license/mit" rel="noopener">MIT License</a></li>
+    <li><strong>このサイトが作ったデータ</strong>（くらしのテーマの分類、年度をまたいだ取組の対応づけなど）: <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" rel="noopener">CC BY 4.0</a></li>
+    <li><strong>県の報告書から読み取った内容</strong>は CC BY 4.0 の対象ではありません。県の文章の著作権は沖縄県にあります（<a href="/about/#license">データの利用について</a>）</li>
+  </ul>
+</Base>
+
+<style>
+  .facts { display: grid; gap: 10px; margin: 8px 0 16px; max-width: 40em; }
+  .facts > div { display: grid; grid-template-columns: 10em 1fr; gap: 4px 16px; }
+  .facts dt { font-family: var(--font-display); font-weight: 700; }
+  .facts dd { margin: 0; }
+  @media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; } }
+</style>

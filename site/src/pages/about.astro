@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import { YEARS, LATEST, yearLabel, yearLong, getTorikumi, amountEntries, getFinanceReference, getBudgetRecords } from '../lib/data.js';
 import { fmt } from '../lib/format.js';
 import fs from 'node:fs';
-import { LINKS } from '../lib/links.js';
+import { LINKS, PROJECT } from '../lib/links.js';
 import { TERMS } from '../lib/terms.js';
 import { getThemes, unthemed } from '../lib/themes.js';
 import path from 'node:path';
@@ -86,7 +86,7 @@ const themes = getThemes();
 
   <h2>注意点</h2>
   <ul>
-    <li><strong>非公式のサイトです。</strong>PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。</li>
+    <li><strong>非公式のサイトです。</strong><a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。</li>
     <li><strong>主な取組の進捗の内訳が、概要版と数件ずれることがあります。</strong>報告書の進捗状況の欄が空欄や「-」の取組（{blanks.map(([y, n]) => `${yearLabel(y)}で${n}件`).join('、')}）は、このサイトでは「記載なし」としています。県の集計ではこれらも「順調」「未着手」などに数えられています。</li>
     <li><strong>施策の推進状況（A〜G）は、施策総括表に印字された判定をそのまま使っています。</strong>区分ごとの件数は概要版と数件ずれます（「概ね順調」がこのサイトの方が少ないなど）。県は一部の施策を集計で「その他」に回していますが、それだけではずれを説明できず、原因は分かっていません。R4は施策ごとの判定が公表されていないため「未公表」としています。</li>
     <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>R7から目標値・計画値が新しくなったため、R6以前とR7以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>
@@ -95,6 +95,18 @@ const themes = getThemes();
     <li>年度をまたいだ取組・成果指標の対応は、名前が同じかどうかで判断しています。名前が少しでも変わると別の行（別の取組のページ）になります。取組のページでは、同じ施策で前後の年度に載っている取組のうち、同じ予算事業を使うものや名前が似ているものを「関係がありそうな取組」として示しています。</li>
     <li><strong>取組のページの活動内容・検証・改善案は、部局の検証票の文章をそのまま載せています。</strong>空欄の欄と、表の形が崩れていて読み取れなかった欄は表示していません（4年分の延べ{fmt(records.length)}取組のうち{fmt(emptyFields)}件）。</li>
     <li><strong>R5の報告書の成果指標の達成率は、25指標が概要版に書かれた計算式と合いません</strong>（実績値÷目標値で計算したと見られるものなど）。このサイトは報告書の値をそのまま載せています。</li>
+  </ul>
+
+  <h2 id="license">データの利用について</h2>
+  <p>このサイトのソースコードと、報告書から読み取ったデータ（<code>data/extracted</code>）は <a href={PROJECT.repo} rel="noopener">GitHub</a> で公開しています。</p>
+  <ul>
+    <li><strong>ソースコード</strong>（PDFの読み取りと、このサイト）は <a href="https://opensource.org/license/mit" rel="noopener">MIT License</a> です。</li>
+    <li>
+      <strong>このサイトが作ったデータ</strong>は <a href="https://creativecommons.org/licenses/by/4.0/deed.ja" rel="noopener">CC BY 4.0</a> です。報告書に無く、このサイトが加えたもの（くらしのテーマの分類、施策・取組・成果指標のIDと年度をまたいだ対応づけ、表の形への整理、予算の重複の除き方と誤記の疑いの判定など）が対象です。使うときは「{PROJECT.org}『沖縄県PDCAダッシュボード』」と出典を書いてください。
+    </li>
+    <li>
+      <strong>県の報告書から読み取った内容</strong>（施策・取組・指標の名前、数値、判定、県の分析・検証・改善案などの文章）は、CC BY 4.0 の対象ではありません。県の文章の著作権は沖縄県にあります。使うときは<a href={LINKS.siteTerms} rel="noopener">県のサイトの利用条件</a>を確かめ、出典（沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」など）を書いてください。このサイトが手を加えたものを、県が作ったもののように見せないでください。
+    </li>
   </ul>
 
   <h2>このサイトの表示について</h2>
