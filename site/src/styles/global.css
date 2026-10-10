@@ -172,14 +172,20 @@ small, .small { font-size: 0.875rem; }
    目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
    1. .sticker.lift … ページの頭とトップのヒーローだけ。太い線と大きな影
    2. .sticker      … 並ぶカード・図・絞り込み。細めの線と小さな影
-   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける */
+   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける（余白は使う所で決める。数字の並び .kv の箱もこの形） */
 .sticker, .card {
   background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
 .sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
 /* ステッカーの中のステッカー（将来像の一覧の中の図など）は影を付けない */
 .sticker .sticker { box-shadow: none; }
-.inset, .muted-box { background: var(--bg); border-radius: 14px; padding: 12px 16px; }
+.inset, .kv > div { background: var(--bg); border-radius: 12px; }
+/* 数字の並び（基準値・実績値・計画値・目標値・見通し。成果指標と主要指標の札） */
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0; }
+.kv > div { padding: 6px 10px; min-width: 0; }
+.kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+.kv dd { margin: 0; }
+.kv dd.big { font-size: 1.1rem; }
 .card + .card { margin-top: 18px; }
 .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .cards > .card { margin-top: 0; }
@@ -243,7 +249,7 @@ details[open] > summary { margin-bottom: 8px; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
 .chip.empty { color: var(--ink-2); }
-/* 施策の判定（A〜G）の小さな丸いハンコ。一覧の行と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
+/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
 .jstamp {
   display: inline-flex; align-items: center; justify-content: center; gap: 2px; flex: none; width: 30px; height: 30px; border-radius: 50%;
   border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);

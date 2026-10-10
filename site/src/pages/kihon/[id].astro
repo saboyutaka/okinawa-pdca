@@ -7,6 +7,7 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import Chip from '../../components/Chip.astro';
 import Stamps from '../../components/Stamps.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import { oneLine } from '../../lib/text.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
   getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, toneOfJudgement,
@@ -33,7 +34,6 @@ const shuyouCards = latestShuyou.map((r) => ({
     return ys.find((x) => x.name === r.name) || (ys.length === 1 && latestShuyou.length === 1 ? ys[0] : null);
   }),
 }));
-const oneLine = (v) => (v || '—').replace(/\s*\n\s*/g, ' ');
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -145,11 +145,6 @@ const progressRows = YEARS.map((y) => ({
   /* 主要指標。最新の値と見通しを大きく出し、4年間の見通しはスタンプ、年度ごとの値と出典は表に畳む */
   .s-card { display: grid; gap: 12px; margin-top: 12px; }
   .s-card h3 { margin: 0; }
-  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0; }
-  .kv div { background: var(--bg); border-radius: 12px; padding: 8px 12px; min-width: 0; }
-  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-  .kv dd { margin: 0; }
-  .kv dd.big { font-size: 1.2rem; }
   .kv-j :global(.chip) { font-weight: 700; white-space: normal; }
   .j-years { max-width: 420px; }
   .s-card details { margin: 0; }

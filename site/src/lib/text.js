@@ -1,4 +1,7 @@
 // PDFから読んだ文章の改行を整える。文の途中の折り返しはつなぎ、見出し・箇条の頭・文末の改行は残す
+// 報告書の表の値の改行を空白にして1行にする（「1,032万t-CO₂\n（R3年度）」→「1,032万t-CO₂ （R3年度）」）。空なら —
+export const oneLine = (v) => (v || '—').replace(/\s*\n\s*/g, ' ');
+
 export function joinLines(text) {
   let out = '';
   let prev = '';

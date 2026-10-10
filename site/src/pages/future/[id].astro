@@ -20,6 +20,7 @@ import { getThemes } from '../../lib/themes.js';
 import { fmt, pct, yen } from '../../lib/format.js';
 import { LINKS } from '../../lib/links.js';
 import ExtLink from '../../components/ExtLink.astro';
+import { oneLine } from '../../lib/text.js';
 
 export function getStaticPaths() {
   return getShouraizou().map((v) => ({ params: { id: String(v.id) } }));
@@ -145,9 +146,9 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
               {k.shuyou.map((r) => {
                 const tone = toneOfJudgement(r.judgement);
                 return (
-                  <li>
+                  <li class="inset">
                     <div class="s-name">{r.name}</div>
-                    <div class="small">実績 <b>{(r.actual_raw || '—').replace(/\n/g, ' ')}</b>　→ 目標 {(r.target_raw || '—').replace(/\n/g, ' ')}</div>
+                    <div class="small">実績 <b>{oneLine(r.actual_raw)}</b>　→ 目標 {oneLine(r.target_raw)}</div>
                     {r.judgement && <div>{tone ? <Chip tone={tone} text={`見通し: ${r.judgement}`} /> : <span class="small">見通し: {r.judgement}</span>}</div>}
                   </li>
                 );
@@ -248,7 +249,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .k-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .k-pv { font-size: 1.3rem; }
   .shuyou { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 8px; }
-  .shuyou li { background: var(--bg); border-radius: 12px; padding: 8px 12px; display: grid; gap: 2px; }
+  .shuyou li { padding: 8px 12px; display: grid; gap: 2px; }
   .s-name { font-weight: 700; font-size: 0.9375rem; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }

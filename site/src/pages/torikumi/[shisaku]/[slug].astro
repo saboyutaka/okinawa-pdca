@@ -106,7 +106,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <span class="p-kind">この取組が入っている施策</span>
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <span class="p-row">
-      <span class:list={['p-stamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
+      <span class:list={['jstamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
       <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
       <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
     </span>
@@ -120,7 +120,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       <ThemeTags ids={themeIdsOfItem(s.id, t.name)} />
     </div>
-    <div class="now">
+    <div class="now inset">
       <div class="now-l">
         <span class:list={['now-pill', `tone-${latestTone}`]}><Icon tone={latestTone} size={16} />{latestStatus}</span>
         <span class="now-sb">{yearLong(t.year)}の<Term word="進捗状況" /></span>
@@ -221,8 +221,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
             <div class="y-head"><span class="y">{yearLabel(y)}</span><Chip tone={toneOfStatus(st)} text={st} /></div>
             {(!prevInd || prevInd !== r.indicator) && r.indicator && <div class="y-ind">{r.indicator}</div>}
             <dl class="y-vals">
-              <div><dt>計画</dt><dd>{r.target || '—'}</dd></div>
-              <div><dt>実績</dt><dd><b>{r.actual || '—'}</b></dd></div>
+              <div class="inset"><dt>計画</dt><dd>{r.target || '—'}</dd></div>
+              <div class="inset"><dt>実績</dt><dd><b>{r.actual || '—'}</b></dd></div>
             </dl>
             {ach && (
               <>
@@ -361,7 +361,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
                 <h4>前年度に決めた改善案と、その反映</h4>
                 <ul class="impr">
                   {plansDone.map((x) => (
-                    <li>
+                    <li class="inset">
                       {x.plan && !/^[―\-ー－]$/.test(x.plan.trim()) && <div class="impr-plan"><span class="tagline">改善案</span><span class="prose">{x.plan}</span></div>}
                       <div class="impr-res"><span class="tagline">反映</span><span class="prose">{x.result || '—'}</span></div>
                     </li>
@@ -456,11 +456,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .parent:hover .p-name, .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
   .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
-  .p-stamp {
-    display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 34px; border-radius: 50%;
-    border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
-    font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; flex: none;
-  }
   .p-name { font-weight: 700; line-height: 1.5; flex: 1 1 10em; min-width: 0; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
   .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
@@ -473,7 +468,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .head h1 { margin: 0; }
   .kind { font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); margin-bottom: -6px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; background: var(--bg); border-radius: 16px; padding: 10px 16px; }
+  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; padding: 10px 16px; }
   .now-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
   .now-pill {
     display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px; border: 2.5px solid var(--line); border-radius: 999px;
@@ -510,7 +505,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .y { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; }
   .y-ind { font-size: 0.875rem; color: var(--ink-2); line-height: 1.5; }
   .y-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
-  .y-vals div { background: var(--bg); border-radius: 10px; padding: 4px 8px; min-width: 0; }
+  .y-vals div { padding: 4px 8px; min-width: 0; }
   .y-vals dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   .y-vals dd { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
   .plan { margin-top: 12px; display: grid; gap: 12px; }
@@ -562,7 +557,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .flow-body h4:not(:first-child) { margin-top: 12px; }
   .flow-body p { margin: 0; }
   .impr { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  .impr li { display: grid; gap: 4px; background: var(--bg); border-radius: 14px; padding: 8px 12px; }
+  .impr li { display: grid; gap: 4px; padding: 8px 12px; }
   .impr-plan, .impr-res { display: grid; grid-template-columns: 3.6em minmax(0, 1fr); gap: 8px; font-size: 0.9375rem; }
   .tagline { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); padding-top: 2px; }
   .typed { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
