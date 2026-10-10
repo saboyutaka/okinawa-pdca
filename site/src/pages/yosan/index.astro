@@ -1,13 +1,13 @@
 ---
-import Base from '../layouts/Base.astro';
-import AmountChart from '../components/AmountChart.astro';
-import BarList from '../components/BarList.astro';
-import Chip from '../components/Chip.astro';
+import Base from '../../layouts/Base.astro';
+import AmountChart from '../../components/AmountChart.astro';
+import BarList from '../../components/BarList.astro';
+import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, statusOf, toneOfStatus,
   amountEntries, getBudgetLines, getSuspects, budgetOf, getTorikumi, getShisakuList, getShouraizou, sourceLink,
-} from '../lib/data.js';
-import { fmt, yen, pct } from '../lib/format.js';
+} from '../../lib/data.js';
+import { fmt, yen, pct } from '../../lib/format.js';
 
 const sum = (xs) => xs.reduce((s, x) => s + x.amount, 0);
 const byFund = (entries) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
@@ -94,6 +94,7 @@ const suspects = getSuspects();
   <p>
     各部局の「主な取組」検証票には、取組ごとに予算事業の名前、主な財源、前年度の決算額・その年度の決算見込額・翌年度の当初予算額が書かれています。
     これを集めて、どんな財源でどれだけの予算が取組に使われているかをまとめました。
+    財源の意味や、沖縄振興予算との違いは<a href="/yosan/zaigen/">予算の財源のしくみ</a>で説明しています。
   </p>
   <div class="notice">
     <strong>合計は目安です。</strong>
@@ -128,9 +129,17 @@ const suspects = getSuspects();
     categories={FUNDS}
     rows={trendRows}
   />
-  <p class="small secondary">
-    一括交付金は沖縄振興特別推進交付金（ソフト）と沖縄振興公共投資交付金（ハード）。内閣府計上・各省計上は国の予算に計上される事業、県単等は県の単独事業などです。
-  </p>
+  <div class="card guide">
+    <h3>財源の区分</h3>
+    <ul>
+      {FUNDS.map((f) => <li><span class={`swatch series-${f.series}`}>{f.key}</span> {f.short}（負担: {f.who}）</li>)}
+    </ul>
+    <p class="small">
+      ここでの合計は県の取組の予算で、国が沖縄のために組む「沖縄振興予算」とは別のものです。
+      「県単等」も県民の税金だけでなく、国から配られる地方交付税などが元になっています。
+      くわしくは<a href="/yosan/zaigen/">予算の財源のしくみ</a>へ。
+    </p>
+  </div>
 
   <h2>部局別・将来像別（{yearLong(LATEST)}の決算見込額）</h2>
   <BarList title="部局別" caption="最新の報告での所管部局。件数ではなく金額（億円）です。" items={deptItems} unit="億円" />
@@ -230,4 +239,8 @@ const suspects = getSuspects();
   .budget td:first-child { min-width: 14em; }
   .rel { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
   .rel :global(.chip) { font-size: 0.75rem; }
+  .guide { margin-top: 16px; }
+  .guide h3 { margin-top: 0; }
+  .guide ul { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; font-size: 0.9rem; }
+  .guide .swatch { font-weight: 600; margin-right: 4px; }
 </style>
