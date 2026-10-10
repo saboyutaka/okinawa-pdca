@@ -16,6 +16,7 @@ export const PROJECT = {
   orgUrl: 'https://code4okinawa.org/',
   orgGithub: 'https://github.com/CodeforOkinawa',
   brigades: 'https://www.code4japan.org/brigade', // Code for Japan のブリゲード（地域のコミュニティ）の一覧
+  maintainerName: '立花 豊',
   maintainer: 'saboyutaka',
   maintainerX: 'https://x.com/saboyutaka',
 };

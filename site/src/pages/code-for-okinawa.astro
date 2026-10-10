@@ -1,6 +1,7 @@
 ---
 // このサイトを作っている団体（Code for Okinawa）と、サイトの運営・問い合わせ先
 import Base from '../layouts/Base.astro';
+import ExtLink from '../components/ExtLink.astro';
 import { LINKS, PROJECT } from '../lib/links.js';
 ---
 <Base title="Code for Okinawa とは" description="このサイトを作っている Code for Okinawa と、サイトの運営・問い合わせ先について">
@@ -18,9 +19,9 @@ import { LINKS, PROJECT } from '../lib/links.js';
     全国各地の「Code for ○○」と同じく、Code for Japan のブリゲード（地域のコミュニティ）として活動しています。
   </p>
   <ul>
-    <li><a href={PROJECT.orgUrl} rel="noopener">Code for Okinawa のサイト</a></li>
-    <li><a href={PROJECT.orgGithub} rel="noopener">Code for Okinawa の GitHub</a></li>
-    <li><a href={PROJECT.brigades} rel="noopener">Code for Japan のブリゲードの一覧</a></li>
+    <li><ExtLink href={PROJECT.orgUrl}>Code for Okinawa のサイト</ExtLink></li>
+    <li><ExtLink href={PROJECT.orgGithub}>Code for Okinawa の GitHub</ExtLink></li>
+    <li><ExtLink href={PROJECT.brigades}>Code for Japan のブリゲードの一覧</ExtLink></li>
   </ul>
 
   <h3>シビックテックとは</h3>
@@ -31,11 +32,11 @@ import { LINKS, PROJECT } from '../lib/links.js';
   <h2>このサイトの運営</h2>
   <dl class="facts sticker">
     <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
-    <div><dt>管理している人</dt><dd>{PROJECT.maintainer}（X: <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a>）</dd></div>
+    <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</dd></div>
   </dl>
-  <p>まちがいの報告やご意見は、X の <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a> へお寄せください。</p>
+  <p>まちがいの報告やご意見は、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください。</p>
   <p>
-    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<a href={LINKS.kikakuChousei} rel="noopener">企画部企画調整課</a>）へお問い合わせください。
+    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<ExtLink href={LINKS.kikakuChousei}>企画部企画調整課</ExtLink>）へお問い合わせください。
   </p>
 </Base>
 
