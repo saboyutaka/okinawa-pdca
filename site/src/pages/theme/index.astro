@@ -2,25 +2,32 @@
 import Base from '../../layouts/Base.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
-import { LATEST, yearLong, countBy, getShisakuList } from '../../lib/data.js';
-import { getThemes, unthemed } from '../../lib/themes.js';
+import { LATEST, yearLong, countBy, getShisakuList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.js';
+import { getThemes, unthemed, themeIdsOfItem } from '../../lib/themes.js';
 import { JUDGE_GROUPS, judgeGroupOf } from '../../lib/icons.js';
 import { fmt } from '../../lib/format.js';
 
 const byId = new Map(getShisakuList().map((s) => [s.id, s]));
 const keys = JUDGE_GROUPS.map((g) => g.key);
+const toriThemes = getTorikumiGroups().map((g) => themeIdsOfItem(g.shisaku.id, g.latest.name));
+const seikaThemes = getSeikaGroups().filter((r) => r.latest.year === LATEST).map((r) => themeIdsOfItem(r.shisaku.id, r.latest.name));
 const themes = getThemes().map((t) => ({
   ...t,
   counts: countBy(t.ids.map((id) => byId.get(id)), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', keys),
+  tori: toriThemes.filter((ids) => ids.includes(t.id)).length,
+  seika: seikaThemes.filter((ids) => ids.includes(t.id)).length,
 }));
 const rest = unthemed();
 ---
-<Base title="くらしのテーマ" description="子ども・子育て、観光、交通など、くらしのテーマごとに沖縄県PDCAの施策を見られます（このサイト独自の分類）。">
+<Base title="くらしのテーマ" description="子ども・子育て、観光、交通など、くらしのテーマごとに沖縄県PDCAの施策・取組・成果指標を見られます（このサイト独自の分類）。">
   <nav class="breadcrumb"><a href="/">トップ</a> › くらしのテーマ</nav>
   <h1>くらしのテーマ<span class="own">このサイト独自の分類</span></h1>
   <div class="notice">
-    <p><strong>このテーマは、県の計画の分類ではありません。</strong>県の計画は「将来像 → 基本施策 → 施策」の体系で並んでいますが、ふだんの暮らしの言葉で探せるように、このサイトが独自にまとめました。</p>
-    <p class="small">施策の名前・施策展開の名前・基本施策の名前に、下の「決め方」の言葉が含まれる施策をそのテーマに入れています。1つの施策が複数のテーマに入ることがあり、どれにも入らない施策もあります（{fmt(rest.length)}施策）。言葉だけで決めているので、関係が薄い施策が入ったり、関係があるのに入らなかったりすることがあります。</p>
+    <p><strong>このテーマは、県の計画の分類ではありません。</strong>県の計画は「将来像 → 基本施策 → 施策」の体系で並んでいますが、ふだんの暮らしの言葉で探せるように、このサイトが{themes.length}のテーマにまとめました。</p>
+    <p class="small">
+      施策の名前・施策展開の名前・基本施策の名前に、下の「決め方」の言葉が含まれる施策をそのテーマに入れています。どの施策もいずれかのテーマに入り、1つの施策が複数のテーマに入ることもあります。
+      主な取組・成果指標は、その施策のテーマに加えて、取組・指標の名前に言葉が含まれるテーマにも入れています。言葉だけで決めているので、関係が薄いものが入ることがあります。
+    </p>
   </div>
 
   <ul class="themes">
@@ -28,21 +35,24 @@ const rest = unthemed();
       <li class="sticker theme-row">
         <span class="ico"><ThemeIcon id={t.id} /></span>
         <div class="body">
-          <h2><a href={`/theme/${t.id}/`}>{t.label}</a> <span class="n">{fmt(t.ids.length)}施策</span></h2>
+          <h2><a href={`/theme/${t.id}/`}>{t.label}</a></h2>
+          <div class="nums small">施策 <b>{fmt(t.ids.length)}</b>・<a href={`/torikumi/?theme=${t.id}`}>取組 <b>{fmt(t.tori)}</b></a>・<a href={`/shihyou/?theme=${t.id}`}>成果指標 <b>{fmt(t.seika)}</b></a></div>
           <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の${yearLong(LATEST)}の判定 `} size="mini" />
           <p class="rule small"><span class="secondary">決め方: </span>{t.words.join('、')}</p>
         </div>
       </li>
     ))}
   </ul>
-  <p class="small secondary">棒は{yearLong(LATEST)}の施策の判定（A 順調／B 概ね順調／C・D 成果が遅れている／E・F 取組が遅れている／G 大幅遅れ）の内訳です。</p>
+  <p class="small secondary">棒は{yearLong(LATEST)}の施策の判定（A 順調／B 概ね順調／C・D 成果が遅れている／E・F 取組が遅れている／G 大幅遅れ）の内訳です。取組は令和4〜7年度に出てくる主な取組、成果指標は{yearLong(LATEST)}の報告にあるものの数です。</p>
 
-  <details class="rest">
-    <summary>どのテーマにも入らない施策（{fmt(rest.length)}）</summary>
-    <ul>
-      {rest.map((s) => <li><a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></li>)}
-    </ul>
-  </details>
+  {rest.length > 0 && (
+    <details class="rest">
+      <summary>どのテーマにも入らない施策（{fmt(rest.length)}）</summary>
+      <ul>
+        {rest.map((s) => <li><a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></li>)}
+      </ul>
+    </details>
+  )}
 </Base>
 
 <style>
@@ -54,7 +64,7 @@ const rest = unthemed();
   .ico :global(.theme-ic) { width: 30px; height: 30px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .body { display: grid; gap: 6px; min-width: 0; }
   h2 { font-size: 1.15rem; margin: 0; }
-  .n { font-family: var(--font); font-size: 0.875rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+  .nums b { font-family: var(--font-num); font-weight: 600; font-size: 1rem; }
   .rule { margin: 0; line-height: 1.6; }
   .rest { margin-top: 24px; }
   .rest ul { columns: 2 20em; font-size: 0.9375rem; }
