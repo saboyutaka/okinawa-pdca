@@ -209,7 +209,7 @@ export function seikaKeyOf(row) {
 export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
 // 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
-// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・トップと将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
+// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
 // 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
 const isDelay = (x) => DELAYS.has(x);
 export const PATTERNS = {

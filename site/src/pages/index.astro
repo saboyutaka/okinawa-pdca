@@ -4,15 +4,13 @@ import StatusChart from '../components/StatusChart.astro';
 import StatusBar from '../components/StatusBar.astro';
 import Donut from '../components/Donut.astro';
 import Chunk from '../components/Chunk.astro';
-import Icon from '../components/Icon.astro';
-import Stamps from '../components/Stamps.astro';
 import Term from '../components/Term.astro';
 import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, toneOfStatus, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.js';
 import { getThemes, unthemed } from '../lib/themes.js';
@@ -42,30 +40,8 @@ const themes = getThemes().map((t) => ({
   counts: countBy(t.ids.map((id) => byId.get(id)), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
 }));
 
-// 令和6年度から7年度の動き（年度をまたいで同じ名前の取組）
-const has = (pat) => (g) => g.patterns.includes(pat);
-const moves = [
-  {
-    tone: 'good', title: '遅れから「順調」に戻った',
-    desc: `${yearLabel(LATEST - 1)}に遅れていて、${yearLabel(LATEST)}は順調になった取組`,
-    rows: groups.filter(has('recover')),
-    href: '/torikumi/?pat=recover',
-  },
-  {
-    tone: 'serious', title: '新しく遅れが出た',
-    desc: `${yearLabel(LATEST - 1)}は順調・概ね順調で、${yearLabel(LATEST)}に遅れた取組`,
-    rows: groups.filter(has('newdelay')),
-    href: '/torikumi/?pat=newdelay',
-  },
-  {
-    tone: 'critical', title: '4年のうち3年以上遅れた',
-    desc: `4年とも報告にある取組のうち、3年以上の年度で遅れていたもの（4年とも遅れ ${fmt(groups.filter(has('delay4')).length)}件）`,
-    rows: groups.filter(has('delay3')).sort((a, b) => b.delayYears - a.delayYears),
-    href: '/torikumi/?pat=delay3',
-  },
-];
-
 // ヒーローの「まだ進んでいないところ」（取組の遅れ・成果の遅れ・取組は順調でも成果が遅れている施策）
+const has = (pat) => (g) => g.patterns.includes(pat);
 const toriDelay = latestGroups.filter((g) => DELAYS.has(g.statuses[L])).length;
 // 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になる
 const streak = groups.filter(has('streak')).length;
@@ -87,7 +63,6 @@ const trend = YEARS.map((y) => {
 });
 const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y), statusOf, statusKeys) }));
 const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y), rateBin, RATE_BINS.map((b) => b.key)) }));
-const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }));
 ---
 <Base>
   <section class="hero sticker lift" aria-labelledby="hero-h">
@@ -147,33 +122,6 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
         </li>
       ))}
     </ul>
-  </section>
-
-  <section aria-labelledby="moves-h">
-    <h2 id="moves-h">今年のできごと</h2>
-    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告で、同じ名前の主な取組の<Term word="進捗状況" />を比べました。遅れ＝やや遅れ・大幅遅れ・未着手。</p>
-    <div class="news">
-      {moves.map((m) => (
-        <div class="sticker news-card">
-          <div class="news-head"><Icon tone={m.tone} size={16} />{m.title}</div>
-          <div class="big news-n">{fmt(m.rows.length)}<small>件</small></div>
-          <div class="news-desc">{m.desc}</div>
-          <details>
-            <summary>例を見る</summary>
-            <ul class="ex-list">
-              {m.rows.slice(0, 4).map((g) => (
-                <li>
-                  <a class="ex-name name-link" href={g.href}>{g.latest.name}</a>
-                  <span class="ex-sub">施策 {g.shisaku.name} <span class="code-no">{g.shisaku.code}</span></span>
-                  <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
-                </li>
-              ))}
-            </ul>
-          </details>
-          <a class="more-link" href={m.href}>{fmt(m.rows.length)}件をすべて見る</a>
-        </div>
-      ))}
-    </div>
   </section>
 
   <section aria-labelledby="vision-h">
@@ -290,18 +238,6 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .theme :global(.sbar) { grid-area: bar; }
   .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
   @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
-
-  .news { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-  .news-card { display: grid; gap: 4px; align-content: start; }
-  .news-head { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; }
-  .news-n { font-size: 2.4rem; line-height: 1.1; }
-  .news-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
-  .news-desc { font-size: 0.875rem; color: var(--ink-2); }
-  .ex-list { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 12px; }
-  .ex-list li { display: grid; gap: 4px; border-top: 1.5px solid var(--grid); padding-top: 10px; }
-  .ex-name { font-weight: 700; line-height: 1.5; }
-  .ex-sub { font-size: 0.875rem; color: var(--ink-2); }
-  .more-link { font-weight: 700; font-size: 0.9375rem; margin-top: 4px; }
 
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
   .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
