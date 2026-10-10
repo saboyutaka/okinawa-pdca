@@ -57,8 +57,9 @@ dev:
 build:
 	$(COMPOSE) run --rm site npm run build
 
+# --ignore-lock は dev と同じ理由（compose.yaml の site を参照）
 preview:
-	$(COMPOSE) run --rm --service-ports site npm run preview -- --host 0.0.0.0 --port $(SITE_PORT)
+	$(COMPOSE) run --rm --service-ports site npm run preview -- --host 0.0.0.0 --port $(SITE_PORT) --ignore-lock
 
 # worktree を片付ける前に使う。main では node_modules のボリュームは残す
 down:
