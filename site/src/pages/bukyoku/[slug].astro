@@ -131,7 +131,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
   <section aria-labelledby="lists" id="dept-lists">
     <h2 id="lists">{dept.name}の取組・成果指標・施策</h2>
     <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
-      <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+      <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
         <select name="theme">
           <option value="">すべて</option>
           {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}

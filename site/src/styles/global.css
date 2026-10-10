@@ -297,9 +297,17 @@ a.ttag:hover { background: var(--sky); }
 .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
 .filters label, .fgroup-label { display: grid; gap: 4px; font-size: 0.875rem; color: var(--ink-2); font-weight: 700; }
 .filters select, .filters input[type="search"], .filters input[type="text"] {
-  font: inherit; font-size: 0.95rem; font-weight: 400; color: var(--ink); background: var(--paper);
+  font: inherit; font-size: 0.95rem; font-weight: 400; color: var(--ink); background-color: var(--paper);
   border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-height: 44px; max-width: 100%;
 }
+/* セレクトの三角は標準のものを消し、枠の内側に余白をとって描く（角の丸い枠の端に寄らないように。色は配色に合わせる） */
+.filters select {
+  appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position: right 20px center, right 14px center; background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
+}
+.filters select:hover { background-color: var(--sky); }
+.filters label .lbl { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .filters .q { flex: 1 1 14em; }
 .filters .q input { width: 100%; }
 .fgroup { display: grid; gap: 6px; border: 0; padding: 0; margin: 0; min-width: 0; flex-basis: 100%; }
@@ -315,7 +323,7 @@ a.ttag:hover { background: var(--sky); }
 .fchip input:checked + span::before { content: "✓"; font-weight: 700; }
 .fchip input:focus-visible + span { outline: 3px solid var(--pop); outline-offset: 2px; }
 .fchip:hover > input + span { background: var(--sky); }
-.filters label .own { justify-self: start; }
+.filters label .own { justify-self: start; transform: none; margin: 0; }
 .result-count { font-size: 0.9375rem; color: var(--ink-2); font-weight: 700; }
 /* いまの絞り込みの条件（scripts/list-filter.js）。1つずつ外せる */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }

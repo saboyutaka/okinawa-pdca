@@ -57,7 +57,7 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
     <label class="q" data-label="キーワード">キーワード（取組・施策・所管課の名前）
       <input type="search" name="q" placeholder="例: 離島、子ども、観光" />
     </label>
-    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
         {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}

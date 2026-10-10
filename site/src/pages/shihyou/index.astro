@@ -34,17 +34,10 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
     <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）
       <input type="search" name="q" placeholder="例: 観光、離島、子ども、二酸化炭素" />
     </label>
-    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
         {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-      </select>
-    </label>
-    <label data-label="対象">対象
-      <select name="period">
-        <option value="latest" selected>{yearLabel(LATEST)}の報告にある指標</option>
-        <option value="past">R6 まで使われていた指標</option>
-        <option value="">すべて</option>
       </select>
     </label>
     <label data-label="将来像">将来像
@@ -69,6 +62,13 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       <select name="dept">
         <option value="">すべて</option>
         {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+      </select>
+    </label>
+    <label data-label="対象">対象
+      <select name="period">
+        <option value="latest" selected>{yearLabel(LATEST)}の報告にある指標</option>
+        <option value="past">R6 まで使われていた指標</option>
+        <option value="">すべて</option>
       </select>
     </label>
   </form>

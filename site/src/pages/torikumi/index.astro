@@ -19,7 +19,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     <label class="q" data-label="キーワード">キーワード
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
-    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
         {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}

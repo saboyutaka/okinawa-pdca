@@ -28,7 +28,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
     <label class="q" data-label="キーワード">キーワード（施策・取組・部局の名前）
       <input type="search" name="q" placeholder="例: 離島、子ども、観光" />
     </label>
-    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
         {themes.map((t) => <option value={t.id}>{t.label}</option>)}
