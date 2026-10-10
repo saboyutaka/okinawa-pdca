@@ -1,0 +1,7 @@
+# 県から取得した原本（台帳の manifest.jsonl / pages.jsonl だけコミットする）
+data/raw/*/
+data/interim/
+*.part
+*.tmp
+__pycache__/
+.DS_Store
