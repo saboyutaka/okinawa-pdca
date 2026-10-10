@@ -1,0 +1,87 @@
+---
+// 施策の判定（A〜G）のマス目。縦は主な取組のうち「順調」の割合、横は成果指標の達成率（境目は40%と80%）。
+// B は3マスにまたがるので、真ん中のマスにだけ件数を書く。マスを押すと、その判定の施策の一覧を開く
+import Icon from './Icon.astro';
+import { judgeOf } from '../lib/data.js';
+import { JUDGE_UI } from '../lib/icons.js';
+import { fmt } from '../lib/format.js';
+
+interface Props { counts: Record<string, number>; caption: string; hrefOf?: (key: string) => string }
+const { counts, caption, hrefOf = (k) => `/shisaku/?judge=${k}` } = Astro.props;
+const AX = ['80%以上', '40〜80%', '40%未満'];
+const GRID = [['A', 'B', 'C'], ['B', 'B', 'D'], ['E', 'F', 'G']];
+---
+<figure class="matrix-fig sticker">
+  <figcaption class="mx-cap">{caption}</figcaption>
+  <div class="mx-xtitle" aria-hidden="true">成果指標の達成率（左ほど高い）</div>
+  <div class="mx-body">
+    <div class="mx-ytitle" aria-hidden="true">主な取組のうち「順調」の割合（上ほど高い）</div>
+    <div class="matrix">
+      <div class="mx-hd" aria-hidden="true"></div>
+      {AX.map((a) => <div class="mx-hd" aria-hidden="true">成果<br />{a}</div>)}
+      {GRID.map((row, ri) => (
+        <>
+          <div class="mx-hd" aria-hidden="true">取組<br />{AX[ri]}</div>
+          {row.map((k, ci) => {
+            const j = judgeOf(k);
+            const ui = JUDGE_UI[k];
+            if (k === 'B' && !(ri === 1 && ci === 1)) {
+              return <div class:list={['mcell', 'dup', `tone-${j.tone}`]} aria-hidden="true"><span class="mk"><Icon tone={j.tone} shape={ui.shape} size={13} />B</span></div>;
+            }
+            const n = counts[k] || 0;
+            return (
+              <a
+                class:list={['mcell', `tone-${j.tone}`, ui.hatch && 'hatch']}
+                href={hrefOf(k)}
+                aria-label={`${k} ${j.label}、${fmt(n)}施策${k === 'B' ? '（3つのマスの合計）' : ''}。主な取組の順調の割合 ${k === 'B' ? '40%以上' : AX[ri]}、成果指標の達成率 ${k === 'B' ? '40%以上（A を除く）' : AX[ci]}。この判定の施策の一覧を開く`}
+              >
+                <span class="mk"><Icon tone={j.tone} shape={ui.shape} size={16} />{k}</span>
+                <span class="ms">{k === 'B' ? '概ね順調（3マス分）' : ui.short}</span>
+                <span class="mn">{fmt(n)}<small>施策</small></span>
+              </a>
+            );
+          })}
+        </>
+      ))}
+    </div>
+  </div>
+  <ul class="mx-keys">
+    {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((k) => {
+      const j = judgeOf(k);
+      return <li><span class="chip"><Icon tone={j.tone} shape={JUDGE_UI[k].shape} /><span>{k} {j.label}</span></span></li>;
+    })}
+  </ul>
+</figure>
+
+<style>
+  .matrix-fig { margin-top: 12px; }
+  .mx-cap { font-family: var(--font-display); font-weight: 700; margin-bottom: 6px; }
+  .mx-xtitle { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); text-align: center; margin-left: calc(2em + 5em + 14px); }
+  .mx-body { display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 8px; margin-top: 4px; }
+  .mx-ytitle { writing-mode: vertical-rl; font-size: 0.875rem; font-weight: 700; color: var(--ink-2); justify-self: center; align-self: center; letter-spacing: 0.08em; }
+  .matrix { display: grid; grid-template-columns: 5em repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; }
+  .mcell {
+    display: grid; align-content: start; gap: 2px; min-height: 100px; padding: 10px 12px; border-radius: 16px; color: var(--ink); text-decoration: none;
+    background-color: color-mix(in oklab, var(--tone) 22%, var(--paper)); border: 2.5px solid var(--line);
+  }
+  a.mcell { box-shadow: 3px 3px 0 var(--shadow); }
+  a.mcell:hover { background-color: color-mix(in oklab, var(--tone) 38%, var(--paper)); }
+  a.mcell:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
+  .mcell.hatch { background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--tone) 42%, var(--paper)) 0 2px, transparent 2px 7px); }
+  .mcell.dup { opacity: 0.8; }
+  .mk { display: flex; align-items: center; gap: 6px; font-family: var(--font-num); font-size: 1.3rem; font-weight: 600; }
+  .dup .mk { font-size: 1rem; color: var(--ink-2); }
+  .ms { font-family: var(--font-display); font-size: 0.8125rem; line-height: 1.4; font-weight: 700; }
+  .mn { font-family: var(--font-num); font-size: 1.6rem; font-weight: 600; line-height: 1.1; margin-top: auto; }
+  .mn small { font-family: var(--font); font-size: 0.8125rem; font-weight: 700; margin-left: 2px; }
+  .mx-keys { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 4px 20px; }
+  @media (max-width: 600px) {
+    .matrix { grid-template-columns: 3.4em repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .mx-xtitle { margin-left: calc(2em + 3.4em + 12px); }
+    .mcell { min-height: 84px; padding: 8px; }
+    .ms { display: none; }
+    .mn { font-size: 1.3rem; }
+    .mn small { display: block; margin: 0; }
+  }
+</style>

@@ -1,0 +1,20 @@
+{
+  "note": "このサイト独自の「くらしのテーマ」。県の計画の分類ではない。施策の名前・施策展開の名前・基本施策の名前に match（正規表現）が当たる施策をテーマに入れる。キーワードで拾いきれないもの・誤って入るものは、施策ID（例: 1-1-a-1）を include / exclude に書いて直す",
+  "checked_at": "2026-10-10",
+  "themes": [
+    { "id": "kosodate", "label": "子ども・子育て", "match": "子ども|子供|子育て|こども|保育|少子|妊娠|出産|ひとり親|若者|ヤングケアラー|児童(?!生徒)", "include": [], "exclude": [] },
+    { "id": "manabi", "label": "学校・学び", "match": "教育|学校|学力|学び|児童生徒|大学|高校|生徒|学習", "include": [], "exclude": [] },
+    { "id": "iryo", "label": "医療・健康", "match": "医療|健康|保健|看護|病院|疾病|がん|感染症|薬剤師|医師|飲酒|喫煙", "include": [], "exclude": [] },
+    { "id": "fukushi", "label": "福祉・介護", "match": "福祉|介護|障害|高齢者|生活困窮|貧困|地域共生|生活保護|権利擁護", "include": [], "exclude": [] },
+    { "id": "kanko", "label": "観光", "match": "観光|リゾート|ＭＩＣＥ|MICE|クルーズ|旅行", "include": [], "exclude": [] },
+    { "id": "shigoto", "label": "仕事・産業", "match": "雇用|就業|働く|働き|産業|企業|起業|ものづくり|中小|物流|情報通信|ＤＸ|DX|金融", "include": [], "exclude": [] },
+    { "id": "nougyo", "label": "農業・漁業", "match": "農|漁|林業|森林|畜産|水産|園芸", "include": [], "exclude": [] },
+    { "id": "kotsu", "label": "交通", "match": "交通|道路|港湾|空港|バス|鉄軌道|モノレール|航路|航空", "include": [], "exclude": [] },
+    { "id": "ritou", "label": "離島", "match": "離島", "include": [], "exclude": [] },
+    { "id": "kankyo", "label": "環境・エネルギー", "match": "環境|エネルギー|脱炭素|二酸化炭素|自然|廃棄物|赤土|生物|リサイクル|プラスチック", "include": [], "exclude": [] },
+    { "id": "anzen", "label": "防災・安全", "match": "防災|安全|犯罪|事故|災害|消防|治安|減災|危機", "include": [], "exclude": [] },
+    { "id": "bunka", "label": "文化・スポーツ", "match": "文化|スポーツ|芸能|芸術|しまくとぅば|空手|歴史|伝統", "include": [], "exclude": [] },
+    { "id": "heiwa", "label": "平和・基地", "match": "平和|基地|米軍|不発弾|戦争|跡地", "include": [], "exclude": [] },
+    { "id": "sumai", "label": "住まい・まち", "match": "住宅|住まい|まちづくり|公園|景観|都市|水道", "include": [], "exclude": [] }
+  ]
+}

@@ -1,0 +1,93 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShisakuItem from '../../components/ShisakuItem.astro';
+import ThemeIcon from '../../components/ThemeIcon.astro';
+import Chunk from '../../components/Chunk.astro';
+import JudgeMatrix from '../../components/JudgeMatrix.astro';
+import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou } from '../../lib/data.js';
+import { getThemes, getTheme } from '../../lib/themes.js';
+import { fmt, pct } from '../../lib/format.js';
+
+export function getStaticPaths() {
+  return getThemes().map((t) => ({ params: { id: t.id } }));
+}
+
+const t = getTheme(Astro.params.id);
+const byId = new Map(getShisakuList().map((s) => [s.id, s]));
+const items = t.ids.map((id) => byId.get(id));
+const tori = items.flatMap((s) => s.torikumi.filter((x) => x.year === LATEST));
+const toriOk = tori.filter((x) => x.status === '順調').length;
+const seika = items.flatMap((s) => s.seika.filter((x) => x.year === LATEST));
+const seikaOk = seika.filter((x) => rateBin(x) === '100%以上').length;
+const judgeCounts = countBy(items, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const others = getThemes().filter((x) => x.id !== t.id);
+const visions = getShouraizou().map((v) => ({ ...v, items: items.filter((s) => s.shouraizou === v.id) })).filter((v) => v.items.length);
+const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
+---
+<Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）の進み具合（このサイト独自の分類）`}>
+  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/theme/">くらしのテーマ</a> › {t.label}</nav>
+  <header class="t-head">
+    <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+    <div>
+      <h1>{t.label}<span class="own">このサイト独自の分類</span></h1>
+      <p class="small secondary">県の計画の分類ではありません。施策の名前・施策展開・基本施策の名前に「{t.words.join('」「')}」のどれかを含む{fmt(items.length)}施策です（<a href="/theme/">テーマの決め方</a>）。</p>
+    </div>
+  </header>
+
+  <div class="facts">
+    <div class="sticker fact">
+      <div class="tile-label">施策</div>
+      <div class="tile-value">{fmt(items.length)}<small>施策</small></div>
+      <div class="tile-sub">成果が遅れている（C・D）のは {fmt((judgeCounts.C || 0) + (judgeCounts.D || 0))}</div>
+    </div>
+    <div class="sticker fact">
+      <div class="tile-label">主な取組のうち「順調」（{yearLong(LATEST)}）</div>
+      <div class="tile-value">{pct(toriOk, tori.length)}</div>
+      <Chunk frac={tori.length ? toriOk / tori.length : 0} label={`主な取組 ${tori.length}件のうち順調 ${toriOk}件`} thin />
+      <div class="tile-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件</div>
+    </div>
+    <div class="sticker fact">
+      <div class="tile-label">成果指標のうち計画値に到達（{yearLong(LATEST)}）</div>
+      <div class="tile-value">{pct(seikaOk, seika.length)}</div>
+      <Chunk frac={seika.length ? seikaOk / seika.length : 0} label={`成果指標 ${seika.length}のうち計画値に到達 ${seikaOk}`} thin />
+      <div class="tile-sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標</div>
+    </div>
+  </div>
+
+  <section aria-labelledby="judge-h">
+    <h2 id="judge-h">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
+    <JudgeMatrix counts={judgeCounts} caption={`「${t.label}」の${fmt(items.length)}施策`} hrefOf={listHref} />
+  </section>
+
+  <section aria-labelledby="list-h">
+    <h2 id="list-h">施策（{fmt(items.length)}）</h2>
+    <p class="small"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
+    {visions.map((v) => (
+      <>
+        <h3 class="v-h"><span class="badge-sz" aria-hidden="true">{v.id}</span>将来像{v.id} {v.name}（{v.items.length}）</h3>
+        <ul class="list">
+          {v.items.map((s) => <ShisakuItem s={s} />)}
+        </ul>
+      </>
+    ))}
+  </section>
+
+  <section aria-labelledby="others-h">
+    <h2 id="others-h">ほかのテーマ</h2>
+    <ul class="others">
+      {others.map((o) => <li><a class="tag" href={`/theme/${o.id}/`}>{o.label}</a></li>)}
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .t-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; align-items: center; margin-top: 8px; }
+  .t-head h1 { margin: 0; }
+  .t-head p { margin: 4px 0 0; }
+  .ico { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--pink); border: 2.5px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
+  .ico :global(.theme-ic) { width: 36px; height: 36px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
+  .fact { display: grid; gap: 4px; align-content: start; }
+  .v-h { display: flex; align-items: center; gap: 8px; }
+  .others { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
