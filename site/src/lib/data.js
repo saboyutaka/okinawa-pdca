@@ -6,8 +6,8 @@ import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
 const cache = new Map();
-// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi' のように指定する
-function load(name) {
+// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi'、個別計画などは 'kanko/torikumi' のように指定する
+export function load(name) {
   const rel = name.includes('/') ? name : `soukatsu/${name}`;
   if (!cache.has(rel)) {
     cache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, `${rel}.json`), 'utf-8')));

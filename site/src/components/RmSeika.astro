@@ -1,0 +1,67 @@
+---
+// 観光ロードマップの成果指標1つ。基準値・年度ごとの実績値と計画値・目標値を表にし、基準値と比べた判定（前進など）を印で出す
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import { yearLabel, withUnit, deptHref } from '../lib/data.js';
+import { rmJudgementOf } from '../lib/plans.js';
+import { joinLines } from '../lib/text.js';
+
+interface Props { g: any }
+const { g } = Astro.props;
+const x = g.latest;
+const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
+const j = x.judgement ? rmJudgementOf(x.judgement) : null;
+const rate = x.rate != null ? `${x.rate}%` : x.rate_raw || '—';
+const past = Object.values(g.years).filter((r: any) => r.year !== x.year && r.judgement).sort((a: any, b: any) => a.year - b.year);
+const hasPlan = (x.plan_raw || []).some(Boolean);
+---
+<article class="rm-seika">
+  <h4>{x.name}{u && <span class="secondary small">（{u}）</span>}</h4>
+  <div class="judge">
+    {j ? <Chip tone={j.tone} shape={j.shape} text={`${x.judgement}（${yearLabel(x.year)}）`} title={j.note} /> : <Chip text={`判定なし（${yearLabel(x.year)}）`} />}
+    <span class="small"><Term word="達成率" /> {rate}</span>
+    {past.map((r: any) => <span class="small secondary">{yearLabel(r.year)}は{r.judgement}</span>)}
+  </div>
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">{x.name}の基準値・実績値・目標値</caption>
+      <thead><tr><th></th><th class="num"><Term word="基準値" /></th>{x.years.map((y) => <th class="num">{y}</th>)}<th class="num"><Term word="目標値" />（R6）</th></tr></thead>
+      <tbody>
+        <tr>
+          <th scope="row">実績値</th>
+          <td class="num">{withUnit(x.base_raw, u)}</td>
+          {x.actual_raw.map((a, i) => <td class="num">{withUnit(a, u)}{x.ref_years[i] && <><br /><small class="secondary">{x.ref_years[i]}の値</small></>}</td>)}
+          <td class="num">{withUnit(x.target_raw, u)}</td>
+        </tr>
+        {hasPlan && (
+          <tr>
+            <th scope="row"><Term word="計画値" /></th>
+            <td></td>
+            {x.years.map((_, i) => <td class="num">{withUnit(x.plan_raw[i], u)}</td>)}
+            <td></td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+  {g.pdca.length > 0 && (
+    <p class="small pdca">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a href={p.href}>施策 {p.shisaku.code} {p.shisaku.name}</a></>)}</p>
+  )}
+  {(x.explanation || x.dept) && (
+    <details>
+      <summary>県の説明（{yearLabel(x.year)}）</summary>
+      {x.dept && <p class="small secondary">担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
+      {x.explanation && <p class="prose small">{joinLines(x.explanation)}</p>}
+    </details>
+  )}
+</article>
+
+<style>
+  .rm-seika { background: var(--bg); border-radius: 14px; padding: 10px 14px; display: grid; gap: 6px; min-width: 0; }
+  h4 { margin: 0; font-size: 0.98rem; line-height: 1.5; }
+  .judge { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+  table { font-size: 0.875rem; background: var(--paper); border-radius: 10px; }
+  th, td { padding: 6px 8px; }
+  .pdca { margin: 0; }
+  details > summary { font-size: 0.875rem; }
+</style>

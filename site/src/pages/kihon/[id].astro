@@ -8,6 +8,7 @@ import Crumbs from '../../components/Crumbs.astro';
 import Term from '../../components/Term.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import { themesOf } from '../../lib/themes.js';
+import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, statusOf, countBy,
   getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, deptHref, seikaHref, seikaKeyOf,
@@ -26,6 +27,11 @@ const yearsDesc = [...YEARS].reverse();
 const src = k.source && sourceLink(k.source, k.page);
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
+// 評価検証報告書（R4〜R6）の基本施策ごとの成果と課題
+const h = hyokaOf(k.id);
+const hSrc = h && planSourceLink('hyoka', h.source, h.page);
+// この基本施策の取組が観光ロードマップでも評価されている施策の数
+const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => r.id))).size;
 const progressRows = YEARS.map((y) => ({
   label: yearLabel(y),
   counts: countBy(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === y)), statusOf, statusKeys),
@@ -46,6 +52,38 @@ const progressRows = YEARS.map((y) => ({
     <section aria-labelledby="mezasu">
       <h2 id="mezasu">目指す姿</h2>
       <p class="muted-box">{k.mezasu}</p>
+    </section>
+  )}
+
+  {h && (
+    <section aria-labelledby="hyoka">
+      <h2 id="hyoka">県による4年間のふりかえり（R4〜R6）</h2>
+      <p class="small secondary lead">県の<Term word="評価検証報告書" />（{HYOKA.published}）が、前期実施計画（R4〜R6）のPDCAの結果などをもとに、この基本施策の成果と課題をまとめたものです。</p>
+      <div class="bubble-row voice">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          {h.intro && <p class="intro">{h.intro}</p>}
+          <h3>主な施策の成果</h3>
+          <div data-clamp id="clamp-results"><ul class="pts">{h.results.map((r) => <li>{r}</li>)}</ul></div>
+          <button type="button" class="more" data-clamp-toggle="clamp-results" aria-controls="clamp-results" aria-expanded="false" hidden>続きを読む</button>
+        </div>
+      </div>
+      <div class="bubble-row voice">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          <h3>主な課題</h3>
+          <div data-clamp id="clamp-issues">
+            {h.issues.map((x) => (
+              <>
+                {x.head && <h4>{x.head}</h4>}
+                <ul class="pts">{x.items.map((t) => <li>{t}</li>)}</ul>
+              </>
+            ))}
+          </div>
+          <button type="button" class="more" data-clamp-toggle="clamp-issues" aria-controls="clamp-issues" aria-expanded="false" hidden>続きを読む</button>
+        </div>
+      </div>
+      {hSrc && <p class="small">出典: <a href={hSrc.href} rel="noopener">{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</a></p>}
     </section>
   )}
 
@@ -72,6 +110,7 @@ const progressRows = YEARS.map((y) => ({
         </tbody>
       </table>
     </div>
+    {h?.shuyou && <p class="small muted-box"><strong>県の説明（評価検証報告書）:</strong> {h.shuyou}</p>}
   </section>
 
   <section aria-labelledby="progress">
@@ -81,6 +120,9 @@ const progressRows = YEARS.map((y) => ({
 
   <section aria-labelledby="list">
     <h2 id="list">施策（{shisaku.length}）</h2>
+    {rmCount > 0 && (
+      <p class="small rm-note"><span class="plan-tag">{KANKO.short}</span> この基本施策の主な取組の一部は、県の観光の個別計画「<a href={KANKO.href}>{KANKO.name}</a>」の{rmCount}の施策でも評価されています。</p>
+    )}
     {tenkai.map(([tid, tname]) => (
       <>
         <h3>{tname}</h3>
@@ -124,5 +166,12 @@ const progressRows = YEARS.map((y) => ({
   .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; }
   .item { display: grid; gap: 4px; }
   .report-no { white-space: nowrap; }
+  .rm-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+  .voice { margin-top: 14px; }
+  .voice h3 { margin: 0.6em 0 0.3em; font-size: 1.02rem; }
+  .voice h4 { margin: 0.8em 0 0.2em; font-size: 0.95rem; }
+  .intro { margin: 0 0 4px; font-weight: 700; }
+  .pts { margin: 0; padding-left: 1.2em; }
+  .pts li { margin: 0 0 6px; }
   @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 </style>

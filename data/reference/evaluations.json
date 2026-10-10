@@ -1,0 +1,39 @@
+{
+  "note": "沖縄県PDCA のほかに、県が計画・事業ごとに公表している評価の一覧（このサイトでは中身を取り込んでいないもの）。個別計画のページ（/keikaku/）の「ほかにも県が公表している評価」に出す。件数・区分は公表ページと PDF で確かめたもの",
+  "checked_at": "2026-10-10",
+  "groups": [
+    {
+      "id": "plan",
+      "label": "取組や指標を毎年評価している計画",
+      "items": [
+        { "name": "次代を拓く持続可能な島づくり計画（離島振興計画）PDCA", "dept": "企画部 地域・離島課", "url": "https://www.pref.okinawa.jp/kensei/shinko/1017087/1017118/1028397/index.html", "what": "主な取組（5区分）と成果指標（前進・後退など）。R4〜R6", "note": "新・沖縄21世紀ビジョン実施計画の離島に関する取組・成果指標と重なりが大きい" },
+        { "name": "沖縄県DX推進計画 PDCA検証", "dept": "企画部 デジタル社会推進課", "url": "https://www.pref.okinawa.jp/machizukuri/johoif/1013564/1027110.html", "what": "取組の進捗（5区分）。検証票は Excel。R4〜R6" },
+        { "name": "健康長寿おきなわ復活に向けたロードマップ 活動実績報告", "dept": "保健医療介護部 健康長寿課", "url": "https://www.pref.okinawa.jp/iryokenko/kenko/1006220/1028752.html", "what": "健康おきなわ21（第3次）の取組（A〜Eの5区分）。R6" },
+        { "name": "第3次沖縄県環境基本計画 進捗状況", "dept": "環境部", "url": "https://www.pref.okinawa.lg.jp/kurashikankyo/kankyo/1004287/1038855/index.html", "what": "取組の進捗（5区分）。R5・R6（環境基本計画推進会議の資料）" },
+        { "name": "沖縄県教育委員会の事務の点検・評価", "dept": "教育委員会", "url": "https://www.pref.okinawa.lg.jp/kyoiku/edu/1008438/1008449.html", "what": "教育振興基本計画の事業（約150、5区分）と学識経験者の意見。地方教育行政法26条による" },
+        { "name": "沖縄県総合交通体系基本計画 点検・評価", "dept": "企画部 交通政策課", "url": "https://www.pref.okinawa.jp/machizukuri/dorokotsu/1012558/1012581/1022306/1039166.html", "what": "成果指標（74）の達成状況。R4〜R6" },
+        { "name": "新沖縄県行政運営プログラム 推進状況", "dept": "総務部 行政管理課", "url": "https://www.pref.okinawa.jp/kensei/gyosei/1014355/1014365.html", "what": "県庁の行財政運営の実施項目（29）の推進状況" },
+        { "name": "第2期沖縄県地域福祉支援計画 実績評価", "dept": "生活福祉部 福祉政策課", "url": "https://www.pref.okinawa.jp/kyoiku/seikatufukushi/1006788/1006798.html", "what": "関連指標（63）の評価と社会福祉審議会の意見。R6" }
+      ]
+    },
+    {
+      "id": "jigyo",
+      "label": "事業・交付金・公共事業の評価",
+      "items": [
+        { "name": "沖縄振興公共投資交付金（ハードの一括交付金）事業評価", "dept": "総務部 財政課", "url": "https://www.pref.okinawa.lg.jp/kensei/yosan/1015205/1015209.html", "what": "ハード事業の成果目標の評価" },
+        { "name": "沖縄県公共事業評価監視委員会（再評価・事後評価）", "dept": "土木建築部・農林水産部", "url": "https://www.pref.okinawa.jp/machizukuri/toshi/1013622/1013638/1013625/1013658/index.html", "what": "道路・河川・港湾などの個々の公共事業の再評価・事後評価" },
+        { "name": "デジタル田園都市国家構想交付金 効果検証", "dept": "企画部", "url": "https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014216/1037298.html", "what": "交付金事業ごとの KPI の実績（地方創生推進会議の資料）" }
+      ]
+    },
+    {
+      "id": "report",
+      "label": "個別計画の指標の報告",
+      "items": [
+        { "name": "男女共同参画の状況と第6次男女共同参画計画の取組結果", "dept": "こども未来部 女性力・ダイバーシティ推進課", "url": "https://www.pref.okinawa.jp/kurashikankyo/danjo/1005130/1005132/index.html", "what": "指標の基準値・目標値・実績値と取組結果（年次報告）" },
+        { "name": "第8次沖縄県医療計画 進捗評価", "dept": "保健医療介護部 医療政策課", "url": "https://www.pref.okinawa.lg.jp/iryokenko/iryo/1005807/1005824/1034509/index.html", "what": "がん・救急・へき地など12分野の指標の推移と総合評価" },
+        { "name": "沖縄県子どもの貧困対策計画 評価", "dept": "こども未来部 こども若者政策課", "url": "https://www.pref.okinawa.jp/site/kodomo/kodomomirai/kodomonohinkonnnikansurusisakuhyouka.html", "what": "主要指標・関連指標の改善状況（第2期の中間評価）" },
+        { "name": "沖縄県地球温暖化対策実行計画 進捗管理報告書", "dept": "環境部 環境再生課", "url": "https://www.pref.okinawa.jp/site/kankyo/saisei/taisaku/onndannkasinntyokukannrihoukoku.html", "what": "温室効果ガスの排出量と、緩和策・適応策の取組結果" }
+      ]
+    }
+  ]
+}

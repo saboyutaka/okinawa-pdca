@@ -9,11 +9,12 @@ const NOINDEX = true;
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
-// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。also のページ（基本施策・遅れが続いている取組）にいるときも、その項目をいまの場所にする
+// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。個別計画（観光ロードマップなど）は基本計画とは別の計画なので将来像の隣に置く。also のページ（基本施策・遅れが続いている取組）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
   { href: '/theme/', label: 'くらしのテーマ' },
   { href: '/future/', label: '将来像', also: ['/kihon/'] },
+  { href: '/keikaku/', label: '個別計画' },
   { href: '/shisaku/', label: '施策' },
   { href: '/torikumi/', label: '取組', also: ['/okure/'] },
   { href: '/shihyou/', label: '成果指標' },
@@ -73,6 +74,7 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     <footer class="site-footer">
       <div class="wrap">
         <p>出典: 沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
+        <p>個別計画のページは「<a href={LINKS.kankoRm} rel="noopener">沖縄観光推進ロードマップPDCA</a>」、施策のページの一括交付金は「<a href={LINKS.ikkatsu} rel="noopener">沖縄振興特別推進交付金の事後評価</a>」、基本施策のページの県の総括は「<a href={LINKS.hyoka} rel="noopener">新・沖縄21世紀ビジョン基本計画 評価検証報告書</a>」から読み取っています。</p>
         <p>「くらしのテーマ」は、このサイトが独自にまとめた分類です。県の計画の分類ではありません。</p>
         <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a>）</p>
       </div>
