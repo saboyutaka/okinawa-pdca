@@ -3,7 +3,7 @@
 
 help:
 	@echo "make fetch         県サイトから報告書を取得（ホストの python3、標準ライブラリのみ）"
-	@echo "make extract       総括報告書から施策・取組・指標を抽出して公表値と突き合わせ"
+	@echo "make extract       総括報告書と部局別の検証票から抽出して公表値と突き合わせ"
 	@echo "make check         抽出結果を公表値と突き合わせるだけ"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make dev           サイトの開発サーバー（http://localhost:4321/）"
@@ -16,6 +16,7 @@ fetch:
 extract:
 	docker compose run --rm tools python scripts/expand_zips.py --source soukatsu
 	docker compose run --rm tools python scripts/extract_soukatsu.py
+	docker compose run --rm tools python scripts/extract_bukyoku.py
 	python3 scripts/check_extracted.py
 
 check:

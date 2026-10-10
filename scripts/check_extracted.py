@@ -97,6 +97,18 @@ def main() -> int:
             judge = Counter(s["judge"] or "なし" for s in rows["shisaku"])
             diff = {k: f"{judge.get(k, 0)}/{v}" for k, v in exp["judge"].items() if judge.get(k, 0) != v}
             print(f"  {'OK ' if not diff else '警告'} 施策の推進状況 " + (f"差（抽出/公表）: {diff}" if diff else "一致"))
+
+    # 部局別の検証票（予算）が総括報告書のどの取組に結び付いたか（参考）
+    budget_path = d.parent / "bukyoku" / "torikumi_budget.json"
+    if budget_path.exists():
+        budget = json.loads(budget_path.read_text(encoding="utf-8"))
+        print("== 部局別の検証票（予算）")
+        for year in EXPECTED:
+            keys = {(t["shisaku_id"], t["key"]) for t in data["torikumi"] if t["year"] == year}
+            found = {(b["shisaku_id"], b["key"]) for b in budget if b["year"] == year}
+            orphan = len(found - keys)
+            print(f"  R{year - 2018}: 総括の取組 {len(keys)} のうち部局票あり {len(keys & found)}"
+                  + (f"、総括に無い取組 {orphan}" if orphan else ""))
     return 1 if failed else 0
 
 
