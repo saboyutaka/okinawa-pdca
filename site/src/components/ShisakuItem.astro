@@ -23,12 +23,11 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 ---
 <li class="item s-item" {...attrs}>
   <div class="item-head">
-    <span class="code">{s.code}</span>
     <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
   </div>
   <div class="item-meta">
     <Sz id={s.shouraizou} />
-    <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
+    <a href={`/kihon/${s.kihon_id}/`}>{kihon?.name}</a>
     <span class="dept">{s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : s.kankei}</span>
   </div>
   <div class="item-body">

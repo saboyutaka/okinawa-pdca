@@ -424,7 +424,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <h2 id="repost">同じ取組が載っている施策</h2>
       <p class="small secondary">総括報告書では、1つの取組が複数の施策に載っていることがあります（再掲）。</p>
       <ul class="reposts">
-        {reposts.map((o) => <li><a class="tag" href={o.href}><Sz id={o.shisaku.shouraizou} />施策 {o.shisaku.code} {o.shisaku.name}</a></li>)}
+        {reposts.map((o) => <li><a class="tag" href={o.href}><Sz id={o.shisaku.shouraizou} />施策 {o.shisaku.name}</a></li>)}
       </ul>
     </section>
   )}

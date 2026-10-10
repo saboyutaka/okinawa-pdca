@@ -82,7 +82,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       if (!items.length) return null;
       return (
         <section data-group>
-          <h2 class="group-title"><Sz id={k.shouraizou} /> <span class="code">{k.code}</span> <a href={`/kihon/${k.id}/`}>{k.name}</a></h2>
+          <h2 class="group-title"><Sz id={k.shouraizou} /> <a href={`/kihon/${k.id}/`}>{k.name}</a></h2>
           <ul class="list">
             {items.map((r) => {
               const x = r.latest;
@@ -106,7 +106,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
                     {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
                   </div>
                   <div class="small">
-                    施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.code} {r.shisaku.name}</a>
+                    施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a>
                     　担当 {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : <span class="secondary">{x.dept || '—'}</span>}
                   </div>
                   <div class="vals small">

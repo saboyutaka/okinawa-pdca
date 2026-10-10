@@ -322,7 +322,6 @@ a.ttag:hover { background: var(--sky); }
 .active-chip:hover { background: var(--paper); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 16px; min-width: 0; }
-.code { font-family: var(--font); font-size: 0.875rem; color: var(--ink-2); font-weight: 400; font-variant-numeric: tabular-nums; }
 .years { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 

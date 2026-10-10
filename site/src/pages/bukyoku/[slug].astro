@@ -118,7 +118,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
             return (
               <li class="item">
                 <strong>{g.name}</strong> <span class="big">{yen(g.amount)}</span> <small class="secondary">（{[...g.funds].join('・')}）</small>
-                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.name}</a></div>}
               </li>
             );
           })}
@@ -155,7 +155,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
               <li class="item dcard" data-item data-theme={themes.join('|')} data-text={`${g.latest.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name}`}>
                 <a class="d-name" href={g.href}>{g.latest.name}</a>
                 <div class="small secondary">{g.section}</div>
-                <div class="small"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
+                <div class="small"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a></div>
                 <ThemeTags ids={themes} />
                 <Stamps items={YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }))} label="4年の進捗状況" size="small" />
                 <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}</div>
@@ -178,7 +178,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
               <li class="item" data-item data-theme={themes.join('|')} data-text={`${x.name} ${x.dept || ''} ${s?.code} ${s?.name}`}>
                 <a href={seikaHref(x.shisaku_id, seikaKeyOf(x))}><strong>{x.name}</strong></a>
                 <span class="small secondary">　{x.dept}</span>
-                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.name}</a></div>}
                 <ThemeTags ids={themes} />
                 <div class="tags">
                   <Chip tone={RATE_BINS.find((b) => b.key === bin)?.tone} text={x.rate != null ? `達成率 ${x.rate}%` : (x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし')} />
@@ -201,7 +201,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
           const themes = themesOf(s.id).map((t) => t.id);
           return (
             <li class="item" data-item data-theme={themes.join('|')} data-text={`${s.code} ${s.name}`}>
-              <Sz id={s.shouraizou} /> <span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a>
+              <Sz id={s.shouraizou} /> <a href={`/shisaku/${s.id}/`}>{s.name}</a>
               <div>{j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} shape={JUDGE_UI[j.key].shape} /> : <Chip text="判定なし" />}</div>
               <ThemeTags ids={themes} />
             </li>

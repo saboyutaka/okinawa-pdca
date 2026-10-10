@@ -102,7 +102,7 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
                 <div class="o-head">
                   <a class="o-name" href={g.href}>{t.name}</a>
                   <div class="o-sec">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</div>
-                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
+                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a></div>
                   <ThemeTags ids={themes} />
                 </div>
                 <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />

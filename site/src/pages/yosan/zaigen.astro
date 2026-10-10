@@ -82,7 +82,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
               <div class="secondary">金額の大きい予算事業</div>
               <ul class="tops">
                 {f.top.map((t) => (
-                  <li>{t.name}（{yen(t.amount)}）{t.shisaku && <><br /><a href={`/shisaku/${t.shisaku.id}/`}>{t.shisaku.code} {t.shisaku.name}</a></>}</li>
+                  <li>{t.name}（{yen(t.amount)}）{t.shisaku && <><br /><a href={`/shisaku/${t.shisaku.id}/`}>{t.shisaku.name}</a></>}</li>
                 ))}
               </ul>
             </div>

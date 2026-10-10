@@ -84,7 +84,7 @@ const progressRows = YEARS.map((y) => ({
             const j = judgeOf(s.judges[LATEST]);
             return (
               <li class="item">
-                <div><span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a></div>
+                <div><a href={`/shisaku/${s.id}/`}>{s.name}</a></div>
                 <div class="row">
                   {j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}
                   <div class="mini"><StatusBar categories={STATUSES} counts={countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys)} context={`${s.name} 主な取組 `} /></div>
