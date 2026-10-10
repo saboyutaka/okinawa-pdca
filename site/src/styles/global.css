@@ -330,6 +330,12 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 }
 /* ステッカーの中の吹き出しは影を付けない（箱の中の箱を浮かせない） */
 .sticker .bubble { box-shadow: none; }
+/* スマホでは印を上に置き、吹き出しを上から出す（横に並べると印の分だけ本文の幅が狭くなるため）。尾は印の真ん中の下に置く */
+@media (max-width: 640px) {
+  .bubble-row { flex-direction: column; gap: 14px; }
+  .bubble { flex: none; align-self: stretch; }
+  .bubble::before { left: 12px; top: -11px; border-bottom: 0; border-top: 2px solid var(--line); }
+}
 
 /* ツールチップ（scripts/tooltip.js・scripts/charts.js） */
 .tooltip {
