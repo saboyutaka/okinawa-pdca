@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import { YEARS, yearLabel, yearLong, getTorikumi } from '../lib/data.js';
+import { YEARS, LATEST, yearLabel, yearLong, getTorikumi, amountEntries, getFinanceReference } from '../lib/data.js';
+import { fmt } from '../lib/format.js';
 import fs from 'node:fs';
 import { LINKS } from '../lib/links.js';
 import path from 'node:path';
@@ -9,6 +10,9 @@ import path from 'node:path';
 const sources = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), '../data/extracted/soukatsu/sources.json'), 'utf-8'));
 const pages = YEARS.map((y) => sources.find((s) => s.year === y && s.page_url)).filter(Boolean);
 // 進捗状況の欄が空欄・「-」の取組の件数（年度別）
+// 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
+const torikumiBudget = Math.round(amountEntries(LATEST, 'estimate').reduce((s, e) => s + e.amount, 0) / 1e5);
+const prefBudget = getFinanceReference().prefecture;
 const blanks = YEARS.map((y) => [y, getTorikumi(y).filter((t) => !t.status).length]).filter(([, n]) => n > 0);
 ---
 <Base title="データについて" description="このサイトのデータの出典・作り方・注意点">
@@ -22,6 +26,14 @@ const blanks = YEARS.map((y) => [y, getTorikumi(y).filter((t) => !t.status).leng
   </p>
   <ul>
     <li><strong>将来像（5）</strong> → <strong>基本施策（36）</strong> → 施策展開 → <strong>施策（339）</strong> → <strong>主な取組（約1,500）</strong>の階層になっています。</li>
+    <li id="torikumi">
+      <strong>主な取組は、県の事業のすべてではありません。</strong>
+      県が実施計画で、施策ごとに「課題の解決に向けた手段となる具体的な事業等」として選んだもので、PDCAはこの主な取組を対象にしています。
+      県の一般会計（令和{prefBudget.year - 2018}年度当初 {fmt(prefBudget.total)}億円）に対して、このサイトで集計した主な取組の予算事業は{yearLabel(LATEST)}の決算見込額で約{fmt(torikumiBudget)}億円です
+      （一般会計には人件費や借金の返済も含むので、比べるのは目安です。<a href="/yosan/zaigen/">予算の財源のしくみ</a>）。
+      主な取組に入っていない県の事業のほか、国・市町村・民間の取組もあり、成果指標の数字はそれらや社会情勢にも左右されます。
+      「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
+    </li>
     <li><strong>主要指標</strong>は基本施策の最終的な成果、<strong>成果指標</strong>は施策の成果、<strong>活動指標</strong>は主な取組の活動量をはかる指標です。</li>
     <li>R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>（目標年度R6）、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
