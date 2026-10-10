@@ -1,10 +1,11 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract check site-install dev build preview
+.PHONY: help fetch extract check issues site-install dev build preview
 
 help:
 	@echo "make fetch         県サイトから報告書を取得（ホストの python3、標準ライブラリのみ）"
 	@echo "make extract       総括報告書と部局別の検証票から抽出して公表値と突き合わせ"
 	@echo "make check         抽出結果を公表値と突き合わせるだけ"
+	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make dev           サイトの開発サーバー（http://localhost:4321/）"
 	@echo "make build         サイトを site/dist に書き出す"
@@ -18,9 +19,13 @@ extract:
 	docker compose run --rm tools python scripts/extract_soukatsu.py
 	docker compose run --rm tools python scripts/extract_bukyoku.py
 	python3 scripts/check_extracted.py
+	python3 scripts/report_issues.py
 
 check:
 	python3 scripts/check_extracted.py
+
+issues:
+	python3 scripts/report_issues.py
 
 site-install:
 	docker compose run --rm site npm ci

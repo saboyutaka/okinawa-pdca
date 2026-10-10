@@ -31,6 +31,20 @@ sys.path.insert(0, str(Path(__file__).parent))
 from extract_soukatsu import FIRST_YEAR, clean, name_key, parse_code, parse_num, shisaku_id, write_json  # noqa: E402
 
 YEAR_DIR = re.compile(r"^(\d{4})-")
+# 桁の誤記の疑い: 同じ行の3つの金額のうち1つだけが、他の金額の最大値の SUSPECT_RATIO 倍以上・SUSPECT_MIN 以上
+SUSPECT_MIN = 1_000_000  # 千円（10億円）
+SUSPECT_RATIO = 50
+AMOUNTS = ("settled", "estimate", "initial")
+
+
+def suspect_kinds(row: dict) -> list[str]:
+    vals = {k: row[k] for k in AMOUNTS if row[k] is not None}
+    out = []
+    for k, v in vals.items():
+        others = [x for kk, x in vals.items() if kk != k]
+        if v >= SUSPECT_MIN and others and v >= SUSPECT_RATIO * max(max(others), 1):
+            out.append(k)
+    return out
 
 
 def is_overview(rows) -> bool:
@@ -118,6 +132,7 @@ def read_budget(rows) -> list[dict]:
             r["settled"] = parse_num(r["settled_raw"])
             r["estimate"] = parse_num(r["estimate_raw"])
             r["initial"] = parse_num(r["initial_raw"])
+            r["suspect"] = suspect_kinds(r)
         blocks.append(block)
     return blocks
 

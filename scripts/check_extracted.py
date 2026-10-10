@@ -38,31 +38,47 @@ def plan_index(year: int) -> int:
     return year - 2022 if year <= 2024 else year - 2025
 
 
-def verify_formulas(seika: list[dict], year: int) -> tuple[Counter, Counter]:
-    """概要版に書かれた式で、計画値と達成率を計算し直して報告書の値と比べる。
+def expected_plans(s: dict) -> list[float] | None:
+    """概要版の式で計算した計画値（計画期間の3年分）。基準値・目標値が数値で読めなければ None。
 
     計画値 = 目標値 - (目標値 - 基準値) × 残年数 / N   （R4〜R6: N=3・目標年度R6、R7〜: N=6・目標年度R9）
-    達成率 = (実績値 - 基準値) / (その年度の計画値 - 基準値) × 100
     """
-    n, end = (3, 2024) if year <= 2024 else (6, 2027)
-    start = 2022 if year <= 2024 else 2025
-    plan_ok, rate_ok = Counter(), Counter()
-    for s in seika:
-        base, target, plans = s["base"], s["target"], s["plan"]
-        if base is not None and target is not None and plans and None not in plans:
-            ok = all(abs(target - (target - base) * (end - (start + j)) / n - p) <= max(0.051, abs(p) * 0.01)
-                     for j, p in enumerate(plans))
-            plan_ok["式どおり" if ok else "式と違う"] += 1
-        else:
-            plan_ok["計算できない"] += 1
-        i = plan_index(year)
-        plan = plans[i] if plans and len(plans) > i else None
-        if None in (s["rate"], base, s["actual"], plan) or plan == base:
-            rate_ok["計算できない"] += 1
-            continue
-        r = (s["actual"] - base) / (plan - base) * 100
-        rate_ok["式どおり" if abs(r - s["rate"]) <= 0.15 else "式と違う"] += 1
-    return plan_ok, rate_ok
+    year, base, target = s["year"], s["base"], s["target"]
+    if base is None or target is None:
+        return None
+    n, start, end = (3, 2022, 2024) if year <= 2024 else (6, 2025, 2027)
+    return [target - (target - base) * (end - (start + j)) / n for j in range(3)]
+
+
+def plan_matches(s: dict) -> bool | None:
+    """報告書の計画値が式どおりか。計算できなければ None。"""
+    exp, plans = expected_plans(s), s["plan"]
+    if exp is None or not plans or None in plans:
+        return None
+    return all(abs(e - p) <= max(0.051, abs(p) * 0.01) for e, p in zip(exp, plans))
+
+
+def expected_rate(s: dict) -> float | None:
+    """達成率 = (実績値 - 基準値) / (その年度の計画値 - 基準値) × 100。計算できなければ None。"""
+    i = plan_index(s["year"])
+    plan = s["plan"][i] if s["plan"] and len(s["plan"]) > i else None
+    if None in (s["base"], s["actual"], plan) or plan == s["base"]:
+        return None
+    return (s["actual"] - s["base"]) / (plan - s["base"]) * 100
+
+
+def rate_matches(s: dict) -> bool | None:
+    """報告書の達成率が式どおりか（0.15ポイントまでの差は丸めとみなす）。計算できなければ None。"""
+    r = expected_rate(s)
+    if r is None or s["rate"] is None:
+        return None
+    return abs(r - s["rate"]) <= 0.15
+
+
+def verify_formulas(seika: list[dict]) -> tuple[Counter, Counter]:
+    """概要版に書かれた式で、計画値と達成率を計算し直して報告書の値と比べた件数。"""
+    label = {True: "式どおり", False: "式と違う", None: "計算できない"}
+    return Counter(label[plan_matches(s)] for s in seika), Counter(label[rate_matches(s)] for s in seika)
 
 
 def main() -> int:
@@ -89,7 +105,7 @@ def main() -> int:
         mark = "OK " if got == exp["status"] else "警告"
         print(f"  {mark} 進捗内訳 {got}（公表 {exp['status']}）" + (f" 欄の表記がそれ以外: {odd}" if odd else ""))
 
-        plan_ok, rate_ok = verify_formulas(rows["seika"], year)
+        plan_ok, rate_ok = verify_formulas(rows["seika"])
         print(f"  参考 計画値を式で再計算: {dict(plan_ok)}")
         print(f"  参考 達成率を式で再計算: {dict(rate_ok)}")
 
