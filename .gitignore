@@ -13,3 +13,6 @@ site/.astro/
 
 # Cloudflare のツールが作るキャッシュ（アカウント情報を含む）
 .cloudflare/
+
+# Claude Code の作業用 worktree（別のチェックアウトなのでコミットしない）
+.claude/worktrees/
