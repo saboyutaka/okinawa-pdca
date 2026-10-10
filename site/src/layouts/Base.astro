@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+
+interface Props { title?: string; description?: string }
+const SITE = '沖縄県PDCAダッシュボード';
+const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE}` : SITE;
+const path = Astro.url.pathname;
+---
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="site-title" href="/">{SITE}<small class="secondary">（非公式）</small></a>
+        <nav class="site-nav" aria-label="サイト内">
+          <a href="/" aria-current={path === '/' ? 'page' : undefined}>トップ</a>
+          <a href="/shisaku/" aria-current={path.startsWith('/shisaku') ? 'page' : undefined}>施策をさがす</a>
+          <a href="/about/" aria-current={path.startsWith('/about') ? 'page' : undefined}>データについて</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>出典: 沖縄県「沖縄県PDCA実施結果」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
+      </div>
+    </footer>
+    <script src="../scripts/tooltip.js"></script>
+  </body>
+</html>

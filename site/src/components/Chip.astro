@@ -1,0 +1,6 @@
+---
+// 状態の印（色の点＋文字）。tone が無いときは「公表なし」などの空の印
+interface Props { tone?: string | null; text: string; title?: string }
+const { tone, text, title } = Astro.props;
+---
+<span class:list={['chip', tone ? `tone-${tone}` : 'empty']} title={title}>{text}</span>

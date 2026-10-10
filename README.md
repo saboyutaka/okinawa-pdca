@@ -52,3 +52,37 @@ data/
 
 - `raw/` は不変。抽出結果は必ず `manifest.jsonl` の `file_url`（＋PDFページ番号）を出典として持つ。
 - PDF・zip・HTMLはリポジトリに含めない（`.gitignore`）。`manifest.jsonl`・`pages.jsonl` はコミットする。
+
+## 抽出（総括報告書 R4〜R7）
+
+ホストに Python のPDFライブラリは入れず、解析用コンテナ（`docker/tools`）で動かす。
+
+```sh
+make extract   # zip展開 → 抽出 → 公表値との突き合わせ
+make check     # 突き合わせだけ（ホストの python3）
+```
+
+- 入力は総括報告書（soukatsu）の「将来像1〜5」と「付属資料」。どのファイルかは manifest のリンク文言で判定する。
+- 出力は `data/extracted/soukatsu/` の JSON（将来像・基本施策・施策・主な取組・成果指標・主要指標・出典）。サイトはこれを読んでビルドするのでコミットする。
+- 施策・主な取組・成果指標・基本施策の件数は、4年度とも概要版の公表値と一致することを `scripts/check_extracted.py` で確認している。進捗の内訳・施策の判定の数件の差は、報告書の欄が空欄・「-」のものと、県が集計で「その他」に回す施策によるもの（サイトの「データについて」に明記）。
+
+## 公開サイト（site/）
+
+Astro で全ページを静的HTMLとして書き出す（トップ・施策一覧・施策339・基本施策36・データについて）。ブラウザでデータベースは動かさず、ビルド時に `data/extracted` を読んでページにする。
+
+```sh
+make site-install  # 初回のみ
+make dev           # http://localhost:4321/
+make build         # site/dist に書き出し
+```
+
+Cloudflare Pages の設定（Git 連携の場合）:
+
+| 項目 | 値 |
+|---|---|
+| ルートディレクトリ | `site` |
+| ビルドコマンド | `npm run build` |
+| 出力ディレクトリ | `dist` |
+| Node | `site/.node-version`（24） |
+
+ビルドは `../data/extracted` を読むので、リポジトリ全体がチェックアウトされている必要がある。

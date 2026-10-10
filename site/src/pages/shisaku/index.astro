@@ -1,0 +1,180 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusBar from '../../components/StatusBar.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, JUDGES, judgeOf, statusOf, rateBin, countBy,
+  getShisakuList, getShouraizou, getKihonList,
+} from '../../lib/data.js';
+
+const shisaku = getShisakuList();
+const shouraizou = getShouraizou();
+const kihon = getKihonList();
+const depts = [...new Set(shisaku.flatMap((s) => s.depts))].sort((a, b) => a.localeCompare(b, 'ja'));
+const judgeYears = YEARS.filter((y) => shisaku.some((s) => s.judges[y]));
+const statusKeys = STATUSES.map((s) => s.key);
+const rateText = (s) => (s.rate != null ? `達成率 ${s.rate}%` : s.rate_raw === '-%' || !s.rate_raw ? '達成率なし' : s.rate_raw);
+
+const groups = kihon.map((k) => ({
+  kihon: k,
+  items: shisaku.filter((s) => s.kihon_id === k.id),
+}));
+---
+<Base title="施策をさがす" description="沖縄県PDCAの339施策を、将来像・判定・担当部局・キーワードで絞り込んで探せます。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
+  <h1>施策をさがす</h1>
+  <p class="secondary">
+    新・沖縄21世紀ビジョン実施計画の339施策です。判定は{yearLong(LATEST)}の県の「施策の推進状況」、棒は{yearLong(LATEST)}の主な取組の進捗状況の内訳です。
+  </p>
+
+  <form class="filters" id="filters" role="search" aria-label="施策の絞り込み">
+    <label>将来像
+      <select name="s">
+        <option value="">すべて</option>
+        {shouraizou.map((s) => <option value={s.id}>将来像{s.id}</option>)}
+      </select>
+    </label>
+    <label>判定（{yearLabel(LATEST)}）
+      <select name="judge">
+        <option value="">すべて</option>
+        {JUDGES.map((j) => <option value={j.key}>{j.key} {j.label}</option>)}
+        <option value="CD">C・D（成果が遅れている）</option>
+        <option value="EF">E・F（取組が遅れている）</option>
+      </select>
+    </label>
+    <label>担当部局
+      <select name="dept">
+        <option value="">すべて</option>
+        {depts.map((d) => <option value={d}>{d}</option>)}
+      </select>
+    </label>
+    <label class="q">キーワード
+      <input type="search" name="q" placeholder="例: 離島、子ども、観光" />
+    </label>
+  </form>
+  <p class="result-count" aria-live="polite"><span id="count">{shisaku.length}</span>施策を表示</p>
+
+  {groups.map(({ kihon: k, items }) => (
+    <section class="group" data-group>
+      <h2 class="group-title">
+        <span class="code">{k.code}</span>
+        <a href={`/kihon/${k.id}/`}>{k.name}</a>
+      </h2>
+      <ul class="list">
+        {items.map((s) => {
+          const counts = countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys);
+          const seika = s.seika.filter((x) => x.year === LATEST);
+          const j = judgeOf(s.judges[LATEST]);
+          return (
+            <li
+              class="item"
+              data-s={String(s.shouraizou)}
+              data-judge={s.judges[LATEST] ?? ''}
+              data-depts={s.depts.join('|')}
+              data-text={`${s.code} ${s.name} ${s.tenkai_name} ${k.name} ${s.kankei} ${s.torikumi.filter((t) => t.year === LATEST).map((t) => t.name).join(' ')}`}
+            >
+              <div class="item-head">
+                <span class="code">{s.code}</span>
+                <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
+                <span class="item-dept">{s.kankei}</span>
+              </div>
+              <div class="item-body">
+                <div class="judges">
+                  {j ? <Chip tone={j.tone} text={`${j.key} ${j.label}`} /> : <Chip text="判定なし" />}
+                  <span class="past">
+                    {judgeYears.filter((y) => y !== LATEST).map((y) => {
+                      const pj = judgeOf(s.judges[y]);
+                      return <Chip tone={pj?.tone} text={`${yearLabel(y)} ${pj?.key ?? '—'}`} title={pj ? `${yearLabel(y)}: ${pj.label}` : `${yearLabel(y)}: 判定なし`} />;
+                    })}
+                  </span>
+                </div>
+                <div class="mini">
+                  <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} />
+                </div>
+                <div class="seika small secondary">
+                  成果指標: {seika.map((x) => `${x.name}（${rateText(x)}）`).join('／') || '—'}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ))}
+  <p id="empty" class="secondary" hidden>条件に合う施策はありません。</p>
+</Base>
+
+<script>
+  // 絞り込み。条件は URL のクエリにも残すので、そのまま共有できる
+  const form = document.getElementById('filters') as HTMLFormElement;
+  const items = [...document.querySelectorAll<HTMLElement>('.item')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-group]')];
+  const count = document.getElementById('count')!;
+  const empty = document.getElementById('empty')!;
+  const norm = (s: string) => s.normalize('NFKC').toLowerCase();
+
+  function apply() {
+    const f = new FormData(form);
+    const s = String(f.get('s') || '');
+    const judge = String(f.get('judge') || '');
+    const dept = String(f.get('dept') || '');
+    const words = norm(String(f.get('q') || '')).split(/\s+/).filter(Boolean);
+    let n = 0;
+    for (const el of items) {
+      const d = el.dataset;
+      const text = norm(d.text || '');
+      const ok =
+        (!s || d.s === s) &&
+        (!judge || (d.judge !== '' && judge.includes(d.judge!))) &&
+        (!dept || (d.depts || '').split('|').includes(dept)) &&
+        words.every((w) => text.includes(w));
+      el.hidden = !ok;
+      if (ok) n++;
+    }
+    for (const g of groups) g.hidden = !g.querySelector('.item:not([hidden])');
+    count.textContent = String(n);
+    empty.hidden = n > 0;
+    const params = new URLSearchParams();
+    for (const [k, v] of f.entries()) if (v) params.set(k, String(v));
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  const init = new URLSearchParams(location.search);
+  for (const [k, v] of init) {
+    const el = form.elements.namedItem(k) as HTMLInputElement | HTMLSelectElement | null;
+    if (el) el.value = v;
+  }
+  form.addEventListener('input', apply);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  apply();
+</script>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
+  .filters label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--ink-2); }
+  .filters select, .filters input {
+    font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--baseline); border-radius: 8px; padding: 6px 10px; min-height: 40px; max-width: 100%;
+  }
+  .filters .q { flex: 1 1 14em; }
+  .filters .q input { width: 100%; }
+  .result-count { font-size: 0.9rem; color: var(--ink-2); }
+  .group-title { font-size: 1.05rem; margin: 2em 0 0.5em; }
+  .code { font-size: 0.8rem; color: var(--ink-2); font-weight: 400; margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
+  .item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .item-name { font-weight: 600; }
+  .item-dept { font-size: 0.8rem; color: var(--ink-2); margin-left: auto; }
+  .item-body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 6px 16px; margin-top: 8px; align-items: center; }
+  .judges { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+  .judges > :global(.chip) { white-space: normal; }
+  .past { display: inline-flex; gap: 10px; }
+  .past :global(.chip) { font-size: 0.75rem; color: var(--ink-2); }
+  .seika { grid-column: 1 / -1; line-height: 1.5; }
+  @media (max-width: 640px) {
+    .item-body { grid-template-columns: 1fr; }
+    .item-dept { margin-left: 0; width: 100%; }
+  }
+</style>

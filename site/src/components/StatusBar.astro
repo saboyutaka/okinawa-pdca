@@ -1,0 +1,42 @@
+---
+// 100%積み上げの横棒1本。区切りは2pxのすき間で表し、枠線は引かない
+import { fmt, pct } from '../lib/format.js';
+
+interface Props {
+  categories: { key: string; tone: string }[];
+  counts: Record<string, number>;
+  unit?: string;
+  context?: string;
+  /** 棒の中に割合を書く区分（入りきるときだけ） */
+  labelKey?: string;
+}
+const { categories, counts, unit = '件', context = '', labelKey = categories[0]?.key } = Astro.props;
+const total = categories.reduce((s, c) => s + (counts[c.key] || 0), 0);
+const segs = categories.filter((c) => counts[c.key] > 0).map((c) => ({ ...c, n: counts[c.key] }));
+const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}`;
+---
+<div class="sbar" role="img" aria-label={aria}>
+  {segs.map((s) => (
+    <span
+      class={`seg tone-${s.tone}`}
+      style={`flex-grow:${s.n}`}
+      tabindex="0"
+      data-tip-value={`${fmt(s.n)}${unit}（${pct(s.n, total)}）`}
+      data-tip-label={`${context}${s.key}`}
+    >
+      {s.key === labelKey && s.n / total >= 0.18 && <span class="seg-label">{pct(s.n, total)}</span>}
+    </span>
+  ))}
+</div>
+
+<style>
+  .sbar { display: flex; gap: 2px; height: 22px; width: 100%; }
+  .seg {
+    flex-basis: 0; min-width: 3px; background: var(--tone);
+    display: flex; align-items: center; padding-left: 6px; overflow: visible;
+  }
+  .seg:last-child { border-radius: 0 4px 4px 0; }
+  .seg:hover, .seg:focus-visible { filter: brightness(1.12); }
+  /* 塗りの上の文字は塗りの明るさで決める（緑・黄・橙は濃い文字が読める） */
+  .seg-label { color: #0b0b0b; font-size: 0.8rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+</style>
