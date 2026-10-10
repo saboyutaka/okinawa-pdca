@@ -25,8 +25,8 @@ const visions = getShouraizou().map((v) => {
     shisaku: ss.length,
     cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST])).length,
     rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
-      label: `${k.code} ${k.name}`,
-      sub: `${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
+      label: k.name,
+      sub: `${k.code}・${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
       href: `/kihon/${k.id}/`,
       counts: countBy(t.filter((x) => x.shisaku_id.startsWith(`${k.id}-`)), statusOf, statusKeys),
     })),

@@ -113,9 +113,9 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const badge = el('span', `badge-sz sz-${sz}`, String(sz));
     badge.setAttribute('aria-hidden', 'true');
     s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
-    const a = el('a', '', `${code} ${sname}`) as HTMLAnchorElement;
+    const a = el('a', '', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
-    s.append(a);
+    s.append(a, ' ', el('span', 'code-no', code));
     const years = el('div', 'years');
     data.years.forEach((y, i) => {
       const box = el('span');

@@ -175,7 +175,7 @@ const suspects = getSuspects();
                   return (
                     <li>
                       {t && <Chip tone={toneOfStatus(statusOf(t))} text={statusOf(t)} />} {href ? <a href={href}>{l.torikumi}</a> : l.torikumi}
-                      <br /><a href={`/shisaku/${l.shisaku_id}/`}>{s?.code} {s?.name}</a>
+                      <br /><a href={`/shisaku/${l.shisaku_id}/`}>{s?.name}</a> <span class="code-no">{s?.code}</span>
                     </li>
                   );
                 })}

@@ -49,7 +49,7 @@ const rest = unthemed();
     <details class="rest">
       <summary>どのテーマにも入らない施策（{fmt(rest.length)}）</summary>
       <ul>
-        {rest.map((s) => <li><a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></li>)}
+        {rest.map((s) => <li><a href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></li>)}
       </ul>
     </details>
   )}

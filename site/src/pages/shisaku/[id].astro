@@ -59,17 +59,18 @@ const pastYears = yearsDesc.filter((y) => y !== LATEST && s.years[y] && (s.years
 const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 ---
-<Base title={`${s.name}（施策 ${s.code}）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: `施策 ${s.code}` }]} />
+<Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: s.name }]} />
 
   <header class="sticker head">
+    <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <div class="head-main">
-      <div class="code">施策 {s.code}　／　施策展開 {s.tenkai_name}</div>
+      <div class="kind">施策展開「{s.tenkai_name}」の<Term word="施策" /></div>
       <h1>{s.name}</h1>
       <div class="meta">
         <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
         <a class:list={['sz-ribbon', 'sz-link', `sz-${s.shouraizou}`]} href={`/future/${s.shouraizou}/`}><Sz id={s.shouraizou} sr={false} />将来像{s.shouraizou} {shou?.name}</a>
-        <span>基本施策 <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a></span>
+        <span>基本施策 <a href={`/kihon/${s.kihon_id}/`}>{kihon?.name}</a></span>
         {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
     </div>
@@ -189,6 +190,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>
+    <p class="small">県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>（<span class="report-no">基本施策 {kihon?.code}</span>）です。報告書の PDF では、この番号で探せます。</p>
     <ul class="small">
       {yearsDesc.map((y) => {
         const r = s.years[y];
@@ -206,9 +208,10 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 </Base>
 
 <style>
-  .head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; }
+  .head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: start; margin-top: 12px; padding-top: 30px; }
   .head h1 { margin: 4px 0 8px; }
-  .head .code { font-size: 0.9375rem; }
+  .kind { font-size: 0.9375rem; color: var(--ink-2); }
+  .report-no { white-space: nowrap; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .sz-link { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; padding-block: 2px; box-shadow: 2px 2px 0 var(--shadow); }

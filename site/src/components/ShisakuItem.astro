@@ -22,13 +22,13 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
 const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 ---
 <li class="item s-item" {...attrs}>
-  <div class="item-head">
-    <span class="code">{s.code}</span>
+  <div class="item-head name-row">
     <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
+    <span class="code-no">{s.code}</span>
   </div>
   <div class="item-meta">
     <Sz id={s.shouraizou} />
-    <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
+    <a href={`/kihon/${s.kihon_id}/`}>{kihon?.name}</a>
     <span class="dept">{s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : s.kankei}</span>
   </div>
   <div class="item-body">
@@ -53,7 +53,6 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 </li>
 
 <style>
-  .item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   .item-name { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 0.875rem; color: var(--ink-2); margin-top: 2px; }
   .item-meta a { color: var(--ink-2); }
