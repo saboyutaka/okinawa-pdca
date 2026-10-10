@@ -49,6 +49,7 @@ const pats = [
       <select name="st">
         <option value="">すべて</option>
         {STATUSES.map((s, i) => <option value={i}>{s.key}</option>)}
+        <option value="delay">遅れ（やや遅れ・大幅遅れ・未着手）</option>
         <option value="none">{yearLabel(LATEST)}の報告に無い</option>
       </select>
     </label>
@@ -57,6 +58,7 @@ const pats = [
         <option value="">すべて</option>
         <option value="delay4">4年とも遅れ</option>
         <option value="delay3">3年以上遅れ</option>
+        <option value="streak">{yearLabel(LATEST - 2)}から{yearLabel(LATEST)}まで続けて遅れ（今も遅れている）</option>
         <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
         <option value="newdelay">{yearLabel(LATEST - 1)}の順調・概ね順調から{yearLabel(LATEST)}で遅れ</option>
         <option value="new">{yearLabel(LATEST)}で新しく出た</option>
@@ -181,11 +183,12 @@ const pats = [
       if (s && String(sh[2]) !== s) return false;
       if (dept && d !== dept) return false;
       if (ti >= 0 && !r[10].includes(ti)) return false;
-      if (st === 'none' ? sts[last] != null : st && sts[last] !== Number(st)) return false;
+      if (st === 'none' ? sts[last] != null : st === 'delay' ? !(sts[last] != null && DELAY.has(sts[last]!)) : st && sts[last] !== Number(st)) return false;
       const delays = sts.filter((x) => x != null && DELAY.has(x)).length;
       const all = sts.every((x) => x != null);
       if (pat === 'delay4' && !(all && delays === 4)) return false;
       if (pat === 'delay3' && !(all && delays >= 3)) return false;
+      if (pat === 'streak' && ![last - 2, last - 1, last].every((i) => sts[i] != null && DELAY.has(sts[i]!))) return false;
       if (pat === 'recover' && !(sts[last - 1] != null && DELAY.has(sts[last - 1]!) && sts[last] === 0)) return false;
       if (pat === 'newdelay' && !(sts[last - 1] != null && sts[last - 1]! <= 1 && sts[last] != null && DELAY.has(sts[last]!))) return false;
       if (pat === 'new' && !(sts[last] != null && sts[last - 1] == null)) return false;
