@@ -87,7 +87,8 @@ body {
 a { color: var(--link); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
 a:hover { text-decoration-thickness: 2.5px; }
 :focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
-h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; }
+/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり） */
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; word-break: auto-phrase; }
 h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0.25em 0 0.5em; letter-spacing: 0.02em; }
 h2 { font-size: 1.35rem; margin: 2.2em 0 0.6em; }
 h3 { font-size: 1.08rem; margin: 1.6em 0 0.4em; }

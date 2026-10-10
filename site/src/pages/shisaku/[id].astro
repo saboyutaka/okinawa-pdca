@@ -9,12 +9,11 @@ import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
-import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
+  getShisakuList, getShisaku, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
 } from '../../lib/data.js';
 import { JUDGE_UI } from '../../lib/icons.js';
 import { themesOf } from '../../lib/themes.js';
@@ -28,7 +27,6 @@ export function getStaticPaths() {
 
 const s = getShisaku(Astro.params.id);
 const kihon = getKihonList().find((k) => k.id === s.kihon_id);
-const shou = getShouraizou().find((x) => x.id === s.shouraizou);
 const tRows = torikumiRows(s);
 const sRows = seikaRows(s);
 const statusKeys = STATUSES.map((x) => x.key);
@@ -61,7 +59,7 @@ const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 ---
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: s.name }]} />
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} />
 
   <header class="sticker lift head">
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
@@ -70,8 +68,6 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
       <h1>{s.name}</h1>
       <div class="meta">
         <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
-        <a class:list={['sz-ribbon', 'sz-link', `sz-${s.shouraizou}`]} href={`/future/${s.shouraizou}/`}><Sz id={s.shouraizou} sr={false} />将来像{s.shouraizou} {shou?.name}</a>
-        <span>基本施策 <a href={`/kihon/${s.kihon_id}/`}>{kihon?.name}</a></span>
         {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
     </div>
@@ -215,8 +211,6 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   .report-no { white-space: nowrap; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .sz-link { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; padding-block: 2px; box-shadow: 2px 2px 0 var(--shadow); }
-  .sz-link:hover { filter: brightness(1.04); text-decoration: underline; }
   .head-side { display: grid; justify-items: center; gap: 14px; width: 232px; }
   .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; }
   .stamp-big .circle {
