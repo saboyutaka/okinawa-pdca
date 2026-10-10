@@ -121,7 +121,3 @@ git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使�
 | Node | `site/.node-version`（24）。読まれないときは環境変数 `NODE_VERSION=24` |
 
 ビルドは `../data/extracted` と `../data/reference` を読むので、リポジトリ全体がチェックアウトされている必要がある（Workers Builds はリポジトリ全体を取得する）。
-
-## ライセンス
-
-ライセンスは県に確認してから決定。

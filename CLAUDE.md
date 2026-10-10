@@ -68,5 +68,3 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 公開
 
 Cloudflare Workers の静的アセットとして `site/dist` を置く（`site/wrangler.jsonc`。GitHub 連携で main に push すると、ビルドしてから `wrangler deploy` される。main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになり、`wrangler.jsonc` に `previews` の枠が要る）。配信時のヘッダーは `site/public/_headers`。いまは公開前（ステルス）なので検索エンジンに載せない設定（`Base.astro` の `NOINDEX` と `_headers` の `X-Robots-Tag: noindex, nofollow`）。robots.txt では止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
-
-ライセンスは県に確認してから決定。
