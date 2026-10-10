@@ -1,13 +1,13 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Chip from '../../components/Chip.astro';
+import SeikaRow from '../../components/SeikaRow.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
 import {
-  LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, toneOfJudgement, seikaDept,
-  getSeikaGroups, getKihonList, getShouraizou, withUnit, seikaHref,
+  LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, seikaDept,
+  getSeikaGroups, getKihonList, getShouraizou, seikaHref,
 } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { LINKS } from '../../lib/links.js';
@@ -20,8 +20,6 @@ const rows = getSeikaGroups();
 const latestCount = rows.filter((r) => r.latest.year === LATEST).length;
 const pastCount = rows.length - latestCount;
 const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.name));
-const toneOfBin = (b) => RATE_BINS.find((x) => x.key === b)?.tone;
-const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし');
 ---
 <Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・くらしのテーマ・将来像・達成率・見通し・担当部局でさがせます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 成果指標をさがす</nav>
@@ -89,38 +87,22 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
           <ul class="row-list">
             {items.map((r) => {
               const x = r.latest;
-              const bin = rateBin(x);
-              const jt = toneOfJudgement(x.judgement);
-              const past = x.year !== LATEST;
               return (
-                <li
-                  class="m-row"
-                  data-item
-                  data-period={past ? 'past' : 'latest'}
-                  data-s={String(r.shisaku.shouraizou)}
-                  data-bin={bin}
-                  data-judge={x.judgement}
-                  data-dept={seikaDept(x)}
-                  data-theme={themeIdsOfItem(r.shisaku.id, x.name).join('|')}
-                  data-text={`${x.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`}
-                >
-                  <div class="m-head">
-                    <span class="ind-name">
-                      <a class="name-link" href={seikaHref(r.shisaku.id, r.key)}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
-                      {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
-                    </span>
-                    <span class="tags">
-                      <Chip tone={toneOfBin(bin)} text={`${rateText(x)}（${yearLabel(x.year)}）`} />
-                      {x.judgement && <Chip tone={jt} text={`見通し: ${x.judgement}`} />}
-                    </span>
-                  </div>
-                  <div class="vals small">
-                    <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
-                    <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
-                    <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
-                  </div>
-                  <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.name}</a> <span class="code-no">{r.shisaku.code}</span></div>
-                </li>
+                <SeikaRow
+                  x={x}
+                  shisaku={r.shisaku}
+                  href={seikaHref(r.shisaku.id, r.key)}
+                  attrs={{
+                    'data-item': '',
+                    'data-period': x.year !== LATEST ? 'past' : 'latest',
+                    'data-s': String(r.shisaku.shouraizou),
+                    'data-bin': rateBin(x),
+                    'data-judge': x.judgement,
+                    'data-dept': seikaDept(x),
+                    'data-theme': themeIdsOfItem(r.shisaku.id, x.name).join('|'),
+                    'data-text': `${x.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`,
+                  }}
+                />
               );
             })}
           </ul>
@@ -137,11 +119,4 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   .search-form .q input { font-size: 1rem; min-height: 44px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
   .gt-name { flex: 1 1 12em; min-width: 0; }
-  /* 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・テーマは絞り込みと施策のページに任せる */
-  .m-row { display: grid; gap: 2px; }
-  .m-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
-  .ind-name { min-width: 0; }
-  .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
-  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; }
 </style>

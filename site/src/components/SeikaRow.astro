@@ -1,0 +1,40 @@
+---
+// 成果指標の一覧の1行（成果指標をさがす・部局のページ。親は ul.row-list）。
+// 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・くらしのテーマは絞り込みと施策のページに任せる
+import Chip from './Chip.astro';
+import { LATEST, yearLabel, RATE_BINS, rateBin, toneOfJudgement, withUnit } from '../lib/data.js';
+
+interface Props { x: any; shisaku: any; href: string; attrs?: Record<string, string> }
+const { x, shisaku: s, href, attrs = {} } = Astro.props;
+const bin = rateBin(x);
+const binTone = RATE_BINS.find((b) => b.key === bin)?.tone;
+const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
+const past = x.year !== LATEST;
+---
+<li class="m-row" {...attrs}>
+  <div class="m-head">
+    <span class="ind-name">
+      <a class="name-link" href={href}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
+      {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
+    </span>
+    <span class="tags">
+      <Chip tone={binTone} text={`${rateText}（${yearLabel(x.year)}）`} />
+      {x.judgement && <Chip tone={toneOfJudgement(x.judgement)} text={`見通し: ${x.judgement}`} />}
+    </span>
+  </div>
+  <div class="vals small">
+    <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
+    <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
+    <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
+  </div>
+  {s && <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+</li>
+
+<style>
+  .m-row { display: grid; gap: 2px; }
+  .m-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+  .ind-name { min-width: 0; }
+  .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
+  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+</style>

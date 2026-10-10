@@ -259,12 +259,5 @@ const pats = [
 <style>
   .pats { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
   .pats a { display: inline-flex; align-items: center; gap: 6px; }
-  /* 1件を1行に。左に名前・所管と施策・活動指標、右に4年のスタンプ */
-  #results :global(.t-row) { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
-  #results :global(.t-main) { display: grid; gap: 2px; min-width: 0; }
-  #results :global(.name) { line-height: 1.5; }
-  @media (max-width: 640px) {
-    #results :global(.t-row) { grid-template-columns: 1fr; }
-    #results :global(.stamps) { max-width: 260px; }
-  }
+  /* 結果の行の形は styles/global.css の .t-row（部局のページと同じ） */
 </style>
