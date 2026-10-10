@@ -81,21 +81,21 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
 const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }));
 ---
 <Base>
-  <section class="hero sticker" aria-labelledby="hero-h">
+  <section class="hero sticker lift" aria-labelledby="hero-h">
     <span class="tag">{yearLong(LATEST)}の結果</span>
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
       沖縄県は毎年、「<a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
     </p>
     <div class="donuts">
-      <div class="donut-card sticker">
+      <div class="donut-card">
         <Donut frac={toriOk / latestTori.length} label={`主な取組のうち順調 ${pct(toriOk, latestTori.length)}`} />
         <div>
           <div class="dc-title">県の主な取組のうち「順調」</div>
           <div class="dc-sub">{fmt(latestTori.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
         </div>
       </div>
-      <div class="donut-card sticker">
+      <div class="donut-card">
         <Donut frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} />
         <div>
           <div class="dc-title"><Term word="成果指標" />のうち<Term word="計画値" />に到達</div>
@@ -245,9 +245,8 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .hero .lead { font-size: 1rem; }
   .pdf-n { font-size: 1.2rem; margin-inline: 1px; }
   .donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
-  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
-  .donut-card:nth-child(1) { transform: rotate(-0.6deg); }
-  .donut-card:nth-child(2) { transform: rotate(0.6deg); }
+  /* ヒーローの中の箱なので線と影は付けず、白い地だけで分ける */
+  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--paper); border-radius: 16px; padding: 14px 16px; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
   .gap { margin-top: 22px; }

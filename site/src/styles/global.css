@@ -98,6 +98,8 @@ small, .small { font-size: 0.875rem; }
 .big { font-family: var(--font-num); font-weight: 600; font-variant-numeric: tabular-nums; }
 .lead { max-width: 46em; }
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; }
+/* hidden 属性は、ページの style で display を付けた要素でも必ず隠す（一覧の絞り込みが hidden で隠すため） */
+[hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* 本文へスキップ（キーボードで最初にフォーカスしたときだけ見える） */
@@ -136,18 +138,23 @@ small, .small { font-size: 0.875rem; }
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
 
-/* ステッカー（カード）。.card は以前の名前 */
+/* ステッカー（カード）。.card は以前の名前。
+   目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
+   1. .sticker.lift … ページの頭とトップのヒーローだけ。太い線と大きな影
+   2. .sticker      … 並ぶカード・図・絞り込み。細めの線と小さな影
+   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける */
 .sticker, .card {
-  background: var(--paper); border: 2.5px solid var(--line); border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); padding: 18px 20px; min-width: 0;
+  background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
+.sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
+.inset, .muted-box { background: var(--bg); border-radius: 14px; padding: 12px 16px; }
 .card + .card { margin-top: 18px; }
 .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .cards > .card { margin-top: 0; }
 figure { margin: 0; }
 .notice {
-  background: var(--pink); border: 2.5px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
+  background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
 }
-.muted-box { background: var(--bg); border-radius: 14px; padding: 12px 16px; }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.875rem; color: var(--ink-2); margin-top: 18px; }
 .breadcrumb a { color: var(--ink); text-decoration: none; padding: 0 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
 .breadcrumb a:hover { background: var(--sky); }
@@ -162,7 +169,7 @@ figure { margin: 0; }
 /* ボタン */
 .button, .pill-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem;
-  color: var(--ink); background: var(--paper); border: 2.5px solid var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--shadow);
+  color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--shadow);
   padding: 6px 18px; min-height: 44px; cursor: pointer; text-decoration: none;
 }
 .pill-btn { color: var(--pop-ink); background: var(--pop); font-size: 1rem; min-height: 48px; padding: 8px 22px; }
@@ -219,8 +226,8 @@ details[open] > summary { margin-bottom: 8px; }
 .sz-5 { --szc: var(--sz-5); --szi: var(--sz-5-ink); --szw: var(--sz-5-wash); }
 /* 将来像の帯（見出し）。番号の印と名前を並べ、地を将来像の淡い色にする */
 .sz-ribbon {
-  display: flex; align-items: center; gap: 10px; background: var(--szw, var(--sky)); border: 2.5px solid var(--line); border-radius: 999px;
-  padding: 4px 16px 4px 5px; box-shadow: 3px 3px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
+  display: flex; align-items: center; gap: 10px; background: var(--szw, var(--sky)); border: 2px solid var(--line); border-radius: 999px;
+  padding: 4px 16px 4px 5px; box-shadow: 2px 2px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
 }
 .sz-ribbon .badge-sz { width: 2.1em; height: 2.1em; font-size: 0.95rem; }
 /* くらしのテーマのラベル（components/ThemeTags.astro）。このサイト独自の分類なので、ピンクの地で県の分類と見分ける */
@@ -249,14 +256,16 @@ a.ttag:hover { background: var(--sky); }
 /* 吹き出し */
 .bubble-row { display: flex; gap: 14px; align-items: flex-start; }
 .avatar {
-  flex: none; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--paper);
-  border: 2.5px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+  flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--paper);
+  border: 2px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem;
 }
-.bubble { position: relative; flex: 1; min-width: 0; background: var(--paper); border: 2.5px solid var(--line); border-radius: 20px; padding: 14px 18px; box-shadow: 4px 4px 0 var(--shadow); }
+.bubble { position: relative; flex: 1; min-width: 0; background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 14px 18px; box-shadow: 3px 3px 0 var(--shadow); }
 .bubble::before {
-  content: ""; position: absolute; left: -12px; top: 16px; width: 18px; height: 18px; background: var(--paper);
-  border-left: 2.5px solid var(--line); border-bottom: 2.5px solid var(--line); transform: rotate(45deg);
+  content: ""; position: absolute; left: -11px; top: 15px; width: 18px; height: 18px; background: var(--paper);
+  border-left: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: rotate(45deg);
 }
+/* ステッカーの中の吹き出しは影を付けない（箱の中の箱を浮かせない） */
+.sticker .bubble { box-shadow: none; }
 
 /* ツールチップ（scripts/tooltip.js・scripts/charts.js） */
 .tooltip {
@@ -326,7 +335,11 @@ a.ttag:hover { background: var(--sky); }
 .active-chip span { font-size: 1rem; color: var(--ink-2); }
 .active-chip:hover { background: var(--paper); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 16px; min-width: 0; }
+.item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; padding: 12px 16px; min-width: 0; }
+/* 一覧の行。1件ずつをステッカーにせず、1つの箱の中に細い線で区切って並べる。
+   区切りは grid のすき間に地の色を見せて描く（絞り込みで隠れた行のぶんの線が残らないように） */
+.rows { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
+.rows > li { background: var(--paper); padding: 12px 16px; min-width: 0; }
 /* 報告書の施策・基本施策の番号（1-(1)-ア-①）。名前より目立たせず、ステッカー・カードの右上の隅か、名前の後ろに小さく薄く置く */
 .code-no { font-family: var(--font); font-size: 0.75rem; font-weight: 400; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .code-corner { position: absolute; top: 7px; right: 16px; }

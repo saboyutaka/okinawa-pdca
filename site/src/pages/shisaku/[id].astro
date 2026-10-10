@@ -62,7 +62,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { label: s.name }]} />
 
-  <header class="sticker head">
+  <header class="sticker lift head">
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <div class="head-main">
       <div class="kind">施策展開「{s.tenkai_name}」の<Term word="施策" /></div>

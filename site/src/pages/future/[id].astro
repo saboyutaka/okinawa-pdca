@@ -89,7 +89,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 <Base title={`将来像${v.id} ${v.name}`} description={`沖縄県PDCA: 将来像${v.id}「${v.name}」の基本施策・施策・主な取組・成果指標の進み具合（令和4〜7年度）`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}` }]} />
 
-  <header class:list={['sticker', 'v-hero', `sz-${v.id}`]}>
+  <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
     <div>
       <div class="v-kicker"><Term word="将来像" />{v.id}</div>

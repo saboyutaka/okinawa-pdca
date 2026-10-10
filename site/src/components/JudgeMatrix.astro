@@ -63,9 +63,9 @@ const GRID = [['A', 'B', 'C'], ['B', 'B', 'D'], ['E', 'F', 'G']];
   .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; }
   .mcell {
     display: grid; align-content: start; gap: 2px; min-height: 100px; padding: 10px 12px; border-radius: 16px; color: var(--ink); text-decoration: none;
-    background-color: color-mix(in oklab, var(--tone) 22%, var(--paper)); border: 2.5px solid var(--line);
+    background-color: color-mix(in oklab, var(--tone) 22%, var(--paper)); border: 2px solid var(--line);
   }
-  a.mcell { box-shadow: 3px 3px 0 var(--shadow); }
+  a.mcell { box-shadow: 2px 2px 0 var(--shadow); }
   a.mcell:hover { background-color: color-mix(in oklab, var(--tone) 38%, var(--paper)); }
   a.mcell:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
   .mcell.hatch { background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--tone) 42%, var(--paper)) 0 2px, transparent 2px 7px); }
