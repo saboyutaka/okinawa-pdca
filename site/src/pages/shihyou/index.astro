@@ -6,6 +6,7 @@ import {
   getSeikaGroups, getKihonList, getShouraizou, getShuyouByYear, withUnit,
 } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
+import { LINKS } from '../../lib/links.js';
 
 const kihon = getKihonList();
 const shouraizou = getShouraizou();
@@ -20,7 +21,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   <h1>指標をさがす</h1>
   <p class="secondary">
     県が施策の成果をはかるために決めている指標です。<strong>主要指標</strong>は基本施策（36）の最終的な成果、<strong>成果指標</strong>は施策（339）ごとの成果をはかります。
-    ここでは{yearLong(LATEST)}の報告の値を載せています。目標値は中期実施計画の目標年度（R9）のものです。
+    ここでは{yearLong(LATEST)}の報告の値を載せています。目標値は<a href={LINKS.chuki} rel="noopener">中期実施計画</a>の目標年度（R9）のものです。
   </p>
 
   <section aria-labelledby="shuyou">

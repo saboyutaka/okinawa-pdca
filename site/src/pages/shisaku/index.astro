@@ -6,6 +6,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, JUDGES, judgeOf, statusOf, rateBin, countBy,
   getShisakuList, getShouraizou, getKihonList,
 } from '../../lib/data.js';
+import { LINKS } from '../../lib/links.js';
 
 const shisaku = getShisakuList();
 const shouraizou = getShouraizou();
@@ -24,7 +25,7 @@ const groups = kihon.map((k) => ({
   <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
   <h1>施策をさがす</h1>
   <p class="secondary">
-    新・沖縄21世紀ビジョン実施計画の339施策です（<a href="/kihon/">基本施策の一覧</a>から体系でたどることもできます）。判定は{yearLong(LATEST)}の県の「施策の推進状況」、棒は{yearLong(LATEST)}の主な取組の進捗状況の内訳です。
+    <a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>の339施策です（<a href="/kihon/">基本施策の一覧</a>から体系でたどることもできます）。判定は{yearLong(LATEST)}の県の「施策の推進状況」、棒は{yearLong(LATEST)}の主な取組の進捗状況の内訳です。
   </p>
 
   <form class="filters" role="search" aria-label="施策の絞り込み" data-filter="#shisaku-list" data-count="#count" data-empty="#empty">

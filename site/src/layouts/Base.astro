@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { LINKS } from '../lib/links.js';
 
 interface Props { title?: string; description?: string }
 const SITE = '沖縄県PDCAダッシュボード';
@@ -45,7 +46,7 @@ const NAV = [
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>出典: 沖縄県「沖縄県PDCA実施結果」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
+        <p>出典: 沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
       </div>
     </footer>
     <script src="../scripts/tooltip.js"></script>

@@ -7,6 +7,7 @@ import {
   getTorikumi, getSeika, getShisakuList, getShouraizou,
 } from '../lib/data.js';
 import { fmt, pct } from '../lib/format.js';
+import { LINKS } from '../lib/links.js';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const torikumiRows = YEARS.map((y) => ({
@@ -46,7 +47,7 @@ const byShouraizou = getShouraizou().map((s) => ({
   <section class="intro">
     <h1>沖縄県PDCAダッシュボード</h1>
     <p>
-      沖縄県は毎年、「新・沖縄21世紀ビジョン実施計画」に並ぶ施策と取組がどこまで進んだかを自ら検証し、「沖縄県PDCA実施結果」として公表しています。
+      沖縄県は毎年、「<a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>」に並ぶ施策と取組がどこまで進んだかを自ら検証し、「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」として公表しています。
       このサイトは、その報告書（令和4〜7年度対象）のPDFを読み取り、施策ごとに4年分を並べて見られるようにしたものです。
     </p>
     <form class="search card" action="/torikumi/" method="get" role="search" aria-label="取組をさがす">
@@ -96,7 +97,7 @@ const byShouraizou = getShouraizou().map((s) => ({
       unit="指標"
     />
     <p class="small secondary">
-      R4〜R6は前期実施計画、R7からは中期実施計画（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、達成率は計画期間をまたいで単純には比べられません。
+      R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、達成率は計画期間をまたいで単純には比べられません。
     </p>
   </section>
 

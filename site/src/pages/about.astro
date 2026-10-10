@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { YEARS, yearLabel, yearLong, getTorikumi } from '../lib/data.js';
 import fs from 'node:fs';
+import { LINKS } from '../lib/links.js';
 import path from 'node:path';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）
@@ -16,17 +17,17 @@ const blanks = YEARS.map((y) => [y, getTorikumi(y).filter((t) => !t.status).leng
 
   <h2>沖縄県PDCAとは</h2>
   <p>
-    沖縄県は「新・沖縄21世紀ビジョン基本計画」を進めるため、実施計画に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
-    その検証結果が「沖縄県PDCA実施結果」で、毎年夏ごろに前年度分が公表されます（例: 令和7年度対象の結果は令和8年8月公表）。
+    沖縄県は「<a href={LINKS.kihonKeikaku} rel="noopener">新・沖縄21世紀ビジョン基本計画</a>」を進めるため、<a href={LINKS.jisshiKeikaku} rel="noopener">実施計画</a>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
+    その検証結果が「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」で、毎年夏ごろに前年度分が公表されます（例: 令和7年度対象の結果は令和8年8月公表）。仕組みは県の「<a href={LINKS.pdcaGaiyou} rel="noopener">沖縄県PDCAの概要</a>」で説明されています。
   </p>
   <ul>
     <li><strong>将来像（5）</strong> → <strong>基本施策（36）</strong> → 施策展開 → <strong>施策（339）</strong> → <strong>主な取組（約1,500）</strong>の階層になっています。</li>
     <li><strong>主要指標</strong>は基本施策の最終的な成果、<strong>成果指標</strong>は施策の成果、<strong>活動指標</strong>は主な取組の活動量をはかる指標です。</li>
-    <li>R4〜R6は前期実施計画（目標年度R6）、R7からは中期実施計画（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
+    <li>R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>（目標年度R6）、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
 
   <h2>出典</h2>
-  <p>沖縄県「沖縄県PDCA実施結果」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源については各部局が公開している「主な取組」検証票です。</p>
+  <p>沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源については各部局が公開している「主な取組」検証票（<a href={LINKS.pdca} rel="noopener">沖縄県PDCA</a>の各部局のページ）です。</p>
   <ul>
     {pages.map((p) => <li>{yearLong(p.year)}: <a href={p.page_url} rel="noopener">{p.page_title}</a></li>)}
   </ul>
