@@ -396,6 +396,16 @@ export function getSeika(year) {
 
 // ---------------------------------------------------------------- 出典
 
+// 読み込んだ県の PDF の数（取得台帳 data/raw/manifest.jsonl のうち、取得できた対象年度 R4〜R7 の PDF。zip の中の PDF は数えない）
+let pdfCount;
+export function getPdfCount() {
+  if (pdfCount != null) return pdfCount;
+  const file = path.resolve(process.cwd(), '../data/raw/manifest.jsonl');
+  pdfCount = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+    .filter((r) => r.sha256 && /\.pdf$/i.test(r.local_path || '') && YEARS.includes(Number(r.fiscal_year))).length;
+  return pdfCount;
+}
+
 let sources;
 export function sourceOf(id) {
   sources ??= new Map(load('sources').map((s) => [s.id, s]));
