@@ -7,7 +7,7 @@ import StatusBar from '../../components/StatusBar.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.js';
-import { KANKO, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.js';
+import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.js';
 import { LINKS } from '../../lib/links.js';
 import { fmt } from '../../lib/format.js';
 
@@ -50,7 +50,10 @@ const tenkai = kankoTenkaiList();
         <div class="tile-sub">同じ年度に同じ名前の主な取組が沖縄県PDCAにもあるもの。取組のページからたどれます。</div>
       </div>
     </div>
-    <a class="button" href={KANKO.href}>観光ロードマップを見る（{fmt(tenkai.length)}の施策展開）</a>
+    <div class="btns">
+      <a class="button" href={KANKO.href}>観光ロードマップを見る（{fmt(tenkai.length)}の施策展開）</a>
+      <a class="button" href={KANKO_TORIKUMI_HREF}>取組をさがす</a>
+    </div>
   </article>
 
 </Base>
@@ -62,5 +65,5 @@ const tenkai = kankoTenkaiList();
   .plan > p { margin: 0; }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 20px; }
   .fact { display: grid; gap: 4px; align-content: start; }
-  .plan .button { justify-self: start; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px 12px; }
 </style>

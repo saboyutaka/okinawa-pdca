@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページに、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, seikaHrefByName } from './data.js';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName } from './data.js';
 
 // ---------------------------------------------------------------- 出典
 
@@ -105,6 +105,16 @@ export function kankoTenkaiList() {
   return [...m.values()];
 }
 export const kankoTenkai = (id) => kankoTenkaiList().find((t) => t.id === id);
+
+// 観光ロードマップの取組には自分のページが無いので、施策展開のページの取組のカードを行き先にする
+export const kankoTorikumiAnchor = (shisakuId, key) => `rmt-${shisakuId}-${torikumiSlug(key)}`;
+export const KANKO_TORIKUMI_HREF = '/keikaku/kanko/torikumi/';
+// 観光ロードマップの取組（年度をまたいで同じ名前を1行にしたもの）を、施策の順に平らにする（取組をさがすで使う）
+export function kankoTorikumiRows() {
+  return kankoShisakuList().flatMap((s) =>
+    s.torikumi.map((g) => ({ ...g, rm: s, href: `${kankoTenkaiHref(s.tenkai_id)}#${kankoTorikumiAnchor(s.id, g.key)}` })),
+  );
+}
 
 // その年度の観光ロードマップの主な取組（延べ）
 export const kankoTorikumi = (year) => load('kanko/torikumi').filter((t) => t.year === year);

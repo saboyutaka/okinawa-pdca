@@ -9,7 +9,7 @@ import ExtLink from '../../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.js';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
-  kankoTenkaiHref, planSources,
+  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF,
 } from '../../../lib/plans.js';
 import { LINKS } from '../../../lib/links.js';
 import { fmt, pct } from '../../../lib/format.js';
@@ -58,6 +58,7 @@ const sources = planSources('kanko');
       <div class="tile-label"><Term word="主な取組" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}<small>件が順調</small></div>
       <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
+      <a class="small" href={KANKO_TORIKUMI_HREF}>取組をさがす</a>
     </div>
     <div class="sticker fact">
       <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
@@ -85,6 +86,7 @@ const sources = planSources('kanko');
 
   <section aria-labelledby="list">
     <h2 id="list">基本施策と施策展開</h2>
+    <p class="small"><a href={KANKO_TORIKUMI_HREF}>観光ロードマップの取組をさがす</a>（進捗状況・沖縄県PDCAとの重なり・部局で絞り込めます）</p>
     <p class="small secondary lead">棒は{yearLabel(RM_LATEST)}の主な取組の進捗状況の内訳です。</p>
     {kihon.map((k) => (
       <>

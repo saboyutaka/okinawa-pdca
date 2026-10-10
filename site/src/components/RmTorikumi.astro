@@ -5,13 +5,13 @@ import { yearLabel, statusOf, toneOfStatus, deptHref } from '../lib/data.js';
 import { RM_LATEST } from '../lib/plans.js';
 import { yen } from '../lib/format.js';
 
-interface Props { g: any; years: number[] }
-const { g, years } = Astro.props;
+interface Props { g: any; years: number[]; id?: string }
+const { g, years, id } = Astro.props;
 const t = g.latest;
 const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[years.length - 1])}` : yearLabel(years[0]);
 ---
-<article class="sticker rm-tori">
+<article class="sticker rm-tori anchor" id={id}>
   <div class="th">
     <h4>{t.name}</h4>
     <div class="sec">{deptHref(t.section) ? <a class="sub-link" href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
