@@ -1,0 +1,7 @@
+---
+// 太いメーター（割合）。値は必ず近くの文字にも出す
+interface Props { frac: number; tone?: string; label: string; thin?: boolean }
+const { frac, tone = 'good', label, thin = false } = Astro.props;
+const w = Math.max(0, Math.min(1, frac || 0)) * 100;
+---
+<div class:list={['chunk', `tone-${tone}`, thin && 'thin']} role="img" aria-label={label}><span style={`width:${w}%`}></span></div>

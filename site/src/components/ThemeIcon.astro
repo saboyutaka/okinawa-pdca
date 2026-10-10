@@ -1,0 +1,7 @@
+---
+// くらしのテーマの線画（lib/icons.js）
+import { themeIconSvg } from '../lib/icons.js';
+
+interface Props { id: string }
+---
+<Fragment set:html={themeIconSvg(Astro.props.id)} />

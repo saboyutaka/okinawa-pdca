@@ -1,0 +1,6 @@
+---
+// 用語。押すと短い説明を出す（説明は lib/terms.js、動きは scripts/terms.js）
+interface Props { word: string; label?: string }
+const { word, label } = Astro.props;
+---
+<button type="button" class="term" data-term={word} aria-expanded="false" aria-controls="termpop">{label ?? word}</button>

@@ -9,6 +9,7 @@ const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
 const NAV = [
   ['/', 'トップ'],
+  ['/theme/', 'くらしのテーマ'],
   ['/shisaku/', '施策'],
   ['/torikumi/', '取組'],
   ['/shihyou/', '成果指標'],
@@ -16,12 +17,14 @@ const NAV = [
   ['/yosan/', '予算'],
   ['/about/', 'データについて'],
 ];
+// いまいる場所。基本施策・遅れが続いている取組は施策・取組の下に置く
+const section = path.startsWith('/kihon/') ? '/shisaku/' : path.startsWith('/okure/') ? '/torikumi/' : path;
 ---
 <!doctype html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <script is:inline>
       // 選んだ配色を最初に反映する（scripts/theme.js が切り替えと記憶を受け持つ）
@@ -36,18 +39,19 @@ const NAV = [
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/fredoka-num.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <a class="skip" href="#main">本文へスキップ</a>
     <header class="site-header">
       <div class="wrap">
-        <a class="site-title" href="/">{SITE}<small class="secondary">（非公式）</small></a>
+        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}<small>（非公式）</small></span></a>
+        <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
         <nav class="site-nav" aria-label="サイト内">
           {NAV.map(([href, label]) => (
-            <a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href)) ? 'page' : undefined}>{label}</a>
+            <a href={href} aria-current={(href === '/' ? path === '/' : section.startsWith(href)) ? 'page' : undefined}>{label}</a>
           ))}
         </nav>
-        <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
       </div>
     </header>
     <main class="wrap" id="main">
@@ -56,9 +60,13 @@ const NAV = [
     <footer class="site-footer">
       <div class="wrap">
         <p>出典: 沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
+        <p>「くらしのテーマ」は、このサイトが独自にまとめた分類です。県の計画の分類ではありません。</p>
       </div>
     </footer>
     <script src="../scripts/tooltip.js"></script>
     <script src="../scripts/theme.js"></script>
+    <script src="../scripts/terms.js"></script>
+    <script src="../scripts/disclosure.js"></script>
+    <script src="../scripts/charts.js"></script>
   </body>
 </html>

@@ -1,0 +1,27 @@
+---
+// ドーナツ（割合ひとつ）。中に数字、読み上げは aria-label
+interface Props { frac: number; tone?: string; label: string; size?: number }
+const { frac, tone = 'good', label, size = 124 } = Astro.props;
+const r = 48;
+const c = 2 * Math.PI * r;
+const v = Math.max(0, Math.min(1, frac || 0));
+---
+<div class="donut" role="img" aria-label={label} style={`--size:${size}px`}>
+  <svg viewBox="0 0 124 124" aria-hidden="true">
+    <circle cx="62" cy="62" r="56" class="d-out" />
+    <circle cx="62" cy="62" r={r} class="d-track" style={`--t:var(--${tone})`} />
+    <circle cx="62" cy="62" r={r} class="d-arc" style={`--t:var(--${tone})`} stroke-dasharray={`${c * v} ${c}`} />
+    <circle cx="62" cy="62" r="39" class="d-in" />
+  </svg>
+  <span class="v big" aria-hidden="true">{(v * 100).toFixed(1)}%</span>
+</div>
+
+<style>
+  .donut { position: relative; width: var(--size); height: var(--size); flex: none; }
+  .donut svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .d-out { fill: var(--paper); stroke: var(--line); stroke-width: 2.5; }
+  .d-track { fill: none; stroke: color-mix(in oklab, var(--t) 22%, var(--paper)); stroke-width: 16; }
+  .d-arc { fill: none; stroke: var(--t); stroke-width: 16; }
+  .d-in { fill: var(--paper); stroke: var(--line); stroke-width: 2.5; }
+  .v { position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(var(--size) / 5); }
+</style>

@@ -1,0 +1,27 @@
+---
+// 年度ごとのスタンプ（判定・進捗状況）。items は年度の順
+import Icon from './Icon.astro';
+import { yearLabel } from '../lib/data.js';
+
+interface Item { year: number; tone?: string | null; shape?: string; key?: string; text: string; hatch?: boolean }
+interface Props { items: Item[]; label: string; size?: 'normal' | 'small' }
+const { items, label, size = 'normal' } = Astro.props;
+---
+<ol class:list={['stamps', size === 'small' && 'small-stamps']} aria-label={label}>
+  {items.map((it) => (
+    <li class="stamp">
+      <span class="y">{yearLabel(it.year)}</span>
+      <span class:list={['c', `tone-${it.tone || 'blank'}`, it.hatch && 'hatch']} aria-hidden="true">
+        {it.key ? <span class="k"><Icon tone={it.tone || 'blank'} shape={it.shape} size={11} />{it.key}</span> : <Icon tone={it.tone || 'blank'} shape={it.tone ? it.shape : 'ring'} size={16} />}
+      </span>
+      <span class="t"><span class="sr-only">{yearLabel(it.year)}: </span>{it.text}</span>
+    </li>
+  ))}
+</ol>
+
+<style>
+  ol.stamps { list-style: none; padding: 0; margin: 0; }
+  .small-stamps { gap: 4px; }
+  .small-stamps .stamp { min-width: 0; }
+  .small-stamps .c { width: 40px; height: 40px; }
+</style>

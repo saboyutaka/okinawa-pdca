@@ -1,6 +1,8 @@
 ---
-// 状態の印（色の点＋文字）。tone が無いときは「公表なし」などの空の印
-interface Props { tone?: string | null; text: string; title?: string }
-const { tone, text, title } = Astro.props;
+// 状態の印（形＋色＋文字）。tone が無いときは「公表なし」などの空の印
+import Icon from './Icon.astro';
+
+interface Props { tone?: string | null; text: string; title?: string; shape?: string }
+const { tone, text, title, shape } = Astro.props;
 ---
-<span class:list={['chip', tone ? `tone-${tone}` : 'empty']} title={title}>{text}</span>
+<span class:list={['chip', !tone && 'empty']} title={title}><Icon tone={tone || 'blank'} shape={tone ? shape : 'ring'} /><span>{text}</span></span>

@@ -11,7 +11,7 @@ const max = Math.max(1, ...rows.map(totalOf));
 const used = categories.filter((c) => rows.some((r) => (r.amounts[c.key] || 0) > 0));
 const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : 'â€”');
 ---
-<figure class="chart card">
+<figure class="chart-card sticker">
   <figcaption>
     <div class="chart-title">{title}</div>
     {caption && <div class="chart-caption">{caption}</div>}
@@ -36,7 +36,6 @@ const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : 'â
                 <span
                   class={`aseg series-${c.series}`}
                   style={`flex-grow:${r.amounts[c.key]}`}
-                  tabindex="0"
                   data-tip-value={`${yen(r.amounts[c.key])}ï¼ˆ${pct(r.amounts[c.key], total)}ï¼‰`}
                   data-tip-label={`${r.label} ${c.key}`}
                 ></span>
@@ -68,20 +67,20 @@ const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : 'â
 </figure>
 
 <style>
-  .chart { margin-top: 16px; }
-  .chart-title { font-weight: 700; }
-  .chart-caption { font-size: 0.85rem; color: var(--ink-2); }
+  .chart-card { margin-top: 16px; }
+  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
   .rows { display: grid; grid-template-columns: minmax(5em, max-content) 1fr; align-items: center; gap: 10px 12px; }
   .row { display: contents; }
-  .row-label { font-size: 0.9rem; line-height: 1.3; }
-  .row-sub { display: block; font-size: 0.75rem; color: var(--ink-2); }
+  .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
+  .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
   .track { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .abar { display: flex; gap: 2px; height: 22px; min-width: 3px; }
+  .abar { display: flex; gap: 2px; height: 24px; min-width: 3px; padding: 2px; border: 2px solid var(--line); border-radius: 0 999px 999px 0; background: var(--paper); }
   .aseg { flex-basis: 0; min-width: 2px; background: var(--series); }
-  .aseg:last-child { border-radius: 0 4px 4px 0; }
-  .aseg:hover, .aseg:focus-visible { filter: brightness(1.12); }
-  .row-total { font-size: 0.8rem; color: var(--ink-2); white-space: nowrap; }
+  .aseg:last-child { border-radius: 0 999px 999px 0; }
+  .aseg:hover { filter: brightness(1.12); }
+  .row-total { font-size: 0.875rem; color: var(--ink-2); white-space: nowrap; }
   .table-view { margin-top: 14px; }
   @media (max-width: 560px) {
     .rows { grid-template-columns: 1fr; gap: 4px; }

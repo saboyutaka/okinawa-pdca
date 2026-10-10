@@ -8,7 +8,7 @@ interface Row { label: string; sub?: string; href?: string; counts: Record<strin
 interface Props {
   title: string;
   caption?: string;
-  categories: { key: string; tone: string; note?: string }[];
+  categories: { key: string; tone: string; note?: string; shape?: string; hatch?: boolean }[];
   rows: Row[];
   unit?: string;
 }
@@ -16,13 +16,13 @@ const { title, caption, categories, rows, unit = '件' } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 ---
-<figure class="chart card">
+<figure class="chart-card sticker">
   <figcaption>
     <div class="chart-title">{title}</div>
     {caption && <div class="chart-caption">{caption}</div>}
   </figcaption>
   <ul class="legend" aria-label="凡例">
-    {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}
+    {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
   </ul>
   <div class="rows">
     {rows.map((r) => (
@@ -58,16 +58,16 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
 </figure>
 
 <style>
-  .chart { margin: 16px 0 0; }
-  .chart-title { font-weight: 700; }
-  .chart-caption { font-size: 0.85rem; color: var(--ink-2); }
+  .chart-card { margin: 16px 0 0; }
+  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }
   .row { display: contents; }
-  .row-label { font-size: 0.9rem; line-height: 1.3; }
-  .row-sub { display: block; font-size: 0.75rem; color: var(--ink-2); }
-  .row-total { font-size: 0.8rem; color: var(--ink-2); min-width: 4.5em; text-align: right; }
+  .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
+  .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+  .row-total { font-size: 0.875rem; color: var(--ink-2); min-width: 4.5em; text-align: right; }
   .table-view { margin-top: 14px; }
   @media (max-width: 560px) {
     .rows { grid-template-columns: 1fr; }
