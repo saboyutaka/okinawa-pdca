@@ -65,8 +65,7 @@ const moves = [
 // 将来像ごと
 const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  const ss = shisaku.filter((s) => s.shouraizou === v.id);
-  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length, shisaku: ss.length, cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST])).length };
+  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
 
 // 4年間の推移
@@ -126,7 +125,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   <section aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
     <p class="small secondary lead">
-      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです。どの施策もいずれかのテーマに入り、1つの施策が複数のテーマに入ることもあります{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。棒は{yearLong(LATEST)}の判定の内訳です。<a href="/theme/">テーマの決め方</a>
+      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/theme/">テーマの決め方</a>
     </p>
     <ul class="themes">
       {themes.map((t) => (
@@ -134,7 +133,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
           <a class="theme" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
             <span class="nm">{t.label}</span>
-            <span class="n">{fmt(t.ids.length)}施策</span>
+            <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
             <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
           </a>
         </li>
@@ -172,18 +171,13 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">県の計画は、めざす沖縄の姿を5つの将来像に分けています。棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
-    <ul class="visions">
+    <ul class="rows visions">
       {visions.map((v) => (
-        <li class:list={['sticker', 'vision', `sz-${v.id}`]}>
+        <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
-          <div class="v-body">
-            <a class="v-name" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
-            <div class="v-row">
-              <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} />
-              <span class="big v-pv">{pct(v.ok, v.n)}</span>
-            </div>
-            <div class="v-sub">主な取組 {fmt(v.n)}件のうち{fmt(v.ok)}件が順調。施策 {fmt(v.shisaku)}のうち、成果が遅れている（C・D）のは {fmt(v.cd)}。<a href={`/shisaku/?s=${v.id}`}>施策をさがす</a></div>
-          </div>
+          <a class="v-name" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
+          <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
+          <span class="v-pv"><span class="big">{pct(v.ok, v.n)}</span><small>{fmt(v.ok)}/{fmt(v.n)}件</small></span>
         </li>
       ))}
     </ul>
@@ -263,18 +257,19 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
     border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; min-height: 46px;
   }
 
-  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .theme {
-    display: grid; justify-items: start; gap: 6px; height: 100%; color: var(--ink); text-decoration: none; background: var(--paper);
-    border: 2.5px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 14px;
+    display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
+    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
   }
   .theme:hover { background: var(--sky); }
-  .theme:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
-  .theme :global(.sbar) { margin-top: auto; }
-  .ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--pink); border: 2px solid var(--line); }
-  .ico :global(.theme-ic) { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { font-family: var(--font-display); font-weight: 700; line-height: 1.4; }
-  .n { font-size: 0.875rem; color: var(--ink-2); }
+  .theme:active { transform: translate(2px, 2px); box-shadow: none; }
+  .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
+  .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .theme :global(.sbar) { grid-area: bar; }
+  .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
+  @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
 
   .news { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
   .news-card { display: grid; gap: 4px; align-content: start; }
@@ -288,14 +283,19 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .ex-sub { font-size: 0.875rem; color: var(--ink-2); }
   .more-link { font-weight: 700; font-size: 0.9375rem; margin-top: 4px; }
 
-  .visions { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-  .vision { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--szw); }
-  .vision :global(.big-badge) { width: 58px; height: 58px; font-size: 1.6rem; border-width: 2.5px; }
-  .v-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--ink); }
-  .v-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 6px; }
-  .v-pv { font-size: 1.2rem; }
-  .v-sub { font-size: 0.875rem; color: var(--ink-2); margin-top: 4px; }
-  @media (max-width: 480px) { .vision { grid-template-columns: 1fr; } .vision :global(.big-badge) { width: 44px; height: 44px; font-size: 1.2rem; } }
+  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
+  .v-name { grid-area: name; font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
+  .vision :global(.chunk) { grid-area: bar; }
+  .v-pv { grid-area: pv; display: grid; justify-items: end; line-height: 1.2; }
+  .v-pv .big { font-size: 1.15rem; }
+  .v-pv small { font-size: 0.75rem; color: var(--ink-2); }
+  @media (max-width: 640px) {
+    .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
+    .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
+    .v-pv { grid-auto-flow: column; align-items: baseline; gap: 6px; }
+  }
 
   .trend { margin-top: 0; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
