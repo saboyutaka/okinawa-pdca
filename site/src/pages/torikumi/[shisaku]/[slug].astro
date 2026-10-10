@@ -403,8 +403,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       return y === t.year ? (
         <div class="sticker cad latest">
           <h3 class="cad-h">{yearLong(y)}の報告 <Chip tone={toneOfStatus(st)} text={st} /></h3>
-          <div data-clamp id={`clamp-${y}`}>{body}</div>
-          <button type="button" class="more" data-clamp-toggle={`clamp-${y}`} aria-controls={`clamp-${y}`} aria-expanded="false" hidden>続きを読む</button>
+          {body}
           {src && <p class="small"><ExtLink href={src.href}>主な取組検証票（{src.label}）</ExtLink></p>}
         </div>
       ) : (
