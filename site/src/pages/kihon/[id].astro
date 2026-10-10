@@ -1,14 +1,15 @@
 ---
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
-import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import Chip from '../../components/Chip.astro';
+import Stamps from '../../components/Stamps.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink,
+  getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, toneOfJudgement,
 } from '../../lib/data.js';
 
 export function getStaticPaths() {
@@ -23,6 +24,17 @@ const shuyou = getShuyou(k.id);
 const yearsDesc = [...YEARS].reverse();
 const src = k.source && sourceLink(k.source, k.page);
 
+// 主要指標。最新の報告の指標ごとに、4年分の行を名前で結び付ける（名前が少し変わった年度は、その年度の指標が1つだけなら同じ指標とみなす）
+const latestShuyou = shuyou.filter((r) => r.year === LATEST);
+const shuyouCards = latestShuyou.map((r) => ({
+  latest: r,
+  years: YEARS.map((y) => {
+    const ys = shuyou.filter((x) => x.year === y);
+    return ys.find((x) => x.name === r.name) || (ys.length === 1 && latestShuyou.length === 1 ? ys[0] : null);
+  }),
+}));
+const oneLine = (v) => (v || '—').replace(/\s*\n\s*/g, ' ');
+
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
   label: yearLabel(y),
@@ -31,45 +43,72 @@ const progressRows = YEARS.map((y) => ({
 ---
 <Base title={`${k.name}（基本施策）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
-  <header class="k-head">
-    <div class="k-top">
-      <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/future/${k.shouraizou}/`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
-      <span class="code-no" title="県の報告書での番号">基本施策 {k.code}</span>
-    </div>
-    <div class="secondary small"><Term word="基本施策" /></div>
+  <header class="sticker lift k-head">
+    <span class="code-no code-corner" title="県の報告書での番号">基本施策 {k.code}</span>
+    <div class="kind">将来像{k.shouraizou}「{shou?.name}」の<Term word="基本施策" /></div>
     <h1>{k.name}</h1>
+    {k.mezasu && (
+      <div class="bubble-row says">
+        <span class="avatar" aria-hidden="true">県</span>
+        <div class="bubble">
+          <div class="small secondary label">目指す姿（県の報告書から）</div>
+          <p class="first">{oneLine(k.mezasu)}</p>
+        </div>
+      </div>
+    )}
   </header>
 
-  {k.mezasu && (
-    <section aria-labelledby="mezasu">
-      <h2 id="mezasu">目指す姿</h2>
-      <p class="muted-box">{k.mezasu}</p>
-    </section>
-  )}
-
   <section aria-labelledby="shuyou">
-    <h2 id="shuyou">主要指標</h2>
-    <p class="small secondary">基本施策の最終的な成果をはかる指標です。R4〜R6はR6の目標値、R7からはR9の目標値に対する見通しです。</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>報告年度</th><th>主要指標</th><th>基準値</th><th>実績値</th><th>目標値</th><th>見通し</th></tr></thead>
-        <tbody>
-          {yearsDesc.flatMap((y) => shuyou.filter((r) => r.year === y).map((r) => {
-            const src = sourceLink(r.source, r.page);
-            return (
-              <tr>
-                <th>{yearLabel(y)}</th>
-                <td>{r.name}{src && <><br /><ExtLink class="small" href={src.href}>出典</ExtLink></>}</td>
-                <td class="prose small">{r.base_raw}</td>
-                <td class="prose">{r.actual_raw}</td>
-                <td class="prose small">{r.target_raw}</td>
-                <td class="prose small">{r.judgement}</td>
-              </tr>
-            );
-          }))}
-        </tbody>
-      </table>
-    </div>
+    <h2 id="shuyou"><Term word="主要指標" /></h2>
+    <p class="small secondary lead">見通しは、目標値（R7からはR9、R6まではR6）に届くかの県の見立てです。</p>
+    {shuyouCards.map(({ latest: r, years }) => {
+      const tone = toneOfJudgement(r.judgement);
+      // 見通しが「策定率:目標達成 改定率:…」のように決まった言い方でないときは、スタンプにせず文章のまま出す
+      const plain = years.every((x) => !x?.judgement || toneOfJudgement(x.judgement));
+      return (
+        <article class="sticker s-card">
+          <h3>{r.name}</h3>
+          <dl class="kv">
+            <div><dt>基準値</dt><dd>{oneLine(r.base_raw)}</dd></div>
+            <div><dt>実績値（{yearLabel(LATEST)}報告）</dt><dd class="big">{oneLine(r.actual_raw)}</dd></div>
+            <div><dt>目標値（R9）</dt><dd>{oneLine(r.target_raw)}</dd></div>
+            <div class="kv-j"><dt>見通し</dt><dd>{!r.judgement ? '—' : tone ? <Chip tone={tone} text={r.judgement} /> : <span class="prose small">{r.judgement}</span>}</dd></div>
+          </dl>
+          {plain && (
+            <div class="j-years">
+              <div class="small secondary label">4年間の見通し</div>
+              <Stamps items={YEARS.map((y, i) => (years[i]?.judgement ? { year: y, tone: toneOfJudgement(years[i].judgement), text: years[i].judgement } : { year: y, tone: null, text: '報告なし' }))} label="4年間の見通し" size="small" />
+            </div>
+          )}
+          <details>
+            <summary>表で見る</summary>
+            <div class="table-wrap">
+              <table>
+                <caption class="sr-only">{r.name}の年度別の値</caption>
+                <thead><tr><th>報告年度</th><th>基準値</th><th>実績値</th><th>目標値</th><th>見通し</th><th>出典</th></tr></thead>
+                <tbody>
+                  {yearsDesc.map((y) => {
+                    const x = years[YEARS.indexOf(y)];
+                    if (!x) return <tr><th>{yearLabel(y)}</th><td colspan="5" class="secondary small">この年度の報告に、この指標はありません</td></tr>;
+                    const s2 = sourceLink(x.source, x.page);
+                    return (
+                      <tr>
+                        <th>{yearLabel(y)}{x.name !== r.name && <><br /><small class="secondary">{x.name}</small></>}</th>
+                        <td class="small">{oneLine(x.base_raw)}</td>
+                        <td>{oneLine(x.actual_raw)}</td>
+                        <td class="small">{oneLine(x.target_raw)}</td>
+                        <td class="small prose">{x.judgement || '—'}</td>
+                        <td class="small">{s2 ? <ExtLink href={s2.href}>{s2.label}</ExtLink> : '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </article>
+      );
+    })}
   </section>
 
   <section aria-labelledby="progress">
@@ -92,14 +131,28 @@ const progressRows = YEARS.map((y) => ({
   <section aria-labelledby="source">
     <h2 id="source">出典</h2>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
-    {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、表の各行にあります。</p>}
+    {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の各行にあります。</p>}
   </section>
 </Base>
 
 <style>
-  .k-head { margin-top: 12px; }
-  .k-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
-  .k-top .code-no { margin-left: auto; }
-  .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; }
+  /* 頭は施策ページと同じ太いステッカー。目指す姿は県の吹き出しに入れる */
+  .k-head { position: relative; display: grid; gap: 4px; margin-top: 12px; padding-top: 30px; }
+  .k-head h1 { margin: 2px 0 10px; }
+  .kind { font-size: 0.9375rem; color: var(--ink-2); }
+  .label { font-weight: 700; margin-bottom: 4px; }
+  .says .first { margin: 4px 0 0; }
+  /* 主要指標。最新の値と見通しを大きく出し、4年間の見通しはスタンプ、年度ごとの値と出典は表に畳む */
+  .s-card { display: grid; gap: 12px; margin-top: 12px; }
+  .s-card h3 { margin: 0; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0; }
+  .kv div { background: var(--bg); border-radius: 12px; padding: 8px 12px; min-width: 0; }
+  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+  .kv dd { margin: 0; }
+  .kv dd.big { font-size: 1.2rem; }
+  .kv-j :global(.chip) { font-weight: 700; white-space: normal; }
+  .j-years { max-width: 420px; }
+  .s-card details { margin: 0; }
+  .s-card table { min-width: 560px; }
   .report-no { white-space: nowrap; }
 </style>
