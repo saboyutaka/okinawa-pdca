@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | コマンド | 内容 |
 |---|---|
 | `make fetch` | 県サイトから報告書を取得（ホストの python3・標準ライブラリのみ。robots.txt に従い1秒間隔。`--refresh` で県の差し替えを確認、`--since 2022`・`--source kikaku` で絞る） |
-| `make extract` | zip 展開 → 総括報告書と部局別の検証票の抽出 → 公表値との突き合わせ → `docs/issues.md` の作り直し |
+| `make extract` | zip 展開 → 総括報告書・部局別の検証票・個別計画などの抽出 → 公表値との突き合わせ → `docs/issues.md` の作り直し |
 | `make check` | 抽出結果を概要版の公表値と突き合わせるだけ（ホストの python3）。`NG` は件数の不一致 |
 | `make issues` | 取れていないデータ・誤りの疑いの一覧（`docs/issues.md`）を作り直す |
 | `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/。`SITE_PORT=4400 make dev` で変えられる）・`site/dist` への書き出し・書き出したものの確認 |
@@ -33,7 +33,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `data/raw` は県から取ったまま（手で編集しない）。PDF・zip は git に入れず、台帳の `manifest.jsonl`・`pages.jsonl` だけコミットする。フォルダの年度は**対象年度**（`2025-r07` = 令和7年度対象、2026年8月公表）。
 - `data/extracted/*.json` はコミットする。**サイトはこれだけを読んでビルドする**ので、PDF が無くてもサイトは作れる。抽出結果は必ず出典（manifest の `file_url` と PDF のページ）を持つ。
-- `data/reference/` は人が用意した参照データ: `finance.json`（国・県の財政の数字、出典つき）、`themes.json`（くらしのテーマの定義）。
+- `data/reference/` は人が用意した参照データ: `finance.json`（国・県の財政の数字、出典つき）、`themes.json`（くらしのテーマの定義）、`evaluations.json`（県が公表しているほかの評価の一覧。個別計画のページのリンク）。
+- 沖縄県PDCA 以外の評価も取り込んでいる（`fetch_pdca.py` の `RELATED_SOURCES`。部局票ではない）: 観光ロードマップPDCA（`kanko-rm` → `extract_kanko.py` → `data/extracted/kanko`）、一括交付金（ソフト）の事後評価（`ikkatsu` → `extract_ikkatsu.py`）、基本計画の評価検証報告書（`hyoka` → `extract_hyoka.py`）。観光ロードマップの R4 の本編は文字に変換できないフォントで読めない。読み方は `docs/data.md` の12章。
 - 施策 ID は報告書のコードを正規化したもの（`1-(1)-ア-①` → `1-1-a-1`、ア→a・イ→b…）。年度をまたいだ同じ取組・成果指標は、同じ施策の中で正規化した名前（`key`）が同じものとみなす。
 - 年度による違いに注意する: R4〜R6 は前期実施計画、R7 からは中期（基準値・目標値・計画値が変わるので、達成率は計画期間をまたいで比べない）。R5 に部局の再編（部局の集計は取組の最新年度の所管部局に寄せる）。成果指標の実績値は前の年度の値のことが多い（`actual_ref_year`）。
 - 施策の判定（A〜G）は施策総括表に印字されたものをそのまま使う（区分表で計算し直すと合わない施策がある）。
@@ -43,8 +44,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.js` が `data/extracted` を読み、施策の索引・年度をまたいだ取組のまとまり（`getTorikumiGroups`）・部局票との結び付け（`budgetOf`）・予算の重複除去（`amountEntries`）などページ用の形にする。ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。
 - 外のサイトへのリンクを別のタブで開くときは `components/ExtLink.astro`（外部リンクの印と、読み上げ用の「別のタブで開きます」を付ける）。いまは Code for Okinawa とは のページだけで使っている。
-- ほかの lib: `themes.js`（くらしのテーマ）、`icons.js`（状態の形・判定 A〜G の形と短い言い方・テーマのアイコン）、`terms.js`（用語の説明）、`text.js`（PDF の改行の整形・県の分析の小見出し分け）。
-- ページ: トップ、`/theme/`（くらしのテーマ）、`/future/`（将来像の一覧と将来像1〜5）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`、`/okure/`、`/bukyoku/`、`/yosan/`、`/about/`、`/code-for-okinawa/`（作っている団体と問い合わせ先）。前の `/kihon/`（一覧）は `/future/` へ転送する（`astro.config.mjs` の `redirects`）。パンくずは計画の体系「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`）。
+- ほかの lib: `plans.js`（個別計画などの読み出し: 観光ロードマップの施策・取組・成果指標と沖縄県PDCAとの結び付き、一括交付金の事業、評価検証報告書）、`themes.js`（くらしのテーマ）、`icons.js`（状態の形・判定 A〜G の形と短い言い方・テーマのアイコン）、`terms.js`（用語の説明）、`text.js`（PDF の改行の整形・県の分析の小見出し分け）。
+- ページ: トップ、`/theme/`（くらしのテーマ）、`/future/`（将来像の一覧と将来像1〜5）、`/keikaku/`（個別計画の入口と、観光ロードマップ `/keikaku/kanko/`・その施策展開30）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`、`/okure/`、`/bukyoku/`、`/yosan/`、`/about/`、`/code-for-okinawa/`（作っている団体と問い合わせ先）。前の `/kihon/`（一覧）は `/future/` へ転送する（`astro.config.mjs` の `redirects`）。パンくずは計画の体系「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`）。
 - ブラウザのスクリプト（`src/scripts/`）:
   - `charts.js`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。
   - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。
@@ -57,6 +58,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 施策と主な取組を見た目で取り違えないようにする。大きな丸いハンコは施策の判定（A〜G）だけに使い、取組の進捗状況は横長の札と線でつないだ4年分のスタンプで出す。取組のページの頭は、親の施策の札の下にカギ形の線でぶら下げる。
 - 報告書の施策の番号（`1-(1)-ア-①`・基本施策の `1-(1)`）は名前より目立たせない。ページの頭のステッカーと一覧のカードでは右上の隅に、カードの無い一覧のリンクや見出しでは名前の後ろに、小さく薄い字で置く（`styles/global.css` の `.code-no`・`.code-corner`・`.name-row`）。パンくずとページの題名は名前だけにする。施策・基本施策・取組のページの最後の「出典」の節に「県の報告書での番号」として説明を置く（報告書の PDF をこの番号で探せる）。検索の文字（`data-text`・`/torikumi/data.json`）にも番号を入れ、番号でも探せるようにする。
 - 将来像の色は基本計画パンフレットの色（`--sz-1`〜`--sz-5`）。番号の印と見出しの帯だけに使い、状態の色（棒・印）とは混ぜない。
+- 個別計画（観光ロードマップ）は県の基本計画とは別の計画。ナビでは将来像の隣に置くが、将来像の一覧の中には入れない。淡い紫の札（`.plan-tag`）で沖縄県PDCAの施策・取組と見分け、施策の番号（1-ア-①）は必ず「観光ロードマップ」と付けて出す。沖縄県PDCAと同じ取組は、取組のページから相互にたどれるようにする。一括交付金の事業は施策のページ、評価検証報告書は基本施策のページに出す。
 - くらしのテーマは**このサイト独自の分類**で、県の計画の分類ではない。画面では必ずそうと分かるように出す（「このサイト独自の分類」の印・ピンクのラベル `ThemeTags`）。どの施策もいずれかのテーマに入るように `themes.json` を保つ（入らない施策があるとビルドで警告する）。主な取組・成果指標は、施策のテーマに加えて名前に当たるテーマにも入る。
 - 情報は減らさず「ひとめで → くわしく → 表と原文は畳む（`details`）」の順にする。図には必ず「表で見る」を付ける。棒の区間ごとにタブで止めない。用語は `Term` で説明を出す。
 - 日本語のウェブフォントは読み込まない。数字だけ丸い英字フォント Fredoka の部分集合（`public/fonts/`、SIL OFL）を使う。
