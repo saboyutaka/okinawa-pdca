@@ -25,15 +25,23 @@ const shuyou = getShuyou(k.id);
 const yearsDesc = [...YEARS].reverse();
 const src = k.source && sourceLink(k.source, k.page);
 
-// 主要指標。最新の報告の指標ごとに、4年分の行を名前で結び付ける（名前が少し変わった年度は、その年度の指標が1つだけなら同じ指標とみなす）
+// 主要指標。最新の報告の指標ごとに、4年分の行を名前で結び付ける（名前が少し変わった年度は、その年度の指標が1つだけなら同じ指標とみなす）。
+// どの札にも結び付かなかった行（最新の報告に無い指標）も、名前ごとに1枚の札にして、ページから落とさない
 const latestShuyou = shuyou.filter((r) => r.year === LATEST);
-const shuyouCards = latestShuyou.map((r) => ({
+const used = new Set();
+const cardOf = (r, single) => ({
   latest: r,
   years: YEARS.map((y) => {
-    const ys = shuyou.filter((x) => x.year === y);
-    return ys.find((x) => x.name === r.name) || (ys.length === 1 && latestShuyou.length === 1 ? ys[0] : null);
+    const ys = shuyou.filter((x) => x.year === y && !used.has(x));
+    const x = y === r.year ? r : ys.find((x) => x.name === r.name) || (single && ys.length === 1 ? ys[0] : null);
+    if (x) used.add(x);
+    return x;
   }),
-}));
+});
+const shuyouCards = latestShuyou.map((r) => cardOf(r, latestShuyou.length === 1));
+for (const r of [...shuyou].sort((a, b) => b.year - a.year)) if (!used.has(r)) shuyouCards.push(cardOf(r, false));
+// 目標値の年度（前期実施計画は R6、中期実施計画は R9）
+const targetYearOf = (y) => (y <= 2024 ? 'R6' : 'R9');
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -61,17 +69,18 @@ const progressRows = YEARS.map((y) => ({
   <section aria-labelledby="shuyou">
     <h2 id="shuyou"><Term word="主要指標" /></h2>
     <p class="small secondary lead">見通しは、目標値（R7からはR9、R6まではR6）に届くかの県の見立てです。</p>
+    {shuyouCards.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
     {shuyouCards.map(({ latest: r, years }) => {
       const tone = toneOfJudgement(r.judgement);
       // 見通しが「策定率:目標達成 改定率:…」のように決まった言い方でないときは、スタンプにせず文章のまま出す
       const plain = years.every((x) => !x?.judgement || toneOfJudgement(x.judgement));
       return (
         <article class="sticker s-card">
-          <h3>{r.name}</h3>
+          <h3>{r.name}{r.year !== LATEST && <small class="past-badge">{yearLabel(r.year)}の報告まで</small>}</h3>
           <dl class="kv">
             <div><dt>基準値</dt><dd>{oneLine(r.base_raw)}</dd></div>
-            <div><dt>実績値（{yearLabel(LATEST)}報告）</dt><dd class="big">{oneLine(r.actual_raw)}</dd></div>
-            <div><dt>目標値（R9）</dt><dd>{oneLine(r.target_raw)}</dd></div>
+            <div><dt>実績値（{yearLabel(r.year)}報告）</dt><dd class="big">{oneLine(r.actual_raw)}</dd></div>
+            <div><dt>目標値（{targetYearOf(r.year)}）</dt><dd>{oneLine(r.target_raw)}</dd></div>
             <div class="kv-j"><dt>見通し</dt><dd>{!r.judgement ? '—' : tone ? <Chip tone={tone} text={r.judgement} /> : <span class="prose small">{r.judgement}</span>}</dd></div>
           </dl>
           {plain && (
@@ -145,6 +154,7 @@ const progressRows = YEARS.map((y) => ({
   /* 主要指標。最新の値と見通しを大きく出し、4年間の見通しはスタンプ、年度ごとの値と出典は表に畳む */
   .s-card { display: grid; gap: 12px; margin-top: 12px; }
   .s-card h3 { margin: 0; }
+  .past-badge { font-family: var(--font); font-size: 0.8125rem; font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); vertical-align: 0.1em; }
   .kv-j :global(.chip) { font-weight: 700; white-space: normal; }
   .j-years { max-width: 420px; }
   .s-card details { margin: 0; }
