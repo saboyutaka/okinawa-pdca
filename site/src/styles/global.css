@@ -279,7 +279,8 @@ details[open] > summary { margin-bottom: 8px; }
 a.ttag:hover { background: var(--sky); }
 /* 年度ごとのスタンプ */
 .stamps { display: flex; flex-wrap: wrap; gap: 8px; }
-.stamp { display: grid; justify-items: center; gap: 2px; min-width: 52px; flex: 1 1 0; max-width: 92px; }
+/* 年度・丸・言葉の3段は上に詰める（ある年度の言葉だけ2行になると、ほかの年度の丸が下がって線の高さがずれるため） */
+.stamp { display: grid; align-content: start; justify-items: center; gap: 2px; min-width: 52px; flex: 1 1 0; max-width: 92px; }
 .stamp .y { font-family: var(--font-num); font-size: 0.8125rem; color: var(--ink-2); }
 .stamp .c {
   display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--line);
