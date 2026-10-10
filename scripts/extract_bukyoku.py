@@ -29,6 +29,7 @@ import pdfplumber
 import pymupdf
 
 sys.path.insert(0, str(Path(__file__).parent))
+from fetch_pdca import RELATED_SLUGS  # noqa: E402
 from extract_soukatsu import FIRST_YEAR, clean, name_key, parse_code, parse_num, shisaku_id, uncid, write_json  # noqa: E402
 
 YEAR_DIR = re.compile(r"^(\d{4})-")
@@ -479,7 +480,8 @@ def main() -> int:
 
     raw = Path(args.raw)
     tasks = []
-    for d in sorted(p for p in raw.iterdir() if p.is_dir() and p.name != "soukatsu"):
+    # 総括報告書と、沖縄県PDCA 以外の評価（観光ロードマップ・一括交付金の事後評価・評価検証報告書）は部局票ではない
+    for d in sorted(p for p in raw.iterdir() if p.is_dir() and p.name not in {"soukatsu", *RELATED_SLUGS}):
         if args.source and d.name not in args.source:
             continue
         for ydir in sorted(d.iterdir()):
