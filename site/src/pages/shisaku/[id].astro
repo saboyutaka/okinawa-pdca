@@ -6,7 +6,7 @@ import Bullet from '../../components/Bullet.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, planLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy,
   getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, budgetOf, fundOf,
-  planIndex, withUnit, DEPTS, deptOf,
+  planIndex, withUnit, deptHref, seikaDept, seikaAnchor,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
 
@@ -28,7 +28,13 @@ const progressRows = YEARS.map((y) => ({
 }));
 
 const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
-const deptSlug = (name) => DEPTS.find((d) => d.name === name)?.slug;
+// 部局票の「対応する成果指標」から、このページの成果指標の見出しを探す（名前の空白・記号の違いは無視）
+const norm = (v) => (v || '').normalize('NFKC').replace(/[\s・、，,。（）()]/g, '');
+const seikaLink = (name) => {
+  const n = norm(name);
+  const row = n && sRows.find((r) => norm(r.latest.name) === n || n.includes(norm(r.latest.name)) || norm(r.latest.name).includes(n));
+  return row ? `#${seikaAnchor(s.id, row.key)}` : null;
+};
 // 決算見込額。「17,314の一部」のように数値にできない表記は、元の表記のまま出す
 const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
 const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
@@ -42,7 +48,7 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
     <div class="code">施策 {s.code}　／　施策展開 {s.tenkai_name}</div>
     <h1>{s.name}</h1>
     <div class="secondary small">
-      関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptSlug(d) ? <a href={`/bukyoku/${deptSlug(d)}/`}>{d}</a> : d}</>) : (s.kankei || '—')}
+      関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}
       　／　将来像{s.shouraizou} {shou?.name}
     </div>
     <nav class="toc" aria-label="このページの内容">
@@ -86,9 +92,14 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
     {sRows.map((row) => {
       const x = row.latest;
       const plan = x.plan?.[planIndex(x.year)];
+      const dept = seikaDept(x);
       return (
-        <article class="card seika">
+        <article class="card seika" id={seikaAnchor(s.id, row.key)}>
           <h3>{x.name}{x.unit && <span class="secondary small">（{x.unit}）</span>}</h3>
+          <p class="small seika-links">
+            担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
+            {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
+          </p>
           {x.year !== LATEST && <p class="small secondary">この指標は{yearLabel(x.year)}まで使われていました（{planLabel(x.year)}）。</p>}
           <dl class="kv">
             <div><dt>基準値</dt><dd>{withUnit(x.base_raw, x.unit)}</dd></div>
@@ -167,7 +178,13 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
               <tr>
                 <td class="tori-name">
                   {t.name}<br />
-                  <small class="secondary">{deptSlug(deptOf(t.section)) ? <a href={`/bukyoku/${deptSlug(deptOf(t.section))}/`}>{t.section}</a> : t.section}</small>
+                  <small class="secondary">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</small>
+                  {(() => {
+                    const b = budgetOf(t.year, t.shisaku_id, t.key);
+                    if (!b?.seika_name) return null;
+                    const href = seikaLink(b.seika_name);
+                    return <><br /><small>対応する成果指標: {href ? <a href={href}>{b.seika_name}</a> : b.seika_name}</small></>;
+                  })()}
                   {t.summary && (
                     <details>
                       <summary>{yearLabel(t.year)}の活動</summary>
@@ -257,6 +274,8 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
   .tori { min-width: 760px; }
   .tori-name { min-width: 16em; }
   .budget-cell { min-width: 12em; }
+  .seika-links { margin: -4px 0 8px; color: var(--ink-2); }
+  .seika { scroll-margin-top: 16px; }
   .toc { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; font-size: 0.9rem; }
   .budget-cell div + div { margin-top: 6px; }
   .tori :global(.chip) { font-size: 0.8rem; }

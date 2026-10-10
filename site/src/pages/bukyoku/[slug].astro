@@ -6,7 +6,7 @@ import YearStatuses from '../../components/YearStatuses.astro';
 import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, judgeOf, rateBin, countBy,
-  getTorikumiGroups, getShisakuList, getSeika, seikaDept,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaKeyOf, deptHref, JUDGEMENTS, toneOfJudgement,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
@@ -92,8 +92,33 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
     <StatusChart title={`課ごと（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} />
   )}
 
-  <h2>成果指標の達成状況</h2>
-  <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+  <section aria-labelledby="seika">
+    <h2 id="seika">成果指標</h2>
+    <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+    {seikaLatest.length > 0 && (
+      <>
+        <h3>{yearLong(LATEST)}の成果指標（{fmt(seikaLatest.length)}）</h3>
+        <ul class="list">
+          {seikaLatest.map((x) => {
+            const s = shisakuById.get(x.shisaku_id);
+            const bin = rateBin(x);
+            return (
+              <li class="item">
+                <a href={seikaHref(x.shisaku_id, seikaKeyOf(x))}><strong>{x.name}</strong></a>
+                <span class="small secondary">　{x.dept}</span>
+                {s && <div class="small">施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+                <div class="tags">
+                  <Chip tone={RATE_BINS.find((b) => b.key === bin)?.tone} text={x.rate != null ? `達成率 ${x.rate}%` : (x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし')} />
+                  {x.judgement && <Chip tone={toneOfJudgement(x.judgement)} text={`見通し: ${x.judgement}`} />}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <p class="small"><a href={`/shihyou/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の成果指標を成果指標のページでさがす</a></p>
+      </>
+    )}
+  </section>
 
   <section aria-labelledby="yosan">
     <h2 id="yosan">予算</h2>
@@ -158,5 +183,6 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 
 <style>
   .row-years { margin: 6px 0 4px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
   .list :global(.chip) { white-space: normal; }
 </style>

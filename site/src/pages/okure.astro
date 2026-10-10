@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import BarList from '../components/BarList.astro';
 import YearStatuses from '../components/YearStatuses.astro';
-import { YEARS, LATEST, yearLabel, yearLong, DEPTS, DELAYS, getTorikumiGroups } from '../lib/data.js';
+import { YEARS, LATEST, yearLabel, yearLong, DEPTS, DELAYS, getTorikumiGroups, deptHref } from '../lib/data.js';
 import { fmt } from '../lib/format.js';
 import { LINKS } from '../lib/links.js';
 
@@ -52,7 +52,7 @@ const sections = [
               <tr>
                 <td>
                   {g.latest.name}<br />
-                  <small class="secondary">{g.section}</small><br />
+                  <small class="secondary">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</small><br />
                   <small>施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></small>
                 </td>
                 <td><YearStatuses statuses={g.statuses} /></td>

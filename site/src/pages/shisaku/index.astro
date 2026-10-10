@@ -4,7 +4,7 @@ import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, JUDGES, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getShouraizou, getKihonList,
+  getShisakuList, getShouraizou, getKihonList, deptHref, seikaHref, seikaKeyOf,
 } from '../../lib/data.js';
 import { LINKS } from '../../lib/links.js';
 
@@ -79,7 +79,7 @@ const groups = kihon.map((k) => ({
               <div class="item-head">
                 <span class="code">{s.code}</span>
                 <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
-                <span class="item-dept">{s.kankei}</span>
+                <span class="item-dept">{s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : s.kankei}</span>
               </div>
               <div class="item-body">
                 <div class="judges">
@@ -95,7 +95,7 @@ const groups = kihon.map((k) => ({
                   <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} />
                 </div>
                 <div class="seika small secondary">
-                  成果指標: {seika.map((x) => `${x.name}（${rateText(x)}）`).join('／') || '—'}
+                  成果指標: {seika.length ? seika.map((x, i) => <>{i > 0 && '／'}<a href={seikaHref(s.id, seikaKeyOf(x))}>{x.name}</a>（{rateText(x)}）</>) : '—'}
                 </div>
               </div>
             </li>

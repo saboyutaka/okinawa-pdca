@@ -187,6 +187,22 @@ export function seikaRows(shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
+// 成果指標の行き先: 施策ページの中の成果指標の見出し（#seika-1, #seika-2 …。施策ページの並び順）
+const seikaIndex = new Map();
+export function seikaAnchor(shisakuId, key) {
+  if (!seikaIndex.has(shisakuId)) {
+    const s = getShisaku(shisakuId);
+    seikaIndex.set(shisakuId, new Map((s ? seikaRows(s) : []).map((r, i) => [r.key, `seika-${i + 1}`])));
+  }
+  return seikaIndex.get(shisakuId).get(key) || 'seika';
+}
+export const seikaHref = (shisakuId, key) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
+// 成果指標1件（seika.json の行）から、年度をまたいだまとまりの key を求める
+export function seikaKeyOf(row) {
+  const s = getShisaku(row.shisaku_id);
+  return s ? seikaRows(s).find((r) => r.years[row.year] === row)?.key : undefined;
+}
+
 // ---------------------------------------------------------------- 年度をまたいだ取組・成果指標
 
 export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
@@ -242,6 +258,12 @@ export const DEPTS = [
 export const FORMER_DEPTS = ['子ども生活福祉部', '保健医療部'];
 export const REORGANIZED = new Set(['知事公室', 'こども未来部', '生活福祉部', '保健医療介護部']);
 export const deptOf = (section) => (section || '').match(DEPT_RE)?.[0] || '';
+// 部局ページの URL。部局名（「商工労働部」）でも所管部課名（「商工労働部産業政策課」）でもよい。旧部局名など該当が無ければ null
+export function deptHref(nameOrSection) {
+  const name = DEPTS.some((d) => d.name === nameOrSection) ? nameOrSection : deptOf(nameOrSection);
+  const d = DEPTS.find((x) => x.name === name);
+  return d ? `/bukyoku/${d.slug}/` : null;
+}
 
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
 let currentDept;

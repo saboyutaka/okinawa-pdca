@@ -51,12 +51,13 @@ const byShouraizou = getShouraizou().map((s) => ({
       このサイトは、その報告書（令和4〜7年度対象）のPDFを読み取り、施策ごとに4年分を並べて見られるようにしたものです。
     </p>
     <form class="search card" action="/torikumi/" method="get" role="search" aria-label="取組をさがす">
-      <label for="top-q">気になる分野の取組をさがす</label>
+      <label for="top-q">気になる分野の取組・成果指標をさがす</label>
       <div class="search-row">
         <input id="top-q" type="search" name="q" placeholder="例: 離島、子ども、観光、赤土" />
-        <button type="submit" class="button">さがす</button>
+        <button type="submit" class="button">取組をさがす</button>
+        <button type="submit" class="button" formaction="/shihyou/">成果指標をさがす</button>
       </div>
-      <div class="small">ほかに <a href="/shisaku/">施策の一覧</a>・<a href="/kihon/">基本施策の一覧</a>・<a href="/shihyou/">指標</a>・<a href="/bukyoku/">部局</a> からもさがせます。</div>
+      <div class="small">ほかに <a href="/shisaku/">施策の一覧</a>・<a href="/kihon/">基本施策の一覧</a>・<a href="/bukyoku/">部局</a> からもさがせます。</div>
     </form>
   </section>
 
@@ -121,7 +122,7 @@ const byShouraizou = getShouraizou().map((s) => ({
       <a class="card nav-card" href="/shisaku/"><strong>施策をさがす</strong><span>339施策ごとに、成果指標・主な取組の4年分と、県の分析・今後の方向</span></a>
       <a class="card nav-card" href="/torikumi/"><strong>取組をさがす</strong><span>約1,700の主な取組を、キーワード・部局・進捗で検索</span></a>
       <a class="card nav-card" href="/okure/"><strong>遅れが続いている取組</strong><span>4年のうち3年以上、進捗が遅れている取組の一覧</span></a>
-      <a class="card nav-card" href="/shihyou/"><strong>指標をさがす</strong><span>主要指標と成果指標の実績・目標・見通し</span></a>
+      <a class="card nav-card" href="/shihyou/"><strong>成果指標をさがす</strong><span>施策ごとの成果指標の実績・目標・見通し</span></a>
       <a class="card nav-card" href="/bukyoku/"><strong>部局</strong><span>部局ごとの取組と成果指標の進み具合</span></a>
       <a class="card nav-card" href="/yosan/"><strong>予算と財源</strong><span>取組に書かれた予算事業の決算額・当初予算と財源の推移</span></a>
       <a class="card nav-card" href="/about/"><strong>データについて</strong><span>出典・作り方・年度による計り方の違い</span></a>
@@ -134,9 +135,9 @@ const byShouraizou = getShouraizou().map((s) => ({
   .intro p { max-width: 46em; }
   .search { margin-top: 16px; display: grid; gap: 8px; }
   .search label { font-weight: 700; }
-  .search-row { display: flex; gap: 8px; }
+  .search-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .search-row input {
-    flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--surface);
+    flex: 1 1 14em; min-width: 0; font: inherit; color: var(--ink); background: var(--surface);
     border: 1px solid var(--baseline); border-radius: 8px; padding: 8px 12px; min-height: 44px;
   }
   .nav-card { display: grid; gap: 4px; text-decoration: none; color: var(--ink); }
