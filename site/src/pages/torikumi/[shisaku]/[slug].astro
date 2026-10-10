@@ -2,6 +2,8 @@
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる
 import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
+import Stamps from '../../../components/Stamps.astro';
+import Term from '../../../components/Term.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
   deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS,
@@ -41,27 +43,33 @@ const KINDS = ['settled', 'estimate', 'initial'];
 // 報告に載っている年度の範囲（「R4〜R6」「R7」）
 const span = (x) => (firstYearOf(x) === x.latest.year ? yearLabel(x.latest.year) : `${yearLabel(firstYearOf(x))}〜${yearLabel(x.latest.year)}`);
 const secHref = deptHref(t.section);
+const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 ---
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
   <nav class="breadcrumb">
     <a href="/">トップ</a> › <a href="/torikumi/">取組をさがす</a> › <a href={`/shisaku/${s.id}/`}>施策 {s.code} {s.name}</a>
   </nav>
 
-  <header class="head">
-    <div class="code">主な取組　／　施策 {s.code}</div>
+  <header class="sticker head">
+    <div class="code"><Term word="主な取組" />　／　施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>
     <h1>{t.name}</h1>
     <div class="secondary small">
       所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}
       {seikaName && <>　／　対応する成果指標: {seikaHref ? <a href={seikaHref}>{seikaName}</a> : seikaName}</>}
     </div>
+    <div class="head-years">
+      <div class="small secondary label">4年間の<Term word="進捗状況" /></div>
+      <Stamps items={stamps} label="4年間の進捗状況" />
+    </div>
+  </header>
     <nav class="toc" aria-label="このページの内容">
       <a href="#progress">進捗の推移</a>
       {latestRec && <a href="#plan">取組の概要</a>}
       <a href="#yosan">予算</a>
       <a href="#pdca">年度ごとの活動と検証</a>
       <a href="#source">出典</a>
+      <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
     </nav>
-  </header>
 
   {(t.year !== LATEST || first !== YEARS[0]) && (
     <div class="notice">
@@ -264,8 +272,11 @@ const secHref = deptHref(t.section);
 
 <style>
   .head { margin-top: 12px; }
-  .head .code { font-size: 0.85rem; }
-  .toc { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; font-size: 0.9rem; }
+  .head h1 { margin: 6px 0 8px; }
+  .head .code { font-size: 0.9375rem; }
+  .head-years { margin-top: 14px; }
+  .label { font-weight: 700; margin-bottom: 4px; }
+  section h2 { scroll-margin-top: 72px; }
   .notice { margin-top: 16px; }
   .notice p { margin: 0 0 6px; }
   .notice ul { margin: 0 0 6px; padding-left: 1.2em; }
@@ -276,16 +287,15 @@ const secHref = deptHref(t.section);
   .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 8px 0 12px; }
   .kv div { min-width: 0; }
   .kv .wide { grid-column: 1 / -1; }
-  .kv dt { font-size: 0.8rem; color: var(--ink-2); }
+  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   .kv dd { margin: 0; overflow-wrap: anywhere; }
-  caption { text-align: left; font-size: 0.85rem; color: var(--ink-2); padding: 4px 0; }
   .plan { margin-top: 8px; }
   .plan td.num { min-width: 4em; }
   .budget { min-width: 720px; }
   .budget td:nth-child(2) { min-width: 12em; }
   .budget tr.sep th, .budget tr.sep td { border-top: 1px solid var(--grid); }
   .cad { margin-top: 12px; }
-  .cad > summary { font-weight: 700; color: var(--ink); font-size: 1rem; cursor: pointer; }
+  .cad > summary { font-family: var(--font-display); font-weight: 700; color: var(--ink); font-size: 1rem; cursor: pointer; }
   .cad > summary :global(.chip) { font-weight: 400; margin-left: 8px; }
   .cad h3 { font-size: 0.95rem; margin: 16px 0 4px; }
   .cad p { margin: 0 0 8px; }
@@ -293,7 +303,7 @@ const secHref = deptHref(t.section);
   .impr td { width: 50%; }
   .typed { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
   .typed li { display: grid; gap: 2px; }
-  .typed .type { font-size: 0.8rem; color: var(--ink-2); }
+  .typed .type { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   /* スマホでは表を1件ずつの縦並びにする（横にスクロールしないと計画・実績・金額が見えないため） */
   @media (max-width: 640px) {
     .stack { min-width: 0; }
@@ -305,7 +315,7 @@ const secHref = deptHref(t.section);
     .stack .span2 { grid-column: span 2; }
     .stack td.name:empty { display: none; }
     .stack td.num { text-align: left; }
-    .stack td[data-label]::before { content: attr(data-label); display: block; font-size: 0.75rem; color: var(--ink-2); }
+    .stack td[data-label]::before { content: attr(data-label); display: block; font-size: 0.8125rem; color: var(--ink-2); }
     .stack tr.sep th, .stack tr.sep td { border-top: 0; }
     .budget td:nth-child(2) { min-width: 0; }
     .progress td.small { min-width: 0; }

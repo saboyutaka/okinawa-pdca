@@ -4,6 +4,8 @@ import { YEARS, LATEST, yearLabel, yearLong, getTorikumi, amountEntries, getFina
 import { fmt } from '../lib/format.js';
 import fs from 'node:fs';
 import { LINKS } from '../lib/links.js';
+import { TERMS } from '../lib/terms.js';
+import { getThemes, unthemed } from '../lib/themes.js';
 import path from 'node:path';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）
@@ -17,6 +19,7 @@ const blanks = YEARS.map((y) => [y, getTorikumi(y).filter((t) => !t.status).leng
 // 部局票の取組のうち、活動内容・判定の根拠・改善案の反映状況・検証・改善案のどれかが空のもの（docs/issues.md の A9 と同じ欄）
 const records = getBudgetRecords();
 const emptyFields = records.filter((b) => ['activity_done', 'basis', 'improvements', 'check', 'action'].some((k) => !b[k]?.length)).length;
+const themes = getThemes();
 ---
 <Base title="データについて" description="このサイトのデータの出典・作り方・注意点">
   <nav class="breadcrumb"><a href="/">トップ</a> › データについて</nav>
@@ -40,6 +43,19 @@ const emptyFields = records.filter((b) => ['activity_done', 'basis', 'improvemen
     <li><strong>主要指標</strong>は基本施策の最終的な成果、<strong>成果指標</strong>は施策の成果、<strong>活動指標</strong>は主な取組の活動量をはかる指標です。</li>
     <li>R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>（目標年度R6）、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
+
+  <h2 id="yougo">用語</h2>
+  <p class="small secondary">本文の点線の下線が付いた言葉を押しても、同じ説明が出ます。</p>
+  <dl class="terms sticker">
+    {Object.entries(TERMS).map(([w, d]) => <div><dt>{w}</dt><dd>{d}</dd></div>)}
+  </dl>
+
+  <h2 id="theme">くらしのテーマについて</h2>
+  <p>
+    <a href="/theme/">くらしのテーマ</a>（{themes.length}テーマ）は、<strong>このサイトが独自にまとめた分類</strong>で、県の計画の分類ではありません。
+    施策の名前・施策展開の名前・基本施策の名前に決まった言葉（例: 子ども・子育てなら「子ども」「保育」「ひとり親」など）が含まれる施策を、そのテーマに入れています。
+    1つの施策が複数のテーマに入ることがあり、どのテーマにも入らない施策が{fmt(unthemed().length)}あります。言葉の一覧と、人が直すための追加・除外の指定は、リポジトリの <code>data/reference/themes.json</code> にあります。
+  </p>
 
   <h2>出典</h2>
   <p>沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<a href={LINKS.pdca} rel="noopener">沖縄県PDCA</a>の各部局のページ）です。</p>
@@ -78,4 +94,17 @@ const emptyFields = records.filter((b) => ['activity_done', 'basis', 'improvemen
     <li><strong>取組のページの活動内容・検証・改善案は、部局の検証票の文章をそのまま載せています。</strong>空欄の欄と、表の形が崩れていて読み取れなかった欄は表示していません（4年分の延べ{fmt(records.length)}取組のうち{fmt(emptyFields)}件）。</li>
     <li><strong>R5の報告書の成果指標の達成率は、25指標が概要版に書かれた計算式と合いません</strong>（実績値÷目標値で計算したと見られるものなど）。このサイトは報告書の値をそのまま載せています。</li>
   </ul>
+
+  <h2>このサイトの表示について</h2>
+  <ul>
+    <li>状態（順調・概ね順調・やや遅れ・大幅遅れ など）は、色だけでなく形（● ◆ ▲ ■）と文字でも区別しています。施策の判定の E・F（取組が遅れている）は ▼ と斜線です。</li>
+    <li>図には「表で見る」を付けています。図の値は表でも読めます。</li>
+    <li>数字の表示に、丸い英字フォント <a href="https://github.com/hafontia/Fredoka-One" rel="noopener">Fredoka</a>（数字と記号だけに絞ったもの。<a href="/fonts/Fredoka-OFL.txt">SIL Open Font License 1.1</a>）を使っています。日本語の文字は、お使いの端末のフォントで表示します。</li>
+  </ul>
 </Base>
+
+<style>
+  .terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 24px; margin: 8px 0 0; }
+  .terms dt { font-family: var(--font-display); font-weight: 700; }
+  .terms dd { margin: 2px 0 0; font-size: 0.9375rem; }
+</style>
