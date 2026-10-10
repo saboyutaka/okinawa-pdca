@@ -13,7 +13,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。部局は最新の報告での所管部局です。
   </p>
 
-  <form class="filters" id="tf" role="search" aria-label="取組の絞り込み">
+  <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q">キーワード
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
@@ -42,6 +42,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
         <option value="delay4">4年とも遅れ</option>
         <option value="delay3">3年以上遅れ</option>
         <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
+        <option value="newdelay">{yearLabel(LATEST - 1)}の順調・概ね順調から{yearLabel(LATEST)}で遅れ</option>
         <option value="new">{yearLabel(LATEST)}で新しく出た</option>
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
@@ -56,6 +57,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 </Base>
 
 <script>
+  import { iconSvg } from '../../lib/icons.js';
   type Data = {
     years: number[];
     statuses: [string, string][];
@@ -108,7 +110,12 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       box.append(el('span', 'yl', `R${y - 2018}`));
       const st = sts[i];
       if (st == null) box.append(el('span', 'secondary small', '—'));
-      else box.append(el('span', `chip tone-${data.statuses[st][1]}`, data.statuses[st][0]));
+      else {
+        const chip = el('span', 'chip');
+        chip.insertAdjacentHTML('beforeend', iconSvg(data.statuses[st][1]));
+        chip.append(el('span', '', data.statuses[st][0]));
+        box.append(chip);
+      }
       years.append(box);
     });
     const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
@@ -146,6 +153,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       if (pat === 'delay4' && !(all && delays === 4)) return false;
       if (pat === 'delay3' && !(all && delays >= 3)) return false;
       if (pat === 'recover' && !(sts[last - 1] != null && DELAY.has(sts[last - 1]!) && sts[last] === 0)) return false;
+      if (pat === 'newdelay' && !(sts[last - 1] != null && sts[last - 1]! <= 1 && sts[last] != null && DELAY.has(sts[last]!))) return false;
       if (pat === 'new' && !(sts[last] != null && sts[last - 1] == null)) return false;
       if (pat === 'ended' && sts[last] != null) return false;
       if (q.length) {
@@ -187,7 +195,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 
 <style>
   #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  #results :global(.name) { font-weight: 600; }
-  #results :global(.sec) { font-size: 0.8rem; color: var(--ink-2); }
+  #results :global(.name) { font-family: var(--font-display); font-weight: 700; }
+  #results :global(.sec) { font-size: 0.875rem; color: var(--ink-2); }
   #results :global(.years) { margin: 6px 0 4px; }
 </style>
