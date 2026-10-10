@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Chip from '../../components/Chip.astro';
+import Term from '../../components/Term.astro';
 import Sz from '../../components/Sz.astro';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
 import {
@@ -74,7 +75,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">{latestCount}</span>指標を表示</p>
-  <p class="small secondary">達成率は、その年度の計画値に対する割合です（計算方法は<a href="/about/">データについて</a>）。見通しは、目標年度の目標値に届くかの県の見立てです。指標の名前を押すと、施策のページで4年分の推移を見られます。</p>
+  <p class="small secondary"><Term word="達成率" />はその年度の計画値に対する割合、見通しは目標値に届くかの県の見立てです。</p>
 
   <div id="seika-list">
     {kihon.map((k) => {

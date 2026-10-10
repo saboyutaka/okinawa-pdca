@@ -129,9 +129,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">
-      棒は{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />です。<Term word="主要指標" />は基本施策の最終的な成果をはかる指標で、{yearLong(LATEST)}の報告の実績値・R9の目標値・見通しです。基本施策の名前を押すと、施策の一覧と主要指標の4年分を見られます。
-    </p>
+    <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />、その下は<Term word="主要指標" />の実績値と、R9の目標値に届くかの見通しです。</p>
     <ul class="kcards">
       {kihonCards.map((k) => (
         <li class="sticker kcard">

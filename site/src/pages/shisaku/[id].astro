@@ -120,9 +120,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
-    <p class="small secondary lead">
-      施策の効果をはかる指標です。スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。実績値は報告の時点で分かっている最新の値で、統計の都合で前の年度の値のことがあります。
-    </p>
+    <p class="small secondary lead">スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
     {seikaPast.length > 0 && (
       <details class="past">
@@ -133,11 +131,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   </section>
 
   <section aria-labelledby="torikumi">
-    <h2 id="torikumi" class="anchor">主な取組</h2>
-    <p class="small secondary lead">
-      県が実施計画で、この施策を進める手段として選んだ事業です。施策で行われる事業のすべてではなく、主な取組に入っていない県の事業や、国・市町村の事業もあります（<a href="/about/#torikumi">データについて</a>）。
-      スタンプは各年度の<Term word="進捗状況" />（県の判定）です。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。
-    </p>
+    <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
+    <p class="small secondary lead">スタンプは各年度の<Term word="進捗状況" />です。名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。</p>
     <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
     <div class="tcards">
       {toriActive.map((row) => <ToriCard row={row} shisakuId={s.id} />)}

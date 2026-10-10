@@ -265,7 +265,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   {plans.size > 0 && (
     <section aria-labelledby="plan">
       <h2 id="plan" class="anchor">年度別計画</h2>
-      <p class="small secondary lead">部局の検証票に書かれた、計画期間（3年）の年度ごとの活動の目標です。「２箇所（４箇所）」のような表記は、その年度の目標（かっこ内は累計）です。</p>
+      <p class="small secondary lead">部局の検証票に書かれた、計画期間（3年）の年度ごとの活動の目標です（かっこ内は累計）。</p>
       {[...plans.values()].map((p) => (
         <div class="sticker plan">
           <div class="plan-h">{p.years[0]}〜{p.years.at(-1)}の計画<span class="small secondary">（{yearLabel(p.report)}の報告の記載）</span></div>
@@ -287,10 +287,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 
   <section aria-labelledby="yosan">
     <h2 id="yosan" class="anchor">予算の推移</h2>
-    <p class="small secondary lead">
-      各部局の検証票に書かれた、この取組の予算事業の金額です。年度ごとに、確定に近い金額（決算額 → 決算見込額 → 当初予算額）を出しています。
-      1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。
-    </p>
+    <p class="small secondary lead">年度ごとに、確定に近い金額（決算額 → 決算見込額 → 当初予算額）を出しています。</p>
     {budgetSeries.length > 0 ? (
       <div class="sticker">
         <ul class="bud">
@@ -304,6 +301,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         <p class="small secondary bud-key"><span class="k k-settled"></span>決算額 <span class="k k-estimate"></span>決算見込額 <span class="k k-initial"></span>当初予算額{budgetNames.length > 1 && `　／　${budgetNames.length}つの予算事業の合計`}</p>
       </div>
     ) : <p class="secondary">部局の検証票に、この取組の金額の記載がありません。</p>}
+    <p class="small secondary">1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。</p>
     <details>
       <summary>報告ごとの予算事業と金額を表で見る</summary>
       <div class="table-wrap">
@@ -343,9 +341,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 
   <section aria-labelledby="pdca">
     <h2 id="pdca" class="anchor">年度ごとの活動と検証</h2>
-    <p class="small secondary lead">
-      各部局の「主な取組」検証票の記載をそのまま載せています。県は毎年、前年度に決めた改善案を反映して活動し（Plan・Do）、結果を検証して（Check）、翌年度の改善案を決めます（Action）。
-    </p>
+    <p class="small secondary lead">部局の検証票の記載をそのまま載せています。P は前年度の改善案の反映、D は活動、C は県の検証、A は翌年度の改善案です。</p>
     {present.map((y) => {
       const r = g.years[y];
       const b = recs[y];
