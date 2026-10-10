@@ -1,0 +1,7 @@
+---
+// 将来像の番号の印。色は新・沖縄21世紀ビジョン基本計画のパンフレットの将来像の色（styles/global.css の --sz-N）。
+// すぐ横に「将来像N」と書いてあるときは sr={false}（読み上げの重複を避ける）
+interface Props { id: number | string; sr?: boolean; class?: string }
+const { id, sr = true, class: cls } = Astro.props;
+---
+<span class:list={['badge-sz', `sz-${id}`, cls]} aria-hidden="true">{id}</span>{sr && <span class="sr-only">将来像{id}</span>}

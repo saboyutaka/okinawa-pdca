@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Chip from '../../components/Chip.astro';
+import Sz from '../../components/Sz.astro';
 import {
   LATEST, yearLong, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi,
   getShuyouByYear, toneOfJudgement,
@@ -34,7 +35,7 @@ const visions = getShouraizou().map((v) => ({
   </p>
   {visions.map((v) => (
     <section id={`shouraizou-${v.id}`} aria-labelledby={`h-shouraizou-${v.id}`}>
-      <h2 id={`h-shouraizou-${v.id}`}>将来像{v.id} {v.name}</h2>
+      <h2 id={`h-shouraizou-${v.id}`} class:list={['sz-ribbon', `sz-${v.id}`, 'sz-h2']}><Sz id={v.id} sr={false} />将来像{v.id} {v.name}</h2>
       <StatusChart title={`将来像${v.id}の基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} />
       <p class="small"><a href={`/shisaku/?s=${v.id}`}>将来像{v.id}の施策をすべて見る</a></p>
       <h3>将来像{v.id}の主要指標（{yearLong(LATEST)}）</h3>
@@ -62,6 +63,8 @@ const visions = getShouraizou().map((v) => ({
 
 <style>
   .ind-name { font-family: var(--font-display); font-weight: 700; }
+  .sz-h2 { font-size: 1.15rem; margin-top: 2.4em; }
+  section { scroll-margin-top: 16px; }
   .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 4px 16px; margin: 6px 0 0; }
   .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   .kv dd { margin: 0; }

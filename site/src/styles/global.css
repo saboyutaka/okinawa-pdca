@@ -37,6 +37,13 @@
   --none: #898781;
   --blank: #c3c2b7;
   --on-fill: #0b0b0b;
+  /* 将来像の色（新・沖縄21世紀ビジョン基本計画のパンフレットの色に合わせる。1 緑・2 青・3 橙・4 ピンク・5 青緑）。
+     番号の印と見出しの帯だけに使い、状態の色（棒・印）には使わない。--sz-N-ink はその上の文字の色 */
+  --sz-1: #0a7f39; --sz-1-ink: #ffffff; --sz-1-wash: #e2f3e8;
+  --sz-2: #0072bc; --sz-2-ink: #ffffff; --sz-2-wash: #dcecf8;
+  --sz-3: #f7941d; --sz-3-ink: #151a3d; --sz-3-wash: #fdeedb;
+  --sz-4: #f0679f; --sz-4-ink: #151a3d; --sz-4-wash: #fde4ee;
+  --sz-5: #00a88e; --sz-5-ink: #151a3d; --sz-5-wash: #dbf3ee;
   /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
   /* 以前の名前（ページの style から参照しているもの） */
@@ -58,6 +65,11 @@
     --link: #a9b8ff; --muted: #8e94c0;
     --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
     --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+    --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
+    --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
+    --sz-3: #f7a24a; --sz-3-ink: #0f1330; --sz-3-wash: #3d2f2c;
+    --sz-4: #f48ab6; --sz-4-ink: #0f1330; --sz-4-wash: #3d2547;
+    --sz-5: #2cc2a6; --sz-5-ink: #0f1330; --sz-5-wash: #173c45;
   }
 }
 :root[data-theme="dark"] {
@@ -67,6 +79,11 @@
   --link: #a9b8ff; --muted: #8e94c0;
   --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+  --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
+  --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
+  --sz-3: #f7a24a; --sz-3-ink: #0f1330; --sz-3-wash: #3d2f2c;
+  --sz-4: #f48ab6; --sz-4-ink: #0f1330; --sz-4-wash: #3d2547;
+  --sz-5: #2cc2a6; --sz-5-ink: #0f1330; --sz-5-wash: #173c45;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -124,6 +141,23 @@ small, .small { font-size: 0.875rem; }
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
+/* サブメニューのあるナビ（施策・取組・予算）。文字はリンク、「▾」でナビの下にサブメニューを1段で出す */
+.nav-split { flex: none; display: inline-flex; align-items: stretch; border: 2px solid transparent; border-radius: 999px; }
+.nav-split > a { border: 0 !important; box-shadow: none !important; background: none !important; padding-right: 6px; }
+.nav-split.on { border-color: var(--line); background: var(--paper); box-shadow: 2px 2px 0 var(--shadow); }
+.nav-split.on > a { font-weight: 700; }
+.nav-split:not(.on):hover { border-color: var(--hair); background: var(--paper); }
+.nav-toggle {
+  font: inherit; font-size: 1.05rem; line-height: 1; color: var(--ink-2); background: none; border: 0; border-left: 1.5px solid var(--hair);
+  border-radius: 0 999px 999px 0; padding: 0 10px 0 7px; min-width: 34px; cursor: pointer;
+}
+.nav-toggle[aria-expanded="true"] { color: var(--ink); background: var(--sky); }
+.nav-toggle[hidden] { display: none; }
+.subnav { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 4px; padding: 8px 10px; background: var(--paper); border: 2px solid var(--line); border-radius: 16px; }
+.subnav[hidden] { display: none; }
+.subnav a { font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 2px 12px; min-height: 36px; display: inline-flex; align-items: center; border-radius: 999px; border: 2px solid transparent; }
+.subnav a:hover { border-color: var(--hair); }
+.subnav a[aria-current="page"] { background: var(--sky); border-color: var(--line); font-weight: 700; }
 @media (max-width: 720px) { .theme-label { display: none; } }
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
@@ -198,11 +232,31 @@ details[open] > summary { margin-bottom: 8px; }
 .chip.empty { color: var(--ink-2); }
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
-/* 将来像の番号の印 */
+/* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */
 .badge-sz {
-  display: inline-grid; place-items: center; flex: none; width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--sky);
+  display: inline-grid; place-items: center; flex: none; width: 1.6em; height: 1.6em; border-radius: 50%;
+  background: var(--szc, var(--sky)); color: var(--szi, var(--ink));
   border: 2px solid var(--line); font-family: var(--font-num); font-size: 0.8125rem; font-weight: 600; line-height: 1;
 }
+.sz-1 { --szc: var(--sz-1); --szi: var(--sz-1-ink); --szw: var(--sz-1-wash); }
+.sz-2 { --szc: var(--sz-2); --szi: var(--sz-2-ink); --szw: var(--sz-2-wash); }
+.sz-3 { --szc: var(--sz-3); --szi: var(--sz-3-ink); --szw: var(--sz-3-wash); }
+.sz-4 { --szc: var(--sz-4); --szi: var(--sz-4-ink); --szw: var(--sz-4-wash); }
+.sz-5 { --szc: var(--sz-5); --szi: var(--sz-5-ink); --szw: var(--sz-5-wash); }
+/* 将来像の帯（見出し）。番号の印と名前を並べ、地を将来像の淡い色にする */
+.sz-ribbon {
+  display: flex; align-items: center; gap: 10px; background: var(--szw, var(--sky)); border: 2.5px solid var(--line); border-radius: 999px;
+  padding: 4px 16px 4px 5px; box-shadow: 3px 3px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
+}
+.sz-ribbon .badge-sz { width: 2.1em; height: 2.1em; font-size: 0.95rem; }
+/* くらしのテーマのラベル（components/ThemeTags.astro）。このサイト独自の分類なので、ピンクの地で県の分類と見分ける */
+.ttags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.ttags-l { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; cursor: help; }
+.ttag {
+  display: inline-flex; align-items: center; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);
+  background: var(--pink); border: 1.5px solid var(--line); border-radius: 8px; padding: 0 8px; line-height: 1.7; text-decoration: none; white-space: nowrap;
+}
+a.ttag:hover { background: var(--sky); }
 /* 年度ごとのスタンプ */
 .stamps { display: flex; flex-wrap: wrap; gap: 8px; }
 .stamp { display: grid; justify-items: center; gap: 2px; min-width: 52px; flex: 1 1 0; max-width: 92px; }
@@ -270,15 +324,25 @@ details[open] > summary { margin-bottom: 8px; }
 /* 押せるボタン型の選択肢（中身は本物の radio / checkbox。キーボード・読み上げはそのまま） */
 .fchip { position: relative; display: inline-flex; }
 .fchip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.fchip span {
+.fchip > input + span {
   display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 0.875rem; color: var(--ink); background: var(--paper);
   border: 2px solid var(--line); border-radius: 999px; padding: 4px 12px; min-height: 38px;
 }
 .fchip input:checked + span { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
 .fchip input:checked + span::before { content: "✓"; font-weight: 700; }
 .fchip input:focus-visible + span { outline: 3px solid var(--pop); outline-offset: 2px; }
-.fchip:hover span { background: var(--sky); }
+.fchip:hover > input + span { background: var(--sky); }
+.filters label .own { justify-self: start; }
 .result-count { font-size: 0.9375rem; color: var(--ink-2); font-weight: 700; }
+/* いまの絞り込みの条件（scripts/list-filter.js）。1つずつ外せる */
+.active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+.active-filters .active-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
+.active-chip {
+  display: inline-flex; align-items: center; gap: 6px; font: inherit; font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: var(--ink);
+  background: var(--sky); border: 2px solid var(--line); border-radius: 999px; padding: 2px 10px 2px 12px; min-height: 34px; cursor: pointer;
+}
+.active-chip span { font-size: 1rem; color: var(--ink-2); }
+.active-chip:hover { background: var(--paper); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 16px; min-width: 0; }
 .code { font-family: var(--font); font-size: 0.875rem; color: var(--ink-2); font-weight: 400; font-variant-numeric: tabular-nums; }
