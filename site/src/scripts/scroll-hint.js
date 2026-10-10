@@ -1,4 +1,4 @@
-// 横にすべらせる帯（[data-scroll-hint]。ヘッダーのナビ・ページ内の目次）に、続きがある向きを付ける。
+// 横にすべらせる帯（[data-scroll-hint]。ヘッダーのナビ・施策と取組のページの目次のリンクの並び）に、続きがある向きを付ける。
 // 左に続きがあれば more-l、右に続きがあれば more-r を付け、styles/global.css がその側の端をぼかす
 for (const el of document.querySelectorAll('[data-scroll-hint]')) {
   const update = () => {

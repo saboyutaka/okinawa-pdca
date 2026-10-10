@@ -172,11 +172,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   </div>
 
   <nav class="toc" aria-label="このページの内容">
-    <a href="#progress">年度ごとの進捗</a>
-    {plans.size > 0 && <a href="#plan">年度別計画</a>}
-    <a href="#yosan">予算</a>
-    <a href="#pdca">活動と検証</a>
-    <a href="#source">出典</a>
+    <div class="toc-links" data-scroll-hint>
+      <a href="#progress">年度ごとの進捗</a>
+      {plans.size > 0 && <a href="#plan">年度別計画</a>}
+      <a href="#yosan">予算</a>
+      <a href="#pdca">活動と検証</a>
+      <a href="#source">出典</a>
+    </div>
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
