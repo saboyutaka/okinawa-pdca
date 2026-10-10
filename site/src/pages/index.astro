@@ -55,8 +55,8 @@ const moves = [
     href: '/torikumi/?pat=newdelay',
   },
   {
-    tone: 'critical', title: '3年以上、遅れが続いている',
-    desc: `4年とも報告にある取組のうち、3年以上遅れているもの（4年とも遅れ ${fmt(groups.filter((g) => g.inAllYears && g.delayYears === 4).length)}件）`,
+    tone: 'critical', title: '4年のうち3年以上遅れた',
+    desc: `4年とも報告にある取組のうち、3年以上の年度で遅れていたもの（4年とも遅れ ${fmt(groups.filter((g) => g.inAllYears && g.delayYears === 4).length)}件）`,
     rows: groups.filter((g) => g.inAllYears && g.delayYears >= 3).sort((a, b) => b.delayYears - a.delayYears),
     href: '/torikumi/?pat=delay3',
   },

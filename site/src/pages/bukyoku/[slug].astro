@@ -79,7 +79,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
       <div class="tile-sub">「順調」 {fmt(okLatest)}件（{pct(okLatest, latest.length)}）</div>
     </div>
     <div class="card">
-      <div class="tile-label">4年のうち3年以上遅れている取組</div>
+      <div class="tile-label">4年のうち3年以上遅れた取組</div>
       <div class="tile-value">{fmt(delayed.length)}<small>件</small></div>
       <div class="tile-sub">{delayed.length ? <a href="#okure">一覧を見る</a> : '該当なし'}</div>
     </div>
@@ -146,7 +146,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
     <p id="dempty" class="secondary" hidden>条件に合うものはありません。</p>
 
     <div class="anchor" id="okure" {...(delayed.length ? { 'data-group': '' } : {})}>
-      <h3>遅れが続いている取組（<span data-group-count>{fmt(delayed.length)}</span>件）</h3>
+      <h3>4年のうち3年以上遅れた取組（<span data-group-count>{fmt(delayed.length)}</span>件）</h3>
       {delayed.length === 0 ? <p class="secondary">4年のうち3年以上遅れている取組はありません。</p> : (
         <ul class="dcards">
           {delayed.map((g) => {
