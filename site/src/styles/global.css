@@ -115,12 +115,12 @@ small, .small { font-size: 0.875rem; }
   background: var(--pop); color: var(--pop-ink); border: 2.5px solid var(--line); box-shadow: 2px 2px 0 var(--shadow);
   font-family: var(--font); font-weight: 800; font-size: 0.75rem; letter-spacing: 0.04em; transform: rotate(-4deg);
 }
-.site-title small { font-weight: 400; color: var(--ink-2); }
-/* 作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面では配色のボタンの行に入る */
-.site-by { margin-left: -8px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
+/* 「（非公式）」と作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面ではタイトルの下の行に小さく置く */
+.site-sub { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; margin-left: -12px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); }
+.site-sub small { font-size: 0.9375rem; }
+.site-by { color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .site-by b { font-family: var(--font-display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; text-underline-offset: 0.25em; }
 .site-by:hover b { text-decoration-color: var(--pop); }
-@media (max-width: 720px) { .site-by { margin-left: 0; } }
 .theme-toggle {
   margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
   background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
@@ -134,7 +134,24 @@ small, .small { font-size: 0.875rem; }
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-@media (max-width: 720px) { .theme-label { display: none; } }
+/* スマホでは「タイトル＋配色のボタン」「（非公式）by …」「ナビ」の3行を、タイトルの行に配色のボタンを並べて詰める */
+@media (max-width: 720px) {
+  .theme-label { display: none; }
+  .site-header .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; }
+  .site-title { grid-column: 1; grid-row: 1; }
+  .theme-toggle { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+  .site-sub { grid-column: 1; grid-row: 2; margin: 0 0 0 74px; font-size: 0.75rem; gap: 0 6px; } /* 74px: PDCA の印の幅とすき間（タイトルの文字の頭にそろえる） */
+  .site-sub small { font-size: 0.8125rem; }
+  .site-by { padding: 0; }
+  .site-nav { grid-column: 1 / -1; margin-top: 6px; }
+}
+/* 横にすべらせる帯（ナビ・ページ内の目次）は、続きがある側の端をぼかす（scripts/scroll-hint.js が more-l・more-r を付ける） */
+[data-scroll-hint].more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent); }
+[data-scroll-hint].more-l { -webkit-mask-image: linear-gradient(to right, transparent, #000 44px); mask-image: linear-gradient(to right, transparent, #000 44px); }
+[data-scroll-hint].more-l.more-r {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+}
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
 

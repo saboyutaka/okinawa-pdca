@@ -52,10 +52,10 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     <a class="skip" href="#main">本文へスキップ</a>
     <header class="site-header">
       <div class="wrap">
-        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}<small>（非公式）</small></span></a>
-        <a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a>
+        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}</span></a>
+        <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
         <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
-        <nav class="site-nav" aria-label="サイト内">
+        <nav class="site-nav" aria-label="サイト内" data-scroll-hint>
           {NAV.map((n) => <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>)}
         </nav>
         <script is:inline>
@@ -83,5 +83,6 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     <script src="../scripts/terms.js"></script>
     <script src="../scripts/disclosure.js"></script>
     <script src="../scripts/charts.js"></script>
+    <script src="../scripts/scroll-hint.js"></script>
   </body>
 </html>
