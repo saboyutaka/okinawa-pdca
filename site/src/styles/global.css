@@ -1,5 +1,5 @@
 /* デザイン: 空と海の色の地に、太い線と硬い影の「ステッカー」を貼るポップな見た目。
-   色はすべて役割名のトークンで参照する。暗い配色は同じ系統から選び直した値（自動反転ではない）。
+   色はすべて役割名のトークンで参照する。暗い配色は同じ系統から選び直した値（自動反転ではない）。はじめはライトで表示する。
    状態の色（青信号系）は装飾の色（青・紫・ピンク）と混ぜない。状態は必ず形と文字と一緒に出す */
 
 /* 数字だけの丸い英字フォント（Fredoka。数字と記号だけに絞った約4KB。日本語のウェブフォントは読み込まない） */
@@ -57,21 +57,7 @@
   --font-display: "Hiragino Maru Gothic ProN", var(--font);
   --font-num: "Fredoka Num", var(--font-display);
 }
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
-    --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --grid: #2c3260; --hair: #3a4280;
-    --link: #a9b8ff; --muted: #8e94c0;
-    --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
-    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
-    --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
-    --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
-    --sz-3: #f7a24a; --sz-3-ink: #0f1330; --sz-3-wash: #3d2f2c;
-    --sz-4: #f48ab6; --sz-4-ink: #0f1330; --sz-4-wash: #3d2547;
-    --sz-5: #2cc2a6; --sz-5-ink: #0f1330; --sz-5-wash: #173c45;
-  }
-}
+/* ダーク（ヘッダーのボタンで選んだときだけ。はじめは端末の設定に関係なくライトで表示する） */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;

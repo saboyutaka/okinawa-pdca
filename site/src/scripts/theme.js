@@ -1,9 +1,8 @@
-// ライト／ダークの切り替え。選んだ配色は localStorage に記憶し、選んでいなければ端末の設定に従う。
+// ライト／ダークの切り替え。はじめはライトで表示し、ダークを選んだら localStorage に記憶する（端末の設定には従わない）。
 // 最初の反映は Base.astro の <head> のインラインスクリプトで行う（読み込み直後の配色のちらつきを防ぐため）
 const root = document.documentElement;
 const btn = document.getElementById('theme-toggle');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-const current = () => root.dataset.theme || (prefersDark.matches ? 'dark' : 'light');
+const current = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
 
 function render() {
   const dark = current() === 'dark';
@@ -30,6 +29,5 @@ if (btn) {
     }
     render();
   });
-  prefersDark.addEventListener('change', render);
   render();
 }
