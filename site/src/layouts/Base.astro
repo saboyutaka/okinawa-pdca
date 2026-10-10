@@ -6,6 +6,14 @@ const SITE = '沖縄県PDCAダッシュボード';
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
+const NAV = [
+  ['/', 'トップ'],
+  ['/shisaku/', '施策'],
+  ['/torikumi/', '取組'],
+  ['/shihyou/', '指標'],
+  ['/bukyoku/', '部局'],
+  ['/about/', 'データについて'],
+];
 ---
 <!doctype html>
 <html lang="ja">
@@ -24,9 +32,9 @@ const path = Astro.url.pathname;
       <div class="wrap">
         <a class="site-title" href="/">{SITE}<small class="secondary">（非公式）</small></a>
         <nav class="site-nav" aria-label="サイト内">
-          <a href="/" aria-current={path === '/' ? 'page' : undefined}>トップ</a>
-          <a href="/shisaku/" aria-current={path.startsWith('/shisaku') ? 'page' : undefined}>施策をさがす</a>
-          <a href="/about/" aria-current={path.startsWith('/about') ? 'page' : undefined}>データについて</a>
+          {NAV.map(([href, label]) => (
+            <a href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href)) ? 'page' : undefined}>{label}</a>
+          ))}
         </nav>
       </div>
     </header>

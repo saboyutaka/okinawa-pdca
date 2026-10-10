@@ -1,0 +1,116 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusChart from '../../components/StatusChart.astro';
+import YearStatuses from '../../components/YearStatuses.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, judgeOf, rateBin, countBy,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept,
+} from '../../lib/data.js';
+import { fmt, pct } from '../../lib/format.js';
+
+export function getStaticPaths() {
+  return DEPTS.map((d) => ({ params: { slug: d.slug } }));
+}
+
+const dept = DEPTS.find((d) => d.slug === Astro.params.slug);
+const statusKeys = STATUSES.map((s) => s.key);
+const last = YEARS.length - 1;
+const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
+const latest = mine.filter((g) => g.statuses[last]);
+const okLatest = latest.filter((g) => g.statuses[last] === '順調').length;
+const delayed = mine.filter((g) => g.inAllYears && g.delayYears >= 3).sort((a, b) => b.delayYears - a.delayYears);
+const shisaku = getShisakuList().filter((s) => s.depts.includes(dept.name));
+
+const progressRows = YEARS.map((y, i) => ({
+  label: yearLabel(y),
+  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i], statusKeys),
+}));
+
+// 課ごと（最新年度）
+const sections = [...new Set(latest.map((g) => g.section))];
+const sectionRows = sections
+  .map((sec) => ({ label: sec.replace(dept.name, ''), counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last], statusKeys) }))
+  .sort((a, b) => Object.values(b.counts).reduce((x, y) => x + y, 0) - Object.values(a.counts).reduce((x, y) => x + y, 0));
+
+const seikaRows = YEARS.map((y) => ({
+  label: yearLabel(y),
+  counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
+}));
+const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
+const seikaOk = seikaLatest.filter((s) => rateBin(s) === '100%以上').length;
+---
+<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標の進み具合（令和4〜7年度）`}>
+  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/bukyoku/">部局</a> › {dept.name}</nav>
+  <h1>{dept.name}</h1>
+  {REORGANIZED.has(dept.name) && (
+    <p class="notice">
+      令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。R4の数値は、その取組がR5以降に所管されている部局に寄せて数えています。
+    </p>
+  )}
+
+  <div class="cards">
+    <div class="card">
+      <div class="tile-label">{yearLong(LATEST)}の主な取組</div>
+      <div class="tile-value">{fmt(latest.length)}<small>件</small></div>
+      <div class="tile-sub">「順調」 {fmt(okLatest)}件（{pct(okLatest, latest.length)}）</div>
+    </div>
+    <div class="card">
+      <div class="tile-label">4年のうち3年以上遅れている取組</div>
+      <div class="tile-value">{fmt(delayed.length)}<small>件</small></div>
+      <div class="tile-sub">{delayed.length ? <a href="#okure">一覧を見る</a> : '該当なし'}</div>
+    </div>
+    <div class="card">
+      <div class="tile-label">{yearLong(LATEST)}に計画値を達成した成果指標</div>
+      <div class="tile-value">{fmt(seikaOk)}<small> / {fmt(seikaLatest.length)}指標</small></div>
+      <div class="tile-sub">成果指標の担当部課がこの部局のもの</div>
+    </div>
+  </div>
+
+  <h2>主な取組の進捗状況</h2>
+  <StatusChart title="年度別" categories={STATUSES} rows={progressRows} />
+  {sectionRows.length > 1 && (
+    <StatusChart title={`課ごと（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} />
+  )}
+
+  <h2>成果指標の達成状況</h2>
+  <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+
+  <section aria-labelledby="okure">
+    <h2 id="okure">遅れが続いている取組（{fmt(delayed.length)}件）</h2>
+    {delayed.length === 0 ? <p class="secondary">4年のうち3年以上遅れている取組はありません。</p> : (
+      <ul class="list">
+        {delayed.map((g) => (
+          <li class="item">
+            <div><strong>{g.latest.name}</strong> <small class="secondary">{g.section}</small></div>
+            <div class="small">施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
+            <div class="row-years"><YearStatuses statuses={g.statuses} /></div>
+            <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}</div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  <section aria-labelledby="shisaku">
+    <h2 id="shisaku">関係する施策（{fmt(shisaku.length)}）</h2>
+    <p class="small secondary">施策の「関係部等」にこの部局が書かれている施策です。</p>
+    <ul class="list">
+      {shisaku.map((s) => {
+        const j = judgeOf(s.judges[LATEST]);
+        return (
+          <li class="item">
+            <span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a>
+            <div>{j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}</div>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+  <p><a href={`/torikumi/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の取組をすべて見る</a></p>
+</Base>
+
+<style>
+  .row-years { margin: 6px 0 4px; }
+  .list :global(.chip) { white-space: normal; }
+</style>

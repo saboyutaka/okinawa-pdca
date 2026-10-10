@@ -1,0 +1,174 @@
+---
+import Base from '../../layouts/Base.astro';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
+import { fmt } from '../../lib/format.js';
+
+const groups = getTorikumiGroups();
+const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
+---
+<Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
+  <h1>取組をさがす</h1>
+  <p class="secondary">
+    令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。
+    部局は最新の報告での所管部局です。
+  </p>
+
+  <form class="filters" id="tf" role="search" aria-label="取組の絞り込み">
+    <label class="q">キーワード
+      <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
+    </label>
+    <label>将来像
+      <select name="s">
+        <option value="">すべて</option>
+        {getShouraizou().map((s) => <option value={s.id}>将来像{s.id}</option>)}
+      </select>
+    </label>
+    <label>担当部局
+      <select name="dept">
+        <option value="">すべて</option>
+        {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+      </select>
+    </label>
+    <label>{yearLabel(LATEST)}の進捗
+      <select name="st">
+        <option value="">すべて</option>
+        {STATUSES.map((s, i) => <option value={i}>{s.key}</option>)}
+        <option value="none">{yearLabel(LATEST)}の報告に無い</option>
+      </select>
+    </label>
+    <label>4年間の様子
+      <select name="pat">
+        <option value="">すべて</option>
+        <option value="delay4">4年とも遅れ</option>
+        <option value="delay3">3年以上遅れ</option>
+        <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
+        <option value="new">{yearLabel(LATEST)}で新しく出た</option>
+        <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
+      </select>
+    </label>
+  </form>
+  <p class="result-count" aria-live="polite"><span id="count">—</span>件</p>
+  <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
+
+  <ul class="list" id="results"></ul>
+  <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
+  <noscript><p>この検索には JavaScript が必要です。<a href="/shisaku/">施策の一覧</a>から各施策のページで取組を見ることもできます。</p></noscript>
+</Base>
+
+<script>
+  type Data = {
+    years: number[];
+    statuses: [string, string][];
+    shisaku: Record<string, [string, string, number]>;
+    rows: [string, string, string, string, (number | null)[], string, string, string, number][];
+  };
+  const PAGE = 50;
+  const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
+  const form = document.getElementById('tf') as HTMLFormElement;
+  const list = document.getElementById('results')!;
+  const count = document.getElementById('count')!;
+  const more = document.getElementById('more') as HTMLButtonElement;
+  const norm = (s: string) => s.normalize('NFKC').toLowerCase();
+  let data: Data;
+  let hits: Data['rows'] = [];
+  let shown = 0;
+
+  function el(tag: string, cls?: string, text?: string) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function render(row: Data['rows'][number]) {
+    const [sid, name, section, , sts, indicator, target, actual, latestYear] = row;
+    const [code, sname] = data.shisaku[sid];
+    const li = el('li', 'item');
+    const head = el('div', 'head');
+    head.append(el('span', 'name', name), el('span', 'sec', section));
+    const s = el('div', 'small');
+    s.append('施策 ');
+    const a = el('a', '', `${code} ${sname}`) as HTMLAnchorElement;
+    a.href = `/shisaku/${sid}/`;
+    s.append(a);
+    const years = el('div', 'years');
+    data.years.forEach((y, i) => {
+      const box = el('span');
+      box.append(el('span', 'yl', `R${y - 2018}`));
+      const st = sts[i];
+      if (st == null) box.append(el('span', 'secondary small', '—'));
+      else box.append(el('span', `chip tone-${data.statuses[st][1]}`, data.statuses[st][0]));
+      years.append(box);
+    });
+    const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
+    li.append(head, s, years, ind);
+    return li;
+  }
+
+  function showMore() {
+    const frag = document.createDocumentFragment();
+    for (const row of hits.slice(shown, shown + PAGE)) frag.append(render(row));
+    list.append(frag);
+    shown = Math.min(hits.length, shown + PAGE);
+    more.hidden = shown >= hits.length;
+    more.textContent = `さらに表示（残り ${hits.length - shown}件）`;
+  }
+
+  function apply() {
+    const f = new FormData(form);
+    const q = norm(String(f.get('q') || '')).split(/\s+/).filter(Boolean);
+    const s = String(f.get('s') || '');
+    const dept = String(f.get('dept') || '');
+    const st = String(f.get('st') || '');
+    const pat = String(f.get('pat') || '');
+    const last = data.years.length - 1;
+    hits = data.rows.filter((r) => {
+      const [sid, name, section, d, sts, indicator] = r;
+      const sh = data.shisaku[sid];
+      if (s && String(sh[2]) !== s) return false;
+      if (dept && d !== dept) return false;
+      if (st === 'none' ? sts[last] != null : st && sts[last] !== Number(st)) return false;
+      const delays = sts.filter((x) => x != null && DELAY.has(x)).length;
+      const all = sts.every((x) => x != null);
+      if (pat === 'delay4' && !(all && delays === 4)) return false;
+      if (pat === 'delay3' && !(all && delays >= 3)) return false;
+      if (pat === 'recover' && !(sts[last - 1] != null && DELAY.has(sts[last - 1]!) && sts[last] === 0)) return false;
+      if (pat === 'new' && !(sts[last] != null && sts[last - 1] == null)) return false;
+      if (pat === 'ended' && sts[last] != null) return false;
+      if (q.length) {
+        const text = norm(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`);
+        if (!q.every((w) => text.includes(w))) return false;
+      }
+      return true;
+    });
+    count.textContent = hits.length.toLocaleString('ja-JP');
+    list.replaceChildren();
+    shown = 0;
+    showMore();
+    const params = new URLSearchParams([...f.entries()].filter(([, v]) => v !== '').map(([k, v]) => [k, String(v)]));
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  for (const [k, v] of new URLSearchParams(location.search)) {
+    const input = form.elements.namedItem(k) as HTMLInputElement | null;
+    if (input) input.value = v;
+  }
+  form.addEventListener('input', apply);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  more.addEventListener('click', showMore);
+  fetch('/torikumi/data.json')
+    .then((r) => r.json())
+    .then((d: Data) => {
+      data = d;
+      apply();
+    });
+</script>
+
+<style>
+  #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  #results :global(.name) { font-weight: 600; }
+  #results :global(.sec) { font-size: 0.8rem; color: var(--ink-2); }
+  #results :global(.years) { margin: 6px 0 4px; }
+</style>

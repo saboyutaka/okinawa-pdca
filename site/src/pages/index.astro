@@ -67,7 +67,7 @@ const byShouraizou = getShouraizou().map((s) => ({
       <div class="card">
         <div class="tile-label">「取組は進んでいるのに成果が遅れている」施策</div>
         <div class="tile-value">{fmt(gapCount)}<small> / {fmt(shisaku.length)}施策</small></div>
-        <div class="tile-sub">県の判定 C・D の合計。<a href="/shisaku/?judge=CD">一覧を見る</a></div>
+        <div class="tile-sub">県の判定 C・D の合計。<a href="/shisaku/?judge=C%7CD">一覧を見る</a></div>
       </div>
     </div>
   </section>
@@ -106,16 +106,24 @@ const byShouraizou = getShouraizou().map((s) => ({
     <StatusChart title="将来像別 主な取組の進捗状況" categories={STATUSES} rows={byShouraizou} />
   </section>
 
-  <section class="next card" aria-labelledby="next">
-    <h2 id="next">施策をさがす</h2>
-    <p>339の施策それぞれについて、成果指標・主な取組の4年分の進み具合と、県による分析・今後の方向をまとめています。</p>
-    <p><a href="/shisaku/">施策の一覧へ</a>　<a href="/about/">このデータについて</a></p>
+  <section aria-labelledby="next">
+    <h2 id="next">くわしく見る</h2>
+    <div class="cards">
+      <a class="card nav-card" href="/shisaku/"><strong>施策をさがす</strong><span>339施策ごとに、成果指標・主な取組の4年分と、県の分析・今後の方向</span></a>
+      <a class="card nav-card" href="/torikumi/"><strong>取組をさがす</strong><span>約1,700の主な取組を、キーワード・部局・進捗で検索</span></a>
+      <a class="card nav-card" href="/okure/"><strong>遅れが続いている取組</strong><span>4年のうち3年以上、進捗が遅れている取組の一覧</span></a>
+      <a class="card nav-card" href="/shihyou/"><strong>指標をさがす</strong><span>主要指標と成果指標の実績・目標・見通し</span></a>
+      <a class="card nav-card" href="/bukyoku/"><strong>部局</strong><span>部局ごとの取組と成果指標の進み具合</span></a>
+      <a class="card nav-card" href="/about/"><strong>データについて</strong><span>出典・作り方・年度による計り方の違い</span></a>
+    </div>
   </section>
 </Base>
 
 <style>
   .intro { margin-top: 24px; }
   .intro p { max-width: 46em; }
-  .next { margin-top: 40px; }
-  .next h2 { margin-top: 0; }
+  .nav-card { display: grid; gap: 4px; text-decoration: none; color: var(--ink); }
+  .nav-card strong { color: var(--link); }
+  .nav-card span { font-size: 0.85rem; color: var(--ink-2); }
+  .nav-card:hover { border-color: var(--link); }
 </style>

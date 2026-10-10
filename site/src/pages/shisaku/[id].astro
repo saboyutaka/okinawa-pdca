@@ -229,6 +229,8 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
   .kv dt { font-size: 0.8rem; color: var(--ink-2); }
   .kv dd { margin: 0; }
   .seika table { margin-top: 12px; }
+  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
+  .seika td.num { white-space: normal; min-width: 5em; max-width: 14em; }
   .tori { min-width: 760px; }
   .tori-name { min-width: 16em; }
   .tori :global(.chip) { font-size: 0.8rem; }

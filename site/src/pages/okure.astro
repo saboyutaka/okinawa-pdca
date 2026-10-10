@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import BarList from '../components/BarList.astro';
+import YearStatuses from '../components/YearStatuses.astro';
+import { YEARS, LATEST, yearLabel, yearLong, DEPTS, DELAYS, getTorikumiGroups } from '../lib/data.js';
+import { fmt } from '../lib/format.js';
+
+const groups = getTorikumiGroups();
+const all = groups.filter((g) => g.inAllYears);
+const delay4 = all.filter((g) => g.delayYears === 4);
+const delay3 = all.filter((g) => g.delayYears === 3);
+const last = YEARS.length - 1;
+const recovered = groups.filter((g) => DELAYS.has(g.statuses[last - 1]) && g.statuses[last] === '順調');
+
+const byDept = DEPTS.map((d) => ({
+  label: d.name,
+  n: [...delay4, ...delay3].filter((g) => g.dept === d.name).length,
+  href: `/bukyoku/${d.slug}/#okure`,
+})).filter((i) => i.n > 0).sort((a, b) => b.n - a.n);
+
+const sections = [
+  { id: 'delay4', title: `4年とも遅れている取組（${fmt(delay4.length)}件）`, rows: delay4 },
+  { id: 'delay3', title: `4年のうち3年遅れている取組（${fmt(delay3.length)}件）`, rows: delay3 },
+  { id: 'recovered', title: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で「順調」に戻った取組（${fmt(recovered.length)}件）`, rows: recovered },
+];
+---
+<Base title="遅れが続いている取組" description="沖縄県PDCAで、令和4〜7年度に進捗の遅れが続いている主な取組の一覧です。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 遅れが続いている取組</nav>
+  <h1>遅れが続いている取組</h1>
+  <p>
+    主な取組の進捗状況が「やや遅れ」「大幅遅れ」「未着手」だった年度を数えました。
+    4年とも報告にある取組 {fmt(all.length)}件のうち、4年とも遅れているのは{fmt(delay4.length)}件、4年のうち3年遅れているのは{fmt(delay3.length)}件です。
+  </p>
+  <p class="small secondary">
+    進捗状況は、活動指標（例: 説明会の開催回数、支援件数）が年度の計画に対してどこまで進んだかの県の判定です。遅れの理由は各施策のページの「県の分析と今後の方向」に書かれています。
+    R7で中期実施計画に切り替わったため、R7で名前が変わった取組は「4年とも報告にある」に入りません。
+  </p>
+
+  <BarList title="部局別の件数（3年以上遅れ）" caption="最新の報告での所管部局で数えています。件数を押すと部局のページを開きます。" items={byDept} />
+
+  {sections.map((sec) => (
+    <section aria-labelledby={sec.id}>
+      <h2 id={sec.id}>{sec.title}</h2>
+      <div class="table-wrap">
+        <table class="okure">
+          <thead>
+            <tr><th>取組（所管課）</th><th>進捗状況</th><th>活動指標（最新）</th></tr>
+          </thead>
+          <tbody>
+            {sec.rows.map((g) => (
+              <tr>
+                <td>
+                  {g.latest.name}<br />
+                  <small class="secondary">{g.section}</small><br />
+                  <small>施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></small>
+                </td>
+                <td><YearStatuses statuses={g.statuses} /></td>
+                <td class="small">{g.latest.indicator}<br /><span class="secondary">目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}（{yearLabel(g.latest.year)}）</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ))}
+  <p><a href="/torikumi/?pat=delay3">取組をさがす</a>で、部局やキーワードで絞り込むこともできます。</p>
+</Base>
+
+<style>
+  .okure { min-width: 720px; }
+  .okure td:first-child { min-width: 16em; }
+  .okure td:nth-child(2) { min-width: 21em; }
+</style>

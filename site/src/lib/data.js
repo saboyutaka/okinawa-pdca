@@ -61,6 +61,15 @@ export function rateBin(s) {
   return '0%以下';
 }
 
+// 成果指標の「達成状況」欄（目標の見通し）
+export const JUDGEMENTS = [
+  { key: '目標達成', tone: 'good' },
+  { key: '目標達成の見込み', tone: 'good' },
+  { key: '達成に努める', tone: 'warning' },
+  { key: '達成は困難', tone: 'critical' },
+];
+export const toneOfJudgement = (j) => JUDGEMENTS.find((x) => x.key === j)?.tone;
+
 const DEPT_RE = /(知事公室|県警本部|警察本部|教育庁|企業局|病院事業局|.+?部)/g;
 export const splitDepts = (s) => (s || '').match(DEPT_RE) || [];
 
@@ -92,6 +101,10 @@ export function getKihonList() {
 
 export function getShuyou(kihonId) {
   return load('shuyou').filter((s) => s.kihon_id === kihonId);
+}
+
+export function getShuyouByYear(year) {
+  return load('shuyou').filter((s) => s.year === year);
 }
 
 // ---------------------------------------------------------------- 施策
@@ -150,17 +163,101 @@ export function torikumiRows(shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year || a.latest.no - b.latest.no);
 }
 
-// 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）
-const nameKey = (s) => s.normalize('NFKC').replace(/[\s・、，,。（）()]/g, '');
+// 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）。
+// 名前の正規化は抽出側の取組の key と同じ規則。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
+const nameKey = (s) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
 export function seikaRows(shisaku) {
   const rows = new Map();
+  const seen = new Map();
   const sorted = [...shisaku.seika].sort((a, b) => b.year - a.year);
   for (const s of sorted) {
-    const k = nameKey(s.name);
+    const base = nameKey(s.name);
+    const n = (seen.get(`${s.year}|${base}`) || 0) + 1;
+    seen.set(`${s.year}|${base}`, n);
+    const k = `${base}#${n}`;
     if (!rows.has(k)) rows.set(k, { key: k, latest: s, years: {} });
     rows.get(k).years[s.year] = s;
   }
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
+}
+
+// ---------------------------------------------------------------- 年度をまたいだ取組・成果指標
+
+export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
+
+// 全施策の取組を、年度をまたいで1行にまとめたもの。部局は最新年度の所管部局（docs/data.md 7.2）
+let torikumiGroups;
+export function getTorikumiGroups() {
+  torikumiGroups ??= getShisakuList().flatMap((s) =>
+    torikumiRows(s).map((row) => {
+      const statuses = YEARS.map((y) => (row.years[y] ? statusOf(row.years[y]) : null));
+      return {
+        ...row,
+        shisaku: s,
+        dept: row.latest.dept,
+        section: row.latest.section,
+        statuses,
+        inAllYears: statuses.every(Boolean),
+        delayYears: statuses.filter((x) => DELAYS.has(x)).length,
+      };
+    }),
+  );
+  return torikumiGroups;
+}
+
+// 全施策の成果指標を、年度をまたいで1行にまとめたもの
+let seikaGroups;
+export function getSeikaGroups() {
+  seikaGroups ??= getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s })));
+  return seikaGroups;
+}
+
+// ---------------------------------------------------------------- 部局
+
+// 並びは県の「各部局等の検証票」一覧の順。R5の組織再編後の名前
+export const DEPTS = [
+  { slug: 'chiji-koshitsu', name: '知事公室' },
+  { slug: 'somu', name: '総務部' },
+  { slug: 'kikaku', name: '企画部' },
+  { slug: 'kankyo', name: '環境部' },
+  { slug: 'kodomo-mirai', name: 'こども未来部' },
+  { slug: 'seikatsu-fukushi', name: '生活福祉部' },
+  { slug: 'hoken-iryo-kaigo', name: '保健医療介護部' },
+  { slug: 'norin', name: '農林水産部' },
+  { slug: 'shoko', name: '商工労働部' },
+  { slug: 'bunka-kanko', name: '文化観光スポーツ部' },
+  { slug: 'doboku', name: '土木建築部' },
+  { slug: 'kyoiku', name: '教育庁' },
+  { slug: 'kigyo', name: '企業局' },
+  { slug: 'keisatsu', name: '県警本部' },
+  { slug: 'byoin', name: '病院事業局' },
+];
+// R5の組織再編で無くなった部。R4の報告書にだけ出てくる
+export const FORMER_DEPTS = ['子ども生活福祉部', '保健医療部'];
+export const REORGANIZED = new Set(['知事公室', 'こども未来部', '生活福祉部', '保健医療介護部']);
+export const deptOf = (section) => (section || '').match(DEPT_RE)?.[0] || '';
+
+// R4の旧部局の課 → R5でその課の取組が最も多く移った先の課（成果指標の担当部課の読み替えに使う）
+let sectionMap;
+function formerSectionMap() {
+  if (sectionMap) return sectionMap;
+  const r5 = new Map(load('torikumi').filter((t) => t.year === 2023).map((t) => [`${t.shisaku_id}|${t.key}`, t.section]));
+  const votes = new Map();
+  for (const t of load('torikumi')) {
+    if (t.year !== 2022 || !FORMER_DEPTS.includes(t.dept)) continue;
+    const to = r5.get(`${t.shisaku_id}|${t.key}`);
+    if (!to) continue;
+    const v = votes.get(t.section) || new Map();
+    v.set(to, (v.get(to) || 0) + 1);
+    votes.set(t.section, v);
+  }
+  sectionMap = new Map([...votes].map(([from, v]) => [from, [...v].sort((a, b) => b[1] - a[1])[0][0]]));
+  return sectionMap;
+}
+// 成果指標の担当部局（R4の旧部局名は読み替える）
+export function seikaDept(s) {
+  const section = s.year === 2022 ? formerSectionMap().get(s.dept) || s.dept : s.dept;
+  return deptOf(section);
 }
 
 // ---------------------------------------------------------------- 全体集計

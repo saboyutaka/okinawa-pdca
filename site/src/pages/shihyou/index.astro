@@ -1,0 +1,143 @@
+---
+import Base from '../../layouts/Base.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, toneOfJudgement, seikaDept,
+  getSeikaGroups, getKihonList, getShouraizou, getShuyouByYear,
+} from '../../lib/data.js';
+import { fmt } from '../../lib/format.js';
+
+const kihon = getKihonList();
+const shouraizou = getShouraizou();
+const shuyou = getShuyouByYear(LATEST);
+const rows = getSeikaGroups().filter((r) => r.latest.year === LATEST);
+const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.name));
+const toneOfBin = (b) => RATE_BINS.find((x) => x.key === b)?.tone;
+const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし');
+---
+<Base title="指標をさがす" description="沖縄県PDCAの主要指標と成果指標（令和7年度）の実績・目標・達成状況を一覧できます。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 指標をさがす</nav>
+  <h1>指標をさがす</h1>
+  <p class="secondary">
+    県が施策の成果をはかるために決めている指標です。<strong>主要指標</strong>は基本施策（36）の最終的な成果、<strong>成果指標</strong>は施策（339）ごとの成果をはかります。
+    ここでは{yearLong(LATEST)}の報告の値を載せています。目標値は中期実施計画の目標年度（R9）のものです。
+  </p>
+
+  <section aria-labelledby="shuyou">
+    <h2 id="shuyou">主要指標（{yearLong(LATEST)}）</h2>
+    {shouraizou.map((s) => (
+      <>
+        <h3>将来像{s.id} {s.name}</h3>
+        <ul class="list">
+          {shuyou.filter((r) => r.kihon_id.startsWith(`${s.id}-`)).map((r) => {
+            const k = kihon.find((x) => x.id === r.kihon_id);
+            const tone = toneOfJudgement(r.judgement);
+            return (
+              <li class="item">
+                <div class="ind-name">{r.name}</div>
+                <div class="small">基本施策 <a href={`/kihon/${r.kihon_id}/`}>{k?.code} {k?.name}</a></div>
+                <dl class="kv small">
+                  <div><dt>基準値</dt><dd class="prose">{r.base_raw}</dd></div>
+                  <div><dt>実績値</dt><dd class="prose"><strong>{r.actual_raw}</strong></dd></div>
+                  <div><dt>目標値（R9）</dt><dd class="prose">{r.target_raw}</dd></div>
+                  <div><dt>見通し</dt><dd class="prose">{tone ? <Chip tone={tone} text={r.judgement} /> : r.judgement}</dd></div>
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    ))}
+  </section>
+
+  <section aria-labelledby="seika">
+    <h2 id="seika">成果指標（{yearLong(LATEST)}・{fmt(rows.length)}指標）</h2>
+    <p class="small secondary">達成率は、この年度の計画値に対する割合です（計算方法は<a href="/about/">データについて</a>）。見通しは、目標年度（R9）の目標値に届くかの県の見立てです。</p>
+    <form class="filters" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty">
+      <label class="q">キーワード
+        <input type="search" name="q" placeholder="例: 観光、離島、子ども" />
+      </label>
+      <label>将来像
+        <select name="s">
+          <option value="">すべて</option>
+          {shouraizou.map((s) => <option value={s.id}>将来像{s.id}</option>)}
+        </select>
+      </label>
+      <label>達成率
+        <select name="bin">
+          <option value="">すべて</option>
+          {RATE_BINS.map((b) => <option value={b.key}>{b.key}</option>)}
+        </select>
+      </label>
+      <label>見通し
+        <select name="judge">
+          <option value="">すべて</option>
+          {JUDGEMENTS.map((j) => <option value={j.key}>{j.key}</option>)}
+        </select>
+      </label>
+      <label>担当部局
+        <select name="dept">
+          <option value="">すべて</option>
+          {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+        </select>
+      </label>
+    </form>
+    <p class="result-count" aria-live="polite"><span id="count">{rows.length}</span>指標を表示</p>
+
+    <div id="seika-list">
+      {kihon.map((k) => {
+        const items = rows.filter((r) => r.shisaku.kihon_id === k.id);
+        if (!items.length) return null;
+        return (
+          <section data-group>
+            <h3 class="group-title"><span class="code">{k.code}</span> <a href={`/kihon/${k.id}/`}>{k.name}</a></h3>
+            <ul class="list">
+              {items.map((r) => {
+                const x = r.latest;
+                const bin = rateBin(x);
+                const jt = toneOfJudgement(x.judgement);
+                return (
+                  <li
+                    class="item"
+                    data-item
+                    data-s={String(r.shisaku.shouraizou)}
+                    data-bin={bin}
+                    data-judge={x.judgement}
+                    data-dept={seikaDept(x)}
+                    data-text={`${x.name} ${r.shisaku.code} ${r.shisaku.name} ${x.dept || ''}`}
+                  >
+                    <div class="ind-name">{x.name}{x.unit && <small class="secondary">（{x.unit}）</small>}</div>
+                    <div class="small">施策 <a href={`/shisaku/${r.shisaku.id}/`}>{r.shisaku.code} {r.shisaku.name}</a>　<span class="secondary">{x.dept}</span></div>
+                    <div class="vals small">
+                      <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
+                      <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
+                      <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
+                    </div>
+                    <div class="tags">
+                      <Chip tone={toneOfBin(bin)} text={rateText(x)} />
+                      {x.judgement && <Chip tone={jt} text={`見通し: ${x.judgement}`} />}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+    <p id="empty" class="secondary" hidden>条件に合う成果指標はありません。</p>
+  </section>
+</Base>
+
+<script src="../../scripts/list-filter.js"></script>
+
+<style>
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 4px 16px; margin: 6px 0 0; }
+  .kv dt { font-size: 0.75rem; color: var(--ink-2); }
+  .kv dd { margin: 0; }
+  .group-title { font-size: 1rem; margin: 1.8em 0 0.5em; }
+  .ind-name { font-weight: 600; }
+  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; margin: 4px 0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+</style>

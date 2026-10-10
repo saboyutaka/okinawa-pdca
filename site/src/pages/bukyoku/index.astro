@@ -1,0 +1,68 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusChart from '../../components/StatusChart.astro';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, getTorikumiGroups, getShisakuList } from '../../lib/data.js';
+import { fmt, pct } from '../../lib/format.js';
+
+const groups = getTorikumiGroups();
+const shisaku = getShisakuList();
+const statusKeys = STATUSES.map((s) => s.key);
+const last = YEARS.length - 1;
+
+const depts = DEPTS.map((d) => {
+  const mine = groups.filter((g) => g.dept === d.name);
+  const latest = mine.filter((g) => g.statuses[last]);
+  return {
+    ...d,
+    latestCount: latest.length,
+    counts: countBy(latest, (g) => g.statuses[last], statusKeys),
+    okRates: YEARS.map((y, i) => {
+      const inYear = mine.filter((g) => g.statuses[i]);
+      return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
+    }),
+    delay3: mine.filter((g) => g.inAllYears && g.delayYears >= 3).length,
+    shisakuCount: shisaku.filter((s) => s.depts.includes(d.name)).length,
+  };
+}).filter((d) => d.latestCount > 0 || d.okRates.some(([, n]) => n > 0));
+
+const rows = [...depts].sort((a, b) => b.latestCount - a.latestCount).map((d) => ({
+  label: d.name,
+  href: `/bukyoku/${d.slug}/`,
+  counts: d.counts,
+}));
+---
+<Base title="部局" description="沖縄県PDCAの主な取組の進み具合を、県の部局ごとに見られます。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 部局</nav>
+  <h1>部局</h1>
+  <p class="secondary">
+    主な取組を所管する部局ごとの進み具合です。部局は最新の報告での所管部局で、過去の年度の取組もその部局に寄せて数えています。
+    令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/">データについて</a>）。
+  </p>
+
+  <StatusChart title={`部局別 主な取組の進捗状況（${yearLong(LATEST)}）`} categories={STATUSES} rows={rows} />
+
+  <h2>部局ごとの4年間</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>部局</th>
+          {YEARS.map((y) => <th class="num">{yearLabel(y)}の順調</th>)}
+          <th class="num">3年以上遅れ</th>
+          <th class="num">関係する施策</th>
+        </tr>
+      </thead>
+      <tbody>
+        {depts.map((d) => (
+          <tr>
+            <th><a href={`/bukyoku/${d.slug}/`}>{d.name}</a></th>
+            {d.okRates.map(([ok, n]) => <td class="num">{n ? pct(ok, n) : '—'}<br /><small class="secondary">{fmt(ok)}/{fmt(n)}</small></td>)}
+            <td class="num">{d.delay3 ? <a href={`/bukyoku/${d.slug}/#okure`}>{fmt(d.delay3)}件</a> : '0件'}</td>
+            <td class="num">{fmt(d.shisakuCount)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="small secondary">「順調」の割合は、その年度の報告にある取組のうち進捗状況が「順調」のもの。「関係する施策」は施策の「関係部等」にその部局が書かれている施策の数です。</p>
+</Base>
