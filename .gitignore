@@ -5,3 +5,8 @@ data/interim/
 *.tmp
 __pycache__/
 .DS_Store
+
+# 公開サイト（Astro）
+site/node_modules/
+site/dist/
+site/.astro/

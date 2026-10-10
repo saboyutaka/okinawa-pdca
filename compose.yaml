@@ -1,0 +1,21 @@
+services:
+  # 抽出（data/raw → data/interim → data/extracted）
+  tools:
+    build: docker/tools
+    volumes:
+      - .:/work
+    working_dir: /work
+
+  # 公開サイト（Astro）。node_modules はホストと混ぜないよう名前付きボリュームに置く
+  site:
+    image: node:24-alpine
+    volumes:
+      - .:/work
+      - site_node_modules:/work/site/node_modules
+    working_dir: /work/site
+    ports:
+      - "4321:4321"
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  site_node_modules:
