@@ -99,19 +99,21 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
                 data-s={String(g.shisaku.shouraizou)}
                 data-text={`${t.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name} ${t.indicator || ''}`}
               >
-                <a class="o-name" href={g.href}>{t.name}</a>
-                <div class="o-sec">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</div>
-                <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
-                <ThemeTags ids={themes} />
+                <div class="o-head">
+                  <a class="o-name" href={g.href}>{t.name}</a>
+                  <div class="o-sec">{deptHref(g.section) ? <a href={deptHref(g.section)}>{g.section}</a> : g.section}</div>
+                  <div class="o-shisaku"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
+                  <ThemeTags ids={themes} />
+                </div>
                 <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
-                {t.indicator && (
+                {t.indicator ? (
                   <div class="act">
                     <div class="act-l">活動指標（{yearLabel(t.year)}）</div>
                     <div>{t.indicator}</div>
                     <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>
                     {ratio != null && <Chunk frac={ratio} tone={ratio >= 0.9 ? 'good' : ratio >= 0.75 ? 'warning' : ratio >= 0.6 ? 'serious' : 'critical'} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
                   </div>
-                )}
+                ) : <div />}
               </li>
             );
           })}
@@ -143,12 +145,15 @@ const ratioOf = (t) => { const a = qty(t.actual); const b = qty(t.target); retur
   .sum-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
   .sec-h { display: flex; align-items: center; gap: 8px; }
   .ocards { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  .ocard { display: grid; gap: 8px; align-content: start; padding: 16px; }
+  /* 並んだカードで段（名前など・スタンプ・活動指標）の高さをそろえる */
+  .ocard { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 8px; padding: 16px; }
+  .ocard[hidden] { display: none; }
+  .o-head { display: grid; gap: 8px; align-content: start; }
   .o-name { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; line-height: 1.5; color: var(--ink); }
   .o-sec, .o-shisaku { font-size: 0.875rem; color: var(--ink-2); }
   .o-sec a { color: var(--ink-2); }
   .o-shisaku { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
-  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 2px; }
+  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 2px; align-self: start; }
   .act-l { color: var(--ink-2); font-weight: 700; }
   .act :global(.chunk) { margin-top: 4px; }
   .by-dept { margin-top: 28px; }

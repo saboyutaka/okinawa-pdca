@@ -1,5 +1,5 @@
 ---
-// 主な取組1つ（施策ページ）。4年のスタンプ・活動指標・対応する成果指標・その年にやったこと。予算は取組のページで見せる
+// 主な取組1つ（施策ページ。親は .tcards の grid）。4年のスタンプ・活動指標・対応する成果指標・その年にやったこと。予算は取組のページで見せる
 import Stamps from './Stamps.astro';
 import Chunk from './Chunk.astro';
 import Term from './Term.astro';
@@ -22,39 +22,44 @@ const comparable = tq && aq && tq.v > 0 && tq.u === aq.u;
 const ratio = comparable ? aq.v / tq.v : 0;
 ---
 <article class="sticker tcard">
-  <h3><a href={href}>{t.name}</a></h3>
-  <div class="sec">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
-  <ThemeTags ids={themeIdsOfItem(shisakuId, t.name)} />
+  <div class="th">
+    <h3><a href={href}>{t.name}</a></h3>
+    <div class="sec">{deptHref(t.section) ? <a href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+    <ThemeTags ids={themeIdsOfItem(shisakuId, t.name)} />
+  </div>
   <Stamps items={stamps} label="4年の進捗状況" size="small" />
-  {t.indicator && (
+  {t.indicator ? (
     <div class="act">
       <div class="act-l"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
       <div class="act-name">{t.indicator}</div>
       <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　目標クリア</strong>}</div>
       {comparable && <Chunk frac={ratio} tone={ratio >= 1 ? 'good' : ratio >= 0.75 ? 'warning' : 'serious'} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
     </div>
-  )}
-  {b?.seika_name && <div class="small">対応する成果指標: {seikaHref ? <a href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div>}
-  {t.summary && (
+  ) : <div />}
+  {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}
+  {t.summary ? (
     <div class="did">
       <div class="did-l">{yearLabel(t.year)}にやったこと</div>
       <p>{t.summary}</p>
     </div>
-  )}
+  ) : <div />}
   <a class="to-page" href={href}>この取組の4年分の活動・予算・検証・改善案</a>
 </article>
 
 <style>
-  .tcard { display: grid; gap: 10px; align-content: start; padding: 16px; }
+  /* 並んだカードで段（見出し・スタンプ・活動指標…）の高さをそろえる。中身のない段も空の div で数を保つ */
+  .tcard { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 10px; align-content: start; padding: 16px; }
+  .th { display: grid; gap: 4px; align-content: start; }
   h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
   h3 a { color: var(--ink); }
-  .sec { font-size: 0.875rem; color: var(--ink-2); margin-top: -6px; }
+  .sec { font-size: 0.875rem; color: var(--ink-2); }
   .sec a { color: var(--ink-2); }
-  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; }
+  .th :global(.ttags) { margin-top: 2px; }
+  .act { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; align-self: start; }
   .act-l { color: var(--ink-2); font-weight: 700; }
   .act-name { font-weight: 700; }
-  .did { font-size: 0.875rem; display: grid; gap: 2px; }
+  .did { font-size: 0.875rem; display: grid; gap: 2px; align-content: start; }
   .did-l { color: var(--ink-2); font-weight: 700; }
   .did p { margin: 0; line-height: 1.7; }
-  .to-page { font-size: 0.875rem; font-weight: 700; }
+  .to-page { font-size: 0.875rem; font-weight: 700; align-self: end; }
 </style>
