@@ -45,6 +45,7 @@ const deptItems = DEPTS.map((d) => ({ label: d.name, n: oku(sum(estimate.filter(
 const visionItems = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   note: s.name,
+  href: `/future/${s.id}/`,
   n: oku(sum(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
 }));
 

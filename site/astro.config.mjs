@@ -6,4 +6,6 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory' },
+  // 基本施策の一覧（/kihon/）は将来像の一覧（/future/）にした。前の URL からは移動先へ案内する
+  redirects: { '/kihon': '/future/' },
 });

@@ -1,0 +1,67 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusChart from '../../components/StatusChart.astro';
+import Crumbs from '../../components/Crumbs.astro';
+import Sz from '../../components/Sz.astro';
+import Chunk from '../../components/Chunk.astro';
+import Term from '../../components/Term.astro';
+import {
+  LATEST, yearLong, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi,
+} from '../../lib/data.js';
+import { fmt, pct } from '../../lib/format.js';
+import { LINKS } from '../../lib/links.js';
+
+const kihon = getKihonList();
+const shisaku = getShisakuList();
+const tori = getTorikumi(LATEST);
+const statusKeys = STATUSES.map((s) => s.key);
+const visions = getShouraizou().map((v) => {
+  const t = tori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
+  const ss = shisaku.filter((s) => s.shouraizou === v.id);
+  return {
+    ...v,
+    n: t.length,
+    ok: t.filter((x) => x.status === '順調').length,
+    shisaku: ss.length,
+    cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST])).length,
+    rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
+      label: `${k.code} ${k.name}`,
+      sub: `${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
+      href: `/kihon/${k.id}/`,
+      counts: countBy(t.filter((x) => x.shisaku_id.startsWith(`${k.id}-`)), statusOf, statusKeys),
+    })),
+  };
+});
+---
+<Base title="将来像の一覧" description="新・沖縄21世紀ビジョン基本計画の5つの将来像と36の基本施策の一覧です。将来像・基本施策ごとの主な取組の進み具合を見られます。">
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '将来像の一覧' }]} />
+  <h1>将来像の一覧</h1>
+  <p class="secondary lead">
+    <a href={LINKS.kihonKeikaku} rel="noopener">新・沖縄21世紀ビジョン基本計画</a>は、めざす沖縄の姿を5つの<Term word="将来像" />に分け、そのもとに36の<Term word="基本施策" />、さらに施策（339）と主な取組を置いています。
+    将来像の名前を押すと、その将来像の進み具合（判定・基本施策ごとの進み・主要指標・4年間の推移）をまとめたページを開きます。棒は{yearLong(LATEST)}の主な取組の進捗状況です。
+  </p>
+  {visions.map((v) => (
+    <section class:list={['sticker', 'vision', `sz-${v.id}`]} id={`shouraizou-${v.id}`} aria-labelledby={`h-${v.id}`}>
+      <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} />将来像{v.id} {v.name}</a></h2>
+      <div class="v-stats">
+        <span>基本施策 <b class="big">{fmt(v.rows.length)}</b></span>
+        <span>施策 <b class="big">{fmt(v.shisaku)}</b>（成果が遅れている C・D <b class="big">{fmt(v.cd)}</b>）</span>
+        <span class="v-ok">主な取組のうち「順調」 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
+      </div>
+      <StatusChart title={`将来像${v.id}の基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} />
+      <p class="v-links"><a class="pill-btn" href={`/future/${v.id}/`}>将来像{v.id}のページを見る<span aria-hidden="true">→</span></a> <a href={`/shisaku/?s=${v.id}`}>将来像{v.id}の施策をさがす</a></p>
+    </section>
+  ))}
+</Base>
+
+<style>
+  .vision { margin-top: 24px; background: var(--szw); scroll-margin-top: 16px; }
+  .v-h { margin: 0; font-size: 1.15rem; }
+  .v-h .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; background: var(--paper); }
+  .v-h .sz-ribbon:hover { text-decoration: underline; }
+  .v-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; margin-top: 14px; font-size: 0.9375rem; }
+  .v-stats b { font-size: 1.15rem; }
+  .v-ok { display: inline-flex; align-items: center; gap: 8px; }
+  .v-ok :global(.chunk) { width: 120px; }
+  .v-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin: 16px 0 0; }
+</style>

@@ -5,6 +5,7 @@ import Chip from '../../../components/Chip.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
 import Sz from '../../../components/Sz.astro';
+import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import { themeIdsOfItem } from '../../../lib/themes.js';
 import {
@@ -49,9 +50,7 @@ const secHref = deptHref(t.section);
 const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 ---
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
-  <nav class="breadcrumb">
-    <a href="/">トップ</a> › <a href="/torikumi/">取組をさがす</a> › <a href={`/shisaku/${s.id}/`}>施策 {s.code} {s.name}</a>
-  </nav>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: `施策 ${s.code}` }, { label: t.name }]} />
 
   <header class="sticker head">
     <div class="code"><Sz id={s.shouraizou} /> <Term word="主な取組" />　／　施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>

@@ -176,12 +176,12 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
         <li class:list={['sticker', 'vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <div class="v-body">
-            <a class="v-name" href={`/shisaku/?s=${v.id}`}>将来像{v.id}　{v.name}</a>
+            <a class="v-name" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
             <div class="v-row">
               <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} />
               <span class="big v-pv">{pct(v.ok, v.n)}</span>
             </div>
-            <div class="v-sub">主な取組 {fmt(v.n)}件のうち{fmt(v.ok)}件が順調。施策 {fmt(v.shisaku)}のうち、成果が遅れている（C・D）のは {fmt(v.cd)}。<a href={`/kihon/#shouraizou-${v.id}`}>基本施策を見る</a></div>
+            <div class="v-sub">主な取組 {fmt(v.n)}件のうち{fmt(v.ok)}件が順調。施策 {fmt(v.shisaku)}のうち、成果が遅れている（C・D）のは {fmt(v.cd)}。<a href={`/shisaku/?s=${v.id}`}>施策をさがす</a></div>
           </div>
         </li>
       ))}

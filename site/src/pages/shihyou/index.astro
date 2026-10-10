@@ -27,7 +27,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
   <p class="secondary">
     成果指標は、施策（339）ごとの成果をはかるために県が決めている指標です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。
     目標値は、R7 からの指標は<a href={LINKS.chuki} rel="noopener">中期実施計画</a>の目標年度（R9）、R6 までの指標は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>の目標年度（R6）のものです。
-    基本施策ごとの主要指標は<a href="/kihon/">基本施策の一覧</a>にあります。
+    基本施策ごとの主要指標は<a href="/future/">将来像</a>・基本施策のページにあります。
   </p>
 
   <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">

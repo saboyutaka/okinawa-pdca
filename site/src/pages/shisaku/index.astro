@@ -21,7 +21,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
   <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
   <h1>施策をさがす</h1>
   <p class="secondary lead">
-    <a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>の339施策です（<a href="/kihon/">基本施策の一覧</a>から体系でたどることもできます）。判定は{yearLong(LATEST)}の県の<Term word="推進状況" />、棒は{yearLong(LATEST)}の主な取組の進捗状況の内訳です。
+    <a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>の339施策です（<a href="/future/">将来像の一覧</a>から体系でたどることもできます）。判定は{yearLong(LATEST)}の県の<Term word="推進状況" />、棒は{yearLong(LATEST)}の主な取組の進捗状況の内訳です。
   </p>
 
   <form class="filters sticker" role="search" aria-label="施策の絞り込み" data-filter="#shisaku-list" data-count="#count" data-empty="#empty" data-summary="#active">

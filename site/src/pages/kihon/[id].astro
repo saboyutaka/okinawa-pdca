@@ -4,6 +4,7 @@ import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
 import Sz from '../../components/Sz.astro';
+import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import { themesOf } from '../../lib/themes.js';
 import {
@@ -29,11 +30,9 @@ const progressRows = YEARS.map((y) => ({
 }));
 ---
 <Base title={`${k.name}（基本施策 ${k.code}）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
-  <nav class="breadcrumb">
-    <a href="/">トップ</a> › <a href="/kihon/">基本施策の一覧</a> › <a href={`/kihon/#shouraizou-${k.shouraizou}`}>将来像{k.shouraizou}</a>
-  </nav>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: `基本施策 ${k.code}` }]} />
   <header class="k-head">
-    <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/kihon/#shouraizou-${k.shouraizou}`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
+    <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/future/${k.shouraizou}/`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
     <div class="secondary small">基本施策 {k.code}</div>
     <h1>{k.name}</h1>
   </header>
