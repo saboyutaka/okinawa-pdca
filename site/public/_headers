@@ -1,3 +1,7 @@
 # Cloudflare が配るときのヘッダー。/_astro/ のファイル名には中身のハッシュが付くので、ずっとキャッシュしてよい
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+
+# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったらこの3行と Base.astro の NOINDEX を外す
+/*
+  X-Robots-Tag: noindex, nofollow
