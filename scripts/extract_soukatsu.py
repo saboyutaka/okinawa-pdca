@@ -50,6 +50,16 @@ SECTION_RE = re.compile(r"^(Ⅰ|Ⅱ|Ⅲ|Ⅳ)\s*")
 # pdfplumber は文字に変換できないグリフ（改行やタブの記号など）を「(cid:10)」のように出す。データには残さない
 CID_RE = re.compile(r"\(cid:\d+\)")
 DEPT_RE = re.compile(r"^(知事公室|県警本部|警察本部|教育庁|企業局|病院事業局|.+?部)")
+# 総括報告書で列幅が足りず「########」と印字された成果指標の基準値。担当部局の「成果指標」検証票には数字が印字されている
+# （報告年度, 施策ID, 成果指標名）→（値, 部局票のファイルID, ページ）
+BASE_FIXES = {
+    (2023, "5-5-b-1", "宿泊事業者（正規雇用者）一人当たりの平均年収"):
+        ("3,129,946", "bunka-kanko/2023-r05/r5seikashihyoubunsupo.pdf", 141),
+    (2024, "5-5-b-1", "宿泊事業者（正規雇用者）一人当たりの平均年収"):
+        ("3,129,946", "bunka-kanko/2024-r06/r6seikashihyoubunsupo.pdf", 155),
+    (2025, "5-5-b-1", "宿泊事業者（正規雇用者）一人当たりの平均年収"):
+        ("3,129,946", "bunka-kanko/2025-r07/r7seikashihyoubunsupo.pdf", 162),
+}
 
 
 # ---------------------------------------------------------------- 文字列の正規化
@@ -427,13 +437,22 @@ class BodyParser:
                       for j, (y, a) in enumerate(zip(years, v[col_act:col_act + 3]))]
             filled = [x for x in series if x["raw"] not in ("", "―", "-", "－", "ー")]
             latest = filled[-1] if filled else {"raw": "", "value": None, "ref_year": "", "year": ""}
+            base_raw, base_fix = v[col_base], {}
+            if re.fullmatch(r"#+", base_raw):
+                if fix := BASE_FIXES.get((self.year, cur["id"], v[0])):
+                    base_fix = {"base_fix": {"printed": base_raw, "source": fix[1], "page": fix[2]}}
+                    base_raw = fix[0]
+                else:
+                    print(f"警告: 基準値が「{base_raw}」と印字されている {self.src['id']} p{page_no}: {v[0]}", file=sys.stderr)
             self.seika.append({
                 "year": self.year,
                 "shisaku_id": cur["id"],
                 "name": v[0],
                 "unit": v[col_unit] if col_unit is not None else "",
-                "base_raw": v[col_base],
-                "base": parse_num(v[col_base]),
+                "base_raw": base_raw,
+                "base": parse_num(base_raw),
+                # 総括報告書の印字が欠けていて、部局票の値で補ったときだけ（印字・出典）
+                **base_fix,
                 # 実績値は「その時点の最新値」。統計の都合で前年度の値のことがあり、その場合は ref_year（例: R6年度）
                 "actual_raw": latest["raw"],
                 "actual": latest["value"],

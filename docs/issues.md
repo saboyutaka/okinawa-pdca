@@ -1,6 +1,6 @@
 # データの欠け・誤りの一覧
 
-`python3 scripts/report_issues.py` で data/extracted から自動で作っている（2026-10-10 作成）。手で編集しない。原因を人が調べたものは scripts/report_issues.py の NOTES・KNOWN_GAPS に書く。作り方の全体は [data.md](data.md)。
+`python3 scripts/report_issues.py` で data/extracted から自動で作っている（2026-10-11 作成）。手で編集しない。原因を人が調べたものは scripts/report_issues.py の NOTES・KNOWN_GAPS に書く。作り方の全体は [data.md](data.md)。
 
 元の報告書: [沖縄県PDCA実施結果（年度別）](https://www.pref.okinawa.jp/kensei/shisaku/1014252/1014253/index.html)（総括報告書）、[沖縄県PDCA](https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html)の各部局のページ（主な取組検証票・成果指標検証票）。
 
@@ -606,6 +606,7 @@ R4 は施策ごとの判定が公表されていない（施策総括表が無�
 |---|---|
 | R5 の施策 3-(9)-ア-① で、「施策の方向」の続きが「関係部等」の欄に食い込んで読める | 句点までを施策の方向に戻す（extract_soukatsu.py） |
 | R4 の基本施策総括のページが回転していて、表として読むと文字が逆順になる | PyMuPDF のテキストから読む（extract_soukatsu.py） |
+| R5〜R7 の 5-(5)-イ-① の成果指標の基準値が、列の幅が足りず「########」と印字されている | 文化観光スポーツ部の「成果指標」検証票の値で補う（extract_soukatsu.py の BASE_FIXES） |
 | 部局票の見出しの表で、見出しと値が別の行に入るファイルがある | 値の形（施策コード、①で始まる施策名）で探す（extract_bukyoku.py） |
 | R5 は組織再編の年で、12取組が2つの部局のファイルに載っている | 最初の1件だけ使う（サイトの data.js） |
 | 同じ施策に同じ名前の成果指標が複数ある（男女別など） | 出てくる順番で区別する（サイトの data.js） |

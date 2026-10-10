@@ -9,6 +9,7 @@ import {
   currentDeptOf, torikumiPage, budgetKey as bkey,
 } from '../../lib/data.js';
 import { fmt, yen, pct } from '../../lib/format.js';
+import ExtLink from '../../components/ExtLink.astro';
 
 const sum = (xs) => xs.reduce((s, x) => s + x.amount, 0);
 const byFund = (entries) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
@@ -174,8 +175,8 @@ const suspects = getSuspects();
                   const href = torikumiPage(l.shisaku_id, l.key);
                   return (
                     <li>
-                      {t && <Chip tone={toneOfStatus(statusOf(t))} text={statusOf(t)} />} {href ? <a href={href}>{l.torikumi}</a> : l.torikumi}
-                      <br /><a href={`/shisaku/${l.shisaku_id}/`}>{s?.name}</a> <span class="code-no">{s?.code}</span>
+                      {t && <Chip tone={toneOfStatus(statusOf(t))} text={statusOf(t)} />} {href ? <a class="name-link" href={href}>{l.torikumi}</a> : l.torikumi}
+                      <br /><a class="sub-link" href={`/shisaku/${l.shisaku_id}/`}>{s?.name}</a> <span class="code-no">{s?.code}</span>
                     </li>
                   );
                 })}
@@ -202,11 +203,11 @@ const suspects = getSuspects();
           return (
             <tr>
               <th>{yearLabel(x.report)}</th>
-              <td>{x.name}<br /><small class="secondary">{torikumiPage(x.shisaku_id, x.key) ? <a href={torikumiPage(x.shisaku_id, x.key)}>{x.torikumi}</a> : x.torikumi}</small></td>
+              <td>{x.name}<br /><small class="secondary">{torikumiPage(x.shisaku_id, x.key) ? <a class="sub-link" href={torikumiPage(x.shisaku_id, x.key)}>{x.torikumi}</a> : x.torikumi}</small></td>
               <td>{AMOUNT_KINDS[x.kind].label}</td>
               <td class="num">{yen(x.amount)}</td>
               <td class="small">{others || '—'}</td>
-              <td class="small">{src ? <a href={src.href} rel="noopener">{src.label}</a> : '—'}</td>
+              <td class="small">{src ? <ExtLink href={src.href}>{src.label}</ExtLink> : '—'}</td>
             </tr>
           );
         })}

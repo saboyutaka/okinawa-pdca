@@ -16,13 +16,18 @@ import {
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.js';
 import { getThemes, unthemed } from '../lib/themes.js';
-import { JUDGE_GROUPS, judgeGroupOf, SHAPES } from '../lib/icons.js';
+import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.js';
 import { fmt, pct } from '../lib/format.js';
 import { LINKS } from '../lib/links.js';
+import ExtLink from '../components/ExtLink.astro';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
-const toriOk = latestTori.filter((t) => t.status === '順調').length;
+// 年度をまたいでまとめた取組（取組をさがすと同じ数え方。ヒーローの数とリンク先の件数をそろえる）
+const groups = getTorikumiGroups();
+const L = YEARS.length - 1;
+const latestGroups = groups.filter((g) => g.statuses[L]);
+const toriOk = latestGroups.filter((g) => g.statuses[L] === '順調').length;
 const latestSeika = getSeika(LATEST);
 const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
@@ -38,34 +43,38 @@ const themes = getThemes().map((t) => ({
 }));
 
 // 令和6年度から7年度の動き（年度をまたいで同じ名前の取組）
-const groups = getTorikumiGroups();
-const L = YEARS.length - 1;
+const has = (pat) => (g) => g.patterns.includes(pat);
 const moves = [
   {
     tone: 'good', title: '遅れから「順調」に戻った',
     desc: `${yearLabel(LATEST - 1)}に遅れていて、${yearLabel(LATEST)}は順調になった取組`,
-    rows: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調'),
+    rows: groups.filter(has('recover')),
     href: '/torikumi/?pat=recover',
   },
   {
     tone: 'serious', title: '新しく遅れが出た',
     desc: `${yearLabel(LATEST - 1)}は順調・概ね順調で、${yearLabel(LATEST)}に遅れた取組`,
-    rows: groups.filter((g) => ['順調', '概ね順調'].includes(g.statuses[L - 1]) && DELAYS.has(g.statuses[L])),
+    rows: groups.filter(has('newdelay')),
     href: '/torikumi/?pat=newdelay',
   },
   {
-    tone: 'critical', title: '3年以上、遅れが続いている',
-    desc: `4年とも報告にある取組のうち、3年以上遅れているもの（4年とも遅れ ${fmt(groups.filter((g) => g.inAllYears && g.delayYears === 4).length)}件）`,
-    rows: groups.filter((g) => g.inAllYears && g.delayYears >= 3).sort((a, b) => b.delayYears - a.delayYears),
-    href: '/okure/',
+    tone: 'critical', title: '4年のうち3年以上遅れた',
+    desc: `4年とも報告にある取組のうち、3年以上の年度で遅れていたもの（4年とも遅れ ${fmt(groups.filter(has('delay4')).length)}件）`,
+    rows: groups.filter(has('delay3')).sort((a, b) => b.delayYears - a.delayYears),
+    href: '/torikumi/?pat=delay3',
   },
 ];
+
+// ヒーローの「まだ進んでいないところ」（取組の遅れ・成果の遅れ・取組は順調でも成果が遅れている施策）
+const toriDelay = latestGroups.filter((g) => DELAYS.has(g.statuses[L])).length;
+// 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になる
+const streak = groups.filter(has('streak')).length;
+const seikaHard = latestSeika.filter((s) => s.judgement === '達成は困難').length;
 
 // 将来像ごと
 const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  const ss = shisaku.filter((s) => s.shouraizou === v.id);
-  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length, shisaku: ss.length, cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST])).length };
+  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
 
 // 4年間の推移
@@ -81,34 +90,33 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
 const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }));
 ---
 <Base>
-  <section class="hero sticker" aria-labelledby="hero-h">
+  <section class="hero sticker lift" aria-labelledby="hero-h">
     <span class="tag">{yearLong(LATEST)}の結果</span>
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
-      沖縄県は毎年、「<a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
+      沖縄県は毎年、「<ExtLink href={LINKS.jisshiKeikaku}>新・沖縄21世紀ビジョン実施計画</ExtLink>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
     </p>
     <div class="donuts">
-      <div class="donut-card sticker">
-        <Donut frac={toriOk / latestTori.length} label={`主な取組のうち順調 ${pct(toriOk, latestTori.length)}`} />
+      <div class="donut-card">
+        <Donut frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} />
         <div>
           <div class="dc-title">県の主な取組のうち「順調」</div>
-          <div class="dc-sub">{fmt(latestTori.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
+          <div class="dc-sub">{fmt(latestGroups.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
+          <a class="dc-more" href="/torikumi/?st=0">順調の取組を見る<span aria-hidden="true"> →</span></a>
         </div>
       </div>
-      <div class="donut-card sticker">
+      <div class="donut-card">
         <Donut frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} />
         <div>
           <div class="dc-title"><Term word="成果指標" />のうち<Term word="計画値" />に到達</div>
           <div class="dc-sub">{fmt(latestSeika.length)}指標のうち{fmt(seikaOk)}指標。くらしや地域は、計画どおりに変わった？</div>
+          <a class="dc-more" href={`/shihyou/?bin=${encodeURIComponent('100%以上')}`}>到達した指標を見る<span aria-hidden="true"> →</span></a>
         </div>
       </div>
     </div>
-    <div class="bubble-row gap">
-      <span class="avatar" aria-hidden="true">!</span>
-      <div class="bubble">
-        <p class="bubble-text">取組は進んでいるのに、成果が追いついていない施策が<span class="big">{fmt(nCD)}</span>あります。</p>
-        <a class="pill-btn" href="/shisaku/?judge=C|D">どんな施策か見る<span aria-hidden="true">→</span></a>
-      </div>
+    <div class="story">
+      <p class="st-lead">でも、まだ進んでいないところもあります。</p>
+      <p class="st-body">遅れている取組が<span class="nw"><a href="/torikumi/?st=delay" aria-label={`遅れている取組 ${fmt(toriDelay)}件の一覧`}><span class="big">{fmt(toriDelay)}</span>件</a>で、</span>そのうち3年以上遅れた状態が続いている取組が<span class="nw"><a href="/torikumi/?pat=streak" aria-label={`3年以上遅れた状態が続いている取組 ${fmt(streak)}件の一覧`}><span class="big">{fmt(streak)}</span>件</a>あります。</span>県自身が「目標の達成は困難」と見ている成果指標が<span class="nw"><a href={`/shihyou/?judge=${encodeURIComponent('達成は困難')}`} aria-label={`「目標の達成は困難」と見られている成果指標 ${fmt(seikaHard)}の一覧`}><span class="big">{fmt(seikaHard)}</span></a>、</span>取組は順調なのに成果が追いついていない施策が<span class="nw"><a href="/shisaku/?judge=C|D" aria-label={`取組は順調なのに成果が追いついていない施策 ${fmt(nCD)}の一覧`}><span class="big">{fmt(nCD)}</span></a>あります。</span></p>
     </div>
   </section>
 
@@ -125,7 +133,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   <section aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
     <p class="small secondary lead">
-      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです。どの施策もいずれかのテーマに入り、1つの施策が複数のテーマに入ることもあります{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。棒は{yearLong(LATEST)}の判定の内訳です。<a href="/theme/">テーマの決め方</a>
+      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/theme/">テーマの決め方</a>
     </p>
     <ul class="themes">
       {themes.map((t) => (
@@ -133,7 +141,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
           <a class="theme" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
             <span class="nm">{t.label}</span>
-            <span class="n">{fmt(t.ids.length)}施策</span>
+            <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
             <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
           </a>
         </li>
@@ -155,7 +163,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
             <ul class="ex-list">
               {m.rows.slice(0, 4).map((g) => (
                 <li>
-                  <a class="ex-name" href={g.href}>{g.latest.name}</a>
+                  <a class="ex-name name-link" href={g.href}>{g.latest.name}</a>
                   <span class="ex-sub">施策 {g.shisaku.name} <span class="code-no">{g.shisaku.code}</span></span>
                   <Stamps items={stampsOf(g)} label="4年の進捗状況" size="small" />
                 </li>
@@ -170,19 +178,14 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
 
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
-    <p class="small secondary lead">県の計画は、めざす沖縄の姿を5つの将来像に分けています。棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
-    <ul class="visions">
+    <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
+    <ul class="row-list visions">
       {visions.map((v) => (
-        <li class:list={['sticker', 'vision', `sz-${v.id}`]}>
+        <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
-          <div class="v-body">
-            <a class="v-name" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
-            <div class="v-row">
-              <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} />
-              <span class="big v-pv">{pct(v.ok, v.n)}</span>
-            </div>
-            <div class="v-sub">主な取組 {fmt(v.n)}件のうち{fmt(v.ok)}件が順調。施策 {fmt(v.shisaku)}のうち、成果が遅れている（C・D）のは {fmt(v.cd)}。<a href={`/shisaku/?s=${v.id}`}>施策をさがす</a></div>
-          </div>
+          <a class="v-name name-link" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
+          <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
+          <span class="v-pv"><span class="big">{pct(v.ok, v.n)}</span><small>{fmt(v.ok)}/{fmt(v.n)}件</small></span>
         </li>
       ))}
     </ul>
@@ -229,7 +232,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
       <StatusChart title="成果指標の達成状況" caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
     <p class="small secondary">
-      R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
+      R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
     </p>
   </section>
 
@@ -245,14 +248,25 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .hero .lead { font-size: 1rem; }
   .pdf-n { font-size: 1.2rem; margin-inline: 1px; }
   .donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
-  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
-  .donut-card:nth-child(1) { transform: rotate(-0.6deg); }
-  .donut-card:nth-child(2) { transform: rotate(0.6deg); }
+  /* ヒーローの中の箱なので線と影は付けず、白い地だけで分ける */
+  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--paper); border-radius: 16px; padding: 14px 16px; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
-  .gap { margin-top: 22px; }
-  .bubble-text { margin: 0 0 12px; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
-  .bubble-text .big { font-size: 1.7rem; margin-inline: 4px; }
+  /* 円グラフの札は全体を押すと一覧を開く（中の用語の説明のボタンは上に出して押せるまま） */
+  .donut-card { position: relative; }
+  .donut-card:has(.dc-more:hover) { background: color-mix(in oklab, var(--sky) 45%, var(--paper)); }
+  .dc-more { display: inline-block; margin-top: 6px; font-size: 0.875rem; font-weight: 700; }
+  .dc-more::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .donut-card :global(.term) { position: relative; z-index: 1; }
+  /* まだ進んでいないところ。説明のあとに大きな数字を置いた文章（警告の色や印は使わない）。数字を押すとその一覧を開く */
+  .story { margin-top: 22px; background: var(--paper); border-radius: 16px; padding: 16px 20px; }
+  .st-lead { margin: 0 0 4px; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+  .st-body { margin: 0; font-family: var(--font-display); font-size: 1.15rem; line-height: 2.1; }
+  .st-body a { color: var(--ink); font-weight: 700; margin-inline: 3px; text-decoration: underline 3px var(--pop); text-underline-offset: 0.18em; }
+  /* 数字とその後ろの短い言葉（「件で、」「あります。」）は離さない */
+  .st-body .nw { white-space: nowrap; }
+  .st-body a:hover { text-decoration-color: var(--ink); }
+  .st-body .big { font-size: 2.1rem; line-height: 1; margin-right: 1px; }
   @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
 
   .search { margin-top: 24px; display: grid; gap: 8px; }
@@ -263,18 +277,19 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
     border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; min-height: 46px;
   }
 
-  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .theme {
-    display: grid; justify-items: start; gap: 6px; height: 100%; color: var(--ink); text-decoration: none; background: var(--paper);
-    border: 2.5px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 14px;
+    display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
+    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
   }
   .theme:hover { background: var(--sky); }
-  .theme:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
-  .theme :global(.sbar) { margin-top: auto; }
-  .ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--pink); border: 2px solid var(--line); }
-  .ico :global(.theme-ic) { width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { font-family: var(--font-display); font-weight: 700; line-height: 1.4; }
-  .n { font-size: 0.875rem; color: var(--ink-2); }
+  .theme:active { transform: translate(2px, 2px); box-shadow: none; }
+  .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
+  .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .theme :global(.sbar) { grid-area: bar; }
+  .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
+  @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
 
   .news { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
   .news-card { display: grid; gap: 4px; align-content: start; }
@@ -288,14 +303,19 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .ex-sub { font-size: 0.875rem; color: var(--ink-2); }
   .more-link { font-weight: 700; font-size: 0.9375rem; margin-top: 4px; }
 
-  .visions { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-  .vision { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--szw); }
-  .vision :global(.big-badge) { width: 58px; height: 58px; font-size: 1.6rem; border-width: 2.5px; }
-  .v-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--ink); }
-  .v-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 6px; }
-  .v-pv { font-size: 1.2rem; }
-  .v-sub { font-size: 0.875rem; color: var(--ink-2); margin-top: 4px; }
-  @media (max-width: 480px) { .vision { grid-template-columns: 1fr; } .vision :global(.big-badge) { width: 44px; height: 44px; font-size: 1.2rem; } }
+  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
+  .v-name { grid-area: name; line-height: 1.5; }
+  .vision :global(.chunk) { grid-area: bar; }
+  .v-pv { grid-area: pv; display: grid; justify-items: end; line-height: 1.2; }
+  .v-pv .big { font-size: 1.15rem; }
+  .v-pv small { font-size: 0.75rem; color: var(--ink-2); }
+  @media (max-width: 640px) {
+    .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
+    .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
+    .v-pv { grid-auto-flow: column; align-items: baseline; gap: 6px; }
+  }
 
   .trend { margin-top: 0; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }

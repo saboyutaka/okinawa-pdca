@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { LINKS, PROJECT } from '../lib/links.js';
+import ExtLink from '../components/ExtLink.astro';
 
 interface Props { title?: string; description?: string }
 const SITE = '沖縄県PDCAダッシュボード';
@@ -9,14 +10,14 @@ const NOINDEX = true;
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE}` : SITE;
 const path = Astro.url.pathname;
-// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。個別計画（観光ロードマップなど）は基本計画とは別の計画なので将来像の隣に置く。also のページ（基本施策・遅れが続いている取組）にいるときも、その項目をいまの場所にする
+// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。個別計画（観光ロードマップなど）は基本計画とは別の計画なので将来像の隣に置く。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
   { href: '/theme/', label: 'くらしのテーマ' },
   { href: '/future/', label: '将来像', also: ['/kihon/'] },
   { href: '/keikaku/', label: '個別計画' },
   { href: '/shisaku/', label: '施策' },
-  { href: '/torikumi/', label: '取組', also: ['/okure/'] },
+  { href: '/torikumi/', label: '取組' },
   { href: '/shihyou/', label: '成果指標' },
   { href: '/bukyoku/', label: '部局' },
   { href: '/yosan/', label: '予算' },
@@ -52,10 +53,10 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     <a class="skip" href="#main">本文へスキップ</a>
     <header class="site-header">
       <div class="wrap">
-        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}<small>（非公式）</small></span></a>
-        <a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a>
+        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE}</span></a>
+        <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
         <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
-        <nav class="site-nav" aria-label="サイト内">
+        <nav class="site-nav" aria-label="サイト内" data-scroll-hint>
           {NAV.map((n) => <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>)}
         </nav>
         <script is:inline>
@@ -73,10 +74,10 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>出典: 沖縄県「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
-        <p>個別計画のページは「<a href={LINKS.kankoRm} rel="noopener">沖縄観光推進ロードマップPDCA</a>」、施策のページの一括交付金は「<a href={LINKS.ikkatsu} rel="noopener">沖縄振興特別推進交付金の事後評価</a>」、基本施策のページの県の総括は「<a href={LINKS.hyoka} rel="noopener">新・沖縄21世紀ビジョン基本計画 評価検証報告書</a>」から読み取っています。</p>
+        <p>出典: 沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
+        <p>個別計画のページは「<ExtLink href={LINKS.kankoRm}>沖縄観光推進ロードマップPDCA</ExtLink>」、施策のページの一括交付金は「<ExtLink href={LINKS.ikkatsu}>沖縄振興特別推進交付金の事後評価</ExtLink>」、基本施策のページの県の総括は「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」から読み取っています。</p>
         <p>「くらしのテーマ」は、このサイトが独自にまとめた分類です。県の計画の分類ではありません。</p>
-        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <a href={PROJECT.maintainerX} rel="noopener">@{PROJECT.maintainer}</a>）</p>
+        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</p>
       </div>
     </footer>
     <script src="../scripts/tooltip.js"></script>
@@ -84,5 +85,6 @@ const inItem = (n) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || []
     <script src="../scripts/terms.js"></script>
     <script src="../scripts/disclosure.js"></script>
     <script src="../scripts/charts.js"></script>
+    <script src="../scripts/scroll-hint.js"></script>
   </body>
 </html>

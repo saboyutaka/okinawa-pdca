@@ -1,4 +1,4 @@
-// 一覧の絞り込み（施策・成果指標・遅れが続いている取組・部局のページで共通）。
+// 一覧の絞り込み（施策・成果指標・部局のページで共通）。
 // <form data-filter="#一覧のid" data-count="#件数のid" data-empty="#0件の表示のid" data-summary="#条件の表示のid"> の各入力の name と、
 // 一覧の [data-item] 要素の data-<name> を比べる。
 //  - 入力の値も項目の値も「|」区切りで複数を表せる。どれか1つが同じなら一致（例: 判定「C|D」）
@@ -7,6 +7,8 @@
 // [data-group] は中に表示中の項目が無ければ隠す。その中の [data-group-count] には表示中の件数を入れる。
 // いまの条件は data-summary の場所に「くらしのテーマ: 子ども・子育て ×」のように並べ、1つずつ外せる（条件の名前は入力を囲む [data-label]）。
 // 条件は URL のクエリに残すので、そのまま共有できる。
+// 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
+// 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
 const norm = (s) => s.normalize('NFKC').toLowerCase();
 
 for (const form of document.querySelectorAll('form[data-filter]')) {
@@ -17,6 +19,22 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
   const empty = document.querySelector(form.dataset.empty);
   const summary = form.dataset.summary && document.querySelector(form.dataset.summary);
   const inputsOf = (name) => [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+  // 入力の初めの値（select は selected の付いた選択肢。無ければ先頭）
+  const defaultOf = (el) => (el.tagName === 'SELECT' ? (([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value ?? '') : el.defaultValue);
+  const selects = [...form.querySelectorAll('select[name]')];
+  // 初めの選択のままの条件か（成果指標の「対象: R7の報告にある指標」のように、初めから選んである条件は数えない）
+  const isDefault = (name, value) => {
+    const first = inputsOf(name)[0];
+    if (!first) return false;
+    if (first.tagName === 'SELECT') return value === defaultOf(first);
+    if (first.type === 'checkbox' || first.type === 'radio') return inputsOf(name).some((x) => x.value === value && x.defaultChecked);
+    return value === first.defaultValue;
+  };
+  // 入力を初めの値に戻す
+  const reset = (el) => {
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = el.defaultChecked;
+    else if (el.name && el.tagName !== 'BUTTON') el.value = defaultOf(el);
+  };
 
   const conditions = () => {
     const conds = new Map();
@@ -25,6 +43,8 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
       if (!conds.has(k)) conds.set(k, []);
       conds.get(k).push(String(v));
     }
+    // 初めから選んである select を「すべて」（空）にしたときも、条件として残す
+    for (const el of selects) if (el.value === '' && defaultOf(el) !== '') conds.set(el.name, ['']);
     return conds;
   };
 
@@ -44,7 +64,9 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
     }
     if (first?.tagName === 'SELECT') {
       const opt = [...first.options].find((o) => o.value === value);
-      return [label, opt?.textContent.trim() || value, () => { first.value = ''; }];
+      // 外すと初めの選択に戻す。初めの選択のままの条件を外すときは「すべて」にする
+      const def = defaultOf(first);
+      return [label, opt?.textContent.trim() || value, () => { first.value = value === def ? '' : def; }];
     }
     return [label, `「${value}」`, () => { if (first) first.value = ''; }];
   };
@@ -80,11 +102,7 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
     all.className = 'more';
     all.textContent = 'すべて外す';
     all.addEventListener('click', () => {
-      for (const el of form.elements) {
-        if (el.type === 'checkbox') el.checked = false;
-        else if (el.type === 'radio') el.checked = el.value === '';
-        else if (el.name && el.tagName !== 'BUTTON') el.value = '';
-      }
+      for (const el of form.elements) reset(el);
       apply();
     });
     summary.replaceChildren(head, ...chips, ...(parts.length > 1 ? [all] : []));
@@ -99,8 +117,10 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
           const text = norm(el.dataset.text || '');
           return values.every((value) => norm(value).split(/\s+/).filter(Boolean).every((w) => text.includes(w)));
         }
+        const vs = values.filter(Boolean);
+        if (!vs.length) return true; // 「すべて」
         const have = (el.dataset[name] || '').split('|');
-        return values.some((value) => value.split('|').some((v) => have.includes(v)));
+        return vs.some((value) => value.split('|').some((v) => have.includes(v)));
       });
       el.hidden = !ok;
       if (ok) n++;
@@ -113,6 +133,9 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
     if (count) count.textContent = String(n);
     if (empty) empty.hidden = n > 0;
     renderSummary(conds);
+    const changed = [...conds].filter(([k]) => k !== 'q').reduce((s, [k, values]) => s + values.filter((v) => !isDefault(k, v)).length, 0);
+    form.dataset.filterN = String(changed);
+    form.dispatchEvent(new CustomEvent('filters:change', { detail: { n: changed } }));
     const params = new URLSearchParams();
     for (const [k, values] of conds) for (const v of values) params.append(k, v);
     const qs = params.toString();

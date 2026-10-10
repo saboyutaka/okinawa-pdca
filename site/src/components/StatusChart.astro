@@ -1,5 +1,6 @@
 ---
-// 区分ごとの内訳を、行（年度・将来像など）ごとの100%積み上げ横棒で並べる。凡例は上、表は下に畳んで置く
+// 区分ごとの内訳を、行（年度・将来像など）ごとの100%積み上げ横棒で並べる。凡例は上、表は下に畳んで置く。
+// 同じ区分の図をいくつも並べるページでは、凡例をページに1回だけ出し、図には legend={false} を渡す（毎回の凡例はくどいため）
 import StatusBar from './StatusBar.astro';
 import Chip from './Chip.astro';
 import { fmt, pct } from '../lib/format.js';
@@ -11,8 +12,9 @@ interface Props {
   categories: { key: string; tone: string; note?: string; shape?: string; hatch?: boolean }[];
   rows: Row[];
   unit?: string;
+  legend?: boolean;
 }
-const { title, caption, categories, rows, unit = '件' } = Astro.props;
+const { title, caption, categories, rows, unit = '件', legend = true } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 ---
@@ -21,14 +23,16 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
     <div class="chart-title">{title}</div>
     {caption && <div class="chart-caption">{caption}</div>}
   </figcaption>
-  <ul class="legend" aria-label="凡例">
-    {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
-  </ul>
+  {legend && (
+    <ul class="legend" aria-label="凡例">
+      {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
+    </ul>
+  )}
   <div class="rows">
     {rows.map((r) => (
       <div class="row">
         <div class="row-label">
-          {r.href ? <a href={r.href}>{r.label}</a> : r.label}
+          {r.href ? <a class="name-link" href={r.href}>{r.label}</a> : r.label}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
         <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />
@@ -62,6 +66,7 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  figcaption + .rows { margin-top: 12px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }
   .row { display: contents; }

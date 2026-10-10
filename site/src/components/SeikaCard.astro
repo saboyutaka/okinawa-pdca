@@ -4,7 +4,7 @@ import Road from './Road.astro';
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { YEARS, LATEST, yearLabel, planIndex, withUnit, deptHref, seikaDept, toneOfJudgement } from '../lib/data.js';
+import { YEARS, LATEST, yearLabel, planIndex, withUnit, deptHref, seikaDept, toneOfJudgement, sourceLink } from '../lib/data.js';
 import { joinLines } from '../lib/text.js';
 
 interface Props { row: any; id: string }
@@ -20,11 +20,13 @@ const prev = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((
 const worse = [x.base, x.actual, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base && (x.actual - x.base) / (x.target - x.base) < 0;
 const dept = seikaDept(x);
 const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
+// 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
+const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
 <article class="sticker scard" id={id}>
   <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
   <p class="small secondary meta">
-    担当: {deptHref(x.dept) ? <a href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
+    担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}
     {dept && deptHref(dept) && <>　<a href={`/shihyou/?dept=${encodeURIComponent(dept)}`}>{dept}の成果指標の一覧</a></>}
   </p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
@@ -41,12 +43,17 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
     </p>
   )}
   <dl class="kv">
-    <div><dt><Term word="基準値" /></dt><dd class="big">{withUnit(x.base_raw, u)}</dd></div>
+    <div><dt><Term word="基準値" /></dt><dd class="big">{withUnit(x.base_raw, u)}</dd>{x.base_fix && <dd class="small secondary">部局の検証票の値</dd>}</div>
     <div><dt>実績値（{yearLabel(x.year)}報告）</dt><dd class="big">{withUnit(x.actual_raw, u)}</dd>{x.actual_ref_year && <dd class="small secondary">{x.actual_ref_year}の値</dd>}</div>
     <div><dt>計画値（{yearLabel(x.year)}）</dt><dd class="big">{withUnit(planRaw, u)}</dd></div>
     <div><dt><Term word="目標値" />（{x.target_year}）</dt><dd class="big">{withUnit(x.target_raw, u)}</dd></div>
     <div><dt>目標の見通し</dt><dd>{x.judgement ? <Chip tone={toneOfJudgement(x.judgement)} text={x.judgement} /> : '—'}</dd></div>
   </dl>
+  {x.base_fix && (
+    <p class="small">
+      基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
+    </p>
+  )}
   <SeikaChart row={row} unit={u} />
   <details>
     <summary>表で見る</summary>
@@ -62,7 +69,7 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
             return (
               <tr>
                 <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
-                <td class="num">{withUnit(r.base_raw, r.unit)}</td>
+                <td class="num">{withUnit(r.base_raw, r.unit)}{r.base_fix && <><br /><small class="secondary">部局の検証票の値</small></>}</td>
                 <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
                 <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
                 <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
@@ -89,11 +96,7 @@ const ref = x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
   .meta { margin: -4px 0 4px; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   .say { font-weight: 700; margin: 10px 0; }
-  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 12px 0; }
-  .kv div { background: var(--bg); border-radius: 12px; padding: 6px 10px; min-width: 0; }
-  .kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-  .kv dd { margin: 0; }
-  .kv dd.big { font-size: 1.1rem; }
+  .kv { margin: 12px 0; }
   /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
   td.num { white-space: normal; min-width: 5em; max-width: 14em; }
 </style>

@@ -35,7 +35,7 @@ const rest = unthemed();
       <li class="sticker theme-row">
         <span class="ico"><ThemeIcon id={t.id} /></span>
         <div class="body">
-          <h2><a href={`/theme/${t.id}/`}>{t.label}</a></h2>
+          <h2><a class="name-link" href={`/theme/${t.id}/`}>{t.label}</a></h2>
           <div class="nums small">施策 <b>{fmt(t.ids.length)}</b>・<a href={`/torikumi/?theme=${t.id}`}>取組 <b>{fmt(t.tori)}</b></a>・<a href={`/shihyou/?theme=${t.id}`}>成果指標 <b>{fmt(t.seika)}</b></a></div>
           <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の${yearLong(LATEST)}の判定 `} size="mini" />
           <p class="rule small"><span class="secondary">決め方: </span>{t.words.join('、')}</p>
@@ -49,7 +49,7 @@ const rest = unthemed();
     <details class="rest">
       <summary>どのテーマにも入らない施策（{fmt(rest.length)}）</summary>
       <ul>
-        {rest.map((s) => <li><a href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></li>)}
+        {rest.map((s) => <li><a class="name-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></li>)}
       </ul>
     </details>
   )}

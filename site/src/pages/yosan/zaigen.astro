@@ -6,6 +6,7 @@ import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getS
 import { fmt, yen, pct } from '../../lib/format.js';
 import { IKKATSU_YEARS, ikkatsuRows } from '../../lib/plans.js';
 import { LINKS } from '../../lib/links.js';
+import ExtLink from '../../components/ExtLink.astro';
 
 const ref = getFinanceReference();
 const shinko = ref.okinawa_shinko;
@@ -85,7 +86,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
           <p class="small">{f.desc}</p>
           {f.key === '一括交付金（ソフト）' && (
             <p class="small ik-note">
-              県はこの交付金を使った事業ごとに成果目標を立て、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています（<a href={LINKS.ikkatsu} rel="noopener">県の公表ページ</a>。{yearLabel(ikYear)}は{fmt(ikCount)}事業）。
+              県はこの交付金を使った事業ごとに成果目標を立て、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています（<ExtLink href={LINKS.ikkatsu}>県の公表ページ</ExtLink>。{yearLabel(ikYear)}は{fmt(ikCount)}事業）。
               事業ごとの評価（◎○△未）・成果目標・予算の執行は、各施策のページの「一括交付金（ソフト）の事業」で見られます（例: <a href="/shisaku/3-2-a-1/#ikkatsu">「安全・安心の島」の構築に向けた受入体制等の整備</a>）。
             </p>
           )}
@@ -94,7 +95,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
               <div class="secondary">金額の大きい予算事業</div>
               <ul class="tops">
                 {f.top.map((t) => (
-                  <li>{t.name}（{yen(t.amount)}）{t.shisaku && <><br /><a href={`/shisaku/${t.shisaku.id}/`}>{t.shisaku.name}</a> <span class="code-no">{t.shisaku.code}</span></>}</li>
+                  <li>{t.name}（{yen(t.amount)}）{t.shisaku && <><br /><a class="sub-link" href={`/shisaku/${t.shisaku.id}/`}>{t.shisaku.name}</a> <span class="code-no">{t.shisaku.code}</span></>}</li>
                 ))}
               </ul>
             </div>
@@ -161,7 +162,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
   <section aria-labelledby="src">
     <h2 id="src">出典</h2>
     <ul class="small">
-      {sources.map((s) => <li><a href={s.url} rel="noopener">{s.title}</a></li>)}
+      {sources.map((s) => <li><ExtLink href={s.url}>{s.title}</ExtLink></li>)}
       <li>取組ごとの予算事業・財源・金額: 各部局の「主な取組」検証票（{yearLong(LATEST)}）</li>
     </ul>
     <p class="small secondary">国・県の資料の数字は{ref.checked_at}に確認したものです。</p>

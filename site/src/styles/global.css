@@ -84,10 +84,24 @@ body {
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
+/* 文章の最後の行に1〜2文字だけ落ちる（「…見通しで / す。」）のを避ける（見出しは balance）。段落など文章のかたまりだけに付ける
+   （一覧の行や表のセルまで付けると、大きな一覧のページで折り返しの計算が重くなるため）。対応していないブラウザでは今までどおり */
+p, dd, figcaption, summary { text-wrap: pretty; }
 a { color: var(--link); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
 a:hover { text-decoration-thickness: 2.5px; }
+/* リンクは3種類。文章の中のリンクは上の青と下線のまま（黒の太字にすると強調と見分けがつかないため）。
+   .name-link … 名前のリンク（一覧の行の名前・カードの見出し・図の行の名前）。見出しとして読むので黒の太字にし、押せることは薄い下線で伝える。
+                書体は角ゴシック（見出しの丸ゴシックは太さが1つしかなく、太字にならないため）
+   .sub-link  … 補足の行の部局・施策の名前。灰色にして、名前より目立たせない
+   どちらも、カーソルを乗せても色は青にしない（名前が別の種類の文字に変わったように見え、一覧ではちらつくため）。
+   乗せたときは下線を黒く太くして、押せることを伝える（太さは上の a:hover） */
+.name-link { color: var(--ink); font-family: var(--font); font-weight: 700; text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
+.sub-link { color: var(--ink-2); text-decoration-color: var(--hair); }
+.name-link:hover { text-decoration-color: var(--ink); }
+.sub-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
 :focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
-h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; }
+/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり） */
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; word-break: auto-phrase; }
 h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0.25em 0 0.5em; letter-spacing: 0.02em; }
 h2 { font-size: 1.35rem; margin: 2.2em 0 0.6em; }
 h3 { font-size: 1.08rem; margin: 1.6em 0 0.4em; }
@@ -98,6 +112,8 @@ small, .small { font-size: 0.875rem; }
 .big { font-family: var(--font-num); font-weight: 600; font-variant-numeric: tabular-nums; }
 .lead { max-width: 46em; }
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; }
+/* hidden 属性は、ページの style で display を付けた要素でも必ず隠す（一覧の絞り込みが hidden で隠すため） */
+[hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* 本文へスキップ（キーボードで最初にフォーカスしたときだけ見える） */
@@ -107,18 +123,20 @@ small, .small { font-size: 0.875rem; }
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.site-title { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; line-height: 1.3; }
+/* PDCA の印は幅を決めておく（スマホで2行目の字下げを、印の幅とすき間から計算するため。書体で幅が変わらないように） */
+.site-header { --mark-w: 62px; --mark-gap: 8px; }
+.site-title { display: inline-flex; align-items: center; gap: var(--mark-gap); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; line-height: 1.3; }
 .site-title .mark {
-  display: inline-grid; place-items: center; flex: none; height: 34px; padding: 0 10px; border-radius: 999px; white-space: nowrap;
+  display: inline-grid; place-items: center; flex: none; width: var(--mark-w); height: 34px; padding: 0; border-radius: 999px; white-space: nowrap;
   background: var(--pop); color: var(--pop-ink); border: 2.5px solid var(--line); box-shadow: 2px 2px 0 var(--shadow);
   font-family: var(--font); font-weight: 800; font-size: 0.75rem; letter-spacing: 0.04em; transform: rotate(-4deg);
 }
-.site-title small { font-weight: 400; color: var(--ink-2); }
-/* 作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面では配色のボタンの行に入る */
-.site-by { margin-left: -8px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
+/* 「（非公式）」と作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面ではタイトルの下の行に小さく置く */
+.site-sub { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; margin-left: -12px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); }
+.site-sub small { font-size: 0.9375rem; }
+.site-by { color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .site-by b { font-family: var(--font-display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; text-underline-offset: 0.25em; }
 .site-by:hover b { text-decoration-color: var(--pop); }
-@media (max-width: 720px) { .site-by { margin-left: 0; } }
 .theme-toggle {
   margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
   background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
@@ -132,22 +150,54 @@ small, .small { font-size: 0.875rem; }
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-@media (max-width: 720px) { .theme-label { display: none; } }
+/* スマホでは「タイトル＋配色のボタン」「（非公式）by …」「ナビ」の3行を、タイトルの行に配色のボタンを並べて詰める */
+@media (max-width: 720px) {
+  .theme-label { display: none; }
+  .site-header .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; }
+  .site-title { grid-column: 1; grid-row: 1; }
+  .theme-toggle { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
+  .site-sub { grid-column: 1; grid-row: 2; margin: 0 0 0 calc(var(--mark-w) + var(--mark-gap)); font-size: 0.75rem; gap: 0 6px; } /* タイトルの文字の頭にそろえる */
+  .site-sub small { font-size: 0.8125rem; }
+  .site-by { padding: 0; }
+  .site-nav { grid-column: 1 / -1; margin-top: 6px; }
+}
+/* 横にすべらせる帯（ヘッダーのナビ・ページ内の目次のリンクの並び）は、続きがある側の端をぼかす（scripts/scroll-hint.js が more-l・more-r を付ける）。
+   キーボードで移った項目がぼかしの下に隠れないよう、スクロールの止まる位置にぼかしの幅の余白を取る */
+[data-scroll-hint] { scroll-padding-inline: 44px; }
+[data-scroll-hint].more-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 44px), transparent); }
+[data-scroll-hint].more-l { -webkit-mask-image: linear-gradient(to right, transparent, #000 44px); mask-image: linear-gradient(to right, transparent, #000 44px); }
+[data-scroll-hint].more-l.more-r {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+}
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
 
-/* ステッカー（カード）。.card は以前の名前 */
+/* ステッカー（カード）。.card は以前の名前。
+   目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
+   1. .sticker.lift … ページの頭とトップのヒーローだけ。太い線と大きな影
+   2. .sticker      … 並ぶカード・図・絞り込み。細めの線と小さな影
+   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける（余白は使う所で決める。数字の並び .kv の箱もこの形） */
 .sticker, .card {
-  background: var(--paper); border: 2.5px solid var(--line); border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); padding: 18px 20px; min-width: 0;
+  background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
+.sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
+/* ステッカーの中のステッカー（将来像の一覧の中の図など）は影を付けない */
+.sticker .sticker { box-shadow: none; }
+.inset, .kv > div { background: var(--bg); border-radius: 12px; }
+/* 数字の並び（基準値・実績値・計画値・目標値・見通し。成果指標と主要指標の札） */
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0; }
+.kv > div { padding: 6px 10px; min-width: 0; }
+.kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+.kv dd { margin: 0; }
+.kv dd.big { font-size: 1.1rem; }
 .card + .card { margin-top: 18px; }
 .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .cards > .card { margin-top: 0; }
 figure { margin: 0; }
 .notice {
-  background: var(--pink); border: 2.5px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
+  background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
 }
-.muted-box { background: var(--bg); border-radius: 14px; padding: 12px 16px; }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.875rem; color: var(--ink-2); margin-top: 18px; }
 .breadcrumb a { color: var(--ink); text-decoration: none; padding: 0 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
 .breadcrumb a:hover { background: var(--sky); }
@@ -162,7 +212,7 @@ figure { margin: 0; }
 /* ボタン */
 .button, .pill-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem;
-  color: var(--ink); background: var(--paper); border: 2.5px solid var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--shadow);
+  color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--shadow);
   padding: 6px 18px; min-height: 44px; cursor: pointer; text-decoration: none;
 }
 .pill-btn { color: var(--pop-ink); background: var(--pop); font-size: 1rem; min-height: 48px; padding: 8px 22px; }
@@ -204,6 +254,13 @@ details[open] > summary { margin-bottom: 8px; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
 .chip.empty { color: var(--ink-2); }
+/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
+.jstamp {
+  display: inline-flex; align-items: center; justify-content: center; gap: 2px; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
+  font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; line-height: 1;
+}
+.row-list:empty { display: none; }
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
 /* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */
@@ -219,8 +276,8 @@ details[open] > summary { margin-bottom: 8px; }
 .sz-5 { --szc: var(--sz-5); --szi: var(--sz-5-ink); --szw: var(--sz-5-wash); }
 /* 将来像の帯（見出し）。番号の印と名前を並べ、地を将来像の淡い色にする */
 .sz-ribbon {
-  display: flex; align-items: center; gap: 10px; background: var(--szw, var(--sky)); border: 2.5px solid var(--line); border-radius: 999px;
-  padding: 4px 16px 4px 5px; box-shadow: 3px 3px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
+  display: flex; align-items: center; gap: 10px; background: var(--szw, var(--sky)); border: 2px solid var(--line); border-radius: 999px;
+  padding: 4px 16px 4px 5px; box-shadow: 2px 2px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
 }
 .sz-ribbon .badge-sz { width: 2.1em; height: 2.1em; font-size: 0.95rem; }
 /* くらしのテーマのラベル（components/ThemeTags.astro）。このサイト独自の分類なので、ピンクの地で県の分類と見分ける */
@@ -239,7 +296,8 @@ a.ttag:hover { background: var(--sky); }
 a.plan-tag:hover { background: var(--sky); }
 /* 年度ごとのスタンプ */
 .stamps { display: flex; flex-wrap: wrap; gap: 8px; }
-.stamp { display: grid; justify-items: center; gap: 2px; min-width: 52px; flex: 1 1 0; max-width: 92px; }
+/* 年度・丸・言葉の3段は上に詰める（ある年度の言葉だけ2行になると、ほかの年度の丸が下がって線の高さがずれるため） */
+.stamp { display: grid; align-content: start; justify-items: center; gap: 2px; min-width: 52px; flex: 1 1 0; max-width: 92px; }
 .stamp .y { font-family: var(--font-num); font-size: 0.8125rem; color: var(--ink-2); }
 .stamp .c {
   display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 2.5px solid var(--line);
@@ -247,6 +305,19 @@ a.plan-tag:hover { background: var(--sky); }
 }
 .stamp .c .k { display: flex; align-items: center; gap: 3px; }
 .stamp .t { font-size: 0.8125rem; font-weight: 700; line-height: 1.3; text-align: center; }
+ol.stamps { list-style: none; padding: 0; margin: 0; }
+.stamps .cw { display: grid; place-items: center; }
+/* 小さいスタンプ（components/Stamps.astro の size="small"・取組の検索）。丸を横の線でつなぐ */
+.small-stamps { gap: 4px; flex-wrap: nowrap; }
+.small-stamps .stamp { min-width: 0; gap: 1px; }
+.small-stamps .cw { justify-self: stretch; position: relative; }
+.small-stamps .c { position: relative; z-index: 1; width: 32px; height: 32px; border-width: 2px; font-size: 0.875rem; }
+/* 前の年度の丸の中心からこの丸の中心まで（丸は同じ幅の枠の真ん中にあるので、枠の幅＋すき間）。報告のない年度にかかる線は点線 */
+.small-stamps .seg .cw::before {
+  content: ''; position: absolute; top: 50%; right: 50%; width: calc(100% + 4px); height: 3px; transform: translateY(-50%);
+  background: var(--line);
+}
+.small-stamps .seg-dash .cw::before { background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px); }
 /* 太いメーター（割合） */
 .chunk { height: 18px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); overflow: hidden; }
 .chunk > span { display: block; height: 100%; background: var(--tone); border-right: 2px solid var(--line); }
@@ -255,14 +326,16 @@ a.plan-tag:hover { background: var(--sky); }
 /* 吹き出し */
 .bubble-row { display: flex; gap: 14px; align-items: flex-start; }
 .avatar {
-  flex: none; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--paper);
-  border: 2.5px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+  flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--paper);
+  border: 2px solid var(--line); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem;
 }
-.bubble { position: relative; flex: 1; min-width: 0; background: var(--paper); border: 2.5px solid var(--line); border-radius: 20px; padding: 14px 18px; box-shadow: 4px 4px 0 var(--shadow); }
+.bubble { position: relative; flex: 1; min-width: 0; background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 14px 18px; box-shadow: 3px 3px 0 var(--shadow); }
 .bubble::before {
-  content: ""; position: absolute; left: -12px; top: 16px; width: 18px; height: 18px; background: var(--paper);
-  border-left: 2.5px solid var(--line); border-bottom: 2.5px solid var(--line); transform: rotate(45deg);
+  content: ""; position: absolute; left: -11px; top: 15px; width: 18px; height: 18px; background: var(--paper);
+  border-left: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: rotate(45deg);
 }
+/* ステッカーの中の吹き出しは影を付けない（箱の中の箱を浮かせない） */
+.sticker .bubble { box-shadow: none; }
 
 /* ツールチップ（scripts/tooltip.js・scripts/charts.js） */
 .tooltip {
@@ -332,7 +405,16 @@ a.plan-tag:hover { background: var(--sky); }
 .active-chip span { font-size: 1rem; color: var(--ink-2); }
 .active-chip:hover { background: var(--paper); }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; box-shadow: 3px 3px 0 var(--shadow); padding: 12px 16px; min-width: 0; }
+.item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; padding: 12px 16px; min-width: 0; }
+/* 一覧の行。1件ずつをステッカーにせず、1つの箱の中に細い線で区切って並べる。
+   区切りは grid のすき間に地の色を見せて描く（絞り込みで隠れた行のぶんの線が残らないように）。
+   名前は .row-list（図の部品 StatusChart・AmountChart が中で .rows を使っているので、それと分ける） */
+.row-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
+.row-list > li { background: var(--paper); padding: 12px 16px; min-width: 0; }
+/* 取組の一覧の1行（取組をさがす・部局のページ）。左に名前・所管と施策・活動指標、右に4年のスタンプ */
+.t-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
+.t-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
+@media (max-width: 640px) { .t-row { grid-template-columns: 1fr; } .t-row .stamps { max-width: 260px; } }
 /* 報告書の施策・基本施策の番号（1-(1)-ア-①）。名前より目立たせず、ステッカー・カードの右上の隅か、名前の後ろに小さく薄く置く */
 .code-no { font-family: var(--font); font-size: 0.75rem; font-weight: 400; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .code-corner { position: absolute; top: 7px; right: 16px; }
@@ -343,12 +425,14 @@ a.plan-tag:hover { background: var(--sky); }
 .years { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 
-/* ページ内の目次（施策・取組のページ）。画面の上に固定し、スマホでは横にすべらせる */
+/* ページ内の目次（施策・取組のページ）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
+   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ。「すべて開く」は端に置いたまま） */
 .toc {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 6px;
-  margin: 18px -16px 0; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair); overflow-x: auto; scrollbar-width: none;
+  margin: 18px -16px 0; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
 }
-.toc::-webkit-scrollbar { display: none; }
+.toc-links { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 4px 4px 2px; margin: -2px -4px -4px -2px; }
+.toc-links::-webkit-scrollbar { display: none; }
 .toc a {
   flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 14px; min-height: 38px;
   display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 999px; background: var(--paper);
@@ -357,11 +441,6 @@ a.plan-tag:hover { background: var(--sky); }
 .toc .button { flex: none; margin-left: auto; min-height: 38px; padding: 2px 14px; font-size: 0.875rem; box-shadow: 2px 2px 0 var(--shadow); }
 .anchor, [id^="seika-"] { scroll-margin-top: 72px; }
 
-/* 長い文章を途中まで見せる（scripts/disclosure.js の「続きを読む」） */
-.clamp { position: relative; max-height: 12em; overflow: hidden; }
-.clamp::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4.5em; background: linear-gradient(to bottom, transparent, var(--paper)); pointer-events: none; }
-.clamp.open { max-height: none; }
-.clamp.open::after { display: none; }
 
 .prose { white-space: pre-line; }
 

@@ -13,12 +13,14 @@ import StatusChart from '../../components/StatusChart.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendChart from '../../components/TrendChart.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy, toneOfJudgement,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, toneOfJudgement,
   getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, amountEntries,
 } from '../../lib/data.js';
 import { getThemes } from '../../lib/themes.js';
 import { fmt, pct, yen } from '../../lib/format.js';
 import { LINKS } from '../../lib/links.js';
+import ExtLink from '../../components/ExtLink.astro';
+import { oneLine } from '../../lib/text.js';
 
 export function getStaticPaths() {
   return getShouraizou().map((v) => ({ params: { id: String(v.id) } }));
@@ -72,9 +74,9 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
 const groups = getTorikumiGroups().filter((g) => g.shisaku.shouraizou === v.id);
 const L = YEARS.length - 1;
 const moves = [
-  { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調').length, href: `/torikumi/?s=${v.id}&pat=recover` },
-  { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => ['順調', '概ね順調'].includes(g.statuses[L - 1]) && DELAYS.has(g.statuses[L])).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
-  { tone: 'critical', title: '3年以上、遅れが続いている', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length, href: `/okure/?s=${v.id}` },
+  { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?s=${v.id}&pat=recover` },
+  { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
+  { tone: 'critical', title: '4年のうち3年以上遅れた', n: groups.filter((g) => g.patterns.includes('delay3')).length, href: `/torikumi/?s=${v.id}&pat=delay3` },
 ];
 
 // くらしのテーマ（この将来像の施策が多い順）
@@ -89,7 +91,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 <Base title={`将来像${v.id} ${v.name}`} description={`沖縄県PDCA: 将来像${v.id}「${v.name}」の基本施策・施策・主な取組・成果指標の進み具合（令和4〜7年度）`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}` }]} />
 
-  <header class:list={['sticker', 'v-hero', `sz-${v.id}`]}>
+  <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
     <div>
       <div class="v-kicker"><Term word="将来像" />{v.id}</div>
@@ -128,27 +130,25 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">
-      棒は{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />です。<Term word="主要指標" />は基本施策の最終的な成果をはかる指標で、{yearLong(LATEST)}の報告の実績値・R9の目標値・見通しです。基本施策の名前を押すと、施策の一覧と主要指標の4年分を見られます。
-    </p>
+    <p class="small secondary lead">棒は主な取組の<Term word="進捗状況" />（{yearLong(LATEST)}）、下の箱は<Term word="主要指標" />の見通しです。</p>
     <ul class="kcards">
       {kihonCards.map((k) => (
         <li class="sticker kcard">
-          <div class="name-row"><a class="k-name" href={`/kihon/${k.id}/`}>{k.name}</a><span class="code-no">{k.code}</span></div>
+          <div class="name-row"><a class="k-name name-link" href={`/kihon/${k.id}/`}>{k.name}</a><span class="code-no">{k.code}</span></div>
           <div class="k-row">
             <span class="small">主な取組 <b>{fmt(k.ok)}/{fmt(k.n)}件</b>が順調</span>
             <span class="big k-pv">{pct(k.ok, k.n)}</span>
           </div>
           {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
-          <div class="small secondary">施策 {fmt(k.shisaku)}（成果が遅れている C・D {fmt(k.cd)}）・<a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策を見る</a></div>
+          <div class="small secondary"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a>（うち成果が遅れている {fmt(k.cd)}）</div>
           {k.shuyou.length > 0 && (
             <ul class="shuyou">
               {k.shuyou.map((r) => {
                 const tone = toneOfJudgement(r.judgement);
                 return (
-                  <li>
+                  <li class="inset">
                     <div class="s-name">{r.name}</div>
-                    <div class="small">実績 <b>{(r.actual_raw || '—').replace(/\n/g, ' ')}</b>　→ 目標 {(r.target_raw || '—').replace(/\n/g, ' ')}</div>
+                    <div class="small">実績 <b>{oneLine(r.actual_raw)}</b>　→ 目標 {oneLine(r.target_raw)}</div>
                     {r.judgement && <div>{tone ? <Chip tone={tone} text={`見通し: ${r.judgement}`} /> : <span class="small">見通し: {r.judgement}</span>}</div>}
                   </li>
                 );
@@ -191,7 +191,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={torikumiRows} />
       <StatusChart title="成果指標の達成状況" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
-    <p class="small secondary">R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
+    <p class="small secondary">R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
   </section>
 
   <section aria-labelledby="moves-h">
@@ -245,12 +245,12 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
   .kcards { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .kcard { display: grid; gap: 8px; align-content: start; }
-  .k-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--ink); }
+  .k-name { line-height: 1.5; }
   .k-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .k-pv { font-size: 1.3rem; }
   .shuyou { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 8px; }
-  .shuyou li { background: var(--bg); border-radius: 12px; padding: 8px 12px; display: grid; gap: 2px; }
-  .s-name { font-weight: 700; font-size: 0.9375rem; }
+  .shuyou li { padding: 8px 12px; display: grid; gap: 2px; }
+  .s-name { font-weight: 700; font-size: 0.9375rem; text-wrap: pretty; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }

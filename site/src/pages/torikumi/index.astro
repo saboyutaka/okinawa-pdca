@@ -1,24 +1,31 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
+import FilterMore from '../../components/FilterMore.astro';
+import Icon from '../../components/Icon.astro';
+import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { getThemes } from '../../lib/themes.js';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
+// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。lib/data.js の PATTERNS）
+const pats = [
+  { pat: 'delay4', tone: 'critical', label: '4年とも遅れ' },
+  { pat: 'delay3', tone: 'serious', label: '3年以上遅れ' },
+  { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に` },
+].map((p) => ({ ...p, n: groups.filter((g) => g.patterns.includes(p.pat)).length }));
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
-  <p class="secondary">
-    令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件です。同じ施策の中で名前が同じ取組は、年度をまたいで1件にまとめ、4年分の進捗状況を並べています。取組の名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。部局は最新の報告での所管部局です。
-  </p>
-  <p><a class="tag" href="/okure/">遅れが続いている取組を見る</a></p>
+  <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
+  <p class="small pats"><span class="secondary">遅れの様子:</span>{pats.map((p) => <a href={`?pat=${p.pat}`} data-pat={p.pat}><Icon tone={p.tone} />{p.label} {fmt(p.n)}件</a>)}</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q" data-label="キーワード">キーワード
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
+    <FilterMore id="tori-more">
     <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
       <select name="theme">
         <option value="">すべて</option>
@@ -41,6 +48,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       <select name="st">
         <option value="">すべて</option>
         {STATUSES.map((s, i) => <option value={i}>{s.key}</option>)}
+        <option value="delay">遅れ（やや遅れ・大幅遅れ・未着手）</option>
         <option value="none">{yearLabel(LATEST)}の報告に無い</option>
       </select>
     </label>
@@ -49,18 +57,23 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
         <option value="">すべて</option>
         <option value="delay4">4年とも遅れ</option>
         <option value="delay3">3年以上遅れ</option>
+        <option value="streak">{yearLabel(LATEST - 2)}から{yearLabel(LATEST)}まで続けて遅れ（今も遅れている）</option>
         <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
         <option value="newdelay">{yearLabel(LATEST - 1)}の順調・概ね順調から{yearLabel(LATEST)}で遅れ</option>
         <option value="new">{yearLabel(LATEST)}で新しく出た</option>
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
+    </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
-  <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
+  <p class="small secondary">
+    遅れ＝「やや遅れ」「大幅遅れ」「未着手」。「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。遅れの理由は、取組のページの「年度ごとの活動と検証」にあります。
+    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
+  </p>
 
-  <ul class="list" id="results"></ul>
+  <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/shisaku/">施策の一覧</a>から各施策のページで取組を見ることもできます。</p></noscript>
 </Base>
@@ -73,7 +86,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     shisaku: Record<string, [string, string, number]>;
     depts: Record<string, string>;
     themes: [string, string][];
-    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[]][];
+    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[], string[]][];
   };
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -95,51 +108,51 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   }
 
   function render(row: Data['rows'][number]) {
-    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href, themes] = row;
-    const [code, sname, sz] = data.shisaku[sid];
-    const li = el('li', 'item');
-    const head = el('div', 'head');
-    const n = el('a', 'name', name) as HTMLAnchorElement;
+    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
+    const [code, sname] = data.shisaku[sid];
+    const li = el('li', 't-row');
+    const main = el('div', 't-main');
+    const n = el('a', 'name name-link', name) as HTMLAnchorElement;
     n.href = href;
-    head.append(n);
+    const s = el('div', 'small secondary');
     if (data.depts[dept]) {
-      const d = el('a', 'sec', section) as HTMLAnchorElement;
+      const d = el('a', 'sub-link', section) as HTMLAnchorElement;
       d.href = `/bukyoku/${data.depts[dept]}/`;
-      head.append(d);
+      s.append(d);
     } else {
-      head.append(el('span', 'sec', section));
+      s.append(section);
     }
-    const s = el('div', 'small');
-    const badge = el('span', `badge-sz sz-${sz}`, String(sz));
-    badge.setAttribute('aria-hidden', 'true');
-    s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
-    const a = el('a', '', sname) as HTMLAnchorElement;
+    s.append('・施策 ');
+    const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
-    const years = el('div', 'years');
-    data.years.forEach((y, i) => {
-      const box = el('span');
-      box.append(el('span', 'yl', `R${y - 2018}`));
-      const st = sts[i];
-      if (st == null) box.append(el('span', 'secondary small', '—'));
-      else {
-        const chip = el('span', 'chip');
-        chip.insertAdjacentHTML('beforeend', iconSvg(data.statuses[st][1]));
-        chip.append(el('span', '', data.statuses[st][0]));
-        box.append(chip);
-      }
-      years.append(box);
-    });
-    const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
-    const tags = el('div', 'ttags');
-    tags.append(el('span', 'sr-only', 'くらしのテーマ（このサイト独自の分類）:'));
-    for (const i of themes) {
-      const t = el('a', 'ttag', data.themes[i][1]) as HTMLAnchorElement;
-      t.href = `/theme/${data.themes[i][0]}/`;
-      tags.append(t);
-    }
-    li.append(head, s, tags, years, ind);
+    main.append(n, s);
+    if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`));
+    // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
+    li.append(main, stamps(sts));
     return li;
+  }
+
+  // 4年のスタンプ（components/Stamps.astro の size="small" と同じ形。見た目は styles/global.css の .stamps）
+  function stamps(sts: (number | null)[]) {
+    const ol = el('ol', 'stamps small-stamps');
+    ol.setAttribute('aria-label', '4年の進捗状況');
+    data!.years.forEach((y, i) => {
+      const st = sts[i];
+      const yl = `R${y - 2018}`;
+      const li = el('li', `stamp${i > 0 ? ' seg' : ''}${i > 0 && (st == null || sts[i - 1] == null) ? ' seg-dash' : ''}`);
+      const tone = st == null ? 'blank' : data!.statuses[st][1];
+      const c = el('span', `c tone-${tone}`);
+      c.setAttribute('aria-hidden', 'true');
+      c.insertAdjacentHTML('beforeend', st == null ? iconSvg('blank', 'ring', 12) : iconSvg(tone, undefined, 12));
+      const cw = el('span', 'cw');
+      cw.append(c);
+      const t = el('span', 't');
+      t.append(el('span', 'sr-only', `${yl}: `), st == null ? '報告なし' : data!.statuses[st][0]);
+      li.append(el('span', 'y', yl), cw, t);
+      ol.append(li);
+    });
+    return ol;
   }
 
   function showMore() {
@@ -169,15 +182,9 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       if (s && String(sh[2]) !== s) return false;
       if (dept && d !== dept) return false;
       if (ti >= 0 && !r[10].includes(ti)) return false;
-      if (st === 'none' ? sts[last] != null : st && sts[last] !== Number(st)) return false;
-      const delays = sts.filter((x) => x != null && DELAY.has(x)).length;
-      const all = sts.every((x) => x != null);
-      if (pat === 'delay4' && !(all && delays === 4)) return false;
-      if (pat === 'delay3' && !(all && delays >= 3)) return false;
-      if (pat === 'recover' && !(sts[last - 1] != null && DELAY.has(sts[last - 1]!) && sts[last] === 0)) return false;
-      if (pat === 'newdelay' && !(sts[last - 1] != null && sts[last - 1]! <= 1 && sts[last] != null && DELAY.has(sts[last]!))) return false;
-      if (pat === 'new' && !(sts[last] != null && sts[last - 1] == null)) return false;
-      if (pat === 'ended' && sts[last] != null) return false;
+      if (st === 'none' ? sts[last] != null : st === 'delay' ? !(sts[last] != null && DELAY.has(sts[last]!)) : st && sts[last] !== Number(st)) return false;
+      // 4年間の様子は、ビルド時に lib/data.js の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
+      if (pat && !r[11].includes(pat)) return false;
       if (q.length) {
         const text = norm(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`);
         if (!q.every((w) => text.includes(w))) return false;
@@ -190,6 +197,10 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     shown = 0;
     showMore();
     renderActive();
+    // キーワード以外で入っている条件の数を、条件のボタン（components/FilterMore.astro）に送る
+    const changed = [...f.entries()].filter(([k, v]) => k !== 'q' && v !== '').length;
+    form.dataset.filterN = String(changed);
+    form.dispatchEvent(new CustomEvent('filters:change', { detail: { n: changed } }));
     const params = new URLSearchParams([...f.entries()].filter(([, v]) => v !== '').map(([k, v]) => [k, String(v)]));
     const qs = params.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
@@ -220,6 +231,14 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const input = form.elements.namedItem(k) as HTMLInputElement | null;
     if (input) input.value = v;
   }
+  // 頭の「遅れの様子」のリンクは、ページを開き直さずに「4年間の様子」だけを変える（キーワードなど、いま入っている条件は残す）
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('.pats [data-pat]')) {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      (form.elements.namedItem('pat') as HTMLSelectElement).value = a.dataset.pat!;
+      apply();
+    });
+  }
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   more.addEventListener('click', showMore);
@@ -238,8 +257,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 </script>
 
 <style>
-  #results :global(.head) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  #results :global(.name) { font-family: var(--font-display); font-weight: 700; }
-  #results :global(.sec) { font-size: 0.875rem; color: var(--ink-2); }
-  #results :global(.years) { margin: 6px 0 4px; }
+  .pats { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
+  .pats a { display: inline-flex; align-items: center; gap: 6px; }
+  /* 結果の行の形は styles/global.css の .t-row（部局のページと同じ） */
 </style>

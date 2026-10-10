@@ -17,6 +17,7 @@ import {
   deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS,
 } from '../../../lib/data.js';
 import { yen } from '../../../lib/format.js';
+import ExtLink from '../../../components/ExtLink.astro';
 import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.js';
 
 export function getStaticPaths() {
@@ -108,22 +109,22 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <span class="p-kind">この取組が入っている施策</span>
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
     <span class="p-row">
-      <span class:list={['p-stamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
+      <span class:list={['jstamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
       <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
       <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
     </span>
   </a>
 
-  <header class="sticker head">
+  <header class="sticker lift head">
     <div class="kind"><Term word="主な取組" /></div>
     <h1>{t.name}</h1>
     <div class="meta">
-      <span>所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}</span>
+      <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       <ThemeTags ids={themeIdsOfItem(s.id, t.name)} />
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}でも評価</a>}
     </div>
-    <div class="now">
+    <div class="now inset">
       <div class="now-l">
         <span class:list={['now-pill', `tone-${latestTone}`]}><Icon tone={latestTone} size={16} />{latestStatus}</span>
         <span class="now-sb">{yearLong(t.year)}の<Term word="進捗状況" /></span>
@@ -166,7 +167,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <div class="tile-label">対応する<Term word="成果指標" /></div>
       {seikaName ? (
         <>
-          <div class="f-name">{seikaHref ? <a href={seikaHref}>{seikaName}</a> : seikaName}</div>
+          <div class="f-name">{seikaHref ? <a class="name-link" href={seikaHref}>{seikaName}</a> : seikaName}</div>
           {seikaRate && <Chip tone={seikaTone} text={`${seikaRate}（${yearLabel(LATEST)}）`} />}
           <div class="tile-sub">この取組で成果を出そうとしている、施策の成果指標です。</div>
         </>
@@ -175,12 +176,14 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   </div>
 
   <nav class="toc" aria-label="このページの内容">
-    <a href="#progress">年度ごとの進捗</a>
-    {plans.size > 0 && <a href="#plan">年度別計画</a>}
-    <a href="#yosan">予算</a>
-    <a href="#pdca">活動と検証</a>
-    {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
-    <a href="#source">出典</a>
+    <div class="toc-links" data-scroll-hint>
+      <a href="#progress">年度ごとの進捗</a>
+      {plans.size > 0 && <a href="#plan">年度別計画</a>}
+      <a href="#yosan">予算</a>
+      <a href="#pdca">活動と検証</a>
+      {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
+      <a href="#source">出典</a>
+    </div>
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
@@ -225,8 +228,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
             <div class="y-head"><span class="y">{yearLabel(y)}</span><Chip tone={toneOfStatus(st)} text={st} /></div>
             {(!prevInd || prevInd !== r.indicator) && r.indicator && <div class="y-ind">{r.indicator}</div>}
             <dl class="y-vals">
-              <div><dt>計画</dt><dd>{r.target || '—'}</dd></div>
-              <div><dt>実績</dt><dd><b>{r.actual || '—'}</b></dd></div>
+              <div class="inset"><dt>計画</dt><dd>{r.target || '—'}</dd></div>
+              <div class="inset"><dt>実績</dt><dd><b>{r.actual || '—'}</b></dd></div>
             </dl>
             {ach && (
               <>
@@ -269,7 +272,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   {plans.size > 0 && (
     <section aria-labelledby="plan">
       <h2 id="plan" class="anchor">年度別計画</h2>
-      <p class="small secondary lead">部局の検証票に書かれた、計画期間（3年）の年度ごとの活動の目標です。「２箇所（４箇所）」のような表記は、その年度の目標（かっこ内は累計）です。</p>
+      <p class="small secondary lead">部局の検証票に書かれた、計画期間（3年）の年度ごとの活動の目標です（かっこ内は累計）。</p>
       {[...plans.values()].map((p) => (
         <div class="sticker plan">
           <div class="plan-h">{p.years[0]}〜{p.years.at(-1)}の計画<span class="small secondary">（{yearLabel(p.report)}の報告の記載）</span></div>
@@ -285,16 +288,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
           ))}
         </div>
       ))}
-      {okUrl(latestRec?.url) && <p class="small">関連ページ: <a href={latestRec.url} rel="noopener">{latestRec.url}</a></p>}
+      {okUrl(latestRec?.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
     </section>
   )}
 
   <section aria-labelledby="yosan">
     <h2 id="yosan" class="anchor">予算の推移</h2>
-    <p class="small secondary lead">
-      各部局の検証票に書かれた、この取組の予算事業の金額です。年度ごとに、確定に近い金額（決算額 → 決算見込額 → 当初予算額）を出しています。
-      1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。
-    </p>
+    <p class="small secondary lead">年度ごとに、確定に近い金額（決算額 → 決算見込額 → 当初予算額）を出しています。</p>
     {budgetSeries.length > 0 ? (
       <div class="sticker">
         <ul class="bud">
@@ -308,6 +308,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         <p class="small secondary bud-key"><span class="k k-settled"></span>決算額 <span class="k k-estimate"></span>決算見込額 <span class="k k-initial"></span>当初予算額{budgetNames.length > 1 && `　／　${budgetNames.length}つの予算事業の合計`}</p>
       </div>
     ) : <p class="secondary">部局の検証票に、この取組の金額の記載がありません。</p>}
+    <p class="small secondary">1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。</p>
     <details>
       <summary>報告ごとの予算事業と金額を表で見る</summary>
       <div class="table-wrap">
@@ -347,9 +348,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 
   <section aria-labelledby="pdca">
     <h2 id="pdca" class="anchor">年度ごとの活動と検証</h2>
-    <p class="small secondary lead">
-      各部局の「主な取組」検証票の記載をそのまま載せています。県は毎年、前年度に決めた改善案を反映して活動し（Plan・Do）、結果を検証して（Check）、翌年度の改善案を決めます（Action）。
-    </p>
+    <p class="small secondary lead">部局の検証票の記載をそのまま載せています。P は前年度の改善案の反映、D は活動、C は県の検証、A は翌年度の改善案です。</p>
     {present.map((y) => {
       const r = g.years[y];
       const b = recs[y];
@@ -369,7 +368,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
                 <h4>前年度に決めた改善案と、その反映</h4>
                 <ul class="impr">
                   {plansDone.map((x) => (
-                    <li>
+                    <li class="inset">
                       {x.plan && !/^[―\-ー－]$/.test(x.plan.trim()) && <div class="impr-plan"><span class="tagline">改善案</span><span class="prose">{x.plan}</span></div>}
                       <div class="impr-res"><span class="tagline">反映</span><span class="prose">{x.result || '—'}</span></div>
                     </li>
@@ -411,15 +410,14 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       return y === t.year ? (
         <div class="sticker cad latest">
           <h3 class="cad-h">{yearLong(y)}の報告 <Chip tone={toneOfStatus(st)} text={st} /></h3>
-          <div data-clamp id={`clamp-${y}`}>{body}</div>
-          <button type="button" class="more" data-clamp-toggle={`clamp-${y}`} aria-controls={`clamp-${y}`} aria-expanded="false" hidden>続きを読む</button>
-          {src && <p class="small"><a href={src.href} rel="noopener">主な取組検証票（{src.label}）</a></p>}
+          {body}
+          {src && <p class="small"><ExtLink href={src.href}>主な取組検証票（{src.label}）</ExtLink></p>}
         </div>
       ) : (
         <details class="sticker cad">
           <summary>{yearLong(y)}の報告 <Chip tone={toneOfStatus(st)} text={st} /></summary>
           {body}
-          {src && <p class="small"><a href={src.href} rel="noopener">主な取組検証票（{src.label}）</a></p>}
+          {src && <p class="small"><ExtLink href={src.href}>主な取組検証票（{src.label}）</ExtLink></p>}
         </details>
       );
     })}
@@ -428,13 +426,11 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   {rm.length > 0 && (
     <section aria-labelledby="rm">
       <h2 id="rm" class="anchor">{KANKO.short}でも評価されています</h2>
-      <p class="small secondary lead">
-        県の観光の<a href="/keikaku/">個別計画</a>「{KANKO.name}」でも、同じ名前の主な取組が評価されています（観光ロードマップPDCA）。施策の番号は沖縄県PDCAとは別です。進捗状況の区分は同じです。
-      </p>
-      <ul class="rm-list">
+      <p class="small secondary lead">県の観光の<a href="/keikaku/">個別計画</a>「{KANKO.name}」でも、同じ名前の主な取組が同じ区分で評価されています。</p>
+      <ul class="row-list">
         {rm.map((x) => (
-          <li class="item">
-            <div class="name-row"><span><span class="plan-tag">{KANKO.short}</span> 施策 <a href={kankoShisakuHref(x.rm)}>{x.rm.name}</a></span><span class="code-no">施策 {x.rm.code}</span></div>
+          <li>
+            <div class="name-row"><span><span class="plan-tag">{KANKO.short}</span> <a class="name-link" href={kankoShisakuHref(x.rm)}>{x.rm.name}</a></span><span class="code-no">施策 {x.rm.code}</span></div>
             <div class="small secondary">
               {Object.values(x.row.years).sort((a, b) => a.year - b.year).map((r, k) => <>{k > 0 && '　'}{yearLabel(r.year)}: {statusOf(r)}</>)}
               {x.row.latest.name !== t.name && <>（観光ロードマップでの名前: {x.row.latest.name}）</>}
@@ -464,8 +460,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         const b = recs[y] && sourceLink(recs[y].source, recs[y].page);
         return (
           <li>
-            {yearLong(y)}: {a ? <a href={a.href} rel="noopener">総括報告書（{a.label}）</a> : '—'}
-            {b ? <>、<a href={b.href} rel="noopener">主な取組検証票（{b.label}）</a></> : '、主な取組検証票なし'}
+            {yearLong(y)}: {a ? <ExtLink href={a.href}>総括報告書（{a.label}）</ExtLink> : '—'}
+            {b ? <>、<ExtLink href={b.href}>主な取組検証票（{b.label}）</ExtLink></> : '、主な取組検証票なし'}
           </li>
         );
       })}
@@ -482,15 +478,10 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
   }
   .parent:hover { background: var(--sky); }
-  .parent:hover .p-name { text-decoration: underline; }
+  .parent:hover .p-name, .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
   .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
-  .p-stamp {
-    display: inline-flex; align-items: center; justify-content: center; gap: 2px; width: 34px; height: 34px; border-radius: 50%;
-    border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
-    font-family: var(--font-num); font-weight: 600; font-size: 0.95rem; flex: none;
-  }
-  .p-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; color: var(--link); flex: 1 1 10em; min-width: 0; }
+  .p-name { font-weight: 700; line-height: 1.5; flex: 1 1 10em; min-width: 0; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
   .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
   .report-no { white-space: nowrap; }
@@ -502,7 +493,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .head h1 { margin: 0; }
   .kind { font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); margin-bottom: -6px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; background: var(--bg); border-radius: 16px; padding: 10px 16px; }
+  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 32px; padding: 10px 16px; }
   .now-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
   .now-pill {
     display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px; border: 2.5px solid var(--line); border-radius: 999px;
@@ -530,7 +521,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .cands { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 8px; }
   .cand { display: grid; gap: 2px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); text-decoration: none; color: var(--ink); }
   .cand:hover { background: var(--sky); }
-  .c-name { font-family: var(--font-display); font-weight: 700; color: var(--link); text-decoration: underline; }
+  .c-name { font-weight: 700; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   section h2 { scroll-margin-top: 72px; }
   .ycards { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .ycard { display: grid; gap: 6px; align-content: start; padding: 14px 16px; }
@@ -539,7 +530,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .y { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; }
   .y-ind { font-size: 0.875rem; color: var(--ink-2); line-height: 1.5; }
   .y-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
-  .y-vals div { background: var(--bg); border-radius: 10px; padding: 4px 8px; min-width: 0; }
+  .y-vals div { padding: 4px 8px; min-width: 0; }
   .y-vals dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   .y-vals dd { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
   .plan { margin-top: 12px; display: grid; gap: 12px; }
@@ -591,14 +582,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .flow-body h4:not(:first-child) { margin-top: 12px; }
   .flow-body p { margin: 0; }
   .impr { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  .impr li { display: grid; gap: 4px; background: var(--bg); border-radius: 14px; padding: 8px 12px; }
+  .impr li { display: grid; gap: 4px; padding: 8px 12px; }
   .impr-plan, .impr-res { display: grid; grid-template-columns: 3.6em minmax(0, 1fr); gap: 8px; font-size: 0.9375rem; }
   .tagline { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); padding-top: 2px; }
   .typed { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
   .typed li { display: grid; gap: 2px; }
   .typed .type { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   .reposts { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .rm-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
   .reposts .tag { gap: 6px; }
   /* スマホでは表を1件ずつの縦並びにする（横にスクロールしないと計画・実績・金額が見えないため） */
   @media (max-width: 640px) {

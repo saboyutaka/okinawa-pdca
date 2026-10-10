@@ -20,7 +20,7 @@ const depts = DEPTS.map((d) => {
       const inYear = mine.filter((g) => g.statuses[i]);
       return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
     }),
-    delay3: mine.filter((g) => g.inAllYears && g.delayYears >= 3).length,
+    delay3: mine.filter((g) => g.patterns.includes('delay3')).length,
     shisakuCount: shisaku.filter((s) => s.depts.includes(d.name)).length,
   };
 }).filter((d) => d.latestCount > 0 || d.okRates.some(([, n]) => n > 0));
