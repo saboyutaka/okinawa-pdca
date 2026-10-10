@@ -3,6 +3,9 @@ import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
+import Sz from '../../components/Sz.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { themesOf } from '../../lib/themes.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, statusOf, countBy,
   getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, deptHref, seikaHref, seikaKeyOf,
@@ -29,8 +32,9 @@ const progressRows = YEARS.map((y) => ({
   <nav class="breadcrumb">
     <a href="/">トップ</a> › <a href="/kihon/">基本施策の一覧</a> › <a href={`/kihon/#shouraizou-${k.shouraizou}`}>将来像{k.shouraizou}</a>
   </nav>
-  <header>
-    <div class="secondary small">基本施策 {k.code}　／　将来像{k.shouraizou} {shou?.name}</div>
+  <header class="k-head">
+    <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/kihon/#shouraizou-${k.shouraizou}`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
+    <div class="secondary small">基本施策 {k.code}</div>
     <h1>{k.name}</h1>
   </header>
 
@@ -86,6 +90,7 @@ const progressRows = YEARS.map((y) => ({
                   {j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}
                   <div class="mini"><StatusBar categories={STATUSES} counts={countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys)} context={`${s.name} 主な取組 `} /></div>
                 </div>
+                <ThemeTags ids={themesOf(s.id).map((t) => t.id)} />
                 <div class="small links">
                   成果指標: {s.seika.filter((x) => x.year === LATEST).map((x, i) => <>{i > 0 && '／'}<a href={seikaHref(s.id, seikaKeyOf(x))}>{x.name}</a></>)}
                   　関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}
@@ -103,5 +108,8 @@ const progressRows = YEARS.map((y) => ({
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 16px; align-items: center; margin-top: 6px; }
   .row :global(.chip) { white-space: normal; }
   .links { margin-top: 6px; color: var(--ink-2); }
+  .k-head { margin-top: 12px; }
+  .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; margin-bottom: 10px; }
+  .item { display: grid; gap: 4px; }
   @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 </style>

@@ -4,6 +4,9 @@ import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
+import Sz from '../../../components/Sz.astro';
+import ThemeTags from '../../../components/ThemeTags.astro';
+import { themeIdsOfItem } from '../../../lib/themes.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
   deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS,
@@ -51,12 +54,13 @@ const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(stat
   </nav>
 
   <header class="sticker head">
-    <div class="code"><Term word="主な取組" />　／　施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>
+    <div class="code"><Sz id={s.shouraizou} /> <Term word="主な取組" />　／　施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>
     <h1>{t.name}</h1>
     <div class="secondary small">
       所管: {secHref ? <a href={secHref}>{t.section}</a> : t.section}
       {seikaName && <>　／　対応する成果指標: {seikaHref ? <a href={seikaHref}>{seikaName}</a> : seikaName}</>}
     </div>
+    <div class="tags"><ThemeTags ids={themeIdsOfItem(s.id, t.name)} /></div>
     <div class="head-years">
       <div class="small secondary label">4年間の<Term word="進捗状況" /></div>
       <Stamps items={stamps} label="4年間の進捗状況" />
@@ -275,6 +279,7 @@ const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(stat
   .head h1 { margin: 6px 0 8px; }
   .head .code { font-size: 0.9375rem; }
   .head-years { margin-top: 14px; }
+  .tags { margin-top: 8px; }
   .label { font-weight: 700; margin-bottom: 4px; }
   section h2 { scroll-margin-top: 72px; }
   .notice { margin-top: 16px; }

@@ -1,6 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Chip from '../../components/Chip.astro';
+import Sz from '../../components/Sz.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, toneOfJudgement, seikaDept,
   getSeikaGroups, getKihonList, getShouraizou, withUnit, deptHref, seikaHref,
@@ -18,7 +21,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
 const toneOfBin = (b) => RATE_BINS.find((x) => x.key === b)?.tone;
 const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし');
 ---
-<Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・将来像・達成率・見通し・担当部局でさがせます。">
+<Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・くらしのテーマ・将来像・達成率・見通し・担当部局でさがせます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 成果指標をさがす</nav>
   <h1>成果指標をさがす</h1>
   <p class="secondary">
@@ -27,42 +30,49 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
     基本施策ごとの主要指標は<a href="/kihon/">基本施策の一覧</a>にあります。
   </p>
 
-  <form class="filters search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty">
-    <label class="q">キーワード（指標の名前・施策・担当部課）
+  <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
+    <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）
       <input type="search" name="q" placeholder="例: 観光、離島、子ども、二酸化炭素" />
     </label>
-    <label>対象
+    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+      <select name="theme">
+        <option value="">すべて</option>
+        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+      </select>
+    </label>
+    <label data-label="対象">対象
       <select name="period">
         <option value="latest" selected>{yearLabel(LATEST)}の報告にある指標</option>
         <option value="past">R6 まで使われていた指標</option>
         <option value="">すべて</option>
       </select>
     </label>
-    <label>将来像
+    <label data-label="将来像">将来像
       <select name="s">
         <option value="">すべて</option>
         {shouraizou.map((s) => <option value={s.id}>将来像{s.id}</option>)}
       </select>
     </label>
-    <label>達成率
+    <label data-label="達成率">達成率
       <select name="bin">
         <option value="">すべて</option>
         {RATE_BINS.map((b) => <option value={b.key}>{b.key}</option>)}
       </select>
     </label>
-    <label>見通し
+    <label data-label="見通し">見通し
       <select name="judge">
         <option value="">すべて</option>
         {JUDGEMENTS.map((j) => <option value={j.key}>{j.key}</option>)}
       </select>
     </label>
-    <label>担当部局
+    <label data-label="部局">担当部局
       <select name="dept">
         <option value="">すべて</option>
         {depts.map((d) => <option value={d.name}>{d.name}</option>)}
       </select>
     </label>
   </form>
+  <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">{latestCount}</span>指標を表示</p>
   <p class="small secondary">達成率は、その年度の計画値に対する割合です（計算方法は<a href="/about/">データについて</a>）。見通しは、目標年度の目標値に届くかの県の見立てです。指標の名前を押すと、施策のページで4年分の推移を見られます。</p>
 
@@ -72,7 +82,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       if (!items.length) return null;
       return (
         <section data-group>
-          <h2 class="group-title"><span class="code">{k.code}</span> <a href={`/kihon/${k.id}/`}>{k.name}</a></h2>
+          <h2 class="group-title"><Sz id={k.shouraizou} /> <span class="code">{k.code}</span> <a href={`/kihon/${k.id}/`}>{k.name}</a></h2>
           <ul class="list">
             {items.map((r) => {
               const x = r.latest;
@@ -88,6 +98,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
                   data-bin={bin}
                   data-judge={x.judgement}
                   data-dept={seikaDept(x)}
+                  data-theme={themeIdsOfItem(r.shisaku.id, x.name).join('|')}
                   data-text={`${x.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`}
                 >
                   <div class="ind-name">
@@ -103,6 +114,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
                     <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
                     <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
                   </div>
+                  <ThemeTags ids={themeIdsOfItem(r.shisaku.id, x.name)} />
                   <div class="tags">
                     <Chip tone={toneOfBin(bin)} text={`${rateText(x)}（${yearLabel(x.year)}）`} />
                     {x.judgement && <Chip tone={jt} text={`見通し: ${x.judgement}`} />}
@@ -123,8 +135,9 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
 <style>
   .search-form .q { flex-basis: 100%; }
   .search-form .q input { font-size: 1rem; min-height: 44px; }
-  .group-title { font-size: 1rem; margin: 1.8em 0 0.5em; }
-  .ind-name { font-weight: 600; }
+  .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
+  .ind-name { font-family: var(--font-display); font-weight: 700; }
+  .item { display: grid; gap: 4px; }
   .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
   .vals { display: flex; flex-wrap: wrap; gap: 0 10px; margin: 4px 0; }
   .tags { display: flex; flex-wrap: wrap; gap: 4px 16px; }

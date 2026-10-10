@@ -3,8 +3,11 @@
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
+import Sz from './Sz.astro';
+import ThemeTags from './ThemeTags.astro';
 import { YEARS, LATEST, yearLabel, STATUSES, judgeOf, statusOf, rateBin, countBy, getKihonList, deptHref, seikaHref, seikaKeyOf, RATE_BINS } from '../lib/data.js';
 import { JUDGE_UI } from '../lib/icons.js';
+import { themesOf } from '../lib/themes.js';
 
 interface Props { s: any; attrs?: Record<string, string> }
 const { s, attrs = {} } = Astro.props;
@@ -24,8 +27,7 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
     <a class="item-name" href={`/shisaku/${s.id}/`}>{s.name}</a>
   </div>
   <div class="item-meta">
-    <span class="badge-sz" aria-hidden="true">{s.shouraizou}</span>
-    <span class="sr-only">将来像{s.shouraizou}</span>
+    <Sz id={s.shouraizou} />
     <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
     <span class="dept">{s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : s.kankei}</span>
   </div>
@@ -43,6 +45,7 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
       <div class="small">主な取組（{yearLabel(LATEST)}） <b>{ok}/{latestTori.length}件</b>が順調</div>
       {latestTori.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} size="mini" />}
     </div>
+    <div class="tags"><ThemeTags ids={themesOf(s.id).map((t) => t.id)} /></div>
     <div class="seika small">
       成果指標: {seika.length ? seika.map((x, i) => <>{i > 0 && '　'}<a href={seikaHref(s.id, seikaKeyOf(x))}>{x.name}</a> <Chip tone={toneOfBin(x)} text={rateText(x)} /></>) : '—'}
     </div>
@@ -61,7 +64,8 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
   .past { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.875rem; color: var(--ink-2); }
   .past span { display: inline-flex; align-items: center; gap: 4px; }
   .tori { display: grid; gap: 4px; }
-  .seika { grid-column: 1 / -1; color: var(--ink-2); line-height: 1.7; }
+  .seika, .tags { grid-column: 1 / -1; }
+  .seika { color: var(--ink-2); line-height: 1.7; }
   .seika :global(.chip) { vertical-align: -0.1em; }
   @media (max-width: 640px) {
     .item-body { grid-template-columns: 1fr; }

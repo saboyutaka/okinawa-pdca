@@ -2,10 +2,14 @@
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import AmountChart from '../../components/AmountChart.astro';
-import YearStatuses from '../../components/YearStatuses.astro';
 import Chip from '../../components/Chip.astro';
+import Stamps from '../../components/Stamps.astro';
+import Sz from '../../components/Sz.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.js';
+import { JUDGE_UI } from '../../lib/icons.js';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, judgeOf, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, judgeOf, rateBin, countBy, toneOfStatus,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaKeyOf, deptHref, JUDGEMENTS, toneOfJudgement,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.js';
@@ -95,29 +99,6 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
   <section aria-labelledby="seika">
     <h2 id="seika">成果指標</h2>
     <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
-    {seikaLatest.length > 0 && (
-      <>
-        <h3>{yearLong(LATEST)}の成果指標（{fmt(seikaLatest.length)}）</h3>
-        <ul class="list">
-          {seikaLatest.map((x) => {
-            const s = shisakuById.get(x.shisaku_id);
-            const bin = rateBin(x);
-            return (
-              <li class="item">
-                <a href={seikaHref(x.shisaku_id, seikaKeyOf(x))}><strong>{x.name}</strong></a>
-                <span class="small secondary">　{x.dept}</span>
-                {s && <div class="small">施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
-                <div class="tags">
-                  <Chip tone={RATE_BINS.find((b) => b.key === bin)?.tone} text={x.rate != null ? `達成率 ${x.rate}%` : (x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし')} />
-                  {x.judgement && <Chip tone={toneOfJudgement(x.judgement)} text={`見通し: ${x.judgement}`} />}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <p class="small"><a href={`/shihyou/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の成果指標を成果指標のページでさがす</a></p>
-      </>
-    )}
   </section>
 
   <section aria-labelledby="yosan">
@@ -136,8 +117,8 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
             const s = shisakuById.get(g.shisaku_id);
             return (
               <li class="item">
-                <strong>{g.name}</strong> {yen(g.amount)} <small class="secondary">（{[...g.funds].join('・')}）</small>
-                {s && <div class="small">施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+                <strong>{g.name}</strong> <span class="big">{yen(g.amount)}</span> <small class="secondary">（{[...g.funds].join('・')}）</small>
+                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
               </li>
             );
           })}
@@ -147,42 +128,98 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
     ) : <p class="secondary">この部局の検証票（予算）は手に入っていません（<a href="/yosan/#coverage">予算と財源</a>の「部局票がある範囲」）。</p>}
   </section>
 
-  <section aria-labelledby="okure">
-    <h2 id="okure">遅れが続いている取組（{fmt(delayed.length)}件）</h2>
-    {delayed.length === 0 ? <p class="secondary">4年のうち3年以上遅れている取組はありません。</p> : (
-      <ul class="list">
-        {delayed.map((g) => (
-          <li class="item">
-            <div><a href={g.href}><strong>{g.latest.name}</strong></a> <small class="secondary">{g.section}</small></div>
-            <div class="small">施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
-            <div class="row-years"><YearStatuses statuses={g.statuses} /></div>
-            <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}</div>
-          </li>
-        ))}
-      </ul>
-    )}
-  </section>
+  <section aria-labelledby="lists" id="dept-lists">
+    <h2 id="lists">{dept.name}の取組・成果指標・施策</h2>
+    <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
+      <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+        <select name="theme">
+          <option value="">すべて</option>
+          {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+        </select>
+      </label>
+      <label class="q" data-label="キーワード">キーワード
+        <input type="search" name="q" placeholder="例: 離島、子ども" />
+      </label>
+    </form>
+    <div class="active-filters" id="active" hidden></div>
+    <p class="result-count" aria-live="polite">下の3つの一覧で <span id="dcount">{fmt(delayed.length + seikaLatest.length + shisaku.length)}</span>件を表示</p>
+    <p id="dempty" class="secondary" hidden>条件に合うものはありません。</p>
 
-  <section aria-labelledby="shisaku">
-    <h2 id="shisaku">関係する施策（{fmt(shisaku.length)}）</h2>
-    <p class="small secondary">施策の「関係部等」にこの部局が書かれている施策です。</p>
-    <ul class="list">
-      {shisaku.map((s) => {
-        const j = judgeOf(s.judges[LATEST]);
-        return (
-          <li class="item">
-            <span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a>
-            <div>{j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}</div>
-          </li>
-        );
-      })}
-    </ul>
+    <div class="anchor" id="okure" {...(delayed.length ? { 'data-group': '' } : {})}>
+      <h3>遅れが続いている取組（<span data-group-count>{fmt(delayed.length)}</span>件）</h3>
+      {delayed.length === 0 ? <p class="secondary">4年のうち3年以上遅れている取組はありません。</p> : (
+        <ul class="dcards">
+          {delayed.map((g) => {
+            const themes = themeIdsOfItem(g.shisaku.id, g.latest.name);
+            return (
+              <li class="item dcard" data-item data-theme={themes.join('|')} data-text={`${g.latest.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name}`}>
+                <a class="d-name" href={g.href}>{g.latest.name}</a>
+                <div class="small secondary">{g.section}</div>
+                <div class="small"><Sz id={g.shisaku.shouraizou} /> 施策 <a href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.code} {g.shisaku.name}</a></div>
+                <ThemeTags ids={themes} />
+                <Stamps items={YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }))} label="4年の進捗状況" size="small" />
+                <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 {g.latest.actual || '—'}</div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+
+    {seikaLatest.length > 0 && (
+      <div class="anchor" id="seika-list" data-group>
+        <h3>{yearLong(LATEST)}の成果指標（<span data-group-count>{fmt(seikaLatest.length)}</span>）</h3>
+        <ul class="list">
+          {seikaLatest.map((x) => {
+            const s = shisakuById.get(x.shisaku_id);
+            const bin = rateBin(x);
+            const themes = themeIdsOfItem(x.shisaku_id, x.name);
+            return (
+              <li class="item" data-item data-theme={themes.join('|')} data-text={`${x.name} ${x.dept || ''} ${s?.code} ${s?.name}`}>
+                <a href={seikaHref(x.shisaku_id, seikaKeyOf(x))}><strong>{x.name}</strong></a>
+                <span class="small secondary">　{x.dept}</span>
+                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+                <ThemeTags ids={themes} />
+                <div class="tags">
+                  <Chip tone={RATE_BINS.find((b) => b.key === bin)?.tone} text={x.rate != null ? `達成率 ${x.rate}%` : (x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし')} />
+                  {x.judgement && <Chip tone={toneOfJudgement(x.judgement)} text={`見通し: ${x.judgement}`} />}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <p class="small"><a href={`/shihyou/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の成果指標を成果指標のページでさがす</a></p>
+      </div>
+    )}
+
+    <div class="anchor" id="shisaku" data-group>
+      <h3>関係する施策（<span data-group-count>{fmt(shisaku.length)}</span>）</h3>
+      <p class="small secondary">施策の「関係部等」にこの部局が書かれている施策です。</p>
+      <ul class="list">
+        {shisaku.map((s) => {
+          const j = judgeOf(s.judges[LATEST]);
+          const themes = themesOf(s.id).map((t) => t.id);
+          return (
+            <li class="item" data-item data-theme={themes.join('|')} data-text={`${s.code} ${s.name}`}>
+              <Sz id={s.shouraizou} /> <span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a>
+              <div>{j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} shape={JUDGE_UI[j.key].shape} /> : <Chip text="判定なし" />}</div>
+              <ThemeTags ids={themes} />
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   </section>
   <p><a href={`/torikumi/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の取組をすべて見る</a></p>
 </Base>
 
+<script src="../../scripts/list-filter.js"></script>
+
 <style>
-  .row-years { margin: 6px 0 4px; }
   .tags { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
   .list :global(.chip) { white-space: normal; }
+  .list .item, .dcard { display: grid; gap: 4px; }
+  .dcards { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .d-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
+  #dept-lists h3 { margin-top: 1.8em; }
 </style>

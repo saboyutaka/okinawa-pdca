@@ -9,6 +9,8 @@ import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
+import Sz from '../../components/Sz.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
   getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
@@ -67,12 +69,12 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
       <h1>{s.name}</h1>
       <div class="meta">
         <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
-        <span><span class="badge-sz" aria-hidden="true">{s.shouraizou}</span> 将来像{s.shouraizou} {shou?.name}</span>
+        <a class:list={['sz-ribbon', 'sz-link', `sz-${s.shouraizou}`]} href={`/kihon/#shouraizou-${s.shouraizou}`}><Sz id={s.shouraizou} sr={false} />将来像{s.shouraizou} {shou?.name}</a>
       </div>
       {themes.length > 0 && (
         <div class="themes">
-          <span class="small secondary"><Term word="くらしのテーマ" />:</span>
-          {themes.map((t) => <a class="tag" href={`/theme/${t.id}/`}>{t.label}</a>)}
+          <ThemeTags ids={themes.map((t) => t.id)} label={false} />
+          <span class="small secondary">（<Term word="くらしのテーマ" label="テーマ" />はこのサイト独自の分類）</span>
         </div>
       )}
     </div>
@@ -212,6 +214,8 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   .head .code { font-size: 0.9375rem; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .sz-link { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; padding-block: 2px; box-shadow: 2px 2px 0 var(--shadow); }
+  .sz-link:hover { filter: brightness(1.04); text-decoration: underline; }
   .themes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
   .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; max-width: 12em; }
   .stamp-big .circle {

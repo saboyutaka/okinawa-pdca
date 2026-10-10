@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
+import { getThemes } from '../../lib/themes.js';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
@@ -14,29 +15,35 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   </p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
-    <label class="q">キーワード
+    <label class="q" data-label="キーワード">キーワード
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
-    <label>将来像
+    <label data-label="テーマ">くらしのテーマ <span class="own">独自の分類</span>
+      <select name="theme">
+        <option value="">すべて</option>
+        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+      </select>
+    </label>
+    <label data-label="将来像">将来像
       <select name="s">
         <option value="">すべて</option>
         {getShouraizou().map((s) => <option value={s.id}>将来像{s.id}</option>)}
       </select>
     </label>
-    <label>担当部局
+    <label data-label="部局">担当部局
       <select name="dept">
         <option value="">すべて</option>
         {depts.map((d) => <option value={d.name}>{d.name}</option>)}
       </select>
     </label>
-    <label>{yearLabel(LATEST)}の進捗
+    <label data-label={`${yearLabel(LATEST)}の進捗`}>{yearLabel(LATEST)}の進捗
       <select name="st">
         <option value="">すべて</option>
         {STATUSES.map((s, i) => <option value={i}>{s.key}</option>)}
         <option value="none">{yearLabel(LATEST)}の報告に無い</option>
       </select>
     </label>
-    <label>4年間の様子
+    <label data-label="4年間の様子">4年間の様子
       <select name="pat">
         <option value="">すべて</option>
         <option value="delay4">4年とも遅れ</option>
@@ -48,6 +55,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       </select>
     </label>
   </form>
+  <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
   <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
 
@@ -63,7 +71,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     statuses: [string, string][];
     shisaku: Record<string, [string, string, number]>;
     depts: Record<string, string>;
-    rows: [string, string, string, string, (number | null)[], string, string, string, number, string][];
+    themes: [string, string][];
+    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[]][];
   };
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -85,8 +94,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   }
 
   function render(row: Data['rows'][number]) {
-    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
-    const [code, sname] = data.shisaku[sid];
+    const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href, themes] = row;
+    const [code, sname, sz] = data.shisaku[sid];
     const li = el('li', 'item');
     const head = el('div', 'head');
     const n = el('a', 'name', name) as HTMLAnchorElement;
@@ -100,7 +109,9 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       head.append(el('span', 'sec', section));
     }
     const s = el('div', 'small');
-    s.append('施策 ');
+    const badge = el('span', `badge-sz sz-${sz}`, String(sz));
+    badge.setAttribute('aria-hidden', 'true');
+    s.append(badge, el('span', 'sr-only', `将来像${sz}`), ' 施策 ');
     const a = el('a', '', `${code} ${sname}`) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a);
@@ -119,7 +130,14 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       years.append(box);
     });
     const ind = el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`);
-    li.append(head, s, years, ind);
+    const tags = el('div', 'ttags');
+    tags.append(el('span', 'sr-only', 'くらしのテーマ（このサイト独自の分類）:'));
+    for (const i of themes) {
+      const t = el('a', 'ttag', data.themes[i][1]) as HTMLAnchorElement;
+      t.href = `/theme/${data.themes[i][0]}/`;
+      tags.append(t);
+    }
+    li.append(head, s, tags, years, ind);
     return li;
   }
 
@@ -141,12 +159,15 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const dept = String(f.get('dept') || '');
     const st = String(f.get('st') || '');
     const pat = String(f.get('pat') || '');
+    const theme = String(f.get('theme') || '');
+    const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
     hits = data.rows.filter((r) => {
       const [sid, name, section, d, sts, indicator] = r;
       const sh = data.shisaku[sid];
       if (s && String(sh[2]) !== s) return false;
       if (dept && d !== dept) return false;
+      if (ti >= 0 && !r[10].includes(ti)) return false;
       if (st === 'none' ? sts[last] != null : st && sts[last] !== Number(st)) return false;
       const delays = sts.filter((x) => x != null && DELAY.has(x)).length;
       const all = sts.every((x) => x != null);
@@ -167,9 +188,31 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     list.replaceChildren();
     shown = 0;
     showMore();
+    renderActive();
     const params = new URLSearchParams([...f.entries()].filter(([, v]) => v !== '').map(([k, v]) => [k, String(v)]));
     const qs = params.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  // いまの条件を「テーマ: 子ども・子育て ×」のように並べ、1つずつ外せるようにする
+  const active = document.getElementById('active')!;
+  function renderActive() {
+    const chips: HTMLElement[] = [];
+    for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
+      if (!input.value) continue;
+      const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
+      const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : `「${input.value}」`;
+      const b = el('button', 'active-chip', `${label}: ${text}`) as HTMLButtonElement;
+      b.type = 'button';
+      b.setAttribute('aria-label', `${label} ${text} の条件を外す`);
+      const x = el('span', '', '×');
+      x.setAttribute('aria-hidden', 'true');
+      b.append(x);
+      b.addEventListener('click', () => { input.value = ''; apply(); });
+      chips.push(b);
+    }
+    active.hidden = chips.length === 0;
+    active.replaceChildren(...(chips.length ? [el('span', 'active-l', '絞り込み中:'), ...chips] : []));
   }
 
   for (const [k, v] of new URLSearchParams(location.search)) {
