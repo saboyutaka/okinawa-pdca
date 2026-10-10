@@ -6,6 +6,7 @@ import Bullet from '../../components/Bullet.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, planLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy,
   getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, budgetOf, fundOf,
+  planIndex, withUnit, DEPTS, deptOf,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
 
@@ -26,22 +27,31 @@ const progressRows = YEARS.map((y) => ({
   counts: countBy(s.torikumi.filter((t) => t.year === y), statusOf, statusKeys),
 }));
 
-// 実績値の表示。数字だけの欄には単位を付ける
-const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
-// その年度の計画値（計画値の欄は計画期間の3年分が並んでいる）
-const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
 const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
+const deptSlug = (name) => DEPTS.find((d) => d.name === name)?.slug;
+// 決算見込額。「17,314の一部」のように数値にできない表記は、元の表記のまま出す
+const amountText = (r) => (r.estimate != null ? yen(r.estimate) : r.estimate_raw || '—');
 const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : '';
 ---
 <Base title={`${s.name}（施策 ${s.code}）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
   <nav class="breadcrumb">
-    <a href="/">トップ</a> › <a href="/shisaku/">施策をさがす</a> › <a href={`/shisaku/?s=${s.shouraizou}`}>将来像{s.shouraizou}</a> › <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
+    <a href="/">トップ</a> › <a href="/shisaku/">施策をさがす</a> › <a href={`/kihon/#shouraizou-${s.shouraizou}`}>将来像{s.shouraizou}</a> › <a href={`/kihon/${s.kihon_id}/`}>{kihon?.code} {kihon?.name}</a>
   </nav>
 
   <header class="head">
     <div class="code">施策 {s.code}　／　施策展開 {s.tenkai_name}</div>
     <h1>{s.name}</h1>
-    <div class="secondary small">関係部等: {s.kankei || '—'}　／　将来像{s.shouraizou} {shou?.name}</div>
+    <div class="secondary small">
+      関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptSlug(d) ? <a href={`/bukyoku/${deptSlug(d)}/`}>{d}</a> : d}</>) : (s.kankei || '—')}
+      　／　将来像{s.shouraizou} {shou?.name}
+    </div>
+    <nav class="toc" aria-label="このページの内容">
+      <a href="#judge">推進状況</a>
+      <a href="#seika">成果指標</a>
+      <a href="#torikumi">主な取組</a>
+      <a href="#check">県の分析と今後の方向</a>
+      <a href="#source">出典</a>
+    </nav>
   </header>
 
   <section aria-labelledby="judge">
@@ -156,7 +166,8 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
             return (
               <tr>
                 <td class="tori-name">
-                  {t.name}<br /><small class="secondary">{t.section}</small>
+                  {t.name}<br />
+                  <small class="secondary">{deptSlug(deptOf(t.section)) ? <a href={`/bukyoku/${deptSlug(deptOf(t.section))}/`}>{t.section}</a> : t.section}</small>
                   {t.summary && (
                     <details>
                       <summary>{yearLabel(t.year)}の活動</summary>
@@ -176,12 +187,13 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
                   {(() => {
                     const b = budgetOf(t.year, t.shisaku_id, t.key);
                     if (!b?.budgets.length) return <>{yen(t.budget)}<br /><small class="secondary">{yearLabel(t.year)}・総括報告書の値</small></>;
-                    return b.budgets.map((blk) => (
+                    const note = b.matchedByName ? <small class="secondary">部局票では別の施策（{b.shisaku_id}）に載っている記載</small> : null;
+                    return [...b.budgets.map((blk) => (
                       <div>
                         {blk.name || '—'}<br />
-                        <small class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${yen(r.estimate)}`).join('、') || '—'}（{yearLabel(t.year)}）</small>
+                        <small class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${amountText(r)}`).join('、') || '—'}（{yearLabel(t.year)}）</small>
                       </div>
-                    ));
+                    )), note];
                   })()}
                 </td>
               </tr>
@@ -245,6 +257,7 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
   .tori { min-width: 760px; }
   .tori-name { min-width: 16em; }
   .budget-cell { min-width: 12em; }
+  .toc { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; font-size: 0.9rem; }
   .budget-cell div + div { margin-top: 6px; }
   .tori :global(.chip) { font-size: 0.8rem; }
   .cad { margin-top: 12px; }

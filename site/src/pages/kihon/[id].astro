@@ -27,7 +27,7 @@ const progressRows = YEARS.map((y) => ({
 ---
 <Base title={`${k.name}（基本施策 ${k.code}）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
   <nav class="breadcrumb">
-    <a href="/">トップ</a> › <a href="/shisaku/">施策をさがす</a> › <a href={`/shisaku/?s=${k.shouraizou}`}>将来像{k.shouraizou}</a>
+    <a href="/">トップ</a> › <a href="/kihon/">基本施策の一覧</a> › <a href={`/kihon/#shouraizou-${k.shouraizou}`}>将来像{k.shouraizou}</a>
   </nav>
   <header>
     <div class="secondary small">基本施策 {k.code}　／　将来像{k.shouraizou} {shou?.name}</div>

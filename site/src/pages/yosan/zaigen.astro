@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import BarList from '../../components/BarList.astro';
-import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference } from '../../lib/data.js';
+import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.js';
 import { fmt, yen, pct } from '../../lib/format.js';
 
 const ref = getFinanceReference();
@@ -12,7 +12,6 @@ const reiwa = (y) => `令和${y - 2018}年度`;
 // このサイトの集計（R7 の決算見込額。同じ予算事業の重複と要確認を除く）
 const estimate = amountEntries(LATEST, 'estimate');
 const total = estimate.reduce((s, e) => s + e.amount, 0);
-const bkey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
 const lines = getBudgetLines().filter((l) => l.report === LATEST);
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const funds = FUNDS.map((f) => {

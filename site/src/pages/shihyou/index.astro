@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Chip from '../../components/Chip.astro';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, toneOfJudgement, seikaDept,
-  getSeikaGroups, getKihonList, getShouraizou, getShuyouByYear,
+  getSeikaGroups, getKihonList, getShouraizou, getShuyouByYear, withUnit,
 } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 
@@ -13,7 +13,6 @@ const shuyou = getShuyouByYear(LATEST);
 const rows = getSeikaGroups().filter((r) => r.latest.year === LATEST);
 const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.name));
 const toneOfBin = (b) => RATE_BINS.find((x) => x.key === b)?.tone;
-const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
 const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし');
 ---
 <Base title="指標をさがす" description="沖縄県PDCAの主要指標と成果指標（令和7年度）の実績・目標・達成状況を一覧できます。">

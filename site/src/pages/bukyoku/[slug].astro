@@ -1,12 +1,15 @@
 ---
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
+import AmountChart from '../../components/AmountChart.astro';
 import YearStatuses from '../../components/YearStatuses.astro';
 import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, judgeOf, rateBin, countBy,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept,
+  FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.js';
+import { yen } from '../../lib/format.js';
 import { fmt, pct } from '../../lib/format.js';
 
 export function getStaticPaths() {
@@ -39,6 +42,22 @@ const seikaRows = YEARS.map((y) => ({
 }));
 const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
 const seikaOk = seikaLatest.filter((s) => rateBin(s) === '100%以上').length;
+
+// 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
+const mineEntries = (kind) => amountEntries(LATEST, kind).filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === dept.name);
+const budgetRows = ['settled', 'estimate', 'initial'].map((kind) => ({
+  label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
+  sub: AMOUNT_KINDS[kind].label,
+  amounts: Object.fromEntries(FUNDS.map((f) => [f.key, mineEntries(kind).filter((e) => e.fund === f.key).reduce((s, e) => s + e.amount, 0)])),
+}));
+const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
+  const k = budgetKey(e.budgetName);
+  const g = m.get(k) || { name: e.budgetName, amount: 0, funds: new Set(), shisaku_id: e.shisaku_id };
+  g.amount += e.amount;
+  g.funds.add(e.fund);
+  return m.set(k, g);
+}, new Map()).values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
+const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 ---
 <Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標の進み具合（令和4〜7年度）`}>
   <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/bukyoku/">部局</a> › {dept.name}</nav>
@@ -75,6 +94,33 @@ const seikaOk = seikaLatest.filter((s) => rateBin(s) === '100%以上').length;
 
   <h2>成果指標の達成状況</h2>
   <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+
+  <section aria-labelledby="yosan">
+    <h2 id="yosan">予算</h2>
+    {budgetRows.some((r) => Object.values(r.amounts).some((v) => v > 0)) ? (
+      <>
+        <AmountChart
+          title="取組に書かれた予算事業の金額（財源別）"
+          caption={`${yearLabel(LATEST)}の報告の前年度決算額・決算見込額・翌年度当初予算額。同じ予算事業の重複を除いています。`}
+          categories={FUNDS}
+          rows={budgetRows}
+        />
+        <h3>金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</h3>
+        <ul class="list">
+          {topBudgets.map((g) => {
+            const s = shisakuById.get(g.shisaku_id);
+            return (
+              <li class="item">
+                <strong>{g.name}</strong> {yen(g.amount)} <small class="secondary">（{[...g.funds].join('・')}）</small>
+                {s && <div class="small">施策 <a href={`/shisaku/${s.id}/`}>{s.code} {s.name}</a></div>}
+              </li>
+            );
+          })}
+        </ul>
+        <p class="small"><a href="/yosan/">予算と財源</a>・<a href="/yosan/zaigen/">財源のしくみ</a></p>
+      </>
+    ) : <p class="secondary">この部局の検証票（予算）は手に入っていません（<a href="/yosan/">予算と財源</a>の「部局票がある範囲」）。</p>}
+  </section>
 
   <section aria-labelledby="okure">
     <h2 id="okure">遅れが続いている取組（{fmt(delayed.length)}件）</h2>

@@ -48,7 +48,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       </select>
     </label>
   </form>
-  <p class="result-count" aria-live="polite"><span id="count">—</span>件</p>
+  <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
   <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
 
   <ul class="list" id="results"></ul>
@@ -70,7 +70,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   const count = document.getElementById('count')!;
   const more = document.getElementById('more') as HTMLButtonElement;
   const norm = (s: string) => s.normalize('NFKC').toLowerCase();
-  let data: Data;
+  let data: Data | undefined;
+  const unit = document.getElementById('unit')!;
   let hits: Data['rows'] = [];
   let shown = 0;
 
@@ -116,6 +117,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   }
 
   function apply() {
+    // 検索用のデータを読み込む前の入力は、読み込み後にまとめて反映する
+    if (!data) return;
     const f = new FormData(form);
     const q = norm(String(f.get('q') || '')).split(/\s+/).filter(Boolean);
     const s = String(f.get('s') || '');
@@ -143,6 +146,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       return true;
     });
     count.textContent = hits.length.toLocaleString('ja-JP');
+    unit.hidden = false;
     list.replaceChildren();
     shown = 0;
     showMore();
@@ -159,10 +163,16 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   form.addEventListener('submit', (e) => e.preventDefault());
   more.addEventListener('click', showMore);
   fetch('/torikumi/data.json')
-    .then((r) => r.json())
+    .then((r) => {
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json();
+    })
     .then((d: Data) => {
       data = d;
       apply();
+    })
+    .catch(() => {
+      count.textContent = '検索用のデータを読み込めませんでした。時間をおいて、ページを再読み込みしてください。';
     });
 </script>
 

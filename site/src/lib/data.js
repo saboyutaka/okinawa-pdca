@@ -20,6 +20,10 @@ export const yearLabel = (y) => `R${y - 2018}`;
 export const yearLong = (y) => `令和${y - 2018}年度`;
 // R4〜R6 は前期実施計画（目標年度R6）、R7からは中期実施計画（目標年度R9）。基準値・目標値が切り替わる
 export const planLabel = (y) => (y <= 2024 ? '前期実施計画（R4〜R6）' : '中期実施計画（R7〜R9）');
+// 成果指標の計画値の欄は計画期間の3年分が並ぶ。その年度の計画値が何番目か（scripts/check_extracted.py の plan_index と同じ）
+export const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
+// 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
+export const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES = [
@@ -239,6 +243,13 @@ export const FORMER_DEPTS = ['子ども生活福祉部', '保健医療部'];
 export const REORGANIZED = new Set(['知事公室', 'こども未来部', '生活福祉部', '保健医療介護部']);
 export const deptOf = (section) => (section || '').match(DEPT_RE)?.[0] || '';
 
+// その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
+let currentDept;
+export function currentDeptOf(year, shisakuId, key) {
+  currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${g.key}`, g.dept])));
+  return currentDept.get(`${year}|${shisakuId}|${key}`) || '';
+}
+
 // R4の旧部局の課 → R5でその課の取組が最も多く移った先の課（成果指標の担当部課の読み替えに使う）
 let sectionMap;
 function formerSectionMap() {
@@ -256,9 +267,10 @@ function formerSectionMap() {
   sectionMap = new Map([...votes].map(([from, v]) => [from, [...v].sort((a, b) => b[1] - a[1])[0][0]]));
   return sectionMap;
 }
-// 成果指標の担当部局（R4の旧部局名は読み替える）
+// 成果指標の担当部局（R4の旧部局名は読み替える）。担当部課に複数の課が書かれているときは最初の課で決める
 export function seikaDept(s) {
-  const section = s.year === 2022 ? formerSectionMap().get(s.dept) || s.dept : s.dept;
+  const first = (s.dept || '').split(/[、,，]/)[0];
+  const section = s.year === 2022 ? formerSectionMap().get(first) || first : first;
   return deptOf(section);
 }
 
@@ -353,7 +365,7 @@ export const AMOUNT_KINDS = {
   estimate: { label: '決算見込額', offset: 0 },
   initial: { label: '当初予算額', offset: 1 },
 };
-const budgetKey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
+export const budgetKey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
 
 // 桁の誤記の疑い（r.suspect）は抽出時に判定している（scripts/extract_bukyoku.py の suspect_kinds）。
 // 同じ行の3つの金額のうち1つだけが他の50倍以上・10億円以上のもの。合計から除く
@@ -375,12 +387,22 @@ export function getBudgetRecords() {
 // 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける。
 // 総括報告書で別の施策に再掲された取組は、部局票では元の施策にしか載っていないことがあるので、
 // 同じ年度に同じ名前の取組が部局票に1件だけなら名前で結び付ける（matchedByName）
+let budgetIndex;
 export function budgetOf(year, shisakuId, key) {
-  const recs = getBudgetRecords();
-  const exact = recs.find((b) => b.year === year && b.shisaku_id === shisakuId && b.key === key);
-  if (exact) return exact;
-  const byName = recs.filter((b) => b.year === year && b.key === key);
-  return byName.length === 1 ? { ...byName[0], matchedByName: true } : undefined;
+  if (!budgetIndex) {
+    const exact = new Map();
+    const byName = new Map();
+    for (const b of getBudgetRecords()) {
+      exact.set(`${b.year}|${b.shisaku_id}|${b.key}`, b);
+      const k = `${b.year}|${b.key}`;
+      byName.set(k, byName.has(k) ? null : b); // 2件以上あれば null（名前だけでは決められない）
+    }
+    budgetIndex = { exact, byName };
+  }
+  const hit = budgetIndex.exact.get(`${year}|${shisakuId}|${key}`);
+  if (hit) return hit;
+  const named = budgetIndex.byName.get(`${year}|${key}`);
+  return named ? { ...named, matchedByName: true } : undefined;
 }
 
 // 予算事業の金額を1行ずつに平らにしたもの
@@ -402,7 +424,7 @@ export function getBudgetLines() {
         initial: r.initial,
         suspect: r.suspect || [],
         file: b.source,
-        page: b.page,
+        page: blk.page || b.page, // 予算の表があるページ
       })),
     ),
   );

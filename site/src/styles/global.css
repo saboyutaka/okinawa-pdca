@@ -83,6 +83,10 @@ small, .small { font-size: 0.85rem; }
 
 .wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
 
+/* 本文へスキップ（キーボードで最初にフォーカスしたときだけ見える） */
+.skip { position: absolute; left: 8px; top: -48px; z-index: 20; background: var(--surface); color: var(--link); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); }
+.skip:focus { top: 8px; }
+
 /* ヘッダー・フッター */
 .site-header { background: var(--surface); border-bottom: 1px solid var(--border); }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 24px; padding-block: 12px; }

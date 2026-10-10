@@ -6,6 +6,7 @@ import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, statusOf, toneOfStatus,
   amountEntries, getBudgetLines, getSuspects, budgetOf, getTorikumi, getShisakuList, getShouraizou, sourceLink,
+  currentDeptOf, budgetKey as bkey,
 } from '../../lib/data.js';
 import { fmt, yen, pct } from '../../lib/format.js';
 
@@ -48,7 +49,6 @@ const visionItems = getShouraizou().map((s) => ({
 }));
 
 // 予算事業ごと（R7の決算見込額の大きい順）
-const bkey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
 const groups = new Map();
 for (const e of estimate) {
   const k = bkey(e.budgetName);
@@ -73,11 +73,11 @@ const top = [...groups.entries()]
     return { ...g, settled: settledByName.get(k), initial: initialByName.get(k), related };
   });
 
-// 部局票がある範囲（総括報告書の取組のうち、予算の記載を読めたもの）
+// 部局票がある範囲（総括報告書の取組のうち、予算の記載を読めたもの）。部局は他のページと同じく最新の報告での所管部局
 const coverage = DEPTS.map((d) => ({
   name: d.name,
   years: YEARS.map((y) => {
-    const ts = getTorikumi(y).filter((t) => t.dept === d.name);
+    const ts = getTorikumi(y).filter((t) => currentDeptOf(y, t.shisaku_id, t.key) === d.name);
     return [ts.filter((t) => budgetOf(y, t.shisaku_id, t.key)).length, ts.length];
   }),
 })).filter((d) => d.years.some(([, n]) => n > 0));
@@ -187,7 +187,7 @@ const suspects = getSuspects();
 
   <h2>合計から除いた金額（要確認）</h2>
   <p class="small secondary">
-    同じ行の3つの金額（前年度決算・当年度見込・翌年度当初）のうち1つだけが他の50倍以上・10億円以上のものは、桁の誤記の疑いがあるため合計に入れていません。
+    同じ行の3つの金額（前年度決算・当年度見込・翌年度当初）のうち1つが0でない他の金額の50倍以上・10億円以上で、他の年度の報告にある同じ予算事業・同じ年度の金額でも裏付けられないものは、桁の誤記の疑いがあるため合計に入れていません。
     元の報告書で確認できるよう、出典のページを載せています。
   </p>
   <div class="table-wrap">
@@ -214,7 +214,7 @@ const suspects = getSuspects();
 
   <h2>部局票がある範囲</h2>
   <p class="small secondary">
-    総括報告書の主な取組のうち、部局の検証票から予算の記載を読めたものの数です。企業局は県のサイトの設定（robots.txt）で取得していません。
+    総括報告書の主な取組のうち、部局の検証票から予算の記載を読めたものの数です（部局は最新の報告での所管部局で数えています）。企業局は県のサイトの設定（robots.txt）で取得していません。
     病院事業局は表の形が特殊で読み取れておらず、R4はファイルが見つかりません（リンク切れ）。県警本部はR6の検証票が公開ページに見当たりません。
   </p>
   <div class="table-wrap">

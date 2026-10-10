@@ -49,6 +49,14 @@ const byShouraizou = getShouraizou().map((s) => ({
       沖縄県は毎年、「新・沖縄21世紀ビジョン実施計画」に並ぶ施策と取組がどこまで進んだかを自ら検証し、「沖縄県PDCA実施結果」として公表しています。
       このサイトは、その報告書（令和4〜7年度対象）のPDFを読み取り、施策ごとに4年分を並べて見られるようにしたものです。
     </p>
+    <form class="search card" action="/torikumi/" method="get" role="search" aria-label="取組をさがす">
+      <label for="top-q">気になる分野の取組をさがす</label>
+      <div class="search-row">
+        <input id="top-q" type="search" name="q" placeholder="例: 離島、子ども、観光、赤土" />
+        <button type="submit" class="button">さがす</button>
+      </div>
+      <div class="small">ほかに <a href="/shisaku/">施策の一覧</a>・<a href="/kihon/">基本施策の一覧</a>・<a href="/shihyou/">指標</a>・<a href="/bukyoku/">部局</a> からもさがせます。</div>
+    </form>
   </section>
 
   <section aria-labelledby="latest">
@@ -123,6 +131,13 @@ const byShouraizou = getShouraizou().map((s) => ({
 <style>
   .intro { margin-top: 24px; }
   .intro p { max-width: 46em; }
+  .search { margin-top: 16px; display: grid; gap: 8px; }
+  .search label { font-weight: 700; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input {
+    flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--baseline); border-radius: 8px; padding: 8px 12px; min-height: 44px;
+  }
   .nav-card { display: grid; gap: 4px; text-decoration: none; color: var(--ink); }
   .nav-card strong { color: var(--link); }
   .nav-card span { font-size: 0.85rem; color: var(--ink-2); }

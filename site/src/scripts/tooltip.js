@@ -3,7 +3,8 @@
 const tip = document.createElement('div');
 tip.className = 'tooltip';
 tip.hidden = true;
-tip.setAttribute('role', 'status');
+// 値はラベル・表・aria-label でも読めるので、読み上げソフトには出さない（ホバーのたびに読み上げられるのを避ける）
+tip.setAttribute('aria-hidden', 'true');
 const strong = document.createElement('strong');
 const label = document.createElement('span');
 tip.append(strong, label);

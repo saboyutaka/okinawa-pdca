@@ -29,6 +29,7 @@ const NAV = [
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
+    <a class="skip" href="#main">本文へスキップ</a>
     <header class="site-header">
       <div class="wrap">
         <a class="site-title" href="/">{SITE}<small class="secondary">（非公式）</small></a>
@@ -39,7 +40,7 @@ const NAV = [
         </nav>
       </div>
     </header>
-    <main class="wrap">
+    <main class="wrap" id="main">
       <slot />
     </main>
     <footer class="site-footer">
