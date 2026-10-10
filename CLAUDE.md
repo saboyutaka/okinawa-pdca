@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
                                                                      └ check_extracted.py（公表値との突き合わせ）
 ```
 
-- `data/raw` は県から取ったまま（手で編集しない）。PDF・zip は git に入れず、台帳の `manifest.jsonl`・`pages.jsonl` だけコミットする。フォルダの年度は**対象年度**（`2025-r07` = 令和7年度対象、2026年8月公表）。
+- `data/raw` は県から取ったまま（手で編集しない）。PDF・zip は git に入れず、台帳の `manifest.jsonl`・`pages.jsonl` だけコミットする。別の PC へは zip にして移す（`docs/new-pc.md`。台帳とそろったかは `python3 scripts/check_raw.py`）。フォルダの年度は**対象年度**（`2025-r07` = 令和7年度対象、2026年8月公表）。
 - `data/extracted/*.json` はコミットする。**サイトはこれだけを読んでビルドする**ので、PDF が無くてもサイトは作れる。抽出結果は必ず出典（manifest の `file_url` と PDF のページ）を持つ。
 - `data/reference/` は人が用意した参照データ: `finance.json`（国・県の財政の数字、出典つき）、`themes.json`（くらしのテーマの定義）。
 - 施策 ID は報告書のコードを正規化したもの（`1-(1)-ア-①` → `1-1-a-1`、ア→a・イ→b…）。年度をまたいだ同じ取組・成果指標は、同じ施策の中で正規化した名前（`key`）が同じものとみなす。
