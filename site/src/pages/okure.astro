@@ -81,7 +81,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
       <section class="anchor" id={sec.id} data-group aria-labelledby={`h-${sec.id}`}>
         <h2 id={`h-${sec.id}`} class="sec-h"><Icon tone={sec.tone} size={18} /><span>{sec.title}（<span data-group-count>{fmt(sec.rows.length)}</span>件）</span></h2>
         <p class="small secondary">{sec.desc}</p>
-        <ul class="rows">
+        <ul class="row-list">
           {sec.rows.map((g) => {
             const t = g.latest;
             const themes = themeIdsOfItem(g.shisaku.id, t.name);
@@ -131,7 +131,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   .sum-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
   .sec-h { display: flex; align-items: center; gap: 8px; }
   /* 1件を1行に。左に名前・所管と施策・活動指標、右に4年のスタンプ。テーマは絞り込みと取組のページに任せる */
-  .rows { margin-top: 12px; }
+  .row-list { margin-top: 12px; }
   .o-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
   .o-main { display: grid; gap: 2px; min-width: 0; }
   .o-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; }

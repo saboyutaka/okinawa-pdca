@@ -60,7 +60,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
   <p class="small secondary">遅れ＝「やや遅れ」「大幅遅れ」「未着手」。年度をまたいだ同一性は名前で判断しているので、名前が変わった取組は別の行になります。</p>
 
-  <ul class="rows" id="results"></ul>
+  <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/shisaku/">施策の一覧</a>から各施策のページで取組を見ることもできます。</p></noscript>
 </Base>

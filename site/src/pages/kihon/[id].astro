@@ -82,7 +82,7 @@ const progressRows = YEARS.map((y) => ({
     {tenkai.map(([tid, tname]) => (
       <>
         <h3>{tname}</h3>
-        <ul class="rows">
+        <ul class="row-list">
           {shisaku.filter((s) => s.tenkai_id === tid).map((s) => <ShisakuItem s={s} />)}
         </ul>
       </>

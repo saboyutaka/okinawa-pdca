@@ -171,7 +171,7 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
-    <ul class="rows visions">
+    <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />

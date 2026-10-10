@@ -84,7 +84,7 @@ const rateText = (x) => (x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw ==
       return (
         <section data-group>
           <h2 class="group-title"><Sz id={k.shouraizou} /> <span class="gt-name"><a href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span></h2>
-          <ul class="rows">
+          <ul class="row-list">
             {items.map((r) => {
               const x = r.latest;
               const bin = rateBin(x);
