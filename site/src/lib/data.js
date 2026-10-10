@@ -324,17 +324,8 @@ export const AMOUNT_KINDS = {
 };
 const budgetKey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
 
-// 同じ行の3つの金額のうち1つだけが他の50倍以上・10億円以上なら、桁の誤記の疑いがあるとして合計から除く
-const SUSPECT_MIN = 1e6; // 千円 → 10億円
-function suspectKinds(r) {
-  const vals = Object.keys(AMOUNT_KINDS).filter((k) => r[k] != null).map((k) => [k, r[k]]);
-  return vals
-    .filter(([k, v]) => {
-      const others = vals.filter(([kk]) => kk !== k).map(([, x]) => x);
-      return v >= SUSPECT_MIN && others.length && v >= 50 * Math.max(...others, 1);
-    })
-    .map(([k]) => k);
-}
+// 桁の誤記の疑い（r.suspect）は抽出時に判定している（scripts/extract_bukyoku.py の suspect_kinds）。
+// 同じ行の3つの金額のうち1つだけが他の50倍以上・10億円以上のもの。合計から除く
 
 let budgetRecords;
 // 年度×取組の予算の記載。同じ取組が複数の部局のファイルに載っている（R5の組織再編の年）ときは最初の1件
@@ -350,8 +341,15 @@ export function getBudgetRecords() {
   }
   return budgetRecords;
 }
+// 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける。
+// 総括報告書で別の施策に再掲された取組は、部局票では元の施策にしか載っていないことがあるので、
+// 同じ年度に同じ名前の取組が部局票に1件だけなら名前で結び付ける（matchedByName）
 export function budgetOf(year, shisakuId, key) {
-  return getBudgetRecords().find((b) => b.year === year && b.shisaku_id === shisakuId && b.key === key);
+  const recs = getBudgetRecords();
+  const exact = recs.find((b) => b.year === year && b.shisaku_id === shisakuId && b.key === key);
+  if (exact) return exact;
+  const byName = recs.filter((b) => b.year === year && b.key === key);
+  return byName.length === 1 ? { ...byName[0], matchedByName: true } : undefined;
 }
 
 // 予算事業の金額を1行ずつに平らにしたもの
@@ -371,7 +369,7 @@ export function getBudgetLines() {
         settled: r.settled,
         estimate: r.estimate,
         initial: r.initial,
-        suspect: suspectKinds(r),
+        suspect: r.suspect || [],
         file: b.source,
         page: b.page,
       })),
