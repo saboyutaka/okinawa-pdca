@@ -7,14 +7,15 @@ import { shortName } from '../lib/iken.js';
 interface Props { kind: string; name: string }
 const { kind, name } = Astro.props;
 ---
-<section class="sticker iken-box" aria-labelledby="iken">
-  <h2 id="iken">この{kind}について、思うことは？</h2>
-  <p class="small">X に <strong>#okinawa_pdca</strong> を付けて書けます（このページへのリンクも付きます）。X に書いたことは県には届きません。県に伝えたいときは「<a href="/iken/">意見を伝えたい人へ</a>」を見てください。</p>
-  <XPost text={`${kind}「${shortName(name)}」について`} withUrl />
+<section aria-labelledby="iken">
+  <h2 id="iken" class="anchor">この{kind}について、思うことは？</h2>
+  <div class="sticker iken-box">
+    <p class="small">X に <strong>#okinawa_pdca</strong> を付けて、このページへのリンクと一緒に書けます。X に書いても県には届きません（県に伝える方法は「<a href="/iken/">意見を伝えたい人へ</a>」）。</p>
+    <XPost text={`${kind}「${shortName(name)}」について`} withUrl />
+  </div>
 </section>
 
 <style>
-  .iken-box { margin-top: 2.2em; background: var(--lilac); }
-  .iken-box h2 { margin: 0 0 0.3em; font-size: 1.15rem; }
+  .iken-box { background: var(--lilac); }
   .iken-box p { margin: 0 0 12px; max-width: 46em; }
 </style>

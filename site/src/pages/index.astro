@@ -188,18 +188,20 @@ const boshu = boshuState();
     </p>
   </section>
 
-  <section class="sticker iken" aria-labelledby="iken-h">
+  <section aria-labelledby="iken-h">
     <h2 id="iken-h">意見を伝えるには</h2>
-    <p>
-      {yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）は、
-      {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
-      {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
-      {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-      県にいつでも意見を送れる窓口や、X で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
-    </p>
-    <div class="iken-actions">
-      <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
-      <XPost />
+    <div class="sticker iken">
+      <p>
+        {yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）は、
+        {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
+        {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
+        {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
+        県にいつでも意見を送れる窓口や、X で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
+      </p>
+      <div class="iken-actions">
+        <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
+        <XPost />
+      </div>
     </div>
   </section>
 
@@ -277,9 +279,8 @@ const boshu = boshuState();
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
 
-  .iken { margin-top: 2.6em; background: var(--lilac); }
-  .iken h2 { margin: 0 0 0.3em; }
-  .iken p { max-width: 46em; }
+  .iken { background: var(--lilac); }
+  .iken p { margin-top: 0; max-width: 46em; }
   .iken-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 
 </style>
