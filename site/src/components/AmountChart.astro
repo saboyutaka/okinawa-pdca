@@ -1,0 +1,90 @@
+---
+// 金額の積み上げ横棒。棒の長さが金額（行どうしで比べられる）、区分は系列の色。凡例は上、表は下に畳む
+import { yen } from '../lib/format.js';
+
+interface Category { key: string; series: number; note?: string }
+interface Row { label: string; sub?: string; amounts: Record<string, number> }
+interface Props { title: string; caption?: string; categories: Category[]; rows: Row[] }
+const { title, caption, categories, rows } = Astro.props;
+const totalOf = (r: Row) => categories.reduce((s, c) => s + (r.amounts[c.key] || 0), 0);
+const max = Math.max(1, ...rows.map(totalOf));
+const used = categories.filter((c) => rows.some((r) => (r.amounts[c.key] || 0) > 0));
+const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : '—');
+---
+<figure class="chart card">
+  <figcaption>
+    <div class="chart-title">{title}</div>
+    {caption && <div class="chart-caption">{caption}</div>}
+  </figcaption>
+  <ul class="legend" aria-label="凡例">
+    {used.map((c) => <li><span class={`swatch series-${c.series}`} title={c.note}>{c.key}</span></li>)}
+  </ul>
+  <div class="rows">
+    {rows.map((r) => {
+      const total = totalOf(r);
+      return (
+        <div class="row">
+          <div class="row-label">{r.label}{r.sub && <span class="row-sub">{r.sub}</span>}</div>
+          <div class="track">
+            <div
+              class="abar"
+              style={`width:${(total / max) * 100}%`}
+              role="img"
+              aria-label={`${r.label} 合計${yen(total)}。${used.filter((c) => r.amounts[c.key]).map((c) => `${c.key} ${yen(r.amounts[c.key])}`).join('、')}`}
+            >
+              {used.filter((c) => r.amounts[c.key] > 0).map((c) => (
+                <span
+                  class={`aseg series-${c.series}`}
+                  style={`flex-grow:${r.amounts[c.key]}`}
+                  tabindex="0"
+                  data-tip-value={`${yen(r.amounts[c.key])}（${pct(r.amounts[c.key], total)}）`}
+                  data-tip-label={`${r.label} ${c.key}`}
+                ></span>
+              ))}
+            </div>
+            <span class="row-total num">{yen(total)}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+  <details class="table-view">
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th>{r.label}</th>
+              {used.map((c) => <td class="num">{yen(r.amounts[c.key] || 0)}<br /><small class="secondary">{pct(r.amounts[c.key] || 0, totalOf(r))}</small></td>)}
+              <td class="num">{yen(totalOf(r))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .chart { margin-top: 16px; }
+  .chart-title { font-weight: 700; }
+  .chart-caption { font-size: 0.85rem; color: var(--ink-2); }
+  .legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .rows { display: grid; grid-template-columns: minmax(5em, max-content) 1fr; align-items: center; gap: 10px 12px; }
+  .row { display: contents; }
+  .row-label { font-size: 0.9rem; line-height: 1.3; }
+  .row-sub { display: block; font-size: 0.75rem; color: var(--ink-2); }
+  .track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .abar { display: flex; gap: 2px; height: 22px; min-width: 3px; }
+  .aseg { flex-basis: 0; min-width: 2px; background: var(--series); }
+  .aseg:last-child { border-radius: 0 4px 4px 0; }
+  .aseg:hover, .aseg:focus-visible { filter: brightness(1.12); }
+  .row-total { font-size: 0.8rem; color: var(--ink-2); white-space: nowrap; }
+  .table-view { margin-top: 14px; }
+  @media (max-width: 560px) {
+    .rows { grid-template-columns: 1fr; gap: 4px; }
+    .row-label { margin-top: 8px; }
+  }
+</style>

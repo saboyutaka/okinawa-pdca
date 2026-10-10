@@ -19,6 +19,8 @@
   --critical: #d03b3b;
   --none: #898781;
   --blank: #c3c2b7;
+  /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
   --font: system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -36,6 +38,7 @@
     --accent: #3987e5;
     --accent-wash: #184f95;
     --blank: #52514e;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
   }
 }
 :root[data-theme="dark"] {
@@ -52,6 +55,7 @@
   --accent: #3987e5;
   --accent-wash: #184f95;
   --blank: #52514e;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -160,3 +164,12 @@ details[open] > summary { margin-bottom: 8px; }
   border: 1px solid var(--baseline); border-radius: 8px; padding: 8px 16px; min-height: 40px; cursor: pointer;
 }
 .button:hover { border-color: var(--ink-2); }
+
+.series-1 { --series: var(--series-1); }
+.series-2 { --series: var(--series-2); }
+.series-3 { --series: var(--series-3); }
+.series-4 { --series: var(--series-4); }
+.series-5 { --series: var(--series-5); }
+.series-6 { --series: var(--series-6); }
+.swatch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; white-space: nowrap; }
+.swatch::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--series); flex: none; }

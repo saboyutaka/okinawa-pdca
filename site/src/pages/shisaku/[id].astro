@@ -5,7 +5,7 @@ import Chip from '../../components/Chip.astro';
 import Bullet from '../../components/Bullet.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, planLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy,
-  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink,
+  getShisakuList, getShisaku, getKihonList, getShouraizou, torikumiRows, seikaRows, sourceLink, budgetOf, fundOf,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
 
@@ -138,7 +138,7 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
     <h2 id="torikumi">主な取組</h2>
     <p class="small secondary">
       施策を進めるための具体的な事業です。進捗状況は、活動指標の実績が年度の計画に対してどこまで進んだかの県の判定です。
-      決算見込額は報告時点の見込みで、同じ予算事業の金額が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。
+      予算事業と決算見込額は各部局の検証票から取ったもので、同じ予算事業が複数の取組に重ねて書かれていることがあります（合計すると実際より大きくなります）。<a href="/yosan/">予算と財源</a>では重複を除いて集計しています。
     </p>
     <div class="table-wrap">
       <table class="tori">
@@ -147,7 +147,7 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
             <th>取組（所管課）</th>
             {YEARS.map((y) => <th>{yearLabel(y)}</th>)}
             <th>活動指標（最新）</th>
-            <th class="num">決算見込額</th>
+            <th>予算事業と決算見込額（最新）</th>
           </tr>
         </thead>
         <tbody>
@@ -172,7 +172,18 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
                   {t.indicator}<br />
                   <span class="secondary">目標 {t.target || '—'} → 実績 {t.actual || '—'}</span>
                 </td>
-                <td class="num small">{yen(t.budget)}<br /><small class="secondary">{yearLabel(t.year)}</small></td>
+                <td class="small budget-cell">
+                  {(() => {
+                    const b = budgetOf(t.year, t.shisaku_id, t.key);
+                    if (!b?.budgets.length) return <>{yen(t.budget)}<br /><small class="secondary">{yearLabel(t.year)}・総括報告書の値</small></>;
+                    return b.budgets.map((blk) => (
+                      <div>
+                        {blk.name || '—'}<br />
+                        <small class="secondary">{blk.rows.map((r) => `${fundOf(r.source)} ${yen(r.estimate)}`).join('、') || '—'}（{yearLabel(t.year)}）</small>
+                      </div>
+                    ));
+                  })()}
+                </td>
               </tr>
             );
           })}
@@ -233,6 +244,8 @@ const refText = (x) => x.actual_ref_year ? `（${x.actual_ref_year}の値）` : 
   .seika td.num { white-space: normal; min-width: 5em; max-width: 14em; }
   .tori { min-width: 760px; }
   .tori-name { min-width: 16em; }
+  .budget-cell { min-width: 12em; }
+  .budget-cell div + div { margin-top: 6px; }
   .tori :global(.chip) { font-size: 0.8rem; }
   .cad { margin-top: 12px; }
   .cad > summary { font-weight: 700; color: var(--ink); font-size: 1rem; }

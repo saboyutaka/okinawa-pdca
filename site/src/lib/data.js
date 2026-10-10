@@ -3,13 +3,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DIR = path.resolve(process.cwd(), '../data/extracted/soukatsu');
+const ROOT = path.resolve(process.cwd(), '../data/extracted');
 const cache = new Map();
+// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi_budget' のように指定する
 function load(name) {
-  if (!cache.has(name)) {
-    cache.set(name, JSON.parse(fs.readFileSync(path.join(DIR, `${name}.json`), 'utf-8')));
+  const rel = name.includes('/') ? name : `soukatsu/${name}`;
+  if (!cache.has(rel)) {
+    cache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, `${rel}.json`), 'utf-8')));
   }
-  return cache.get(name);
+  return cache.get(rel);
 }
 
 export const YEARS = [2022, 2023, 2024, 2025];
@@ -279,6 +281,13 @@ export function sourceOf(id) {
 
 // 県のPDFへのリンク。zip の中のPDFはページ指定できないので zip へのリンクにする
 export function sourceLink(id, page) {
+  // 部局票（data/raw/<部局>/...）は bukyoku/files.json に URL がある
+  if (!id.startsWith('soukatsu/')) {
+    const f = load('bukyoku/files').find((x) => x.id === id);
+    if (!f?.file_url) return null;
+    const text = (f.link_text || '').replace(/\s*（\s*(PDF|zip|Excel)[^）]*）\s*$/i, '');
+    return { href: `${f.file_url}#page=${page}`, label: `${text} ${page}ページ` };
+  }
   const s = sourceOf(id);
   if (!s) return null;
   // リンク文言の末尾の「（PDF 609.1KB）」などは除く
@@ -287,4 +296,109 @@ export function sourceLink(id, page) {
     return { href: s.file_url, label: `${text}（zip内 ${s.zip_member} の${page}ページ）` };
   }
   return { href: `${s.file_url}#page=${page}`, label: `${text} ${page}ページ` };
+}
+
+// ---------------------------------------------------------------- 予算・財源（部局別の主な取組検証票）
+// 金額は千円単位。決算額は報告年度の前年度、決算見込額は報告年度、当初予算額は翌年度のもの（docs/data.md 11）
+
+export const FUNDS = [
+  { key: '県単等', series: 1 },
+  { key: '一括交付金（ソフト）', series: 2 },
+  { key: '一括交付金（ハード）', series: 3 },
+  { key: '内閣府計上', series: 4 },
+  { key: '各省計上', series: 5 },
+  { key: 'その他', series: 6, note: '国直轄・市町村・記載なし' },
+];
+export function fundOf(raw) {
+  const t = (raw || '').normalize('NFKC').replace(/\s/g, '');
+  if (t === '県単等') return '県単等';
+  if (t.startsWith('一括交付金')) return t.includes('ハード') ? '一括交付金（ハード）' : '一括交付金（ソフト）';
+  if (t === '内閣府計上' || t === '各省計上') return t;
+  return 'その他';
+}
+
+export const AMOUNT_KINDS = {
+  settled: { label: '決算額', offset: -1 },
+  estimate: { label: '決算見込額', offset: 0 },
+  initial: { label: '当初予算額', offset: 1 },
+};
+const budgetKey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
+
+// 同じ行の3つの金額のうち1つだけが他の50倍以上・10億円以上なら、桁の誤記の疑いがあるとして合計から除く
+const SUSPECT_MIN = 1e6; // 千円 → 10億円
+function suspectKinds(r) {
+  const vals = Object.keys(AMOUNT_KINDS).filter((k) => r[k] != null).map((k) => [k, r[k]]);
+  return vals
+    .filter(([k, v]) => {
+      const others = vals.filter(([kk]) => kk !== k).map(([, x]) => x);
+      return v >= SUSPECT_MIN && others.length && v >= 50 * Math.max(...others, 1);
+    })
+    .map(([k]) => k);
+}
+
+let budgetRecords;
+// 年度×取組の予算の記載。同じ取組が複数の部局のファイルに載っている（R5の組織再編の年）ときは最初の1件
+export function getBudgetRecords() {
+  if (budgetRecords) return budgetRecords;
+  const seen = new Set();
+  budgetRecords = [];
+  for (const b of load('bukyoku/torikumi_budget')) {
+    const k = `${b.year}|${b.shisaku_id}|${b.key}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    budgetRecords.push(b);
+  }
+  return budgetRecords;
+}
+export function budgetOf(year, shisakuId, key) {
+  return getBudgetRecords().find((b) => b.year === year && b.shisaku_id === shisakuId && b.key === key);
+}
+
+// 予算事業の金額を1行ずつに平らにしたもの
+let budgetLines;
+export function getBudgetLines() {
+  budgetLines ??= getBudgetRecords().flatMap((b) =>
+    b.budgets.flatMap((blk) =>
+      blk.rows.map((r) => ({
+        report: b.year,
+        shisaku_id: b.shisaku_id,
+        key: b.key,
+        torikumi: b.name,
+        name: blk.name,
+        name_next: blk.name_next || blk.name,
+        source: r.source,
+        source_next: r.source_next || r.source,
+        settled: r.settled,
+        estimate: r.estimate,
+        initial: r.initial,
+        suspect: suspectKinds(r),
+        file: b.source,
+        page: b.page,
+      })),
+    ),
+  );
+  return budgetLines;
+}
+
+// 報告年度・金額の種類ごとに、同じ予算事業（名前・財源・金額が同じもの）を1回だけ数えた金額の一覧。
+// 1つの予算事業が複数の取組に載っているときは、最初に出てくる取組（施策コード順）に寄せる
+export function amountEntries(report, kind) {
+  const seen = new Set();
+  const out = [];
+  for (const l of getBudgetLines()) {
+    if (l.report !== report) continue;
+    const v = l[kind];
+    if (v == null || v === 0 || l.suspect.includes(kind)) continue;
+    const name = kind === 'initial' ? l.name_next : l.name;
+    const source = kind === 'initial' ? l.source_next : l.source;
+    const k = `${budgetKey(name)}|${budgetKey(source)}|${v}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ ...l, budgetName: name, fund: fundOf(source), amount: v, year: report + AMOUNT_KINDS[kind].offset });
+  }
+  return out;
+}
+
+export function getSuspects() {
+  return getBudgetLines().flatMap((l) => l.suspect.map((kind) => ({ ...l, kind, amount: l[kind] })));
 }
