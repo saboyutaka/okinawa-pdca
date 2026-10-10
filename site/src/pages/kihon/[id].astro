@@ -5,6 +5,7 @@ import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
 import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
+import Term from '../../components/Term.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import { themesOf } from '../../lib/themes.js';
 import {
@@ -22,6 +23,7 @@ const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
 const statusKeys = STATUSES.map((x) => x.key);
 const shuyou = getShuyou(k.id);
 const yearsDesc = [...YEARS].reverse();
+const src = k.source && sourceLink(k.source, k.page);
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -29,11 +31,11 @@ const progressRows = YEARS.map((y) => ({
   counts: countBy(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === y)), statusOf, statusKeys),
 }));
 ---
-<Base title={`${k.name}（基本施策 ${k.code}）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: `基本施策 ${k.code}` }]} />
+<Base title={`${k.name}（基本施策）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
   <header class="k-head">
     <a class:list={['sz-ribbon', `sz-${k.shouraizou}`]} href={`/future/${k.shouraizou}/`}><Sz id={k.shouraizou} sr={false} />将来像{k.shouraizou} {shou?.name}</a>
-    <div class="secondary small">基本施策 {k.code}</div>
+    <div class="secondary small"><Term word="基本施策" /></div>
     <h1>{k.name}</h1>
   </header>
 
@@ -101,6 +103,12 @@ const progressRows = YEARS.map((y) => ({
       </>
     ))}
   </section>
+
+  <section aria-labelledby="source">
+    <h2 id="source">出典</h2>
+    <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
+    {src && <p class="small">{yearLong(LATEST)}: <a href={src.href} rel="noopener">総括報告書（{src.label}）</a>。主要指標の出典は、表の各行にあります。</p>}
+  </section>
 </Base>
 
 <style>
@@ -110,5 +118,6 @@ const progressRows = YEARS.map((y) => ({
   .k-head { margin-top: 12px; }
   .k-head .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; font-size: 0.9375rem; margin-bottom: 10px; }
   .item { display: grid; gap: 4px; }
+  .report-no { white-space: nowrap; }
   @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 </style>
