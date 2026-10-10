@@ -26,7 +26,7 @@ const last = YEARS.length - 1;
 const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
 const okLatest = latest.filter((g) => g.statuses[last] === '順調').length;
-const delayed = mine.filter((g) => g.inAllYears && g.delayYears >= 3).sort((a, b) => b.delayYears - a.delayYears);
+const delayed = mine.filter((g) => g.patterns.includes('delay3')).sort((a, b) => b.delayYears - a.delayYears);
 const shisaku = getShisakuList().filter((s) => s.depts.includes(dept.name));
 
 const progressRows = YEARS.map((y, i) => ({

@@ -23,7 +23,11 @@ import ExtLink from '../components/ExtLink.astro';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
-const toriOk = latestTori.filter((t) => t.status === '順調').length;
+// 年度をまたいでまとめた取組（取組をさがすと同じ数え方。ヒーローの数とリンク先の件数をそろえる）
+const groups = getTorikumiGroups();
+const L = YEARS.length - 1;
+const latestGroups = groups.filter((g) => g.statuses[L]);
+const toriOk = latestGroups.filter((g) => g.statuses[L] === '順調').length;
 const latestSeika = getSeika(LATEST);
 const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
@@ -39,33 +43,32 @@ const themes = getThemes().map((t) => ({
 }));
 
 // 令和6年度から7年度の動き（年度をまたいで同じ名前の取組）
-const groups = getTorikumiGroups();
-const L = YEARS.length - 1;
+const has = (pat) => (g) => g.patterns.includes(pat);
 const moves = [
   {
     tone: 'good', title: '遅れから「順調」に戻った',
     desc: `${yearLabel(LATEST - 1)}に遅れていて、${yearLabel(LATEST)}は順調になった取組`,
-    rows: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調'),
+    rows: groups.filter(has('recover')),
     href: '/torikumi/?pat=recover',
   },
   {
     tone: 'serious', title: '新しく遅れが出た',
     desc: `${yearLabel(LATEST - 1)}は順調・概ね順調で、${yearLabel(LATEST)}に遅れた取組`,
-    rows: groups.filter((g) => ['順調', '概ね順調'].includes(g.statuses[L - 1]) && DELAYS.has(g.statuses[L])),
+    rows: groups.filter(has('newdelay')),
     href: '/torikumi/?pat=newdelay',
   },
   {
     tone: 'critical', title: '4年のうち3年以上遅れた',
-    desc: `4年とも報告にある取組のうち、3年以上の年度で遅れていたもの（4年とも遅れ ${fmt(groups.filter((g) => g.inAllYears && g.delayYears === 4).length)}件）`,
-    rows: groups.filter((g) => g.inAllYears && g.delayYears >= 3).sort((a, b) => b.delayYears - a.delayYears),
+    desc: `4年とも報告にある取組のうち、3年以上の年度で遅れていたもの（4年とも遅れ ${fmt(groups.filter(has('delay4')).length)}件）`,
+    rows: groups.filter(has('delay3')).sort((a, b) => b.delayYears - a.delayYears),
     href: '/torikumi/?pat=delay3',
   },
 ];
 
 // ヒーローの「まだ進んでいないところ」（取組の遅れ・成果の遅れ・取組は順調でも成果が遅れている施策）
-const toriDelay = latestTori.filter((t) => DELAYS.has(t.status)).length;
-// 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になるように、続けて遅れているものだけを数える
-const streak = groups.filter((g) => [L - 2, L - 1, L].every((i) => DELAYS.has(g.statuses[i]))).length;
+const toriDelay = latestGroups.filter((g) => DELAYS.has(g.statuses[L])).length;
+// 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になる
+const streak = groups.filter(has('streak')).length;
 const seikaHard = latestSeika.filter((s) => s.judgement === '達成は困難').length;
 
 // 将来像ごと
@@ -95,10 +98,10 @@ const stampsOf = (g) => YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: to
     </p>
     <div class="donuts">
       <div class="donut-card">
-        <Donut frac={toriOk / latestTori.length} label={`主な取組のうち順調 ${pct(toriOk, latestTori.length)}`} />
+        <Donut frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} />
         <div>
           <div class="dc-title">県の主な取組のうち「順調」</div>
-          <div class="dc-sub">{fmt(latestTori.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
+          <div class="dc-sub">{fmt(latestGroups.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
           <a class="dc-more" href="/torikumi/?st=0">順調の取組を見る<span aria-hidden="true"> →</span></a>
         </div>
       </div>

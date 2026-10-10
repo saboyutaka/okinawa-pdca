@@ -2,25 +2,24 @@
 import Base from '../../layouts/Base.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Icon from '../../components/Icon.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, DELAYS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
+import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { getThemes } from '../../lib/themes.js';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
-// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。4年とも報告にある取組だけを数える）
-const L = YEARS.length - 1;
+// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。lib/data.js の PATTERNS）
 const pats = [
-  { pat: 'delay4', tone: 'critical', label: '4年とも遅れ', n: groups.filter((g) => g.inAllYears && g.delayYears === 4).length },
-  { pat: 'delay3', tone: 'serious', label: '3年以上遅れ', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length },
-  { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に`, n: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調').length },
-];
+  { pat: 'delay4', tone: 'critical', label: '4年とも遅れ' },
+  { pat: 'delay3', tone: 'serious', label: '3年以上遅れ' },
+  { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に` },
+].map((p) => ({ ...p, n: groups.filter((g) => g.patterns.includes(p.pat)).length }));
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
   <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
-  <p class="small pats"><span class="secondary">遅れの様子:</span>{pats.map((p) => <a href={`?pat=${p.pat}`}><Icon tone={p.tone} />{p.label} {fmt(p.n)}件</a>)}</p>
+  <p class="small pats"><span class="secondary">遅れの様子:</span>{pats.map((p) => <a href={`?pat=${p.pat}`} data-pat={p.pat}><Icon tone={p.tone} />{p.label} {fmt(p.n)}件</a>)}</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
     <label class="q" data-label="キーワード">キーワード
@@ -87,7 +86,7 @@ const pats = [
     shisaku: Record<string, [string, string, number]>;
     depts: Record<string, string>;
     themes: [string, string][];
-    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[]][];
+    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[], string[]][];
   };
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -184,15 +183,8 @@ const pats = [
       if (dept && d !== dept) return false;
       if (ti >= 0 && !r[10].includes(ti)) return false;
       if (st === 'none' ? sts[last] != null : st === 'delay' ? !(sts[last] != null && DELAY.has(sts[last]!)) : st && sts[last] !== Number(st)) return false;
-      const delays = sts.filter((x) => x != null && DELAY.has(x)).length;
-      const all = sts.every((x) => x != null);
-      if (pat === 'delay4' && !(all && delays === 4)) return false;
-      if (pat === 'delay3' && !(all && delays >= 3)) return false;
-      if (pat === 'streak' && ![last - 2, last - 1, last].every((i) => sts[i] != null && DELAY.has(sts[i]!))) return false;
-      if (pat === 'recover' && !(sts[last - 1] != null && DELAY.has(sts[last - 1]!) && sts[last] === 0)) return false;
-      if (pat === 'newdelay' && !(sts[last - 1] != null && sts[last - 1]! <= 1 && sts[last] != null && DELAY.has(sts[last]!))) return false;
-      if (pat === 'new' && !(sts[last] != null && sts[last - 1] == null)) return false;
-      if (pat === 'ended' && sts[last] != null) return false;
+      // 4年間の様子は、ビルド時に lib/data.js の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
+      if (pat && !r[11].includes(pat)) return false;
       if (q.length) {
         const text = norm(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`);
         if (!q.every((w) => text.includes(w))) return false;
@@ -238,6 +230,14 @@ const pats = [
   for (const [k, v] of new URLSearchParams(location.search)) {
     const input = form.elements.namedItem(k) as HTMLInputElement | null;
     if (input) input.value = v;
+  }
+  // 頭の「遅れの様子」のリンクは、ページを開き直さずに「4年間の様子」だけを変える（キーワードなど、いま入っている条件は残す）
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('.pats [data-pat]')) {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      (form.elements.namedItem('pat') as HTMLSelectElement).value = a.dataset.pat!;
+      apply();
+    });
   }
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());

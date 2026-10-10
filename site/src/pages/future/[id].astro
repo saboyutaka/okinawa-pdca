@@ -73,9 +73,9 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
 const groups = getTorikumiGroups().filter((g) => g.shisaku.shouraizou === v.id);
 const L = YEARS.length - 1;
 const moves = [
-  { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => DELAYS.has(g.statuses[L - 1]) && g.statuses[L] === '順調').length, href: `/torikumi/?s=${v.id}&pat=recover` },
-  { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => ['順調', '概ね順調'].includes(g.statuses[L - 1]) && DELAYS.has(g.statuses[L])).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
-  { tone: 'critical', title: '4年のうち3年以上遅れた', n: groups.filter((g) => g.inAllYears && g.delayYears >= 3).length, href: `/torikumi/?s=${v.id}&pat=delay3` },
+  { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?s=${v.id}&pat=recover` },
+  { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
+  { tone: 'critical', title: '4年のうち3年以上遅れた', n: groups.filter((g) => g.patterns.includes('delay3')).length, href: `/torikumi/?s=${v.id}&pat=delay3` },
 ];
 
 // くらしのテーマ（この将来像の施策が多い順）

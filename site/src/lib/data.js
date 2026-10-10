@@ -208,6 +208,20 @@ export function seikaKeyOf(row) {
 
 export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
+// 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
+// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・トップと将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
+// 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
+const isDelay = (x) => DELAYS.has(x);
+export const PATTERNS = {
+  delay4: (st) => st.every(Boolean) && st.filter(isDelay).length === 4, // 4年とも遅れ
+  delay3: (st) => st.every(Boolean) && st.filter(isDelay).length >= 3, // 4年のうち3年以上遅れた（4年とも報告にあるもの。間に順調の年度をはさむものも入る）
+  streak: (st) => st.slice(-3).every(isDelay), // 最新の年度まで3年続けて遅れ（今も遅れている）
+  recover: (st) => isDelay(st.at(-2)) && st.at(-1) === '順調', // 前の年度の遅れから順調に
+  newdelay: (st) => ['順調', '概ね順調'].includes(st.at(-2)) && isDelay(st.at(-1)), // 前の年度の順調・概ね順調から遅れ
+  new: (st) => Boolean(st.at(-1)) && !st.at(-2), // 最新の年度で新しく出た
+  ended: (st) => !st.at(-1), // 最新の年度の報告に無い（終了・名称変更）
+};
+
 // 全施策の取組を、年度をまたいで1行にまとめたもの。部局は最新年度の所管部局（docs/data.md 7.2）
 let torikumiGroups;
 export function getTorikumiGroups() {
@@ -222,6 +236,7 @@ export function getTorikumiGroups() {
         statuses,
         inAllYears: statuses.every(Boolean),
         delayYears: statuses.filter((x) => DELAYS.has(x)).length,
+        patterns: Object.keys(PATTERNS).filter((k) => PATTERNS[k](statuses)),
         href: torikumiHref(s.id, row.key),
       };
     }),
