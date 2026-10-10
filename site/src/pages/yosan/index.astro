@@ -1,0 +1,246 @@
+---
+import Base from '../../layouts/Base.astro';
+import AmountChart from '../../components/AmountChart.astro';
+import BarList from '../../components/BarList.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, statusOf, toneOfStatus,
+  amountEntries, getBudgetLines, getSuspects, budgetOf, getTorikumi, getShisakuList, getShouraizou, sourceLink,
+  currentDeptOf, budgetKey as bkey,
+} from '../../lib/data.js';
+import { fmt, yen, pct } from '../../lib/format.js';
+
+const sum = (xs) => xs.reduce((s, x) => s + x.amount, 0);
+const byFund = (entries) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
+const oku = (v) => Math.round(v / 1e4) / 10; // 千円 → 億円（小数1桁）
+
+// 財源別の推移。各年度の報告に載っている金額のうち、確定に近いもの（決算額）を優先して並べる
+const SERIES = [
+  { report: 2022, kind: 'settled' },
+  { report: 2023, kind: 'settled' },
+  { report: 2024, kind: 'settled' },
+  { report: LATEST, kind: 'settled' },
+  { report: LATEST, kind: 'estimate' },
+  { report: LATEST, kind: 'initial' },
+];
+const trendRows = SERIES.map(({ report, kind }) => {
+  const y = report + AMOUNT_KINDS[kind].offset;
+  return { label: yearLabel(y), sub: `${AMOUNT_KINDS[kind].label}（${yearLabel(report)}報告）`, amounts: byFund(amountEntries(report, kind)) };
+});
+
+const settled = amountEntries(LATEST, 'settled');
+const estimate = amountEntries(LATEST, 'estimate');
+const initial = amountEntries(LATEST, 'initial');
+const ikkatsu = (es) => sum(es.filter((e) => e.fund.startsWith('一括交付金')));
+
+// 取組 → 部局・施策
+const latestTori = getTorikumi(LATEST);
+const toriByKey = new Map(latestTori.map((t) => [`${t.shisaku_id}|${t.key}`, t]));
+const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
+const deptOf = (e) => toriByKey.get(`${e.shisaku_id}|${e.key}`)?.dept || '';
+
+const deptItems = DEPTS.map((d) => ({ label: d.name, n: oku(sum(estimate.filter((e) => deptOf(e) === d.name))), href: `/bukyoku/${d.slug}/` }))
+  .filter((i) => i.n > 0)
+  .sort((a, b) => b.n - a.n);
+const visionItems = getShouraizou().map((s) => ({
+  label: `将来像${s.id}`,
+  note: s.name,
+  n: oku(sum(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
+}));
+
+// 予算事業ごと（R7の決算見込額の大きい順）
+const groups = new Map();
+for (const e of estimate) {
+  const k = bkey(e.budgetName);
+  if (!groups.has(k)) groups.set(k, { name: e.budgetName, estimate: 0, funds: new Set() });
+  const g = groups.get(k);
+  g.estimate += e.amount;
+  g.funds.add(e.fund);
+}
+const amountByName = (entries) => {
+  const m = new Map();
+  for (const e of entries) m.set(bkey(e.budgetName), (m.get(bkey(e.budgetName)) || 0) + e.amount);
+  return m;
+};
+const settledByName = amountByName(settled);
+const initialByName = amountByName(initial);
+const lines = getBudgetLines().filter((l) => l.report === LATEST);
+const top = [...groups.entries()]
+  .sort((a, b) => b[1].estimate - a[1].estimate)
+  .slice(0, 30)
+  .map(([k, g]) => {
+    const related = [...new Map(lines.filter((l) => bkey(l.name) === k).map((l) => [`${l.shisaku_id}|${l.key}`, l])).values()];
+    return { ...g, settled: settledByName.get(k), initial: initialByName.get(k), related };
+  });
+
+// 部局票がある範囲（総括報告書の取組のうち、予算の記載を読めたもの）。部局は他のページと同じく最新の報告での所管部局
+const coverage = DEPTS.map((d) => ({
+  name: d.name,
+  years: YEARS.map((y) => {
+    const ts = getTorikumi(y).filter((t) => currentDeptOf(y, t.shisaku_id, t.key) === d.name);
+    return [ts.filter((t) => budgetOf(y, t.shisaku_id, t.key)).length, ts.length];
+  }),
+})).filter((d) => d.years.some(([, n]) => n > 0));
+const coverageAll = YEARS.map((y) => {
+  const ts = getTorikumi(y);
+  return [ts.filter((t) => budgetOf(y, t.shisaku_id, t.key)).length, ts.length];
+});
+
+const suspects = getSuspects();
+---
+<Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移です。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 予算と財源</nav>
+  <h1>予算と財源</h1>
+  <p>
+    各部局の「主な取組」検証票には、取組ごとに予算事業の名前、主な財源、前年度の決算額・その年度の決算見込額・翌年度の当初予算額が書かれています。
+    これを集めて、どんな財源でどれだけの予算が取組に使われているかをまとめました。
+    財源の意味や、沖縄振興予算との違いは<a href="/yosan/zaigen/">予算の財源のしくみ</a>で説明しています。
+  </p>
+  <div class="notice">
+    <strong>合計は目安です。</strong>
+    県の予算全体ではなく、PDCAの主な取組に書かれている予算事業だけの金額です。
+    同じ予算事業が複数の取組に同じ金額で書かれていることが多いため、同じ予算事業・財源・金額は1回だけ数えています。
+    部局票が手に入らない取組（病院事業局など）は含みません。
+    また、県単融資事業費（年650億円前後）のように、貸付の原資（融資枠）を計上している事業も含みます。くわしくは<a href="/about/">データについて</a>。
+  </div>
+
+  <div class="cards top">
+    <div class="card">
+      <div class="tile-label">{yearLabel(LATEST - 1)}の決算額</div>
+      <div class="tile-value">{yen(sum(settled))}</div>
+      <div class="tile-sub">{yearLabel(LATEST)}の報告に書かれた前年度の実績</div>
+    </div>
+    <div class="card">
+      <div class="tile-label">{yearLabel(LATEST)}の決算見込額</div>
+      <div class="tile-value">{yen(sum(estimate))}</div>
+      <div class="tile-sub">うち一括交付金 {yen(ikkatsu(estimate))}（{pct(ikkatsu(estimate), sum(estimate))}）</div>
+    </div>
+    <div class="card">
+      <div class="tile-label">{yearLabel(LATEST + 1)}の当初予算額</div>
+      <div class="tile-value">{yen(sum(initial))}</div>
+      <div class="tile-sub">{yearLabel(LATEST)}の報告に書かれた翌年度の予算</div>
+    </div>
+  </div>
+
+  <h2>財源別の推移</h2>
+  <AmountChart
+    title="取組に書かれた予算事業の金額（財源別）"
+    caption="R3〜R6は決算額、R7は決算見込額、R8は当初予算額。年度によって元になる報告と取組の範囲が違うので、増減は目安です。"
+    categories={FUNDS}
+    rows={trendRows}
+  />
+  <div class="card guide">
+    <h3>財源の区分</h3>
+    <ul>
+      {FUNDS.map((f) => <li><span class={`swatch series-${f.series}`}>{f.key}</span> {f.short}（負担: {f.who}）</li>)}
+    </ul>
+    <p class="small">
+      ここでの合計は県の取組の予算で、国が沖縄のために組む「沖縄振興予算」とは別のものです。
+      「県単等」も県民の税金だけでなく、国から配られる地方交付税などが元になっています。
+      くわしくは<a href="/yosan/zaigen/">予算の財源のしくみ</a>へ。
+    </p>
+  </div>
+
+  <h2>部局別・将来像別（{yearLong(LATEST)}の決算見込額）</h2>
+  <BarList title="部局別" caption="最新の報告での所管部局。件数ではなく金額（億円）です。" items={deptItems} unit="億円" />
+  <BarList title="将来像別" items={visionItems} unit="億円" />
+
+  <h2>金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</h2>
+  <p class="small secondary">同じ名前の予算事業をまとめた上位30件。1つの予算事業が複数の取組を支えていることがあります。取組の進捗は{yearLabel(LATEST)}の報告の判定です。</p>
+  <div class="table-wrap">
+    <table class="budget">
+      <thead>
+        <tr>
+          <th>予算事業（財源）</th>
+          <th class="num">{yearLabel(LATEST - 1)}決算額</th>
+          <th class="num">{yearLabel(LATEST)}決算見込額</th>
+          <th class="num">{yearLabel(LATEST + 1)}当初予算額</th>
+          <th>この予算事業が書かれている取組</th>
+        </tr>
+      </thead>
+      <tbody>
+        {top.map((g) => (
+          <tr>
+            <td>{g.name}<br /><small class="secondary">{[...g.funds].join('・')}</small></td>
+            <td class="num">{yen(g.settled)}</td>
+            <td class="num"><strong>{yen(g.estimate)}</strong></td>
+            <td class="num">{yen(g.initial)}</td>
+            <td class="small">
+              <ul class="rel">
+                {g.related.map((l) => {
+                  const t = toriByKey.get(`${l.shisaku_id}|${l.key}`);
+                  const s = shisakuById.get(l.shisaku_id);
+                  return (
+                    <li>
+                      {t && <Chip tone={toneOfStatus(statusOf(t))} text={statusOf(t)} />} {l.torikumi}
+                      <br /><a href={`/shisaku/${l.shisaku_id}/`}>{s?.code} {s?.name}</a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>合計から除いた金額（要確認）</h2>
+  <p class="small secondary">
+    同じ行の3つの金額（前年度決算・当年度見込・翌年度当初）のうち1つが0でない他の金額の50倍以上・10億円以上で、他の年度の報告にある同じ予算事業・同じ年度の金額でも裏付けられないものは、桁の誤記の疑いがあるため合計に入れていません。
+    元の報告書で確認できるよう、出典のページを載せています。
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>報告</th><th>予算事業</th><th>種類</th><th class="num">記載の金額</th><th class="num">同じ行の他の金額</th><th>出典</th></tr></thead>
+      <tbody>
+        {suspects.map((x) => {
+          const src = sourceLink(x.file, x.page);
+          const others = Object.keys(AMOUNT_KINDS).filter((k) => k !== x.kind && x[k] != null).map((k) => `${AMOUNT_KINDS[k].label} ${yen(x[k])}`).join('、');
+          return (
+            <tr>
+              <th>{yearLabel(x.report)}</th>
+              <td>{x.name}<br /><small class="secondary">{x.torikumi}</small></td>
+              <td>{AMOUNT_KINDS[x.kind].label}</td>
+              <td class="num">{yen(x.amount)}</td>
+              <td class="small">{others || '—'}</td>
+              <td class="small">{src ? <a href={src.href} rel="noopener">{src.label}</a> : '—'}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>部局票がある範囲</h2>
+  <p class="small secondary">
+    総括報告書の主な取組のうち、部局の検証票から予算の記載を読めたものの数です（部局は最新の報告での所管部局で数えています）。企業局は県企業局のサイトの設定（robots.txt）で自動取得できないため、手動でダウンロードしたものを使っています（R5の1ファイルはまだありません）。
+    病院事業局は表の形が特殊で読み取れておらず、R4はファイルが見つかりません（リンク切れ）。県警本部はR6の検証票が公開ページに見当たりません。
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>部局</th>{YEARS.map((y) => <th class="num">{yearLabel(y)}</th>)}</tr></thead>
+      <tbody>
+        {coverage.map((d) => (
+          <tr>
+            <th>{d.name}</th>
+            {d.years.map(([ok, n]) => <td class="num">{n ? `${fmt(ok)}/${fmt(n)}` : '—'}</td>)}
+          </tr>
+        ))}
+        <tr class="total"><th>合計</th>{coverageAll.map(([ok, n]) => <td class="num"><strong>{fmt(ok)}/{fmt(n)}</strong><br /><small class="secondary">{pct(ok, n)}</small></td>)}</tr>
+      </tbody>
+    </table>
+  </div>
+</Base>
+
+<style>
+  .top { margin-top: 20px; }
+  .budget { min-width: 760px; }
+  .budget td:first-child { min-width: 14em; }
+  .rel { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .rel :global(.chip) { font-size: 0.75rem; }
+  .guide { margin-top: 16px; }
+  .guide h3 { margin-top: 0; }
+  .guide ul { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; font-size: 0.9rem; }
+  .guide .swatch { font-weight: 600; margin-right: 4px; }
+</style>

@@ -1,0 +1,110 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusChart from '../../components/StatusChart.astro';
+import StatusBar from '../../components/StatusBar.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, statusOf, countBy,
+  getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, deptHref, seikaHref, seikaKeyOf,
+} from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return getKihonList().map((k) => ({ params: { id: k.id } }));
+}
+
+const k = getKihonList().find((x) => x.id === Astro.params.id);
+const shou = getShouraizou().find((x) => x.id === k.shouraizou);
+const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
+const statusKeys = STATUSES.map((x) => x.key);
+const shuyou = getShuyou(k.id);
+const yearsDesc = [...YEARS].reverse();
+
+const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
+const progressRows = YEARS.map((y) => ({
+  label: yearLabel(y),
+  counts: countBy(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === y)), statusOf, statusKeys),
+}));
+---
+<Base title={`${k.name}（基本施策 ${k.code}）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
+  <nav class="breadcrumb">
+    <a href="/">トップ</a> › <a href="/kihon/">基本施策の一覧</a> › <a href={`/kihon/#shouraizou-${k.shouraizou}`}>将来像{k.shouraizou}</a>
+  </nav>
+  <header>
+    <div class="secondary small">基本施策 {k.code}　／　将来像{k.shouraizou} {shou?.name}</div>
+    <h1>{k.name}</h1>
+  </header>
+
+  {k.mezasu && (
+    <section aria-labelledby="mezasu">
+      <h2 id="mezasu">目指す姿</h2>
+      <p class="muted-box">{k.mezasu}</p>
+    </section>
+  )}
+
+  <section aria-labelledby="shuyou">
+    <h2 id="shuyou">主要指標</h2>
+    <p class="small secondary">基本施策の最終的な成果をはかる指標です。R4〜R6はR6の目標値、R7からはR9の目標値に対する見通しです。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>報告年度</th><th>主要指標</th><th>基準値</th><th>実績値</th><th>目標値</th><th>見通し</th></tr></thead>
+        <tbody>
+          {yearsDesc.flatMap((y) => shuyou.filter((r) => r.year === y).map((r) => {
+            const src = sourceLink(r.source, r.page);
+            return (
+              <tr>
+                <th>{yearLabel(y)}</th>
+                <td>{r.name}{src && <><br /><a class="small" href={src.href} rel="noopener">出典</a></>}</td>
+                <td class="prose small">{r.base_raw}</td>
+                <td class="prose">{r.actual_raw}</td>
+                <td class="prose small">{r.target_raw}</td>
+                <td class="prose small">{r.judgement}</td>
+              </tr>
+            );
+          }))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="progress">
+    <h2 id="progress">主な取組の進捗（この基本施策の合計）</h2>
+    <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
+  </section>
+
+  <section aria-labelledby="list">
+    <h2 id="list">施策（{shisaku.length}）</h2>
+    {tenkai.map(([tid, tname]) => (
+      <>
+        <h3>{tname}</h3>
+        <ul class="list">
+          {shisaku.filter((s) => s.tenkai_id === tid).map((s) => {
+            const j = judgeOf(s.judges[LATEST]);
+            return (
+              <li class="item">
+                <div><span class="code">{s.code}</span> <a href={`/shisaku/${s.id}/`}>{s.name}</a></div>
+                <div class="row">
+                  {j ? <Chip tone={j.tone} text={`${yearLabel(LATEST)} ${j.key} ${j.label}`} /> : <Chip text="判定なし" />}
+                  <div class="mini"><StatusBar categories={STATUSES} counts={countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys)} context={`${s.name} 主な取組 `} /></div>
+                </div>
+                <div class="small links">
+                  成果指標: {s.seika.filter((x) => x.year === LATEST).map((x, i) => <>{i > 0 && '／'}<a href={seikaHref(s.id, seikaKeyOf(x))}>{x.name}</a></>)}
+                  　関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    ))}
+  </section>
+</Base>
+
+<style>
+  .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; }
+  .code { font-size: 0.8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 16px; align-items: center; margin-top: 6px; }
+  .row :global(.chip) { white-space: normal; }
+  .links { margin-top: 6px; color: var(--ink-2); }
+  @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+</style>

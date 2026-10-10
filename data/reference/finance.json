@@ -1,0 +1,60 @@
+{
+  "_note": "財源の説明ページで使う、国・県の公式資料の数字（単位: 億円）。PDF から人が転記したもの。更新するときは出典の資料で確かめて、確認日も直す。",
+  "checked_at": "2026-10-10",
+  "okinawa_shinko": {
+    "label": "沖縄振興予算（内閣府沖縄担当部局）",
+    "year": 2025,
+    "total": 2642,
+    "previous_total": 2678,
+    "items": [
+      { "name": "公共事業関係費等", "amount": 1258, "note": "道路・港湾・空港・農業の生産基盤・学校施設など。国が直接行う事業（国直轄）を含む" },
+      { "name": "沖縄振興一括交付金", "amount": 721, "note": "ソフト342億円（沖縄振興特別推進交付金）・ハード380億円（沖縄振興公共投資交付金）。県と市町村に交付" },
+      { "name": "沖縄科学技術大学院大学（OIST）", "amount": 201, "note": "学園の運営と施設整備の支援" },
+      { "name": "沖縄振興特定事業推進費", "amount": 95, "note": "一括交付金（ソフト）を補う、市町村などの事業" },
+      { "name": "駐留軍用地跡地先行取得事業費", "amount": 68, "note": "自治体による跡地の土地の先行取得の支援（新規）" }
+    ],
+    "next": { "year": 2026, "total": 2647, "label": "令和8年度沖縄振興予算案" },
+    "sources": [
+      { "title": "令和7年度沖縄振興予算について（内閣府沖縄担当部局）", "url": "https://www8.cao.go.jp/okinawa/3/2024/r7_yosan.pdf" },
+      { "title": "令和8年度沖縄振興予算案について（内閣府沖縄担当部局）", "url": "https://www8.cao.go.jp/okinawa/3/2025/r8_yosancomment.pdf" }
+    ]
+  },
+  "ikkatsu": {
+    "soft_rate": "8/10",
+    "note": "沖縄振興特別推進交付金（ソフト）は事業費の8割を国が交付し、残り2割は県（市町村の事業は市町村）が負担する",
+    "sources": [
+      { "title": "沖縄振興一括交付金の概要（内閣府）", "url": "https://www8.cao.go.jp/okinawa/kouhukin/shiryou/gaiyou.pdf" }
+    ]
+  },
+  "prefecture": {
+    "label": "沖縄県 一般会計 当初予算",
+    "year": 2025,
+    "total": 8894,
+    "previous_total": 8421,
+    "self_financing_ratio": 44.5,
+    "revenue": [
+      { "name": "地方交付税", "amount": 2260, "kind": "依存財源", "general": true, "note": "全国で同じ水準の行政サービスができるよう、国から配られるお金。使い道は自由" },
+      { "name": "国庫支出金", "amount": 1943, "kind": "依存財源", "general": false, "note": "特定の事業のために国から受け取るお金。一括交付金もここに入る" },
+      { "name": "県税", "amount": 1689, "kind": "自主財源", "general": true, "note": "県民や県内の会社が納める税金" },
+      { "name": "諸収入", "amount": 802, "kind": "自主財源", "general": false, "note": "県が貸したお金の返済（貸付金元利収入）や延滞金など" },
+      { "name": "地方消費税清算金", "amount": 740, "kind": "自主財源", "general": true, "note": "地方消費税のうち沖縄県の取り分として配られるお金" },
+      { "name": "繰入金", "amount": 505, "kind": "自主財源", "general": false, "note": "基金（県の貯金）などから入るお金" },
+      { "name": "県債", "amount": 419, "kind": "依存財源", "general": false, "note": "国や銀行などから借りるお金" },
+      { "name": "地方譲与税", "amount": 307, "kind": "依存財源", "general": true, "note": "国が受け取った税金から、決まったルールで配られるお金" },
+      { "name": "その他", "amount": 229, "kind": "大半が自主財源", "general": false, "note": "使用料・手数料など（自主財源218億円・依存財源11億円）" }
+    ],
+    "expenditure_by_nature": [
+      { "name": "補助費等", "amount": 2713, "note": "市町村などへの補助金" },
+      { "name": "人件費", "amount": 2216, "note": "教員・警察官・県職員などの給与" },
+      { "name": "普通建設事業費", "amount": 1302, "note": "道路・公園・建物などの建設" },
+      { "name": "貸付金", "amount": 703, "note": "個人や事業者にお金を貸すための費用" },
+      { "name": "物件費", "amount": 576, "note": "光熱水費や旅費など" },
+      { "name": "公債費", "amount": 571, "note": "借金の返済" },
+      { "name": "扶助費", "amount": 390, "note": "生活に困っている人や障がいのある人の生活を支える費用" },
+      { "name": "その他", "amount": 422, "note": "災害復旧事業費・積立金など" }
+    ],
+    "sources": [
+      { "title": "沖縄県の財政2025（沖縄県総務部財政課）", "url": "https://www.pref.okinawa.jp/_res/projects/default_project/_page_/001/015/190/okinawaken_no_zaisei_2025.pdf" }
+    ]
+  }
+}

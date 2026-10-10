@@ -1,0 +1,147 @@
+---
+import Base from '../layouts/Base.astro';
+import StatusChart from '../components/StatusChart.astro';
+import BarList from '../components/BarList.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, JUDGES, RATE_BINS, statusOf, rateBin, countBy,
+  getTorikumi, getSeika, getShisakuList, getShouraizou,
+} from '../lib/data.js';
+import { fmt, pct } from '../lib/format.js';
+import { LINKS } from '../lib/links.js';
+
+const statusKeys = STATUSES.map((s) => s.key);
+const torikumiRows = YEARS.map((y) => ({
+  label: yearLabel(y),
+  sub: y <= 2024 ? '前期' : '中期',
+  counts: countBy(getTorikumi(y), statusOf, statusKeys),
+}));
+const seikaRows = YEARS.map((y) => ({
+  label: yearLabel(y),
+  sub: y <= 2024 ? '前期' : '中期',
+  counts: countBy(getSeika(y), rateBin, RATE_BINS.map((b) => b.key)),
+}));
+
+const latestTori = getTorikumi(LATEST);
+const latestOk = latestTori.filter((t) => t.status === '順調').length;
+const latestSeika = getSeika(LATEST);
+const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
+
+const shisaku = getShisakuList();
+const judgeCounts = countBy(shisaku, (s) => s.judges[LATEST] ?? 'なし', JUDGES.map((j) => j.key));
+const judgeItems = JUDGES.map((j) => ({
+  label: `${j.key}　${j.label}`,
+  tone: j.tone,
+  n: judgeCounts[j.key] || 0,
+  href: `/shisaku/?judge=${j.key}`,
+}));
+const gapCount = (judgeCounts.C || 0) + (judgeCounts.D || 0);
+
+const byShouraizou = getShouraizou().map((s) => ({
+  label: `将来像${s.id}`,
+  sub: s.name,
+  href: `/shisaku/?s=${s.id}`,
+  counts: countBy(latestTori.filter((t) => t.shisaku_id.startsWith(`${s.id}-`)), statusOf, statusKeys),
+}));
+---
+<Base>
+  <section class="intro">
+    <h1>沖縄県PDCAダッシュボード</h1>
+    <p>
+      沖縄県は毎年、「<a href={LINKS.jisshiKeikaku} rel="noopener">新・沖縄21世紀ビジョン実施計画</a>」に並ぶ施策と取組がどこまで進んだかを自ら検証し、「<a href={LINKS.kekka} rel="noopener">沖縄県PDCA実施結果</a>」として公表しています。
+      このサイトは、その報告書（令和4〜7年度対象）のPDFを読み取り、施策ごとに4年分を並べて見られるようにしたものです。
+    </p>
+    <form class="search card" action="/torikumi/" method="get" role="search" aria-label="取組をさがす">
+      <label for="top-q">気になる分野の取組・成果指標をさがす</label>
+      <div class="search-row">
+        <input id="top-q" type="search" name="q" placeholder="例: 離島、子ども、観光、赤土" />
+        <button type="submit" class="button">取組をさがす</button>
+        <button type="submit" class="button" formaction="/shihyou/">成果指標をさがす</button>
+      </div>
+      <div class="small">ほかに <a href="/shisaku/">施策の一覧</a>・<a href="/kihon/">基本施策の一覧</a>・<a href="/bukyoku/">部局</a> からもさがせます。</div>
+    </form>
+  </section>
+
+  <section aria-labelledby="latest">
+    <h2 id="latest">{yearLong(LATEST)}の結果</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="tile-label">「順調」に進んだ主な取組</div>
+        <div class="hero-figure">{pct(latestOk, latestTori.length)}</div>
+        <div class="tile-sub">主な取組 {fmt(latestTori.length)}件のうち {fmt(latestOk)}件</div>
+      </div>
+      <div class="card">
+        <div class="tile-label">この年度の計画値を達成した成果指標</div>
+        <div class="tile-value">{fmt(seikaOk)}<small> / {fmt(latestSeika.length)}指標</small></div>
+        <div class="tile-sub">計画値に対する達成率が100%以上（{pct(seikaOk, latestSeika.length)}）</div>
+      </div>
+      <div class="card">
+        <div class="tile-label">「取組は進んでいるのに成果が遅れている」施策</div>
+        <div class="tile-value">{fmt(gapCount)}<small> / {fmt(shisaku.length)}施策</small></div>
+        <div class="tile-sub">県の判定 C・D の合計。<a href="/shisaku/?judge=C%7CD">一覧を見る</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="trend">
+    <h2 id="trend">4年間の推移</h2>
+    <StatusChart
+      title="主な取組の進捗状況"
+      caption="各取組の活動実績が、その年度の計画に対してどこまで進んだか（県の判定）。"
+      categories={STATUSES}
+      rows={torikumiRows}
+    />
+    <StatusChart
+      title="成果指標の達成状況"
+      caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。"
+      categories={RATE_BINS}
+      rows={seikaRows}
+      unit="指標"
+    />
+    <p class="small secondary">
+      R4〜R6は<a href={LINKS.zenki} rel="noopener">前期実施計画</a>、R7からは<a href={LINKS.chuki} rel="noopener">中期実施計画</a>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、達成率は計画期間をまたいで単純には比べられません。
+    </p>
+  </section>
+
+  <section aria-labelledby="judge">
+    <h2 id="judge">施策の推進状況（{yearLong(LATEST)}）</h2>
+    <p>
+      県は施策ごとに、「取組の進み具合」と「成果指標の達成率」の2つを組み合わせて推進状況を判定しています。
+      取組は順調でも成果が出ていない施策（C・D）は、取組の中身を見直す必要があるかもしれない施策です。
+    </p>
+    <BarList title={`施策の判定（全${fmt(shisaku.length)}施策）`} caption="件数を押すと、その判定の施策の一覧を開きます。" items={judgeItems} unit="施策" />
+  </section>
+
+  <section aria-labelledby="by-vision">
+    <h2 id="by-vision">将来像ごとの取組の進捗（{yearLong(LATEST)}）</h2>
+    <StatusChart title="将来像別 主な取組の進捗状況" categories={STATUSES} rows={byShouraizou} />
+  </section>
+
+  <section aria-labelledby="next">
+    <h2 id="next">くわしく見る</h2>
+    <div class="cards">
+      <a class="card nav-card" href="/shisaku/"><strong>施策をさがす</strong><span>339施策ごとに、成果指標・主な取組の4年分と、県の分析・今後の方向</span></a>
+      <a class="card nav-card" href="/torikumi/"><strong>取組をさがす</strong><span>約1,700の主な取組を、キーワード・部局・進捗で検索</span></a>
+      <a class="card nav-card" href="/okure/"><strong>遅れが続いている取組</strong><span>4年のうち3年以上、進捗が遅れている取組の一覧</span></a>
+      <a class="card nav-card" href="/shihyou/"><strong>成果指標をさがす</strong><span>施策ごとの成果指標の実績・目標・見通し</span></a>
+      <a class="card nav-card" href="/bukyoku/"><strong>部局</strong><span>部局ごとの取組と成果指標の進み具合</span></a>
+      <a class="card nav-card" href="/yosan/"><strong>予算と財源</strong><span>取組に書かれた予算事業の決算額・当初予算と財源の推移</span></a>
+      <a class="card nav-card" href="/about/"><strong>データについて</strong><span>出典・作り方・年度による計り方の違い</span></a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro { margin-top: 24px; }
+  .intro p { max-width: 46em; }
+  .search { margin-top: 16px; display: grid; gap: 8px; }
+  .search label { font-weight: 700; }
+  .search-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .search-row input {
+    flex: 1 1 14em; min-width: 0; font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--baseline); border-radius: 8px; padding: 8px 12px; min-height: 44px;
+  }
+  .nav-card { display: grid; gap: 4px; text-decoration: none; color: var(--ink); }
+  .nav-card strong { color: var(--link); }
+  .nav-card span { font-size: 0.85rem; color: var(--ink-2); }
+  .nav-card:hover { border-color: var(--link); }
+</style>

@@ -1,0 +1,54 @@
+---
+// 1系列の横棒（件数の比較）。色は1色で、各行のラベルに状態の印を付ける
+import Chip from './Chip.astro';
+import { fmt } from '../lib/format.js';
+
+interface Item { label: string; tone?: string; n: number; href?: string; note?: string }
+interface Props { title: string; caption?: string; items: Item[]; unit?: string }
+const { title, caption, items, unit = '件' } = Astro.props;
+const max = Math.max(1, ...items.map((i) => i.n));
+---
+<figure class="chart card">
+  <figcaption>
+    <div class="chart-title">{title}</div>
+    {caption && <div class="chart-caption">{caption}</div>}
+  </figcaption>
+  <ul class="bars">
+    {items.map((i) => (
+      <li>
+        <div class="bar-label">
+          {i.tone ? <Chip tone={i.tone} text={i.label} /> : i.label}
+          {i.note && <span class="bar-note">{i.note}</span>}
+        </div>
+        <div class="bar-track">
+          <span
+            class="bar"
+            style={`width:${(i.n / max) * 100}%`}
+            tabindex="0"
+            data-tip-value={`${fmt(i.n)}${unit}`}
+            data-tip-label={i.label}
+          ></span>
+          <span class="bar-value num">{i.href && i.n > 0 ? <a href={i.href}>{fmt(i.n)}{unit}</a> : `${fmt(i.n)}${unit}`}</span>
+        </div>
+      </li>
+    ))}
+  </ul>
+</figure>
+
+<style>
+  .chart { margin-top: 16px; }
+  .chart-title { font-weight: 700; }
+  .chart-caption { font-size: 0.85rem; color: var(--ink-2); }
+  .bars { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 12px; }
+  .bars li { display: grid; grid-template-columns: minmax(0, 20em) 1fr; gap: 4px 12px; align-items: center; }
+  .bar-label { font-size: 0.9rem; line-height: 1.35; }
+  .bar-label :global(.chip) { white-space: normal; }
+  .bar-note { display: block; font-size: 0.75rem; color: var(--ink-2); padding-left: 16px; }
+  .bar-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bar { display: block; height: 16px; min-width: 2px; background: var(--accent); border-radius: 0 4px 4px 0; }
+  .bar:hover, .bar:focus-visible { filter: brightness(1.12); }
+  .bar-value { font-size: 0.85rem; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .bars li { grid-template-columns: 1fr; }
+  }
+</style>

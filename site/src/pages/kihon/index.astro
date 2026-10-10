@@ -1,0 +1,68 @@
+---
+import Base from '../../layouts/Base.astro';
+import StatusChart from '../../components/StatusChart.astro';
+import Chip from '../../components/Chip.astro';
+import {
+  LATEST, yearLong, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi,
+  getShuyouByYear, toneOfJudgement,
+} from '../../lib/data.js';
+import { fmt } from '../../lib/format.js';
+import { LINKS } from '../../lib/links.js';
+
+const kihon = getKihonList();
+const shisaku = getShisakuList();
+const tori = getTorikumi(LATEST);
+const statusKeys = STATUSES.map((s) => s.key);
+const shuyou = getShuyouByYear(LATEST);
+const visions = getShouraizou().map((v) => ({
+  ...v,
+  rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
+    label: `${k.code} ${k.name}`,
+    sub: `${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
+    href: `/kihon/${k.id}/`,
+    counts: countBy(tori.filter((t) => t.shisaku_id.startsWith(`${k.id}-`)), statusOf, statusKeys),
+  })),
+}));
+---
+<Base title="基本施策の一覧" description="新・沖縄21世紀ビジョンの5つの将来像と36の基本施策の一覧です。基本施策ごとの主な取組の進み具合を見られます。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 基本施策の一覧</nav>
+  <h1>基本施策の一覧</h1>
+  <p class="secondary">
+    <a href={LINKS.kihonKeikaku} rel="noopener">新・沖縄21世紀ビジョン基本計画</a>は、5つの将来像のもとに36の基本施策を置き、その下に施策（339）と主な取組があります。
+    棒は{yearLong(LATEST)}の主な取組の進捗状況です。基本施策の名前を押すと、目指す姿・主要指標・施策の一覧を見られます。
+    各将来像の下に、基本施策の最終的な成果をはかる<strong>主要指標</strong>（{yearLong(LATEST)}の報告の値）も載せています。施策ごとの成果指標は<a href="/shihyou/">成果指標をさがす</a>へ。
+  </p>
+  {visions.map((v) => (
+    <section id={`shouraizou-${v.id}`} aria-labelledby={`h-shouraizou-${v.id}`}>
+      <h2 id={`h-shouraizou-${v.id}`}>将来像{v.id} {v.name}</h2>
+      <StatusChart title={`将来像${v.id}の基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} />
+      <p class="small"><a href={`/shisaku/?s=${v.id}`}>将来像{v.id}の施策をすべて見る</a></p>
+      <h3>将来像{v.id}の主要指標（{yearLong(LATEST)}）</h3>
+      <ul class="list">
+        {shuyou.filter((r) => r.kihon_id.startsWith(`${v.id}-`)).map((r) => {
+          const k = kihon.find((x) => x.id === r.kihon_id);
+          const tone = toneOfJudgement(r.judgement);
+          return (
+            <li class="item">
+              <div class="ind-name">{r.name}</div>
+              <div class="small">基本施策 <a href={`/kihon/${r.kihon_id}/`}>{k?.code} {k?.name}</a></div>
+              <dl class="kv small">
+                <div><dt>基準値</dt><dd class="prose">{r.base_raw}</dd></div>
+                <div><dt>実績値</dt><dd class="prose"><strong>{r.actual_raw}</strong></dd></div>
+                <div><dt>目標値（R9）</dt><dd class="prose">{r.target_raw}</dd></div>
+                <div><dt>見通し</dt><dd class="prose">{tone ? <Chip tone={tone} text={r.judgement} /> : r.judgement}</dd></div>
+              </dl>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ))}
+</Base>
+
+<style>
+  .ind-name { font-weight: 600; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 4px 16px; margin: 6px 0 0; }
+  .kv dt { font-size: 0.75rem; color: var(--ink-2); }
+  .kv dd { margin: 0; }
+</style>

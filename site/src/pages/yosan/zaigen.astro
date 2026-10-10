@@ -1,0 +1,176 @@
+---
+import Base from '../../layouts/Base.astro';
+import BarList from '../../components/BarList.astro';
+import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.js';
+import { fmt, yen, pct } from '../../lib/format.js';
+
+const ref = getFinanceReference();
+const shinko = ref.okinawa_shinko;
+const pref = ref.prefecture;
+const reiwa = (y) => `令和${y - 2018}年度`;
+
+// このサイトの集計（R7 の決算見込額。同じ予算事業の重複と要確認を除く）
+const estimate = amountEntries(LATEST, 'estimate');
+const total = estimate.reduce((s, e) => s + e.amount, 0);
+const lines = getBudgetLines().filter((l) => l.report === LATEST);
+const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
+const funds = FUNDS.map((f) => {
+  const es = estimate.filter((e) => e.fund === f.key);
+  const byName = new Map();
+  for (const e of es) {
+    const k = bkey(e.budgetName);
+    if (!byName.has(k)) byName.set(k, { name: e.budgetName, amount: 0 });
+    byName.get(k).amount += e.amount;
+  }
+  const top = [...byName.entries()].sort((a, b) => b[1].amount - a[1].amount).slice(0, 3).map(([k, g]) => {
+    const l = lines.find((x) => bkey(x.name) === k);
+    return { ...g, shisaku: l && shisakuById.get(l.shisaku_id) };
+  });
+  return { ...f, amount: es.reduce((s, e) => s + e.amount, 0), top };
+});
+const byKey = Object.fromEntries(funds.map((f) => [f.key, f.amount]));
+const overlap = byKey['内閣府計上'] + byKey['一括交付金（ソフト）'] + byKey['一括交付金（ハード）'];
+const outside = byKey['県単等'] + byKey['各省計上'];
+const loan = lines.filter((l) => bkey(l.name) === '県単融資事業費').reduce((m, l) => Math.max(m, l.estimate || 0), 0);
+const oku = (v) => Math.round(v / 1e4) / 10; // 千円 → 億円
+
+const shinkoItems = [
+  ...shinko.items.map((i) => ({ label: i.name, n: i.amount, note: i.note })),
+  { label: 'その他', n: shinko.total - shinko.items.reduce((s, i) => s + i.amount, 0), note: '離島の活性化、子どもの貧困対策など' },
+];
+const revenueItems = pref.revenue.map((r) => ({
+  label: r.name,
+  n: r.amount,
+  note: [[r.kind, r.general ? '使い道が自由（一般財源）' : ''].filter(Boolean).join('・'), r.note].filter(Boolean).join('。'),
+}));
+const expenditureItems = pref.expenditure_by_nature.map((r) => ({ label: r.name, n: r.amount, note: r.note }));
+const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
+---
+<Base title="予算の財源のしくみ" description="沖縄県PDCAの取組の予算に出てくる財源（県単等・一括交付金・内閣府計上・各省計上）の意味と、沖縄振興予算や県の一般会計との関係をまとめています。">
+  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/yosan/">予算と財源</a> › 財源のしくみ</nav>
+  <h1>予算の財源のしくみ</h1>
+  <p>
+    <a href="/yosan/">予算と財源</a>では、県の主な取組に書かれた予算事業を「主な財源」ごとに分けて集計しています。
+    このページでは、その財源の区分が何を意味するのかと、ニュースなどでよく出てくる「沖縄振興予算」や、県の予算全体との関係を説明します。
+  </p>
+
+  <section class="card points" aria-labelledby="points">
+    <h2 id="points">ポイント</h2>
+    <ul>
+      <li>このサイトの予算の合計（{yearLabel(LATEST)}の決算見込額で約{fmt(Math.round(oku(total)))}億円）は、<strong>県の取組の予算</strong>です。国が沖縄のために組む<strong>沖縄振興予算（{reiwa(shinko.year)} {fmt(shinko.total)}億円）とは別のもの</strong>です。</li>
+      <li>重なるのは、財源が「内閣府計上」「一括交付金」の事業（約{fmt(Math.round(oku(overlap)))}億円）です。「県単等」「各省計上」（約{fmt(Math.round(oku(outside)))}億円）は沖縄振興予算の外のお金です。</li>
+      <li>「県単等」は県が自分で使い道を決められるお金ですが、<strong>国から配られる地方交付税や借金（県債）も元になっています</strong>。県民の税金だけではありません。</li>
+      <li>金額は「主な財源」で分けた事業費なので、国のお金の事業にも<strong>県の負担分が含まれます</strong>（一括交付金のソフト事業なら2割）。</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="funds">
+    <h2 id="funds">財源の区分</h2>
+    <p class="small secondary">金額は{yearLong(LATEST)}の報告の決算見込額で、同じ予算事業の重複と誤記の疑いがある金額を除いたものです。</p>
+    <div class="funds">
+      {funds.map((f) => (
+        <article class="card fund">
+          <h3><span class={`swatch series-${f.series}`}>{f.key}</span></h3>
+          <p class="fund-amount"><strong>{yen(f.amount)}</strong> <span class="secondary small">（{pct(f.amount, total)}）</span></p>
+          <p class="fund-short">{f.short}</p>
+          <dl class="small">
+            <dt>誰が負担するか</dt><dd>{f.who}</dd>
+          </dl>
+          <p class="small">{f.desc}</p>
+          {f.top.length > 0 && (
+            <div class="small">
+              <div class="secondary">金額の大きい予算事業</div>
+              <ul class="tops">
+                {f.top.map((t) => (
+                  <li>{t.name}（{yen(t.amount)}）{t.shisaku && <><br /><a href={`/shisaku/${t.shisaku.id}/`}>{t.shisaku.code} {t.shisaku.name}</a></>}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+    {loan > 0 && (
+      <p class="notice small">
+        「県単等」のうち{yen(loan)}は県単融資事業費（中小企業などへの融資の原資）です。県の歳入の「諸収入」には、県が貸したお金の返済（貸付金元利収入）が入ります。
+        融資の原資は、こうして返済されて戻ってくるお金とみられ、ほかの事業費とは性格が違います。これを除くと、県単等は約{fmt(Math.round(oku(byKey['県単等'] - loan)))}億円です。
+      </p>
+    )}
+  </section>
+
+  <section aria-labelledby="shinko">
+    <h2 id="shinko">沖縄振興予算とのちがい</h2>
+    <p>
+      沖縄振興予算は、<strong>国</strong>（内閣府沖縄担当部局）が沖縄の振興のために組む予算です。{reiwa(shinko.year)}は{fmt(shinko.total)}億円（前年度{fmt(shinko.previous_total)}億円）、{reiwa(shinko.next.year)}の予算案は{fmt(shinko.next.total)}億円です。
+      このうち、国が直接行う道路・港湾・空港の事業や、沖縄科学技術大学院大学（OIST）、市町村に交付される分は、県の取組の予算には出てきません。
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>沖縄振興予算</th><th>このサイトの予算の合計</th></tr></thead>
+        <tbody>
+          <tr><th>何の予算か</th><td>国（内閣府）が沖縄のために組む予算</td><td>県の主な取組（PDCA）に書かれた予算事業の事業費</td></tr>
+          <tr><th>金額</th><td class="num">{fmt(shinko.total)}億円（{reiwa(shinko.year)}当初）</td><td class="num">{yen(total)}（{yearLabel(LATEST)}決算見込額）</td></tr>
+          <tr><th>含むもの</th><td>国直轄の公共事業、一括交付金（県・市町村）、OIST など</td><td>県単等・内閣府計上・一括交付金（県分）・各省計上の事業</td></tr>
+          <tr><th>含まないもの</th><td>県単独の事業、内閣府以外の省庁の補助事業</td><td>国直轄の事業、市町村の事業、県の人件費や借金の返済</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <BarList title={`沖縄振興予算の内訳（${reiwa(shinko.year)}、${fmt(shinko.total)}億円）`} caption="主な項目。内閣府の資料による。" items={shinkoItems} unit="億円" />
+  </section>
+
+  <section aria-labelledby="pref">
+    <h2 id="pref">県の予算全体（一般会計）とのちがい</h2>
+    <p>
+      沖縄県の{reiwa(pref.year)}の一般会計の当初予算は{fmt(pref.total)}億円です。このサイトの合計（約{fmt(Math.round(oku(total)))}億円）は、そのうちPDCAの主な取組に書かれた予算事業の分にあたります。
+      教員・警察官・県職員の人件費や借金の返済などは、取組の予算事業としては出てきません。
+    </p>
+    <p>
+      県に入ってくるお金のうち、県税など自分で集めるお金（自主財源）の割合は{pref.self_financing_ratio}%で、過去最高です。
+      ただし、国から配られる地方交付税（{fmt(pref.revenue.find((r) => r.name === '地方交付税').amount)}億円）は、県税（{fmt(pref.revenue.find((r) => r.name === '県税').amount)}億円）より多くなっています。
+    </p>
+    <BarList title={`県に入ってくるお金（歳入、${reiwa(pref.year)}当初、${fmt(pref.total)}億円）`} caption="自主財源・依存財源の区分と説明は県の資料による。" items={revenueItems} unit="億円" />
+    <BarList title={`県から出ていくお金（歳出・性質別、${reiwa(pref.year)}当初）`} caption="四捨五入のため合計が一致しないことがあります。" items={expenditureItems} unit="億円" />
+  </section>
+
+  <section aria-labelledby="faq">
+    <h2 id="faq">よくある誤解</h2>
+    <dl class="faq">
+      <dt>このサイトの予算の合計は、沖縄振興予算のこと？</dt>
+      <dd>いいえ。沖縄振興予算は国の予算で、このサイトの合計は県の取組の予算です。重なる部分（内閣府計上・一括交付金）はありますが、範囲が違います。</dd>
+      <dt>「県単独」の事業は、県民の税金だけでまかなっている？</dt>
+      <dd>いいえ。県が使い道を決められるお金には、国から配られる地方交付税や地方譲与税、借金（県債）、貯金（基金）も含まれます。沖縄県では地方交付税が県税より多くなっています。</dd>
+      <dt>一括交付金の事業の金額は、全部が国のお金？</dt>
+      <dd>いいえ。金額は事業費で、ソフト事業なら2割は県の負担です。報告書の財源は「主な財源」なので、他の財源が少し混じることもあります。</dd>
+      <dt>予算の合計は、県が実際に使ったお金の合計？</dt>
+      <dd>目安です。取組に書かれた予算事業だけを集めたもので、部局の検証票が手に入らない取組は入らず、融資の原資のように性格の違うお金も含みます。<a href="/yosan/">予算と財源</a>の注意書きもご覧ください。</dd>
+    </dl>
+  </section>
+
+  <section aria-labelledby="src">
+    <h2 id="src">出典</h2>
+    <ul class="small">
+      {sources.map((s) => <li><a href={s.url} rel="noopener">{s.title}</a></li>)}
+      <li>取組ごとの予算事業・財源・金額: 各部局の「主な取組」検証票（{yearLong(LATEST)}）</li>
+    </ul>
+    <p class="small secondary">国・県の資料の数字は{ref.checked_at}に確認したものです。</p>
+  </section>
+</Base>
+
+<style>
+  .points { margin-top: 20px; }
+  .points h2 { margin-top: 0; font-size: 1.1rem; }
+  .points ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+  .funds { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .funds .card + .card { margin-top: 0; }
+  .fund h3 { margin: 0 0 4px; }
+  .fund h3 .swatch { font-size: 1rem; font-weight: 700; }
+  .fund-amount { margin: 0; font-size: 1.1rem; }
+  .fund-short { font-weight: 600; margin: 6px 0; }
+  .fund dl { margin: 4px 0; }
+  .fund dt { color: var(--ink-2); }
+  .fund dd { margin: 0; }
+  .tops { margin: 4px 0 0; padding-left: 1.2em; display: grid; gap: 4px; }
+  .notice { margin-top: 16px; }
+  .faq dt { font-weight: 700; margin-top: 16px; }
+  .faq dd { margin: 4px 0 0; }
+</style>
