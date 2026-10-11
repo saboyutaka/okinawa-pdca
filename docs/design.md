@@ -14,7 +14,7 @@
 - ステッカーの強さは3段階にして、全部を同じ強さにしない（どこから見ればいいか分からなくなるため）。太い線と大きな影（`.sticker.lift`）はページの頭とトップのヒーローだけ。並ぶカード・図・絞り込みは `.sticker`（細めの線と小さな影）。ステッカーの中の箱は線も影も付けず地の色だけ（`.inset`）にし、中の吹き出しやステッカーにも影を付けない。
 - 状態（順調〜大幅遅れ、判定 A〜G）は青信号系の色に加えて、形（● ◆ ▲ ■、判定 E・F は ▼ と斜線）と文字で出す。色だけで伝えない。形は `lib/icons.ts` を通して出す（`Icon`・`Chip`）。
 - 将来像の色は[基本計画のパンフレット](https://www.pref.okinawa.jp/_res/projects/default_project/_page_/001/014/250/shin21seikivision-kihonnkeikaku-pamphlet.pdf)の色（1 緑・2 青・3 橙・4 ピンク・5 青緑。`--sz-1`〜`--sz-5`）。番号の印と見出しの帯だけに使い、状態の色（棒・印）とは混ぜない。
-- 日本語のウェブフォントは読み込まない。数字だけ丸い英字フォント Fredoka の部分集合（`src/fonts/`。ビルドで CSS に埋め込む。ライセンスは `public/fonts/Fredoka-OFL.txt`、SIL OFL）を使う。
+- 日本語のウェブフォントは読み込まない。数字だけ丸い英字フォント Fredoka の部分集合（`src/fonts/`。ビルドで `/_astro/` に書き出す。ライセンスは `public/fonts/Fredoka-OFL.txt`、SIL OFL）を使う。
 
 ## 3. 施策と主な取組を見分ける
 
