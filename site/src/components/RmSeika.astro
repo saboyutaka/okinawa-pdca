@@ -6,8 +6,8 @@ import { yearLabel, withUnit, deptHref } from '../lib/data.js';
 import { rmJudgementOf } from '../lib/plans.js';
 import { joinLines } from '../lib/text.js';
 
-interface Props { g: any }
-const { g } = Astro.props;
+interface Props { g: any; id?: string }
+const { g, id } = Astro.props;
 const x = g.latest;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
 const j = x.judgement ? rmJudgementOf(x.judgement) : null;
@@ -15,7 +15,7 @@ const rate = x.rate != null ? `${x.rate}%` : x.rate_raw || '—';
 const past = Object.values(g.years).filter((r: any) => r.year !== x.year && r.judgement).sort((a: any, b: any) => a.year - b.year);
 const hasPlan = (x.plan_raw || []).some(Boolean);
 ---
-<article class="inset rm-seika">
+<article class="inset rm-seika anchor" id={id}>
   <h4>{x.name}{u && <span class="secondary small">（{u}）</span>}</h4>
   <div class="judge">
     {j ? <Chip tone={j.tone} shape={j.shape} text={`${x.judgement}（${yearLabel(x.year)}）`} title={j.note} /> : <Chip text={`判定なし（${yearLabel(x.year)}）`} />}

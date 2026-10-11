@@ -9,7 +9,7 @@ import Prose from '../../../components/Prose.astro';
 import RmSeika from '../../../components/RmSeika.astro';
 import RmTorikumi from '../../../components/RmTorikumi.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.js';
-import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkai, kankoTenkaiHref, kankoTorikumiAnchor, planSourceLink } from '../../../lib/plans.js';
+import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkai, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.js';
 import { joinLines, firstSentence } from '../../../lib/text.js';
 import { fmt } from '../../../lib/format.js';
 
@@ -69,7 +69,7 @@ const next = all[i + 1];
         )}
 
         <h3><Term word="成果指標" />（{fmt(seika.length)}）</h3>
-        <div class="seika">{seika.map((g) => <RmSeika g={g} />)}</div>
+        <div class="seika">{seika.map((g) => <RmSeika g={g} id={kankoSeikaAnchor(s.id, g.key)} />)}</div>
 
         <h3><Term word="主な取組" />（{yearLabel(RM_LATEST)}: {fmt(active.length)}件）</h3>
         {active.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} ${yearLabel(RM_LATEST)}の主な取組 `} />}

@@ -9,6 +9,7 @@ import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou, getT
 import { getThemes, getTheme, themeIdsOfItem } from '../../lib/themes.js';
 import { fmt, pct } from '../../lib/format.js';
 import { KANKO } from '../../lib/plans.js';
+import RmSummary from '../../components/RmSummary.astro';
 
 export function getStaticPaths() {
   return getThemes().map((t) => ({ params: { id: t.id } }));
@@ -59,12 +60,7 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
     </div>
   </div>
 
-  {t.id === 'kanko' && (
-    <aside class="sticker plan-link">
-      <span class="plan-tag">個別計画</span>
-      <p><strong>県の観光の計画「<a href={KANKO.href}>{KANKO.name}</a>」の評価も見られます。</strong>このテーマ（このサイト独自の分類）とは別に、県が{KANKO.basis}の実施計画として観光の施策（85）を立て、成果指標と主な取組を毎年評価しているものです。</p>
-    </aside>
-  )}
+  {t.id === KANKO.theme && <RmSummary />}
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
@@ -95,6 +91,4 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
   .fact { display: grid; gap: 4px; align-content: start; }
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
-  .plan-link { margin-top: 18px; display: grid; gap: 4px; justify-items: start; }
-  .plan-link p { margin: 0; }
 </style>

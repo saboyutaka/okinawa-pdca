@@ -5,11 +5,12 @@ import Crumbs from '../../../components/Crumbs.astro';
 import StatusChart from '../../../components/StatusChart.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
+import RmSeikaRow from '../../../components/RmSeikaRow.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.js';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
-  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF,
+  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, isBehind,
 } from '../../../lib/plans.js';
 import { LINKS } from '../../../lib/links.js';
 import { fmt, pct } from '../../../lib/format.js';
@@ -35,6 +36,10 @@ const tenkai = kankoTenkaiList();
 const kihon = kankoKihon();
 const latestOf = (t) => t.shisaku.flatMap((s) => s.torikumi.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
 const sources = planSources('kanko');
+// 成果指標（R6）。基準値より後退・横ばいのものを先に、悪い順に出し、前進しているものは畳む
+const seikaAll = kankoSeikaList();
+const behind = seikaAll.filter(isBehind);
+const ahead = seikaAll.filter((r) => !isBehind(r));
 ---
 <Base title={`${KANKO.name}（個別計画）`} description={`${KANKO.basis}の実施計画「${KANKO.name}」のPDCA（成果指標と主な取組の評価）を、施策展開ごとに整理しています。`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { label: KANKO.short }]} />
@@ -71,6 +76,16 @@ const sources = planSources('kanko');
       <div class="tile-sub">主な取組 {fmt(tori.length)}件のうち{fmt(overlap)}件、成果指標 {fmt(seika.length)}のうち{fmt(seikaOverlap)}は、沖縄県PDCAにも同じ名前のものがあります。</div>
     </div>
   </div>
+
+  <section aria-labelledby="seika-list">
+    <h2 id="seika-list" class="anchor">基準値より後退・横ばいの成果指標（{yearLabel(RM_LATEST)}・{fmt(behind.length)}）</h2>
+    <p class="small secondary lead">観光の計画にしか無い指標が多いので、悪い順に並べています。</p>
+    <ul class="row-list">{behind.map((r) => <RmSeikaRow r={r} />)}</ul>
+    <details class="past">
+      <summary>前進している指標など（{fmt(ahead.length)}）</summary>
+      <ul class="row-list">{ahead.map((r) => <RmSeikaRow r={r} />)}</ul>
+    </details>
+  </section>
 
   <section aria-labelledby="progress">
     <h2 id="progress">年度ごとの進み具合</h2>
@@ -133,6 +148,7 @@ const sources = planSources('kanko');
 <style>
   .head { display: grid; gap: 8px; margin-top: 12px; }
   .row-list { margin-top: 8px; }
+  .past { margin-top: 14px; }
   .head h1 { margin: 0; }
   .meta { margin: 0; color: var(--ink-2); }
   .says .bubble p { margin: 0 0 4px; }

@@ -24,6 +24,7 @@ export const KANKO = {
   period: '前期（R4〜R6）',
   dept: '文化観光スポーツ部 観光政策課',
   href: '/keikaku/kanko/',
+  theme: 'kanko', // くらしのテーマ「観光」のページに要約の枠を出す
 };
 // 報告のある年度。R4 は本編が読めないので、概要版の件数（years.json）だけ
 export const RM_YEARS = [2022, 2023, 2024];
@@ -105,6 +106,31 @@ export function kankoTenkaiList() {
   return [...m.values()];
 }
 export const kankoTenkai = (id) => kankoTenkaiList().find((t) => t.id === id);
+
+// 観光ロードマップの成果指標の行き先（施策展開のページの指標の札）
+export const kankoSeikaAnchor = (shisakuId, key) => `rms-${shisakuId}-${torikumiSlug(key)}`;
+// 成果指標の一覧の並び（基準値より悪いものを先に）
+const JUDGE_ORDER = { 後退: 0, 横ばい: 1, その他: 2, 前進: 3 };
+const NO_VALUE = new Set(['', '―', '-', '－', 'ー']);
+// 最新の報告（R6）の成果指標を1行ずつにする。最新の実績値（実績値の欄の最後の値と、その参照年）と、
+// 基準値から目標値までのうちどこまで進んだか（progress。0 で基準値、1 で目標値、マイナスは基準値より悪い）を付け、悪い順に並べる
+export function kankoSeikaList() {
+  const rows = kankoShisakuList().flatMap((s) =>
+    s.seika.filter((g) => g.years[RM_LATEST]).map((g) => {
+      const x = g.years[RM_LATEST];
+      const i = x.actual_raw.map((v, j) => (NO_VALUE.has(v) ? -1 : j)).filter((j) => j >= 0).pop();
+      const value = i != null ? x.actual[i] : null;
+      const progress = value != null && x.base != null && x.target != null && x.target !== x.base ? (value - x.base) / (x.target - x.base) : null;
+      return {
+        ...g, x, rm: s, judgement: x.judgement || 'その他',
+        latestRaw: i != null ? x.actual_raw[i] : '', latestRef: i != null ? x.ref_years[i] || x.years[i] : '', progress,
+        href: `${kankoTenkaiHref(s.tenkai_id)}#${kankoSeikaAnchor(s.id, g.key)}`,
+      };
+    }),
+  );
+  return rows.sort((a, b) => JUDGE_ORDER[a.judgement] - JUDGE_ORDER[b.judgement] || (a.progress ?? 0) - (b.progress ?? 0));
+}
+export const isBehind = (r) => r.judgement === '後退' || r.judgement === '横ばい';
 
 // 観光ロードマップの取組には自分のページが無いので、施策展開のページの取組のカードを行き先にする
 export const kankoTorikumiAnchor = (shisakuId, key) => `rmt-${shisakuId}-${torikumiSlug(key)}`;
