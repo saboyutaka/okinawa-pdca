@@ -3,13 +3,14 @@
 // ゴール（目標値）へ。青い点が実績値。図は scripts/charts.js が表示幅で描く。凡例は施策ページの節の頭に1回だけ、値は「表で見る」にもある
 import { YEARS, LATEST, yearLabel, planIndex, withUnit, refText } from '../lib/data.js';
 
-interface Props { row: any; unit?: string }
+// drawable を渡すと、図を描くかをそれで決める（主要指標は目標値が文でも描く）
+interface Props { row: any; unit?: string; drawable?: boolean }
 const { row, unit = '' } = Astro.props;
 const years = YEARS.filter((y) => row.years[y]).map((y) => {
   const r = row.years[y];
   return { y, actual: r.actual, actual_raw: r.actual_raw, ref: refText(r.actual_ref_year), plan: r.plan || [], plan_raw: r.plan_raw || [], target: r.target, target_raw: r.target_raw, target_year: r.target_year, base: r.base, base_raw: r.base_raw };
 });
-const drawable = years.some((r) => r.actual != null) && years.some((r) => r.target != null);
+const drawable = Astro.props.drawable ?? (years.some((r) => r.actual != null) && years.some((r) => r.target != null));
 const data = JSON.stringify({ unit, years, latest: row.latest.year === LATEST }).replace(/</g, '\\u003c');
 const periodText = (r) => `${r.y <= 2024 ? '前期' : '中期'}は基準値 ${withUnit(r.base_raw, unit)} から目標値 ${withUnit(r.target_raw, unit)}（${r.target_year}）まで`;
 const periods = [years.filter((r) => r.y <= 2024).pop(), years.filter((r) => r.y >= 2025).pop()].filter(Boolean);

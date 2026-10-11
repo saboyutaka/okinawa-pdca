@@ -61,7 +61,7 @@ const pieces = (c, p) => {
             <span class="gs-main"><span class:list={['gs-v', now.t.value == null && 'text']}>{pieces(now.t, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="目標値" />（{now.target_year}）{now.t.note}</span></span>
           </li>
         </ol>
-        <SeikaChart row={p} unit={p.scale === 1 ? p.unit : ''} />
+        <SeikaChart row={p} unit={p.scale === 1 ? p.unit : ''} drawable={p.drawable} />
         {plain && (
           <div class="j-years">
             <div class="small secondary label">4年間の見通し</div>

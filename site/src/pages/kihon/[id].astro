@@ -28,8 +28,10 @@ const src = k.source && sourceLink(k.source, k.page);
 const shuyou = shuyouRows(k.id);
 const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
 const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
-// 図を描ける（実績値と目標値が数で読める）部分があるときだけ凡例を出す
-const drawable = shuyou.some((r) => r.parts.some((p) => Object.values(p.years).some((y) => y.actual != null) && Object.values(p.years).some((y) => y.target != null)));
+// 図を描ける部分があるときだけ凡例を出す（ゴールの丸は、目標値が数で読める部分があるときだけ）
+const parts = shuyou.flatMap((r) => r.parts);
+const drawable = parts.some((p) => p.drawable);
+const goal = parts.some((p) => p.drawable && p.goal);
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -64,7 +66,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <p class="small secondary lead">スタートの基準値からゴールの目標値へ、青い点の実績値がどこまで進んだかを見ます。</p>
     {drawable && (
       <ul class="chart-key" aria-hidden="true">
-        <li><span class="k-ring"></span>ゴールの目標値</li>
+        {goal && <li><span class="k-ring"></span>ゴールの目標値</li>}
         <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
       </ul>
     )}

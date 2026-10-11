@@ -226,7 +226,11 @@ function shuyouParts(latest, years) {
         target_year: r.year <= 2024 ? 'R6年度' : 'R9年度', plan: [], plan_raw: [],
       });
     }
-    return { ...p, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, latest: { ...now, name: p.name } };
+    // 図は、実績値と基準値か目標値が数で読めれば描く（目標値が「可能な限り減少させる」のような文の指標も、スタートからの動きを見せる）
+    const ys = Object.values(p.years);
+    const goal = ys.some((r) => r.target != null);
+    const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
+    return { ...p, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...now, name: p.name } };
   });
 }
 
