@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups,
+  amountEntries, budgetGroups, judgeByGrid,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import {
@@ -21,6 +21,22 @@ test('抽出側の名前の key（name_key）と、サイトの nameKey が同�
     const rows: { name: string; key: string }[] = load(file);
     none(rows.filter((r) => nameKey(r.name) !== r.key), (r) => `${file}: ${r.name} → ${r.key}`);
   }
+});
+
+test('施策総括表に印字された判定（A〜G）は、取組の内訳と成果指標の達成率から区分表で計算したものと同じ', () => {
+  // 判定・「主な取組数」の内訳・達成率の読み取りが互いに矛盾しないことの確かめ（区分表のマスの置き方の確かめにもなる）。
+  // 成果指標が2つ以上ある施策は達成率を平均する（施策総括表の印字はこの平均と合う。概要版の件数は100%で頭打ちにした平均とみられ、少しずれる）
+  const bad: string[] = [];
+  for (const s of load('shisaku')) {
+    if (!s.judge || !s.summary_counts) continue;
+    const n = Object.values(s.summary_counts).reduce((a, b) => a + b, 0);
+    const rates = load('seika').filter((x) => x.year === s.year && x.shisaku_id === s.id)
+      .map((x) => (x.rate != null ? x.rate : x.rate_raw === '達成' ? 100 : x.rate_raw === '未達成' ? 0 : null)).filter((v): v is number => v != null);
+    if (!n || !rates.length) continue;
+    const k = judgeByGrid((100 * (s.summary_counts['順調'] || 0)) / n, rates.reduce((a, b) => a + b, 0) / rates.length);
+    if (k !== s.judge) bad.push(`${s.year} ${s.id}: 印字 ${s.judge}・計算 ${k}`);
+  }
+  none(bad, (x) => x);
 });
 
 test('施策は施策コードの順に並ぶ（1-1-a-2 の次に 1-1-a-10）', () => {

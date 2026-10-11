@@ -93,7 +93,7 @@ const stOf = (g: KankoTorikumiGroup) => {
                     <div class="small secondary">
                       {sec ? <a class="sub-link" href={sec}>{t.section}</a> : t.section}・施策 <a class="sub-link" href={kankoShisakuHref(g.rm)}>{g.rm.name}</a> <span class="code-no">{g.rm.code}</span>
                     </div>
-                    {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>}
+                    {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {(t.target || '—').replace(/\n/g, ' ／ ')} → 実績 {(t.actual || '—').replace(/\n/g, ' ／ ')}</div>}
                     {g.pdca.length > 0
                       ? <div class="small secondary">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a></>)}</div>
                       : <div class="small secondary">観光ロードマップにしか無い取組</div>}

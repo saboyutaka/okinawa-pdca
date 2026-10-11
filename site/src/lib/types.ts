@@ -75,8 +75,9 @@ export interface TorikumiRow {
   summary: string;
   source: string;
   page: number;
-  target: string;
+  target: string; // 目標。セルが2行以上に分かれているものは、空でない値を改行でつないだもの（行ごとの対応は lines）
   actual: string;
+  lines?: { target: string; actual: string }[]; // 目標・実績のセルが2行以上のときだけ。印字の行ごとの目標と実績（空のセルは ''）
   status: string; // 進捗状況。空欄・「-」は ''
   status_raw: string;
 }
@@ -164,9 +165,10 @@ export interface BukyokuTorikumiRow {
   url: string;
   activity_done: string;
   activity_next: string;
-  indicator_name: string;
+  indicator_name: string; // 活動指標の表が2つ以上あるときは、印字で最初の表（総括報告書の目標・実績の1行目に当たる）
   past: { year: string; value: string }[];
   achievement: string;
+  indicators?: { name: string; past: { year: string; value: string }[]; achievement: string }[]; // 活動指標の表が2つ以上あるときだけ。印字の順のすべての表
   basis: string;
   improvements: { plan: string; result: string }[];
   check: { type: string; text: string }[];
@@ -191,6 +193,8 @@ export interface BukyokuFileRow {
   link_text: string;
   page_url: string;
   page_title: string;
+  content_year?: number; // 中身が別の年度の票（県のページに前の年度の票が掲載されているもの）のときの、中身の年度。取組は取り込まない
+  note?: string; // そのときの理由
 }
 
 // ---------------------------------------------------------------- 観光ロードマップ（kanko/）
@@ -222,6 +226,7 @@ export interface KankoShisakuRow {
 
 // 総括報告書の取組と同じ欄に、沖縄県PDCA の取組との結び付き（pdca）を足したもの
 export interface KankoTorikumiRow extends TorikumiRow {
+  name_note?: string; // 取組名の欄で、所管部課の後ろに書かれた小事業の一覧など（R5 3-d-2 No.2 だけ）
   pdca: { shisaku_id: string; key: string; status: string }[];
   pdca_match: string | null;
 }
@@ -298,6 +303,8 @@ export interface IkkatsuJigyoRow {
   sheet_page: number | null;
   sheet_name?: string;
   shisaku_from?: number;
+  shisaku_ref?: { printed: string; source: string; page: number }; // 検証シートが画像だけの PDF で、施策のコードを画像から読んだもの（extract_ikkatsu.py の SHEET_FIXES）
+  sheet_image?: { source: string; page: number; fields: string[] }; // そのとき画像から読んだ検証シートの場所と、画像から読んだ欄（shisaku_ids・dept・budget）
 }
 
 // ---------------------------------------------------------------- 評価検証報告書（hyoka/）

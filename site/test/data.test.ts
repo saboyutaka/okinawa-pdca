@@ -5,7 +5,7 @@ import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
-  PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -15,6 +15,24 @@ test('年度の書き方', () => {
   assert.equal(yearLong(2022), '令和4年度');
   assert.equal(planLabel(2024), '前期実施計画（R4〜R6）');
   assert.equal(planLabel(2025), '中期実施計画（R7〜R9）');
+});
+
+test('judgeByGrid: 県の区分表のマス（A・B は「順調」の割合40%以上の2段、C・D は達成率40%未満の列を80%で分ける）', () => {
+  // [「順調」の割合, 達成率, 判定]
+  const cases: [number, number, string][] = [
+    [100, 100, 'A'], [40, 80, 'A'], [79.9, 80, 'A'], [50, 120, 'A'],
+    [100, 79.9, 'B'], [40, 40, 'B'], [60, 50, 'B'],
+    [80, 39.9, 'C'], [100, -20, 'C'],
+    [79.9, 39.9, 'D'], [40, 0, 'D'],
+    [39.9, 80, 'E'], [0, 150, 'E'],
+    [39.9, 40, 'F'], [20, 79.9, 'F'],
+    [39.9, 39.9, 'G'], [0, -100, 'G'],
+  ];
+  for (const [y, x, k] of cases) assert.equal(judgeByGrid(y, x), k, `順調 ${y}%・達成率 ${x}%`);
+  // マスは重ならず、すべての点がどれか1つに入る
+  for (let y = 0; y <= 100; y += 5) for (let x = -50; x <= 200; x += 5) {
+    assert.equal(JUDGE_CELLS.filter((c) => y >= c.y[0] && y < c.y[1] && x >= c.x[0] && x < c.x[1]).length, 1, `${y} ${x}`);
+  }
 });
 
 test('planIndex: 計画値の欄の何番目か（前期は R4 から、中期は R7 から数える）', () => {
@@ -99,6 +117,9 @@ test('nameKey: 空白・中黒・句読点・括弧を除き、全角を半角�
 test('部局: 所管部課から部局を取り出し、部局のページの URL にする', () => {
   assert.deepEqual(splitDepts('商工労働部土木建築部'), ['商工労働部', '土木建築部']);
   assert.deepEqual(splitDepts('知事公室教育庁'), ['知事公室', '教育庁']);
+  // 「、」「,」で区切られたもの（抽出で欄の中の改行を「、」にしたもの・R6以降の印字の「,」）
+  assert.deepEqual(splitDepts('商工労働部、土木建築部'), ['商工労働部', '土木建築部']);
+  assert.deepEqual(splitDepts('企画部, 文化観光スポーツ部'), ['企画部', '文化観光スポーツ部']);
   assert.deepEqual(splitDepts(''), []);
   assert.equal(deptOf('商工労働部産業政策課'), '商工労働部');
   assert.equal(deptOf('知事公室防災危機管理課'), '知事公室');

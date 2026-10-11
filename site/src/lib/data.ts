@@ -77,6 +77,20 @@ export const JUDGES: (Category & { label: string })[] = [
 ];
 export const judgeOf = (key: string | null | undefined) => JUDGES.find((j) => j.key === key);
 
+// 県の概要版の「施策評価の判定基準」区分表（R4〜R7 とも同じ）。y は主な取組のうち「順調」の割合、x は成果指標の計画値に対する達成率（%）。
+// A と B は「順調」の割合40%以上の2段にまたがり、C・D は達成率40%未満の列を「順調」の割合80%で分ける（components/JudgeMatrix.astro のマス）。
+// 範囲は [下限, 上限)。y・x のラベルは画面の説明に使う
+export const JUDGE_CELLS = [
+  { key: 'A', y: [40, Infinity], x: [80, Infinity], yText: '40%以上', xText: '80%以上' },
+  { key: 'B', y: [40, Infinity], x: [40, 80], yText: '40%以上', xText: '40〜80%' },
+  { key: 'C', y: [80, Infinity], x: [-Infinity, 40], yText: '80%以上', xText: '40%未満' },
+  { key: 'D', y: [40, 80], x: [-Infinity, 40], yText: '40〜80%', xText: '40%未満' },
+  { key: 'E', y: [-Infinity, 40], x: [80, Infinity], yText: '40%未満', xText: '80%以上' },
+  { key: 'F', y: [-Infinity, 40], x: [40, 80], yText: '40%未満', xText: '40〜80%' },
+  { key: 'G', y: [-Infinity, 40], x: [-Infinity, 40], yText: '40%未満', xText: '40%未満' },
+] as const;
+export const judgeByGrid = (y: number, x: number) => JUDGE_CELLS.find((c) => y >= c.y[0] && y < c.y[1] && x >= c.x[0] && x < c.x[1])!.key;
+
 // 施策の判定の移り変わり（施策をさがすの「判定の移り変わり」）。数え方はここだけで決め、施策の trends に入れる。判定は R5 から（R4 は公表されていない）。
 // 上がった・下がったは、判定を A 順調 → B 概ね順調 → C〜F（取組か成果が遅れている）→ G 大幅遅れ の順に並べて前の年度と比べる（C〜F の中での入れ替わりは数えない）
 // ranks は年度の順の判定の順位（判定の無い年度は null）
@@ -124,7 +138,8 @@ export const JUDGEMENTS: Category[] = [
 export const toneOfJudgement = (j: string | null | undefined) => JUDGEMENTS.find((x) => x.key === j)?.tone;
 
 const DEPT_RE = /(知事公室|県警本部|警察本部|教育庁|企業局|病院事業局|.+?部)/g;
-export const splitDepts = (s: string | null | undefined): string[] => (s || '').match(DEPT_RE) || [];
+// 関係部等は「、」「,」で区切られていることがある（抽出で欄の中の改行を「、」にしたもの・R6以降の印字の「,」）。区切ってから部局の名前を探す
+export const splitDepts = (s: string | null | undefined): string[] => (s || '').split(/[、,，]/).flatMap((x) => x.trim().match(DEPT_RE) || []);
 
 export function countBy<T>(rows: T[], keyFn: (r: T) => string, keys: string[]) {
   const out = Object.fromEntries(keys.map((k) => [k, 0]));
@@ -151,6 +166,11 @@ export function getKihonList() {
       mezasu: k.mezasu || all.find((x) => x.id === k.id && x.mezasu)?.mezasu || '',
     }));
 }
+
+// 主要指標の数（県の概要版「主要指標の達成状況」の「主要指標N指標」。R4〜R7 とも49）。付属資料の表は1行に複数の指標が並ぶので、行の数（37）とは違う
+export const SHUYOU_COUNT: Record<number, number> = { 2022: 49, 2023: 49, 2024: 49, 2025: 49 };
+// 概要版の「成果指標の達成状況」の「うちN指標が計画値を達成」（このサイトの数え方（rateBin の 100%以上）とは数件ずれる。about の注意点）
+export const SEIKA_REACHED_PUBLISHED: Record<number, number> = { 2022: 204, 2023: 211, 2024: 220, 2025: 204 };
 
 export function getShuyou(kihonId: string) {
   return load('shuyou').filter((s) => s.kihon_id === kihonId);
@@ -737,8 +757,9 @@ let pdfCount: number | undefined;
 export function getPdfCount() {
   if (pdfCount != null) return pdfCount;
   const file = path.resolve(process.cwd(), '../data/raw/manifest.jsonl');
-  pdfCount = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map((l): { sha256?: string; local_path?: string; fiscal_year?: string | number } => JSON.parse(l))
-    .filter((r) => r.sha256 && /\.pdf$/i.test(r.local_path || '') && YEARS.includes(Number(r.fiscal_year))).length;
+  // 県が同じファイルを別の年度・別の名前でも掲載していることがあるので、中身（sha256）が同じものは1件と数える
+  pdfCount = new Set(fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map((l): { sha256?: string; local_path?: string; fiscal_year?: string | number } => JSON.parse(l))
+    .filter((r) => r.sha256 && /\.pdf$/i.test(r.local_path || '') && YEARS.includes(Number(r.fiscal_year))).map((r) => r.sha256)).size;
   return pdfCount;
 }
 
@@ -877,14 +898,25 @@ export function activityQty(raw: string | null | undefined) {
 // 画面に出す単位は報告書の文字のまま（₂ や ㎥ を崩さない）
 const activityUnitText = (raw: string) => raw.match(/^[-−△▲－]?\s*[\d０-９,，.．]+\s*([^\s（(→]*)/)?.[1] ?? '';
 // 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「計画 10件 → 実績 54件」のように同じ単位の数から計算する
+// 活動指標の表が2つ以上ある取組（部局票の indicators）と、目標・実績が2行以上の取組（総括報告書の lines）は、1つの割合にまとめられないので null
+// （表ごとの達成割合は activityAchievements）
 export function activityAchievement(g: TorikumiGroup, y: number) {
-  const raw = budgetOf(y, g.shisaku.id, g.key)?.achievement ?? '';
+  const rec = budgetOf(y, g.shisaku.id, g.key);
+  if ((rec?.indicators?.length ?? 0) > 1) return null;
+  const raw = rec?.achievement ?? '';
   const m = raw.normalize('NFKC').match(/(-?[\d,.]+)\s*%/);
   if (m) return { pct: Number(m[1].replace(/,/g, '')), text: raw };
   const r = g.years[y];
+  if (r?.lines) return null;
   const a = activityQty(r?.actual);
   const b = activityQty(r?.target);
   return a && b && b.v > 0 && a.u === b.u ? { pct: (a.v / b.v) * 100, text: `${Math.round((a.v / b.v) * 100)}%（計算）` } : null;
+}
+
+// 活動指標の表が2つ以上ある取組の、表ごとの名前と達成割合（印字の順。1つだけなら []）
+export function activityAchievements(g: TorikumiGroup, y: number) {
+  const list = budgetOf(y, g.shisaku.id, g.key)?.indicators ?? [];
+  return list.length > 1 ? list.map((x) => ({ name: x.name, text: x.achievement })) : [];
 }
 
 // 活動指標の1年分。future は部局票の年度別計画にだけある、この先の年度（実績はまだ無い）
@@ -916,7 +948,14 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
     const r = g.years[y];
     if (!r) continue;
     const indicator = r.indicator || budgetOf(y, g.shisaku.id, g.key)?.indicator_name || '';
-    const row = { y, plan_raw: r.target, actual_raw: r.actual, status: statusOf(r), ach: activityAchievement(g, y)?.text ?? '', future: false };
+    const achs = activityAchievements(g, y);
+    const ach = achs.length ? achs.map((x) => x.text || '—').join('\n') : activityAchievement(g, y)?.text ?? '';
+    // 目標・実績が2行以上の取組は、行ごとの値を改行でつないで表に出す（図には置かない）
+    const lines = r.lines;
+    const row = {
+      y, plan_raw: lines ? lines.map((l) => l.target || '—').join('\n') : r.target, actual_raw: lines ? lines.map((l) => l.actual || '—').join('\n') : r.actual,
+      status: statusOf(r), ach, future: false,
+    };
     const last = runs.at(-1);
     if (last && nameKey(last.indicator) === nameKey(indicator)) last.years.push(row);
     else runs.push({ indicator, years: [row] });
@@ -939,9 +978,10 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
   return runs.reverse().map((run, k) => {
     // 単位は、数で読めた値でいちばん多いもの
     const count = new Map<string, number>();
-    for (const r of run.years) for (const q of [activityQty(r.plan_raw), activityQty(r.actual_raw)]) if (q) count.set(q.u, (count.get(q.u) ?? 0) + 1);
+    for (const r of run.years) for (const q of [r.plan_raw, r.actual_raw].map((raw) => (raw.includes('\n') ? null : activityQty(raw)))) if (q) count.set(q.u, (count.get(q.u) ?? 0) + 1);
     const unit = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
-    const val = (raw: string) => { const q = activityQty(raw); return q && q.u === unit ? q.v : null; };
+    // 2行以上の値（目標・実績が行ごとに分かれた取組）は図に置かない
+    const val = (raw: string) => { const q = raw.includes('\n') ? null : activityQty(raw); return q && q.u === unit ? q.v : null; };
     const years = run.years.map((r) => ({ ...r, plan: val(r.plan_raw), actual: val(r.actual_raw) }));
     const chart = years.some((r) => r.actual != null);
     const unitRaw = years.flatMap((r) => [r.actual_raw, r.plan_raw]).find((raw) => val(raw) != null);

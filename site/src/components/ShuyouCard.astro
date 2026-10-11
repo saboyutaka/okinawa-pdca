@@ -17,7 +17,11 @@ const yl = yearLabel(x.year);
 const yearsDesc = [...YEARS].reverse();
 const split = row.parts.length > 1;
 // 計画期間をまたいで基準値・目標値が変わった（R6→R7）
-const prev = yearsDesc.some((y) => y < x.year && row.years[y] && (y <= 2024) !== (x.year <= 2024));
+const prevRow = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
+const prev = Boolean(prevRow);
+// 新しくなったのはスタート（基準値）・ゴール（目標値）のどちらか。どちらも同じ指標もある（欄の中の改行・全角半角の違いは同じとみなす）
+const sameText = (a: string | null | undefined, b: string | null | undefined) => (a || '').normalize('NFKC').replace(/\s/g, '') === (b || '').normalize('NFKC').replace(/\s/g, '');
+const renewed = prevRow && [!sameText(prevRow.base_raw, x.base_raw) && 'スタート', !sameText(prevRow.target_raw, x.target_raw) && 'ゴール'].filter(Boolean).join('と');
 // 値は数字を大きく、位と単位を小さく出す（「3兆2,885億円」→ 3 兆 2,885 億円）。単位の書かれていない数には指標の単位を添える。文の値はそのまま
 const pieces = (c: Cell, p: ShuyouPart) => {
   if (c.value == null) return [{ t: c.text, n: true }];
@@ -73,7 +77,7 @@ const pieces = (c: Cell, p: ShuyouPart) => {
   })}
   {prev && (
     <p class="small secondary note">
-      {yl}から中期<Term word="実施計画" />になり、スタートとゴールが新しくなりました。
+      {yl}から中期<Term word="実施計画" />になり、{renewed ? `${renewed}が新しくなりました` : 'スタートとゴールの値は前期と同じです'}。
     </p>
   )}
   <details>

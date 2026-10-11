@@ -87,7 +87,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 
   {h && (
     <section aria-labelledby="hyoka">
-      <h2 id="hyoka">県による4年間のふりかえり（R4〜R6）</h2>
+      <h2 id="hyoka">県によるふりかえり（R4〜R6の3年間）</h2>
       <p class="small secondary lead">県の<Term word="評価検証報告書" />（{HYOKA.published}）が、この基本施策の成果と課題をまとめたものです。</p>
       <div class="bubble-row voice">
         <span class="avatar" aria-hidden="true">県</span>
@@ -139,7 +139,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <h2 id="source">出典</h2>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の各行にあります。</p>}
-    {hSrc && <p class="small">県による4年間のふりかえり: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
+    {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
   </section>
 </Base>
 

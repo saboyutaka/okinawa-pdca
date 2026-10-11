@@ -37,8 +37,9 @@ export function GET() {
       g.dept,
       g.statuses.map((x) => (x == null ? null : code[x])),
       g.latest.indicator,
-      g.latest.target,
-      g.latest.actual,
+      // 目標・実績が2行以上の取組は、行を「／」でつないで1行にする（一覧の行は1行で描くため）
+      g.latest.lines ? g.latest.lines.map((l) => l.target || '—').join(' ／ ') : g.latest.target,
+      g.latest.lines ? g.latest.lines.map((l) => l.actual || '—').join(' ／ ') : g.latest.actual,
       g.latest.year,
       g.href,
       themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),

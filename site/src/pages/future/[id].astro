@@ -138,7 +138,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
             <span class="big k-pv">{pct(k.ok, k.n)}</span>
           </div>
           {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
-          <div class="small secondary"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a>（うち成果が遅れている {fmt(k.cd)}）</div>
+          <div class="small secondary"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a>（うち成果だけが遅れている {fmt(k.cd)}）</div>
           {k.shuyou.length > 0 && (
             <ul class="shuyou">
               {k.shuyou.map((r) => {

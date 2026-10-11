@@ -19,7 +19,8 @@ const sentence = j.targets.length > 0 && j.targets.every((x) => !x.target);
 const b = j.budget || {};
 const past = Object.values(g.years).filter((r) => r.year !== j.year).sort((a, c) => c.year - a.year);
 const src = planSourceLink('ikkatsu', j.source, j.page);
-const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.sheet_page);
+// 検証シート。画像だけの PDF のシート（R5 の一部）は、画像から読んだ場所（sheet_image）にリンクする
+const sheet = j.sheet_source ? planSourceLink('ikkatsu', j.sheet_source, j.sheet_page) : j.sheet_image && planSourceLink('ikkatsu', j.sheet_image.source, j.sheet_image.page);
 ---
 <article class="sticker ik anchor" id={ikkatsuAnchor(g.key)}>
   <div class="th">
@@ -57,7 +58,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
   {(j.overview || j.policy) && (
     <details>
       <summary>事業の内容と今後の方針</summary>
-      {j.overview && <p class="small"><strong>事業概要:</strong> {j.overview}</p>}
+      {j.overview && <p class="small prose"><strong>事業概要:</strong> {j.overview}</p>}
       {j.policy && <p class="small prose"><strong>今後の取り組み方針:</strong> {j.policy}</p>}
     </details>
   )}
@@ -75,6 +76,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
   <p class="small src">
     出典: {src ? <ExtLink href={src.href}>総括表 {j.page}ページ</ExtLink> : '—'}{sheet && <>、<ExtLink href={sheet.href}>検証シート（{sheet.label}）</ExtLink></>}
     {j.shisaku_from && <span class="secondary">（{yearLabel(j.year)}の検証シートが読めないため、施策は{yearLabel(j.shisaku_from)}の記載によります）</span>}
+    {j.shisaku_ref && <span class="secondary">（{yearLabel(j.year)}の検証シートは画像だけのPDFのため、施策のコード「{j.shisaku_ref.printed}」{j.sheet_image?.fields.includes('dept') && '・担当部課'}{j.sheet_image?.fields.includes('budget') && '・予算'}は画像を見て読み取っています）</span>}
   </p>
 </article>
 
