@@ -32,12 +32,12 @@ const visions = getShouraizou().map((v) => ({ ...v, items: items.filter((s) => s
 const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`}>
-  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/theme/">くらしのテーマ</a> › {t.label}</nav>
+  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/#themes">くらしのテーマ</a> › {t.label}</nav>
   <header class="t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <div>
       <h1>{t.label}<span class="own">このサイト独自の分類</span></h1>
-      <p class="small secondary">県の計画の分類ではありません。施策の名前・施策展開・基本施策の名前に「{t.words.join('」「')}」のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標（名前にこれらの言葉を含むものも）です（<a href="/theme/">テーマの決め方</a>）。</p>
+      <p class="small secondary">県の計画の分類ではありません。施策の名前・施策展開・基本施策の名前に「{t.words.join('」「')}」のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標（名前にこれらの言葉を含むものも）です（<a href="/about/#theme">テーマの決め方</a>）。</p>
     </div>
   </header>
 
