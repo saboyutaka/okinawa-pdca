@@ -12,7 +12,6 @@ import Sz from '../../../components/Sz.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import ShareBox from '../../../components/ShareBox.astro';
-import { shareText } from '../../../lib/iken.ts';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import { JUDGE_UI } from '../../../lib/icons.ts';
@@ -111,7 +110,7 @@ const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 ---
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
-  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: t.name }]} share={{ text: shareText('主な取組', t.name), label: 'この主な取組を SNS でシェア' }} />
+  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: t.name }]} />
 
   <a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
     <span class="p-kind">この取組が入っている施策</span>
