@@ -84,9 +84,7 @@ body {
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
-/* 文章の最後の行に1〜2文字だけ落ちる（「…見通しで / す。」）のを避ける（見出しは balance）。段落など文章のかたまりだけに付ける
-   （一覧の行や表のセルまで付けると、大きな一覧のページで折り返しの計算が重くなるため）。対応していないブラウザでは今までどおり */
-p, dd, figcaption, summary { text-wrap: pretty; }
+/* 文章に text-wrap: pretty は付けない。iOS の Safari は段落の全部の行の長さをそろえるので、どの行も早めに折り返されて右が空く */
 a { color: var(--link); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
 a:hover { text-decoration-thickness: 2.5px; }
 /* リンクは3種類。文章の中のリンクは上の青と下線のまま（黒の太字にすると強調と見分けがつかないため）。
