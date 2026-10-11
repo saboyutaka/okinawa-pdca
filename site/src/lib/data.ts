@@ -652,37 +652,27 @@ export function seikaHrefByName(shisakuId: string, name: string | null | undefin
   const k = sameKey(nameKey(name || ''));
   return (list.find((r) => sameKey(nameKey(r.latest.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.latest.name)))?.href ?? null;
 }
-// 主な取組と成果指標の結び付き。ある年度の部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。
-// 当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
-function seikaOfTorikumiIn(shisakuId: string, key: string, year: number) {
-  const name = budgetOf(year, shisakuId, key)?.seika_name || '';
-  const groups = name ? seikaGroupsOf(shisakuId).filter((g) => g.years[year] && seikaNameMatches(name, g.years[year].name)) : [];
-  return { year, name, groups };
-}
-// 主な取組の対応する成果指標（取組のページ・施策ページの取組のカード）。部局票がある最新の年度のもの
+// 主な取組の対応する成果指標（取組のページ・施策ページの取組のカード）。部局票がある最新の年度の「対応する成果指標」（名前）を、
+// 同じ施策のその年度の成果指標の名前と比べ、当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
 export function seikaOfTorikumi(shisakuId: string, row: YearGroup<TorikumiRow>) {
   const year = [...YEARS].reverse().find((y) => row.years[y] && budgetOf(y, shisakuId, row.key));
-  return year ? seikaOfTorikumiIn(shisakuId, row.key, year) : { year, name: '', groups: [] };
+  const name = (year && budgetOf(year, shisakuId, row.key)?.seika_name) || '';
+  const groups = year && name ? seikaGroupsOf(shisakuId).filter((g) => g.years[year] && seikaNameMatches(name, g.years[year].name)) : [];
+  return { year, name, groups };
 }
-// 成果指標にかかわる主な取組（成果指標のページ）。どれかの年度の部局票で、この指標に対応するとされている取組。
-// 最新の年度だけで結ぶと、R6 で終わった指標に取組が付かない（取組の R7 の部局票は、入れ替わった後の指標を指すため）。
-// 並びは施策ページの取組の並び（最新の報告にあるものが先）
-let torikumiBySeika: Map<string, TorikumiGroup[]> | undefined;
+// 成果指標の施策の主な取組（成果指標のページ）。指標の最新の報告と同じ年度の報告にある取組で、並びは施策ページの取組の並び。
+// 部局票の「対応する成果指標」は、県が施策の成果指標をまとめて書いていて（同じ施策の取組はどれも同じ名前。test/integrity.test.ts）、
+// 取組ごとには分かれていないので、名前で結ばずに施策の取組をまとめて出す
+let torikumiByShisaku: Map<string, TorikumiGroup[]> | undefined;
 export function torikumiOfSeika(row: SeikaGroupOfShisaku) {
-  if (!torikumiBySeika) {
-    torikumiBySeika = new Map();
+  if (!torikumiByShisaku) {
+    torikumiByShisaku = new Map();
     for (const g of getTorikumiGroups()) {
-      for (const y of YEARS) {
-        if (!g.years[y]) continue;
-        for (const x of seikaOfTorikumiIn(g.shisaku.id, g.key, y).groups) {
-          if (!torikumiBySeika.has(x.href)) torikumiBySeika.set(x.href, []);
-          const list = torikumiBySeika.get(x.href)!;
-          if (!list.includes(g)) list.push(g);
-        }
-      }
+      if (!torikumiByShisaku.has(g.shisaku.id)) torikumiByShisaku.set(g.shisaku.id, []);
+      torikumiByShisaku.get(g.shisaku.id)!.push(g);
     }
   }
-  return torikumiBySeika.get(row.href) || [];
+  return (torikumiByShisaku.get(row.shisaku.id) || []).filter((g) => g.years[row.latest.year]);
 }
 
 // ---------------------------------------------------------------- 部局
