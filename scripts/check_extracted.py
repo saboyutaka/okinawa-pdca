@@ -9,6 +9,10 @@
 進捗状況の内訳・施策の推進状況（A〜G）の差は警告にとどめる。PDF の個別の欄と県の集計が
 もともと一致しないものがあるため（進捗状況が空欄・「-」の取組など。施策の推進状況の差は原因が特定できていない）。
 成果指標の計画値・達成率は、概要版に書かれた式で計算し直して報告書の値と比べ、件数を参考として出す。
+data/extracted のすべての JSON の文字の値から、紛らわしい文字（康熙部首・CJK部首補助・私用領域・置換文字・「(cid:」・
+改行とタブ以外の制御文字）を探し、1つでもあれば失敗にする。PDF の字の対応づけの都合で、印字では同じに見えても
+別の文字（「支」ではなく康熙部首の「⽀」など）として抽出されたもの・読めなかった字の名残で、検索や照合を狂わせる。
+印字と違う普通の漢字に対応づけられた字（例: U+25E65）は、文字だけでは見分けられないので対象外。
 
 標準ライブラリのみで動作。
 """
@@ -17,7 +21,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import unicodedata
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 
 STATUSES = ("順調", "概ね順調", "やや遅れ", "大幅遅れ", "未着手")
@@ -135,6 +141,72 @@ def check_related(extracted: Path) -> bool:
     return ok_all
 
 
+# ---------------------------------------------------------------- 紛らわしい文字
+
+
+def suspicious_char(ch: str) -> str | None:
+    """紛らわしい文字なら種類の名前。普通の文字なら None。"""
+    o = ord(ch)
+    if 0x2F00 <= o <= 0x2FDF:
+        return "康熙部首"
+    if 0x2E80 <= o <= 0x2EFF:
+        return "CJK部首補助"
+    if 0xE000 <= o <= 0xF8FF:
+        return "私用領域"
+    if o == 0xFFFD:
+        return "置換文字"
+    if unicodedata.category(ch) == "Cc" and ch not in "\n\t":
+        return "制御文字"
+    return None
+
+
+def suspicious_in(s: str) -> list[str]:
+    """文字列の中の紛らわしい文字の説明（例「U+2F40 ⽀（康熙部首）」）。同じ文字は1回だけ。"""
+    out = []
+    if "(cid:" in s:
+        out.append("「(cid:」（読めなかった字の名残）")
+    for ch in dict.fromkeys(s):
+        kind = suspicious_char(ch)
+        if kind:
+            out.append(f"U+{ord(ch):04X} {repr(ch) if kind == '制御文字' else ch}（{kind}）")
+    return out
+
+
+def walk_strings(value, path: str = "") -> Iterator[tuple[str, str]]:
+    """JSON の値の中の文字列を（欄の道すじ, 文字列）で順に返す。道すじは「lines[0].target」の形。"""
+    if isinstance(value, str):
+        yield path, value
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            yield from walk_strings(v, f"{path}[{i}]")
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from walk_strings(v, f"{path}.{k}" if path else str(k))
+
+
+def record_label(rec) -> str:
+    """レコードを見分けるための短い表示（年度・ID・施策・番号・名前）。"""
+    if not isinstance(rec, dict):
+        return ""
+    parts = [f"{k}={rec[k]}" for k in ("year", "id", "shisaku_id", "kihon_id", "no") if rec.get(k) not in (None, "")]
+    if isinstance(rec.get("name"), str):
+        parts.append(rec["name"][:20])
+    return " ".join(parts)
+
+
+def check_chars(extracted: Path) -> list[tuple[str, str, str, str]]:
+    """data/extracted のすべての JSON から紛らわしい文字を探す。（ファイル, レコード, 欄, 文字の説明）の一覧。"""
+    out = []
+    for f in sorted(extracted.rglob("*.json")):
+        data = json.loads(f.read_text(encoding="utf-8"))
+        records = data if isinstance(data, list) else [data]
+        for i, rec in enumerate(records):
+            for path, s in walk_strings(rec):
+                for desc in suspicious_in(s):
+                    out.append((str(f.relative_to(extracted)), f"[{i}] {record_label(rec)}".rstrip(), path, desc))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dir", default="data/extracted/soukatsu")
@@ -180,6 +252,14 @@ def main() -> int:
             print(f"  R{year - 2018}: 総括の取組 {len(keys)} のうち部局票あり {len(keys & found)}"
                   + (f"、総括に無い取組 {orphan}" if orphan else ""))
     failed |= not check_related(d.parent)
+
+    findings = check_chars(d.parent)
+    print("== 紛らわしい文字（康熙部首・CJK部首補助・私用領域・置換文字・「(cid:」・制御文字）")
+    for f, rec, field, desc in findings:
+        print(f"  NG {f} {rec} {field}: {desc}")
+    if not findings:
+        print("  OK なし")
+    failed |= bool(findings)
     return 1 if failed else 0
 
 

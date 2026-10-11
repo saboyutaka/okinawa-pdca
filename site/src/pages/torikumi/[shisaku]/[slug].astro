@@ -18,7 +18,7 @@ import { themeIdsOfItem } from '../../../lib/themes.ts';
 import { JUDGE_UI } from '../../../lib/icons.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
-  sectionHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement,
+  sectionHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements, seikaGroupOf, seikaHref as seikaLinkHref,
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -46,9 +46,13 @@ const seikaName = latestRec?.seika_name;
 const seikaHref = seikaName && seikaHrefByName(s.id, seikaName);
 // 対応する成果指標の最新の達成率（名前の空白・記号の違いは無視して施策の成果指標から探す）
 const norm = (v: string | null | undefined) => (v || '').normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
-const seikaRow = seikaName && s.seika.filter((x) => x.year === LATEST).find((x) => { const a = norm(x.name); const b = norm(seikaName); return a === b || a.includes(b) || b.includes(a); });
-const seikaTone = seikaRow ? RATE_BINS.find((b) => b.key === rateBin(seikaRow))?.tone : undefined;
-const seikaRate = seikaRow && (seikaRow.rate != null ? `達成率 ${seikaRow.rate}%` : seikaRow.rate_raw || '達成率なし');
+// 部局票の名前が複数の指標をまとめた名前（「〜及び〜」）のときは、当たる指標をすべて出す（1つだけ出すと、区分の違う指標を落とすため）
+const seikaMatches = seikaName ? s.seika.filter((x) => x.year === LATEST).filter((x) => { const a = norm(x.name); const b = norm(seikaName); return a === b || a.includes(b) || b.includes(a); }) : [];
+const rateChip = (x: (typeof seikaMatches)[number]) => ({
+  tone: RATE_BINS.find((b) => b.key === rateBin(x))?.tone,
+  text: `${x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw || '達成率なし'}（${yearLabel(LATEST)}）`,
+});
+const seikaLinkOf = (x: (typeof seikaMatches)[number]) => { const grp = seikaGroupOf(x); return grp ? seikaLinkHref(s.id, grp.key) : null; };
 const candidates = renameCandidates(g);
 const reposts = repostsOf(g);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
@@ -71,6 +75,8 @@ const pj = judgeOf(s.judges[LATEST]);
 
 const toneOfPct = (p: number): Tone => (p >= 90 ? 'good' : p >= 75 ? 'warning' : p >= 60 ? 'serious' : 'critical');
 const latestAch = activityAchievement(g, t.year);
+// 活動指標の表が2つ以上ある取組の、表ごとの達成割合
+const latestAchs = activityAchievements(g, t.year);
 // 活動指標の計画と実績。活動指標が途中で変わった取組は、活動指標ごとに図と表を分ける（新しい活動指標が先）
 const runs = activityRuns(g);
 const runSpan = (run: ActivityRun) => {
@@ -151,7 +157,12 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <div class="sticker fact">
       <div class="tile-label"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
       <div class="f-name">{t.indicator || tr?.indicator_name || '—'}</div>
-      <div class="f-vals">計画 <b>{t.target || '—'}</b> → 実績 <b>{t.actual || '—'}</b></div>
+      {t.lines ? (
+        <ul class="f-lines">{t.lines.map((l) => <li>計画 <b>{l.target || '—'}</b> → 実績 <b>{l.actual || '—'}</b></li>)}</ul>
+      ) : (
+        <div class="f-vals">計画 <b>{t.target || '—'}</b> → 実績 <b>{t.actual || '—'}</b></div>
+      )}
+      {latestAchs.length > 0 && <ul class="tile-sub f-lines">{latestAchs.map((x) => <li>{x.name}: 達成割合 {x.text || '—'}</li>)}</ul>}
       {latestAch && (
         <>
           <Chunk frac={latestAch.pct / 100} tone={toneOfPct(latestAch.pct)} label={`活動指標の達成割合 ${latestAch.text}`} />
@@ -171,7 +182,15 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       {seikaName ? (
         <>
           <div class="f-name">{seikaHref ? <a class="name-link" href={seikaHref}>{seikaName}</a> : seikaName}</div>
-          {seikaRate && <Chip tone={seikaTone} text={`${seikaRate}（${yearLabel(LATEST)}）`} />}
+          {seikaMatches.length === 1 && <Chip tone={rateChip(seikaMatches[0]).tone} text={rateChip(seikaMatches[0]).text} />}
+          {seikaMatches.length > 1 && (
+            <ul class="f-lines">
+              {seikaMatches.map((x) => {
+                const href = seikaLinkOf(x);
+                return <li>{href ? <a class="sub-link" href={href}>{x.name}</a> : x.name} <Chip tone={rateChip(x).tone} text={rateChip(x).text} /></li>;
+              })}
+            </ul>
+          )}
           <div class="tile-sub">この取組で成果を出そうとしている、施策の成果指標です。</div>
         </>
       ) : <div class="tile-sub">部局の検証票に、対応する成果指標の記載がありません。</div>}
@@ -245,9 +264,9 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
                   <tr>
                     <th>{yearLabel(r.y)}{r.future && <><br /><small class="secondary">年度別計画</small></>}</th>
                     <td class="span2">{r.future ? <span class="small secondary">これから</span> : <Chip tone={toneOfStatus(r.status)} text={r.status} />}</td>
-                    <td class="num" data-label="計画">{r.plan_raw || '—'}</td>
-                    <td class="num" data-label="実績">{r.future ? '—' : <b>{r.actual_raw || '—'}</b>}</td>
-                    <td class="num" data-label="達成割合">{r.ach || '—'}</td>
+                    <td class="num lines" data-label="計画">{r.plan_raw || '—'}</td>
+                    <td class="num lines" data-label="実績">{r.future ? '—' : <b>{r.actual_raw || '—'}</b>}</td>
+                    <td class="num lines" data-label="達成割合">{r.ach || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -514,6 +533,9 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .progress { min-width: 480px; }
   .progress :global(.chip) { white-space: nowrap; }
   td.num { white-space: normal; min-width: 5em; }
+  /* 目標・実績が行ごとに分かれた取組は、改行を残して行ごとに並べる */
+  td.lines { white-space: pre-line; }
+  .f-lines { margin: 4px 0 0; padding-left: 1.2em; }
   .budget { min-width: 720px; }
   .budget td:nth-child(2) { min-width: 12em; }
   .budget tr.sep th, .budget tr.sep td { border-top: 1.5px solid var(--grid); }

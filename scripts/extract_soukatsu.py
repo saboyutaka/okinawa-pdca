@@ -75,6 +75,66 @@ def clean(s: str | None) -> str:
     return re.sub(r"\s+", "", uncid(s))
 
 
+# 見た目は普通の漢字だが、別の文字として PDF に入っているもの（康熙部首 U+2F00〜U+2FDF、CJK部首補助 U+2E80〜U+2EFF）。
+# 例: R4 3-(11)-ウ-① の推進戦略案の「⽀援」「⼤学」（フォントが違うだけで、印字は「支援」「大学」）。
+# この範囲の文字だけを NFKC で普通の漢字に直す。全角英数など他の文字は印字のまま残す（文章全体には NFKC をかけない）。
+# CJK部首補助のうち NFKC で写す先の無い文字は、そのまま残る。
+# なお 1-(4)-ア-⑤ の「中国第一歴史𥹥案館」の「𥹥」（U+25E65、米偏に当）は、拡大すると印字も米偏なので直さない
+# （正しくは「档」（木偏）と思われるが、報告書の誤記として印字のまま持つ）。
+RADICAL_RE = re.compile(r"[\u2E80-\u2EFF\u2F00-\u2FDF]")
+
+
+def fix_chars(s: str) -> str:
+    """康熙部首・CJK部首補助の文字を、同じ形の普通の漢字に直す。"""
+    return RADICAL_RE.sub(lambda m: unicodedata.normalize("NFKC", m.group(0)), s)
+
+
+def fix_strings(v):
+    """出力する値（入れ子の dict・list を含む）の文字列すべてに fix_chars をかける。"""
+    if isinstance(v, str):
+        return fix_chars(v)
+    if isinstance(v, list):
+        return [fix_strings(x) for x in v]
+    if isinstance(v, dict):
+        return {k: fix_strings(x) for k, x in v.items()}
+    return v
+
+
+# 部局・課の名前の終わり
+ORG_SUFFIX_RE = re.compile(r"(課|部|局|庁|室|所|センター|班|館|院|会)$")
+
+
+def join_cell_lines(raw: str | None) -> str:
+    """欄の中で行を分けて印字された部局・課の名前を「、」でつなぐ（関係部等・担当部課名）。
+
+    PDF の行をそのままつなぐと「企業局土木建築部」のように区切りが消える。欄の中の改行は、PDF の文字では
+    改行のほか空白になっていることがある（関係部等「企業局 土木建築部」。R4 は改行の記号が「□」で印字されている）。
+    空白・改行で分けた前の部分が部局・課の名前の終わり（課・部・局…）なら「、」を入れ、そうでなければ
+    欄の中での折り返しとみなしてそのままつなぐ。
+    県の表では「部」の列と「課」の列を1つの欄に続けて書いたものがある
+    （R4 3-(4)-ア-③ の担当部課名の印字「商工労働部／土木建築部アジア経済戦略課／港湾課」は、
+    「商工労働部／土木建築部」と「アジア経済戦略課／港湾課」をつないだもの）。
+    行が「部だけの行…、部＋課の行、課だけの行…」で、部と課の数が同じときは、上から順に組にする
+    （→「商工労働部アジア経済戦略課、土木建築部港湾課」。同じ施策の主な取組の所管部課と一致する）。
+    """
+    lines = [x for x in re.split(r"\s+", uncid(raw)) if x]
+    if len(lines) <= 1:
+        return "".join(lines)
+    # 部の列と課の列をつないだもの
+    bare = 0
+    while bare < len(lines) and (m := DEPT_RE.match(lines[bare])) and m.group(1) == lines[bare]:
+        bare += 1
+    if 0 < bare < len(lines) - 1 and (m := DEPT_RE.match(lines[bare])) and m.group(1) != lines[bare]:
+        depts = lines[:bare] + [m.group(1)]
+        sections = [lines[bare][len(m.group(1)):]] + lines[bare + 1:]
+        if len(depts) == len(sections) and not any(DEPT_RE.match(s) for s in sections):
+            return "、".join(d + s for d, s in zip(depts, sections))
+    out = lines[0]
+    for prev, line in zip(lines, lines[1:]):
+        out += ("、" if ORG_SUFFIX_RE.search(prev) else "") + line
+    return out
+
+
 def parse_code(s: str) -> dict | None:
     """「１－（１）－ア－①」「1-(1)-ア」などの施策コードを分解する。"""
     t = unicodedata.normalize("NFKC", s)  # 全角数字・丸数字（①→1）・全角括弧を半角に
@@ -194,8 +254,58 @@ def find_inputs(raw: Path, interim: Path, manifest: dict, year: int) -> list[dic
 # ---------------------------------------------------------------- 本文（将来像）
 
 
-def section_lines(page, tables_bboxes) -> list[tuple[float, float, float, str]]:
-    """表の外にある本文の行（top, x0, x1, text）。ページ上端の様式名と下端のページ番号は除く。"""
+def visible_points(mpage) -> dict[int, list[tuple[float, float]]]:
+    """PyMuPDF で描かれる文字の中心（y を整数に丸めた値ごと）。
+
+    TEXT_CLIP を付けると、クリップ（Excel の箱の外）で隠れて印字されない文字は返らない。
+    pdfplumber はクリップを見ないので、隠れた文字も読んでしまう
+    （R5 1-(2)-ア-② の分析は、p53 の箱の下に隠れた約400字と、p54 に見えている同じ文章の両方を読んでいた）。
+    """
+    flags = getattr(pymupdf, "TEXT_CLIP", pymupdf.TEXT_MEDIABOX_CLIP)
+    pts: dict[int, list[tuple[float, float]]] = defaultdict(list)
+    for b in mpage.get_text("rawdict", flags=flags)["blocks"]:
+        for ln in b.get("lines", []):
+            for sp in ln["spans"]:
+                for ch in sp["chars"]:
+                    if ch["c"].strip():
+                        x0, y0, x1, y1 = ch["bbox"]
+                        pts[round((y0 + y1) / 2)].append(((x0 + x1) / 2, (y0 + y1) / 2))
+    return pts
+
+
+def is_visible(ln: dict, pts: dict[int, list[tuple[float, float]]]) -> bool:
+    """pdfplumber の行に、描かれる文字が1つでも重なるか。下の端が箱で切れて半分だけ見える行は見えているとする。"""
+    for y in range(int(ln["top"]) - 2, int(ln["bottom"]) + 3):
+        for px, py in pts.get(y, ()):
+            if ln["x0"] - 1 <= px <= ln["x1"] + 1 and ln["top"] - 2 <= py <= ln["bottom"] + 2:
+                return True
+    return False
+
+
+def box_edges(page) -> tuple[float, float, float]:
+    """本文の箱（Ⅲ・Ⅳの枠）から、折り返しと字下げを見分ける位置を返す（wrap_at, near_at, indent_at）。
+
+    wrap_at: 行の右端がここまで来ていれば、箱の右端まで書いて折り返した行。
+    near_at: 句点などで終わらない行は、ここまで来ていれば折り返した行とみなす（wrap_at の3文字ぶん手前）。
+      英数字の続きや括弧は行をまたいで分けないので、行が右端の1〜2文字手前で折り返すことがある
+      （「…全国の」「82.9％と比較…」、「…他の媒体」「（YouTube…」）。
+    indent_at: 行の左端がここより右なら、全角空白で字下げした行（段落・小見出しの頭）。
+    ページの幅は年度・ファイルで違う（A4 の 595pt のほか 754pt・773pt）ので、箱の縦の線から決める。
+    線が見つからなければページの幅から決める。A4 では wrap_at が 544 前後になる（前は 556 − 12 に固定していて、
+    幅の広いページでは段落の終わりの行も折り返しとみなし、小見出しが前の段落につながっていた）。
+    """
+    scale = page.width / 595.2
+    xs = [e["x0"] for e in page.edges if e["orientation"] == "v" and e["bottom"] - e["top"] >= 20]
+    left, right = (min(xs), max(xs)) if xs else (59 * scale, 564 * scale)
+    wrap_at = right - 20 * scale
+    return wrap_at, wrap_at - 3 * 8.3 * scale, left + 5 * scale
+
+
+def section_lines(page, tables_bboxes, pts=None) -> list[tuple[float, float, float, str]]:
+    """表の外にある本文の行（top, x0, x1, text）。ページ上端の様式名と下端のページ番号は除く。
+
+    pts（visible_points）を渡すと、クリップで隠れて印字されない行を除く。
+    """
     lines = []
     for ln in page.extract_text_lines():
         top, bottom = ln["top"], ln["bottom"]
@@ -204,24 +314,52 @@ def section_lines(page, tables_bboxes) -> list[tuple[float, float, float, str]]:
         cy = (top + bottom) / 2
         if any(b[0] - 2 <= ln["x0"] and ln["x1"] <= b[2] + 2 and b[1] - 2 <= cy <= b[3] + 2 for b in tables_bboxes):
             continue
+        if pts and not is_visible(ln, pts):
+            continue
         lines.append((top, ln["x0"], ln["x1"], uncid(ln["text"])))
     return lines
 
 
-def join_lines(lines: list[tuple[float, float, str]], right_edge: float) -> str:
-    """PDFの折り返しを戻す。前の行が右端まで来ていれば折り返し、そうでなければ改行とみなす。"""
+def join_lines(lines: list[tuple], right_edge: float = 556.0) -> str:
+    """PDFの折り返しを戻す。前の行が右端まで来ていれば折り返し、そうでなければ改行とみなす。
+
+    行は (x0, x1, text) か (x0, x1, text, wrap_at, near_at, indent_at)（box_edges の値をページごとに付けたもの）。
+    3つ組のときは right_edge − 12 を wrap_at にし、near_at と字下げは見ない。
+    行頭が「・」「[」「【」「○」「①〜⑳」「※」の行と、字下げした行（「　外部環境の分析」などの小見出し）は必ず改行する。
+    英数字どうしをつなぐときは空白を入れる（「EATS」「OKINAWA」→「EATS OKINAWA」）。
+    """
     out = ""
-    prev_x1 = None
-    for _x0, x1, text in lines:
+    prev_wrapped = False
+    for ln in lines:
+        x0, x1, text = ln[:3]
+        if len(ln) >= 6:
+            wrap_at, near_at, indent_at = ln[3:6]
+        else:
+            wrap_at = near_at = right_edge - 12
+            indent_at = None
         text = text.strip()
         if not text:
             continue
-        if out and prev_x1 is not None and prev_x1 >= right_edge - 12 and not re.match(r"^[・\[［【○①-⑳※]", text):
-            out += text
+        indented = indent_at is not None and x0 >= indent_at
+        if out and prev_wrapped and not indented and not re.match(r"^[・\[［【○①-⑳※]", text):
+            out += (" " if re.search(r"[A-Za-z0-9]$", out) and re.match(r"[A-Za-z0-9]", text) else "") + text
         else:
             out += ("\n" if out else "") + text
-        prev_x1 = x1
+        prev_wrapped = x1 >= wrap_at or (x1 >= near_at and not re.search(r"[。」）)】]$", text))
     return out.strip()
+
+
+MEZASU_RE = re.compile(r"目指す姿\s*\n(.*?目\s*指\s*す\s*。)", re.S)
+
+
+def read_mezasu(text: str) -> str:
+    """基本施策の「目指す姿」の文章（ページのテキストから、見出しの後ろ「〜目指す。」まで）。
+
+    文が「…島づくりを目」「指す。」のように行の途中で折り返していても読む（2-(4)・2-(5) は4年度とも、
+    5-(1) は R6 がこの形で、前は読めていなかった）。
+    """
+    m = MEZASU_RE.search(text)
+    return re.sub(r"\s+", "", m.group(1)) if m else ""
 
 
 class BodyParser:
@@ -242,10 +380,11 @@ class BodyParser:
         doc = pymupdf.open(self.src["path"])
         texts = [pg.get_text() for pg in doc]
         with pdfplumber.open(self.src["path"]) as pdf:
-            state = {"shisaku": None, "group": None, "pending": None, "section": None, "tenkai": None}
+            state = {"shisaku": None, "group": None, "pending": None, "last": None, "section": None, "tenkai": None,
+                     "tail": []}
             for i, page in enumerate(pdf.pages):
                 if "様式２（施策）" in texts[i][:300]:
-                    self.read_form2(page, i + 1, state)
+                    self.read_form2(page, i + 1, state, doc[i])
                 # 施策総括表。前ページから続くページには【施策展開】の見出しが無いので、取組数の欄で見分ける
                 elif "順調の割合" in texts[i] and "主な取組数" in texts[i]:
                     self.read_summary(page, i + 1, state)
@@ -263,9 +402,7 @@ class BodyParser:
         for m in re.finditer(r"基本施策\s*\n\s*([0-9０-９]－（[0-9０-９]+）)\s*\n\s*(.+?)\s*\n\s*目指す姿", text):
             if code := parse_code(m.group(1)):
                 found.append((code, m.group(2).strip()))
-        mezasu = ""
-        if m := re.search(r"目指す姿\s*\n(.*?目指す。)", text, re.S):
-            mezasu = re.sub(r"\s+", "", m.group(1))
+        mezasu = read_mezasu(text)
         for code, name in found:
             kid = kihon_id(code)
             rec = self.kihon.setdefault(kid, {"year": self.year, "id": kid, "shouraizou": code["shouraizou"],
@@ -310,11 +447,12 @@ class BodyParser:
             self.judges[shisaku_id(code)] = {"label": label, "judge": judge_of(label), "counts": counts, **self.ref(page_no)}
 
     # -- 様式２（施策）
-    def read_form2(self, page, page_no: int, state: dict) -> None:
+    def read_form2(self, page, page_no: int, state: dict, mpage=None) -> None:
         tables = page.find_tables()
         bboxes = [t.bbox for t in tables]
-        # 見出し（Ⅰ〜Ⅳ）の位置で本文を区切る
-        lines = section_lines(page, bboxes)
+        # 見出し（Ⅰ〜Ⅳ）の位置で本文を区切る。クリップで隠れて印字されない行は読まない
+        lines = section_lines(page, bboxes, visible_points(mpage) if mpage is not None else None)
+        edges = box_edges(page)
         marks = []
         for top, x0, x1, text in lines:
             if m := SECTION_RE.match(text):
@@ -328,7 +466,7 @@ class BodyParser:
                 self.read_seika(rows, page_no, state)
             else:
                 self.read_torikumi(rows, page_no, state)
-            if any(clean(r[0]) == "担当部課名" for r in rows if r):
+            if any(clean(r[0]) in ("担当部課名", "達成状況の説明") for r in rows if r):
                 self.read_seika_tail(rows, state)
         # Ⅲ・Ⅳの本文
         cur = state["shisaku"]
@@ -341,7 +479,7 @@ class BodyParser:
                 state["section"] = hit[0]
                 continue
             if sec in ("Ⅲ", "Ⅳ"):
-                cur.setdefault("_lines", {}).setdefault(sec, []).append((x0, x1, text))
+                cur.setdefault("_lines", {}).setdefault(sec, []).append((x0, x1, text, *edges))
 
     def start_shisaku(self, rows, page_no: int, state: dict) -> None:
         cells = {clean(r[0]): [clean(x) for x in r[1:]] for r in rows if r and r[0]}
@@ -349,15 +487,17 @@ class BodyParser:
         if not code or code["num"] is None:
             print(f"警告: 施策コードを読めない {self.src['id']} p{page_no}: {cells.get('施策')}", file=sys.stderr)
             # 前の施策のままにすると、この施策の取組・成果指標・本文が前の施策に付いてしまう
-            state.update(shisaku=None, group=None, pending=None, section=None)
+            state.update(shisaku=None, group=None, pending=None, last=None, section=None, tail=[])
             return
         sid = shisaku_id(code)
         houkou = uncid(next((r[1] for r in rows if r and clean(r[0]) == "施策の方向"), "") or "")
-        kankei = (cells.get("関係部等") or [""])[0]
+        kankei = uncid(next((r[1] for r in rows if r and clean(r[0]) == "関係部等"), "") or "")
         # 施策の方向が長いと、続きが関係部等の欄に食い込んで読める（R5 の 3-(9)-ア-①）。句点までは施策の方向に戻す
         if "。" in kankei:
             head, kankei = kankei.rsplit("。", 1)
-            houkou = houkou.rstrip() + head + "。"
+            houkou = houkou.rstrip() + clean(head) + "。"
+        # 複数の部が欄の中で行を分けて印字されていると、つないだときに区切りが消える（R5 4-(3)-ア-②「企業局／土木建築部」）
+        kankei = join_cell_lines(kankei)
         rec = {
             "year": self.year,
             "id": sid,
@@ -372,7 +512,7 @@ class BodyParser:
             **self.ref(page_no),
         }
         self.shisaku[sid] = rec
-        state.update(shisaku=rec, group=None, pending=None, section="Ⅰ")
+        state.update(shisaku=rec, group=None, pending=None, last=None, section="Ⅰ", tail=[])
 
     def read_torikumi(self, rows, page_no: int, state: dict) -> None:
         cur = state["shisaku"]
@@ -384,6 +524,7 @@ class BodyParser:
                 continue
             if c[0].startswith("○"):
                 state["group"] = c[0][1:]
+                state["last"] = None
                 continue
             m = re.match(r"^(\d+)(.*)$", c[0])
             if m and len(c) >= 7 and (c[1] or m.group(2)):
@@ -403,6 +544,7 @@ class BodyParser:
                     "summary": uncid(r[6]).replace("\n", "").strip(),
                     **self.ref(page_no),
                 }
+                state["last"] = None
                 continue
             # 取組の次の行に目標・実績・進捗状況がある。事業廃止などで進捗状況が空欄のこともある
             p = state["pending"]
@@ -410,6 +552,15 @@ class BodyParser:
                 p.update(target=c[3], actual=c[4], status=c[5] if c[5] in STATUSES else "", status_raw=c[5])
                 self.torikumi.append(p)
                 state["pending"] = None
+                state["last"] = p
+                continue
+            # 目標・実績のセルが2行以上に分かれている取組（R4 3-(8)-ウ-① の3: 「300件・12回／空」「300件／325件」「12回／12回」）。
+            # 続きの行は番号・取組名・決算見込額・進捗状況・活動概要の欄が空（上の行と結合）で、目標・実績だけがある
+            last = state["last"]
+            if last and len(c) >= 7 and not any(c[:3]) and not c[6] and (c[3] or c[4]) \
+                    and c[5] not in STATUSES and c[5] != "進捗状況" and c[3] != "目標":
+                last.setdefault("_lines", [{"target": last["target"], "actual": last["actual"]}]).append(
+                    {"target": c[3], "actual": c[4]})
 
     def read_seika(self, rows, page_no: int, state: dict) -> None:
         """成果指標の表。見出し行・年度行・値・参照年・「計画値」・計画値の6行で1組。1施策に複数組あることがある。"""
@@ -471,25 +622,57 @@ class BodyParser:
             })
 
     def read_seika_tail(self, rows, state: dict) -> None:
+        """成果指標の表の後ろの「担当部課名」と「達成状況の説明」。
+
+        見出し「達成状況の説明」と本文が次のページの頭に移ることがある（R5 1-(1)-ウ-④ p44→p45 など）。
+        そのときは担当部課名を読んだ成果指標を state["tail"] に残しておき、次の表で説明を付ける。
+        """
         cur = state["shisaku"]
         if not cur:
             return
-        dept, expl = "", ""
+        dept, expl = None, None
         for j, r in enumerate(rows):
             c0 = clean(r[0])
             if c0 == "担当部課名":
-                dept = next((clean(x) for x in r[1:] if clean(x)), "")
+                dept = join_cell_lines(next((x for x in r[1:] if clean(x)), ""))
             if c0 == "達成状況の説明" and j + 1 < len(rows):
                 expl = uncid(rows[j + 1][0]).strip()
-        for s in self.seika:
-            if s["shisaku_id"] == cur["id"] and "dept" not in s:
-                s["dept"], s["explanation"] = dept, expl
+        if dept is not None:
+            state["tail"] = []
+            for s in self.seika:
+                if s["shisaku_id"] == cur["id"] and "dept" not in s:
+                    s["dept"], s["explanation"] = dept, expl or ""
+                    if expl is None:
+                        state["tail"].append(s)
+        elif expl is not None:
+            for s in state["tail"]:
+                if s["shisaku_id"] == cur["id"] and not s["explanation"]:
+                    s["explanation"] = expl
+            state["tail"] = []
 
     def finish(self) -> None:
         for rec in self.shisaku.values():
             lines = rec.pop("_lines", {})
-            rec["check"] = join_lines(lines.get("Ⅲ", []), 556)
-            rec["action"] = join_lines(lines.get("Ⅳ", []), 556)
+            rec["check"] = join_lines(lines.get("Ⅲ", []))
+            rec["action"] = join_lines(lines.get("Ⅳ", []))
+        for i, t in enumerate(self.torikumi):
+            if lines := t.pop("_lines", None):
+                self.torikumi[i] = with_lines(t, lines)
+
+
+def with_lines(rec: dict, lines: list[dict]) -> dict:
+    """目標・実績が2行以上の取組: 印字の各行を lines に入れ（空のセルは ""）、
+    target・actual は空でない値を改行でつないだものにする。lines は actual の直後に置く。"""
+    out = {}
+    for k, v in rec.items():
+        if k == "target":
+            v = "\n".join(x["target"] for x in lines if x["target"])
+        elif k == "actual":
+            v = "\n".join(x["actual"] for x in lines if x["actual"])
+        out[k] = v
+        if k == "actual":
+            out["lines"] = lines
+    return out
 
 
 # ---------------------------------------------------------------- 付属資料（主要指標一覧）
@@ -617,7 +800,8 @@ def main() -> int:
         return sorted(keep + rows, key=lambda r: r["year"])  # 年度内の並びは保つ（sort は安定）
 
     for name in ("shouraizou", "kihon", "shisaku", "torikumi", "seika", "shuyou"):
-        result[name] = merged(name, result[name])
+        # 康熙部首などの見た目が同じ別の文字を、普通の漢字に直す（fix_chars）
+        result[name] = [fix_strings(r) for r in merged(name, result[name])]
         write_json(out / f"{name}.json", result[name])
     write_json(out / "sources.json", merged("sources", sources))
     for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou"):

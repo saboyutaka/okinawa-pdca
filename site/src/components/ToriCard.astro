@@ -17,10 +17,13 @@ const href = torikumiHref(shisakuId, row.key);
 const stamps = YEARS.map((y) => (row.years[y] ? { year: y, tone: toneOfStatus(statusOf(row.years[y])), text: statusOf(row.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 // 「計画 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
 const qty = (raw: string) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
-const tq = qty(t.target);
-const aq = qty(t.actual);
+// 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、行ごとに並べて棒は出さない（1つの割合にまとめられないため）
+const tq = t.lines ? null : qty(t.target);
+const aq = t.lines ? null : qty(t.actual);
 const comparable = tq && aq && tq.v > 0 && tq.u === aq.u;
 const ratio = comparable ? aq.v / tq.v : 0;
+// 棒の色は進捗状況の区分（STATUSES）と同じ境目（90%・75%・60%）
+const ratioTone = ratio >= 0.9 ? 'good' : ratio >= 0.75 ? 'warning' : ratio >= 0.6 ? 'serious' : 'critical';
 ---
 <article class="sticker tcard">
   <div class="th">
@@ -33,8 +36,12 @@ const ratio = comparable ? aq.v / tq.v : 0;
     <div class="act inset">
       <div class="act-l"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
       <div class="act-name">{t.indicator}</div>
-      <div>計画 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　計画クリア</strong>}</div>
-      {comparable && <Chunk frac={ratio} tone={ratio >= 1 ? 'good' : ratio >= 0.75 ? 'warning' : 'serious'} label={`活動指標 計画 ${t.target}、実績 ${t.actual}（計画の${Math.round(ratio * 100)}%）`} thin />}
+      {t.lines ? (
+        <ul class="act-lines">{t.lines.map((l) => <li>計画 {l.target || '—'} → 実績 {l.actual || '—'}</li>)}</ul>
+      ) : (
+        <div>計画 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　計画クリア</strong>}</div>
+      )}
+      {comparable && <Chunk frac={ratio} tone={ratioTone} label={`活動指標 計画 ${t.target}、実績 ${t.actual}（計画の${Math.round(ratio * 100)}%）`} thin />}
     </div>
   ) : <div />}
   {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a class="sub-link" href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}
@@ -57,6 +64,7 @@ const ratio = comparable ? aq.v / tq.v : 0;
   .act { padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 4px; align-self: start; }
   .act-l { color: var(--ink-2); font-weight: 700; }
   .act-name { font-weight: 700; }
+  .act-lines { margin: 0; padding-left: 1.2em; }
   .did { font-size: 0.875rem; display: grid; gap: 2px; align-content: start; }
   .did-l { color: var(--ink-2); font-weight: 700; }
   .did p { margin: 0; line-height: 1.7; }
