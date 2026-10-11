@@ -1,11 +1,11 @@
 ---
-// 部局1つのページ。将来像のページと同じ並び: ひとめで（取組と成果の割合）→ 施策の判定 → 課ごと → 4年間の推移・今年のできごと・予算 → 一覧
+// 部局1つのページ。将来像のページと同じ並び: ひとめで（取組と成果の割合）→ 施策の判定と前の年度からの変化 → 課ごと → 4年間の推移・予算 → 一覧
 import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import DonutCard from '../../components/DonutCard.astro';
-import Moves from '../../components/Moves.astro';
+import Moves, { type MoveGroup } from '../../components/Moves.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendChart from '../../components/TrendChart.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -28,7 +28,6 @@ import {
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
-import type { Tone } from '../../lib/icons.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
 
@@ -100,10 +99,17 @@ const seikaRows = YEARS.map((y) => ({
   counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
 }));
 
-// 今年のできごと（前の年度から進捗状況が変わった取組。数え方は lib/data.ts の PATTERNS。良くなったものと遅れになったものを同じ重みで並べる）
-const moves: { tone: Tone; title: string; n: number; href: string }[] = [
-  { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
-  { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },
+// 前の年度からの変化。かかわる施策の判定（lib/data.ts の JUDGE_TRENDS）と、主な取組の進捗状況（PATTERNS）を、良くなったものと悪くなったものの対で並べる
+const relatedShisaku = related.map((r) => r.s);
+const moves: MoveGroup[] = [
+  ...(related.length ? [{ label: 'かかわる施策の判定', unit: '施策', items: [
+    { tone: 'good' as const, title: '判定が上がった', n: relatedShisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?dept=${q}&trend=up` },
+    { tone: 'serious' as const, title: '判定が下がった', n: relatedShisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?dept=${q}&trend=down` },
+  ] }] : []),
+  { label: '主な取組の進捗状況', unit: '件', items: [
+    { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
+    { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },
+  ] },
 ];
 
 // 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
@@ -160,6 +166,12 @@ const sources = deptSourcePages(dept.name);
     </section>
   )}
 
+  <section aria-labelledby="moves-h">
+    <h2 id="moves-h">前の年度からの変化</h2>
+    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
+    <Moves groups={moves} />
+  </section>
+
   <section aria-labelledby="ka">
     <h2 id="ka" class="anchor">課ごとの主な取組</h2>
     <p class="small secondary lead">{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />です。課の名前を押すと、その課の取組を取組をさがすで開きます。</p>
@@ -207,12 +219,6 @@ const sources = deptSourcePages(dept.name);
     {REORGANIZED.has(dept.name) && (
       <p class="small secondary">令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。R4の数は、その取組がR5以降に所管されている部局に寄せて数えています。</p>
     )}
-  </section>
-
-  <section aria-labelledby="moves-h">
-    <h2 id="moves-h">今年のできごと</h2>
-    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告で、同じ名前の主な取組の進捗状況を比べました。遅れ＝やや遅れ・大幅遅れ・未着手。</p>
-    <Moves items={moves} />
   </section>
 
   <section aria-labelledby="yosan">
