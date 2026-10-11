@@ -1,7 +1,7 @@
 ---
 // 成果指標1つのページ。年度をまたいで同じ名前の成果指標をまとめる（施策ページのカードと同じまとまり）。シェアや画面の共有で、この指標だけを見せられるようにする。
 // 頭は親の施策の札の下にぶら下げる。①計画値に届いたかとスタート → いま → ゴールの数字（施策ページのカードと同じ部品） ②道のりの図と表
-// ③県による説明（最新の年度は畳まず、前の年度は畳む） ④この指標の施策の主な取組（進捗状況の内訳。一覧は畳む） ⑤観光ロードマップの同じ指標 ⑥出典
+// ③県による説明（最新の年度は畳まず、前の年度は畳む） ④この指標の施策の主な取組（進捗状況の内訳と一覧） ⑤観光ロードマップの同じ指標 ⑥出典
 // 達成率は計画期間（前期・中期）をまたいで比べない。図の地の色と表の「前期・中期」で分ける
 import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../../layouts/Base.astro';
@@ -114,21 +114,18 @@ const description = `沖縄県PDCAの成果指標「${x.name}」。${yl}の実�
         <StatusBar categories={STATUSES} counts={statusCounts} context={`施策「${s.name}」の${yl}の主な取組 `} />
         <div class="tori-chips">{STATUSES.filter((c) => statusCounts[c.key]).map((c) => <Chip tone={c.tone} text={`${c.key} ${statusCounts[c.key]}件`} />)}</div>
       </div>
-      <details class="tori-list">
-        <summary>主な取組の一覧（{torikumi.length}件）</summary>
-        <p class="small secondary">スタンプは4年間の<Term word="進捗状況" />です。</p>
-        <ul class="row-list">
-          {torikumi.map((t) => (
-            <li class="t-row">
-              <div class="t-main">
-                <a class="name-link" href={t.href}>{t.latest.name}</a>
-                <div class="small secondary">{sectionHref(t.section) ? <a class="sub-link" href={sectionHref(t.section)}>{t.section}</a> : t.section}</div>
-              </div>
-              <Stamps items={stampsOf(t)} label="4年間の進捗状況" size="small" />
-            </li>
-          ))}
-        </ul>
-      </details>
+      <p class="small secondary tori-note">スタンプは4年間の<Term word="進捗状況" />です。</p>
+      <ul class="row-list">
+        {torikumi.map((t) => (
+          <li class="t-row">
+            <div class="t-main">
+              <a class="name-link" href={t.href}>{t.latest.name}</a>
+              <div class="small secondary">{sectionHref(t.section) ? <a class="sub-link" href={sectionHref(t.section)}>{t.section}</a> : t.section}</div>
+            </div>
+            <Stamps items={stampsOf(t)} label="4年間の進捗状況" size="small" />
+          </li>
+        ))}
+      </ul>
     </section>
   )}
 
@@ -183,8 +180,6 @@ const description = `沖縄県PDCAの成果指標「${x.name}」。${yl}の実�
   .past-says { margin-top: 14px; }
   .tori-sum { display: grid; gap: 8px; margin-top: 12px; }
   .tori-chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-  .tori-list { margin-top: 12px; }
-  .tori-list p { margin: 8px 0 0; }
-  .tori-list .row-list { margin-top: 8px; }
+  .tori-note { margin: 14px 0 8px; }
   .report-no { white-space: nowrap; }
 </style>
