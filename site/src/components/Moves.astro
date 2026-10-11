@@ -1,28 +1,46 @@
 ---
-// 「今年のできごと」の札（将来像・部局のページ）。取組の4年間の様子（lib/data.ts の PATTERNS）ごとの件数と、その一覧へのリンク
+// 「前の年度からの変化」の札（将来像・部局のページ）。施策の判定の移り変わり（lib/data.ts の JUDGE_TRENDS）と、取組の4年間の様子（PATTERNS）の件数と、その一覧へのリンク。
+// 1組に良くなったものと悪くなったものを対にして並べる（どちらかだけを目立たせない）
 import Icon from './Icon.astro';
 import type { Tone } from '../lib/icons.ts';
 import { fmt } from '../lib/format.ts';
 
-interface Props { items: { tone: Tone; title: string; n: number; href: string }[] }
-const { items } = Astro.props;
+export interface MoveGroup { label: string; unit: string; items: { tone: Tone; title: string; n: number; href: string }[] }
+interface Props { groups: MoveGroup[] }
+const { groups } = Astro.props;
 ---
-<div class="moves">
-  {items.map((m) => (
-    <a class="sticker move" href={m.href}>
-      <span class="m-head"><Icon tone={m.tone} size={16} />{m.title}</span>
-      <span class="big m-n">{fmt(m.n)}<small>件</small></span>
-      <span class="m-link">一覧を見る</span>
-    </a>
+<div class="move-groups">
+  {groups.map((g) => (
+    <div class="move-group">
+      <div class="g-label">{g.label}</div>
+      <div class="moves">
+        {g.items.map((m) => (
+          <a class="sticker move" href={m.href}>
+            <span class="m-head"><Icon tone={m.tone} size={16} />{m.title}</span>
+            <span class="big m-n">{fmt(m.n)}<small>{g.unit}</small></span>
+            <span class="m-link">一覧を見る</span>
+          </a>
+        ))}
+      </div>
+    </div>
   ))}
 </div>
 
 <style>
-  .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .move-groups { display: grid; gap: 18px; }
+  .move-group { display: grid; gap: 8px; }
+  .g-label { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; color: var(--ink-2); }
+  .moves { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .move { display: grid; gap: 4px; color: var(--ink); text-decoration: none; }
   .move:hover { background: var(--sky); }
   .m-head { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; }
   .m-n { font-size: 2.2rem; line-height: 1.1; }
   .m-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
   .m-link { color: var(--link); font-weight: 700; font-size: 0.9375rem; text-decoration: underline; }
+  @media (max-width: 520px) {
+    .moves { gap: 10px; }
+    .m-head { align-items: flex-start; font-size: 0.9375rem; line-height: 1.4; }
+    .m-head :global(svg) { margin-top: 3px; flex: none; }
+    .m-n { font-size: 1.8rem; }
+  }
 </style>
