@@ -136,7 +136,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
     <p class="small secondary lead">スタートからゴールまで、点線の計画どおりに進んでいるかを青い点の実績値で見ます。</p>
     {sRows.length > 0 && (
-      <SeikaKey />
+      <SeikaKey plan={sRows.some((r) => Object.values(r.years).some((y) => y.target != null))} />
     )}
     {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
     {seikaPast.length > 0 && (

@@ -134,6 +134,155 @@ export function getShuyouByYear(year) {
   return load('shuyou').filter((s) => s.year === year);
 }
 
+// 主要指標は報告書の文字のまま持っている（基準値に基準年が付く・1つの欄に男女別などの値が並ぶ・目標値が文章のものがある）。
+// 成果指標と同じ「ゴールまでの道のり」の図に置くため、ここで数を読み取る。画面に出す値は報告書の文字で、読み取った数は図の位置にだけ使う
+const MULT = { 兆: 1e12, 億: 1e8, 百万: 1e6, 万: 1e4, 千: 1e3 };
+const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]));
+// 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
+export const halfWidth = (s) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+// 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
+const joinCell = (raw) => (raw || '').replace(/\s*\n\s*/g, '').trim();
+
+// 「1,032万t-CO₂」「３兆2,885億円」「8,060億92百万円」を { value: 数, scale: 最初の位（万なら1e4）, unit: 位の後ろの単位 } にする。数と単位だけの値でなければ null
+function jaNum(text) {
+  const s = halfWidth(text).replace(/,/g, '').replace(/^△/, '-');
+  const re = /(-?\d+(?:\.\d+)?)(兆|億|百万|万|千)?/y;
+  let value = 0;
+  let scale = null;
+  let last = Infinity;
+  let end = 0;
+  let m;
+  while ((m = re.exec(s))) {
+    const k = MULT[m[2]] || 1;
+    if (k >= last) return null;
+    value += Number(m[1]) * k;
+    scale ??= k;
+    last = k;
+    end = re.lastIndex;
+    if (k === 1) break;
+  }
+  const unit = s.slice(end).trim();
+  return scale == null || /\d/.test(unit) ? null : { value, scale, unit };
+}
+
+// 欄の値。数と単位の後ろが括弧（基準年・「速報値」など。PDF で途中で切れて閉じていないものも）だけなら、括弧を note に分けて数を読む。
+// 文章の値（「可能な限り減少させる」など）や、1つの欄に値が並ぶもの（「1,117億円（R３年）農業922億円…」）は value が null
+function cellOf(raw) {
+  const s = joinCell(raw);
+  const [, text, note] = s.match(/^(.*?)((?:\s*[（(][^（()）]*(?:[）)]|$))*)$/);
+  const n = jaNum(text);
+  return n ? { text: halfWidth(text), note: halfWidth(note.trim()), ...n } : { text: halfWidth(s) || '—', note: '', value: null };
+}
+const unitKey = (c) => (c.value == null ? null : c.unit.normalize('NFKC'));
+
+// 見通しの欄を [{ label, key }] にする。「男性:目標達成\n女性:達成は困難」のように1つの欄に並ぶものは名前ごとに分ける。決まった言い方でできていなければ null
+const JUDGE_KEYS = JUDGEMENTS.map((j) => j.key).sort((a, b) => b.length - a.length);
+export function judgesOf(raw) {
+  const s = joinCell(raw);
+  if (JUDGE_KEYS.includes(s)) return [{ label: '', key: s }];
+  const out = [];
+  let end = 0;
+  for (const m of s.matchAll(new RegExp(`(.*?)[:：](${JUDGE_KEYS.join('|')})`, 'gy'))) {
+    out.push({ label: m[1].trim(), key: m[2] });
+    end = m.index + m[0].length;
+  }
+  return out.length && end === s.length ? out : null;
+}
+
+// 1つの欄に並ぶ値を、見通しの欄の名前（男性・女性など）で分ける。欄が名前で始まり、名前が順に見つかるときだけ
+function splitByLabels(raw, labels) {
+  const s = joinCell(raw);
+  const at = [];
+  for (const l of labels) {
+    const i = s.indexOf(l, at.length ? at[at.length - 1] + 1 : 0);
+    if (i < 0 || (!at.length && i !== 0)) return null;
+    at.push(i);
+  }
+  return labels.map((l, k) => s.slice(at[k] + l.length, at[k + 1] ?? s.length).trim());
+}
+
+// 主要指標1つの図と「スタート → いま → ゴール」の材料（部分ごと）。男性・女性のように1つの欄に並ぶ指標は、最新の報告の見通しの名前で分ける
+// （どの年度も分けられた年度だけを載せる）。分けられない指標は1つのまま。形は成果指標の行（SeikaChart の row）に合わせる
+function shuyouParts(latest, years) {
+  const labels = (judgesOf(latest.judgement) || []).map((j) => j.label);
+  const pick = (x) => [x.base_raw, x.actual_raw, x.target_raw].map((raw) => splitByLabels(raw, labels));
+  const split = labels.length > 1 && labels.every(Boolean) && pick(latest).every(Boolean);
+  const parts = (split ? labels : ['']).map((label) => ({ label, name: label ? `${latest.name}（${label}）` : latest.name, years: {} }));
+  for (const [y, x] of Object.entries(years)) {
+    const cells = split ? pick(x) : [[x.base_raw], [x.actual_raw], [x.target_raw]];
+    if (!cells.every(Boolean)) continue;
+    const judges = judgesOf(x.judgement);
+    parts.forEach((p, i) => {
+      const [b, a, t] = cells.map((c) => cellOf(c[i]));
+      p.years[y] = { year: +y, b, a, t, judgement: split ? judges?.find((j) => j.label === p.label)?.key || '' : x.judgement };
+    });
+  }
+  return parts.map((p) => {
+    // 図の目盛りの位と単位は、最新の報告の目標値（なければ基準値・実績値）の書き方に合わせる
+    const now = p.years[latest.year];
+    const ref = [now.t, now.b, now.a].find((c) => c.value != null);
+    const scaled = (c) => (ref && c.value != null && (!c.unit || unitKey(c) === unitKey(ref)) ? c.value / ref.scale : null);
+    for (const r of Object.values(p.years)) {
+      Object.assign(r, {
+        base: scaled(r.b), actual: scaled(r.a), target: scaled(r.t),
+        base_raw: r.b.text, actual_raw: r.a.text, actual_ref_year: r.a.note, target_raw: r.t.text,
+        target_year: r.year <= 2024 ? 'R6年度' : 'R9年度', plan: [], plan_raw: [],
+      });
+    }
+    // 図は、実績値と基準値か目標値が数で読めれば描く（目標値が「可能な限り減少させる」のような文の指標も、スタートからの動きを見せる）
+    const ys = Object.values(p.years);
+    const goal = ys.some((r) => r.target != null);
+    const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
+    return { ...p, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...now, name: p.name } };
+  });
+}
+
+// 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
+// 単位や名前（指標の名前の括弧の中）付きで書かれていて数になっていないので、主要指標と同じように読む。図はゴールの丸を置かず、スタートと実績値だけを描く。
+// 目標が「〜との差の縮小」のもの（県平均・全国一位の都道府県との差）は、値の図では目標に近づいたか分からないので描かない。描けなければ null
+export function textGoalChartRow(row) {
+  const rs = Object.values(row.years);
+  if (rs.some((r) => r.target != null || /差/.test(r.target_raw || ''))) return null;
+  const read = (r, raw) => {
+    const label = r.name.match(/[（(]([^（()）]+)[)）]$/)?.[1];
+    const s = joinCell(raw);
+    const c = cellOf(label && s.startsWith(label) ? s.slice(label.length) : s);
+    if (c.value == null) return null;
+    const u = `${MULT_NAME[c.scale] || ''}${c.unit}`.normalize('NFKC');
+    if (!u) return c.value;
+    return u === (r.unit || '').normalize('NFKC') ? c.value / c.scale : null;
+  };
+  const years = Object.fromEntries(Object.entries(row.years).map(([y, r]) => [y, { ...r, base: r.base ?? read(r, r.base_raw), actual: r.actual ?? read(r, r.actual_raw) }]));
+  const vs = Object.values(years);
+  return vs.some((r) => r.actual != null) && vs.some((r) => r.base != null) ? { ...row, years } : null;
+}
+
+// 基本施策の主要指標を、年度をまたいだ指標ごとのまとまりにする。最新の報告の指標ごとに、4年分の行を名前で結び付ける
+// （名前が少し変わった年度は、その年度の指標が1つだけで単位が同じなら同じ指標とみなす）。
+// どれにも結び付かなかった行（最新の報告に無い指標）も、名前ごとに1つのまとまりにして、ページから落とさない
+export function shuyouRows(kihonId) {
+  const rows = getShuyou(kihonId);
+  const latestRows = rows.filter((r) => r.year === LATEST);
+  const used = new Set();
+  const unitOf = (r) => [r.target_raw, r.base_raw, r.actual_raw].map((raw) => unitKey(cellOf(raw))).find((u) => u != null);
+  const sameUnit = (a, b) => !unitOf(a) || !unitOf(b) || unitOf(a) === unitOf(b);
+  const group = (r, single) => {
+    const years = {};
+    for (const y of YEARS) {
+      const ys = rows.filter((x) => x.year === y && !used.has(x));
+      const x = y === r.year ? r : ys.find((q) => q.name === r.name) || (single && ys.length === 1 && sameUnit(ys[0], r) ? ys[0] : null);
+      if (x) {
+        used.add(x);
+        years[y] = x;
+      }
+    }
+    return { latest: r, years, parts: shuyouParts(r, years) };
+  };
+  const out = latestRows.map((r) => group(r, latestRows.length === 1));
+  for (const r of [...rows].sort((a, b) => b.year - a.year)) if (!used.has(r)) out.push(group(r, false));
+  return out;
+}
+
 // ---------------------------------------------------------------- 施策
 
 let shisakuIndex;

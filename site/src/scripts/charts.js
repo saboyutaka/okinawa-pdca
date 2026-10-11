@@ -108,6 +108,7 @@ function drawTrend(wrap, W, { points }) {
 // 成果指標の「ゴールまでの道のり」。横は報告年度で、計画期間（前期 R4〜R6・中期 R7〜R9）ごとに、
 // スタート（基準値の小さな点）から点線の計画の道すじ（その年度の計画値）をたどってゴール（目標値。最後の計画値と同じ）へ。青い点が実績値で、最新に「いまここ」。
 // 前期と中期で基準値・目標値が変わるので、最新の報告の計画期間でない方は地の色の帯に灰色の点線で描く。
+// 主要指標（基本施策のページ）のように年度ごとの計画値がない指標は、道すじを引かず、ゴールの丸（目標値）を計画期間の最後の年度に置く。
 // 数字はカードの「スタート → いま → ゴール」に出しているので、図の中の文字は「スタート」「ゴール」「いまここ」だけにし、ほかの印と重ならない場所に置く
 function drawSeika(wrap, W, { unit, years, latest }) {
   const num = (v) => v != null && Number.isFinite(v);
@@ -176,8 +177,10 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     const sx = left(p) + 6;
     const pts = [];
     if (num(r.base)) pts.push([sx, y(r.base)]);
-    const circles = r.plan.map((v, i) => num(v) && [x(p.ys[i]), y(v)]).filter(Boolean);
-    pts.push(...circles);
+    const circles = r.plan.length
+      ? r.plan.map((v, i) => num(v) && [x(p.ys[i]), y(v)]).filter(Boolean)
+      : num(r.target) ? [[x(p.ys[2]), y(r.target)]] : [];
+    if (r.plan.length) pts.push(...circles);
     markPath(pts);
     if (num(r.base)) mark(sx, y(r.base), 4);
     circles.forEach(([cx, cy]) => mark(cx, cy, 6));
@@ -235,7 +238,8 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     // 道すじの外側（上がる指標ならスタートの下・ゴールの上。下がる指標は逆）を先に試す
     const up = start ? [[ex + 6, ey - 19], [ex + 18, ey - 20]] : [[ex - w / 2, ey - 22], [ex - w - 8, ey - 20]];
     const down = start ? [[ex + 6, ey + 5], [ex + 18, ey + 6]] : [[ex - w / 2, ey + 9], [ex - w - 8, ey + 6]];
-    const [bx, by] = place(w, h, (start !== rising ? [...up, ...down] : [...down, ...up]).concat(start ? [[ex + 8, ey - 7]] : []));
+    // スタートは、実績値が基準値と同じだと「いまここ」の札のすぐ横になるので、札の上下に外した場所も最後に試す
+    const [bx, by] = place(w, h, (start !== rising ? [...up, ...down] : [...down, ...up]).concat(start ? [[ex + 8, ey - 7], [ex + 6, ey + 15], [ex + 6, ey - 30]] : []));
     // 文字の後ろに地の色を敷き、下を通る薄い線を隠す
     svg.append(sv('rect', { x: bx - 2, y: by - 1, width: w + 4, height: h + 2, rx: 3, fill: 'var(--paper)' }));
     svg.append(sv('text', { class: 'lbl2', x: bx, y: by + 11 }, name));
@@ -247,7 +251,9 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     const per = periods.find((p) => p.ys.includes(s)).r;
     const rows = [];
     if (r) rows.push([withUnit(r.actual_raw, unit), `実績値${r.ref ? `（${r.ref}）` : ''}`, 'var(--pop)']);
-    if (per.plan_raw?.length) rows.push([withUnit(per.plan_raw[planIndex(s)], unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
+    // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は出さない
+    const pr = per.plan_raw?.[planIndex(s)];
+    if (pr && /[^\s\-－―—‐]/.test(pr)) rows.push([withUnit(pr, unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
     rows.push([withUnit(per.target_raw, unit), `ゴール（目標値・${per.target_year}）`, 'var(--ink)']);
     rows.push([withUnit(per.base_raw, unit), 'スタート（基準値）', 'var(--none)']);
     showRows(`${yl(s)}${r ? 'の報告' : ''}（${s <= 2024 ? '前期' : '中期'}）`, rows, cx, cy);
