@@ -237,6 +237,26 @@ function shuyouParts(latest, years) {
   });
 }
 
+// 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
+// 単位や名前（指標の名前の括弧の中）付きで書かれていて数になっていないので、主要指標と同じように読む。図はゴールの丸を置かず、スタートと実績値だけを描く。
+// 目標が「〜との差の縮小」のもの（県平均・全国一位の都道府県との差）は、値の図では目標に近づいたか分からないので描かない。描けなければ null
+export function textGoalChartRow(row) {
+  const rs = Object.values(row.years);
+  if (rs.some((r) => r.target != null || /差/.test(r.target_raw || ''))) return null;
+  const read = (r, raw) => {
+    const label = r.name.match(/[（(]([^（()）]+)[)）]$/)?.[1];
+    const s = joinCell(raw);
+    const c = cellOf(label && s.startsWith(label) ? s.slice(label.length) : s);
+    if (c.value == null) return null;
+    const u = `${MULT_NAME[c.scale] || ''}${c.unit}`.normalize('NFKC');
+    if (!u) return c.value;
+    return u === (r.unit || '').normalize('NFKC') ? c.value / c.scale : null;
+  };
+  const years = Object.fromEntries(Object.entries(row.years).map(([y, r]) => [y, { ...r, base: r.base ?? read(r, r.base_raw), actual: r.actual ?? read(r, r.actual_raw) }]));
+  const vs = Object.values(years);
+  return vs.some((r) => r.actual != null) && vs.some((r) => r.base != null) ? { ...row, years } : null;
+}
+
 // 基本施策の主要指標を、年度をまたいだ指標ごとのまとまりにする。最新の報告の指標ごとに、4年分の行を名前で結び付ける
 // （名前が少し変わった年度は、その年度の指標が1つだけで単位が同じなら同じ指標とみなす）。
 // どれにも結び付かなかった行（最新の報告に無い指標）も、名前ごとに1つのまとまりにして、ページから落とさない

@@ -4,7 +4,7 @@
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { YEARS, LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, deptHref, toneOfJudgement, sourceLink } from '../lib/data.js';
+import { YEARS, LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, deptHref, toneOfJudgement, sourceLink, textGoalChartRow } from '../lib/data.js';
 import { joinLines } from '../lib/text.js';
 
 interface Props { row: any; id: string }
@@ -39,6 +39,8 @@ const isNum = (raw) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
 const parts = (raw) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, x.actual_raw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
 const ref = refText(x.actual_ref_year);
+// 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする
+const textGoal = textGoalChartRow(row);
 // 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
 const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
@@ -65,7 +67,8 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
     </li>
   </ol>
 
-  <SeikaChart row={row} unit={u} />
+  <SeikaChart row={textGoal || row} unit={u} drawable={textGoal ? true : undefined} />
+  {textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
   {prev && (
     <p class="small secondary note">
       {yl}から中期<Term word="実施計画" />になり、スタートとゴールが新しくなりました。

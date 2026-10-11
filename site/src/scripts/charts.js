@@ -251,7 +251,9 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     const per = periods.find((p) => p.ys.includes(s)).r;
     const rows = [];
     if (r) rows.push([withUnit(r.actual_raw, unit), `実績値${r.ref ? `（${r.ref}）` : ''}`, 'var(--pop)']);
-    if (per.plan_raw?.length) rows.push([withUnit(per.plan_raw[planIndex(s)], unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
+    // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は出さない
+    const pr = per.plan_raw?.[planIndex(s)];
+    if (pr && /[^\s\-－―—‐]/.test(pr)) rows.push([withUnit(pr, unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
     rows.push([withUnit(per.target_raw, unit), `ゴール（目標値・${per.target_year}）`, 'var(--ink)']);
     rows.push([withUnit(per.base_raw, unit), 'スタート（基準値）', 'var(--none)']);
     showRows(`${yl(s)}${r ? 'の報告' : ''}（${s <= 2024 ? '前期' : '中期'}）`, rows, cx, cy);
