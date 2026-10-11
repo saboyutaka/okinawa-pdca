@@ -13,11 +13,11 @@ import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
+import ParentShisaku from '../../../components/ParentShisaku.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
-import { JUDGE_UI } from '../../../lib/icons.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
-  sectionHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements, seikaGroupOf, seikaHref as seikaLinkHref,
+  YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, getTorikumiGroups, keySlug, budgetOf, fundOf,
+  sectionHref, sourceLink, seikaOfTorikumi, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements,
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -27,7 +27,7 @@ import type { Tone } from '../../../lib/icons.ts';
 import type { AmountKind, BudgetAmountRow } from '../../../lib/types.ts';
 
 export function getStaticPaths() {
-  return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: torikumiSlug(g.key) }, props: { g } }));
+  return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: keySlug(g.key) }, props: { g } }));
 }
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
@@ -41,17 +41,15 @@ const first = firstYearOf(g);
 const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]));
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
-const seikaName = latestRec?.seika_name;
-const seikaHref = seikaName && seikaHrefByName(s.id, seikaName);
-// 対応する成果指標の最新の達成率（名前の空白・記号の違いは無視して施策の成果指標から探す）
-const norm = (v: string | null | undefined) => (v || '').normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
-// 部局票の名前が複数の指標をまとめた名前（「〜及び〜」）のときは、当たる指標をすべて出す（1つだけ出すと、区分の違う指標を落とすため）
-const seikaMatches = seikaName ? s.seika.filter((x) => x.year === LATEST).filter((x) => { const a = norm(x.name); const b = norm(seikaName); return a === b || a.includes(b) || b.includes(a); }) : [];
-const rateChip = (x: (typeof seikaMatches)[number]) => ({
-  tone: RATE_BINS.find((b) => b.key === rateBin(x))?.tone,
-  text: `${x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw || '達成率なし'}（${yearLabel(LATEST)}）`,
-});
-const seikaLinkOf = (x: (typeof seikaMatches)[number]) => { const grp = seikaGroupOf(x); return grp ? seikaLinkHref(s.id, grp.key) : null; };
+// 対応する成果指標（部局票の名前）と、当たる施策の成果指標（複数のこともある）。成果指標のページの「かかわる主な取組」と同じ結び付き
+const seika = seikaOfTorikumi(s.id, g);
+const seikaName = seika.name;
+const seikaMatches = seika.groups;
+// 成果指標の最新の報告の達成率
+const rateChip = (grp: (typeof seikaMatches)[number]) => {
+  const x = grp.latest;
+  return { tone: RATE_BINS.find((b) => b.key === rateBin(x))?.tone, text: `${x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw || '達成率なし'}（${yearLabel(x.year)}）` };
+};
 const candidates = renameCandidates(g);
 const reposts = repostsOf(g);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
@@ -69,8 +67,6 @@ const secHref = sectionHref(t.section);
 const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 const latestStatus = statusOf(t);
 const latestTone = toneOfStatus(latestStatus);
-// 親の施策の判定（施策の判定だけを丸いハンコで出し、取組の進捗状況は横長の札で出して見分ける）
-const pj = judgeOf(s.judges[LATEST]);
 
 const toneOfPct = (p: number): Tone => (p >= 90 ? 'good' : p >= 75 ? 'warning' : p >= 60 ? 'serious' : 'critical');
 const latestAch = activityAchievement(g, t.year);
@@ -112,17 +108,9 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
   <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: t.name }]} />
 
-  <a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
-    <span class="p-kind">この取組が入っている施策</span>
-    <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
-    <span class="p-row">
-      <span class:list={['jstamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
-      <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
-      <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
-    </span>
-  </a>
+  <ParentShisaku s={s} kind="この取組が入っている施策" />
 
-  <header class="sticker lift head">
+  <header class="sticker lift head hang">
     <div class="kind"><Term word="主な取組" /></div>
     <h1>{t.name}</h1>
     <div class="meta">
@@ -180,14 +168,11 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <div class="tile-label">対応する<Term word="成果指標" /></div>
       {seikaName ? (
         <>
-          <div class="f-name">{seikaHref ? <a class="name-link" href={seikaHref}>{seikaName}</a> : seikaName}</div>
+          <div class="f-name">{seikaMatches.length === 1 ? <a class="name-link" href={seikaMatches[0].href}>{seikaName}</a> : seikaName}</div>
           {seikaMatches.length === 1 && <Chip tone={rateChip(seikaMatches[0]).tone} text={rateChip(seikaMatches[0]).text} />}
           {seikaMatches.length > 1 && (
             <ul class="f-lines">
-              {seikaMatches.map((x) => {
-                const href = seikaLinkOf(x);
-                return <li>{href ? <a class="sub-link" href={href}>{x.name}</a> : x.name} <Chip tone={rateChip(x).tone} text={rateChip(x).text} /></li>;
-              })}
+              {seikaMatches.map((x) => <li><a class="sub-link" href={x.href}>{x.latest.name}</a> <Chip tone={rateChip(x).tone} text={rateChip(x).text} /></li>)}
             </ul>
           )}
           <div class="tile-sub">この取組で成果を出そうとしている、施策の成果指標です。</div>
@@ -459,24 +444,10 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 </Base>
 
 <style>
-  /* 親の施策の札。取組のステッカーはその下に少し下げて置き、カギ形の線でつなぐ */
-  .parent {
-    position: relative; display: grid; gap: 2px; margin-top: 12px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px;
-    background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
-  }
-  .parent:hover { background: var(--sky); }
-  .parent:hover .p-name, .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
-  .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
-  .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
-  .p-name { font-weight: 700; line-height: 1.5; flex: 1 1 10em; min-width: 0; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
-  .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
-  .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
+  .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   .report-no { white-space: nowrap; }
-  .head { position: relative; display: grid; gap: 12px; margin: 14px 0 0 32px; }
-  .head::before {
-    content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
-    border-left: 3px solid var(--line); border-bottom: 3px solid var(--line); border-bottom-left-radius: 12px;
-  }
+  /* 親の施策の札（ParentShisaku）の下にぶら下げる（.hang） */
+  .head { display: grid; gap: 12px; }
   .head h1 { margin: 0; }
   .kind { font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); margin-bottom: -6px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
@@ -494,8 +465,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
-    .head { margin-left: 20px; }
-    .head::before { left: -12px; width: 10px; }
     .now { gap: 10px; }
     .now-years { max-width: none; }
   }

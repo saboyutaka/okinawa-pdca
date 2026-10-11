@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, deptOf, type Shisaku, type YearGroup } from './data.ts';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, type Shisaku, type YearGroup } from './data.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { HyokaKihonRow, IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
@@ -141,7 +141,7 @@ export function kankoTenkaiList() {
 export const kankoTenkai = (id: string) => kankoTenkaiList().find((t) => t.id === id);
 
 // 観光ロードマップの成果指標の行き先（施策展開のページの指標の札）
-export const kankoSeikaAnchor = (shisakuId: string, key: string) => `rms-${shisakuId}-${torikumiSlug(key)}`;
+export const kankoSeikaAnchor = (shisakuId: string, key: string) => `rms-${shisakuId}-${keySlug(key)}`;
 const NO_VALUE = new Set(['', '―', '-', '－', 'ー']);
 // 最新の報告（R6）の成果指標を1行ずつにする。最新の実績値（実績値の欄の最後の値と、その参照年）を付ける。
 // 並びは報告書の順（施策の順）。良い・悪いで並べ替えない（前進・横ばい・後退はそれぞれの行の印と、ページの頭の棒で見る）
@@ -159,9 +159,11 @@ export function kankoSeikaList() {
   );
 }
 export type KankoSeikaListRow = ReturnType<typeof kankoSeikaList>[number];
+// 沖縄県PDCA の成果指標（ページの URL）が、観光ロードマップのどの成果指標と同じか（観光ロードマップの報告書の「沖縄県PDCAの成果指標」の欄で結ぶ）。成果指標のページで使う
+export const kankoOfSeika = (seikaHref: string) => kankoSeikaList().filter((g) => g.pdca.some((p) => p.href === seikaHref));
 
 // 観光ロードマップの取組には自分のページが無いので、施策展開のページの取組のカードを行き先にする
-export const kankoTorikumiAnchor = (shisakuId: string, key: string) => `rmt-${shisakuId}-${torikumiSlug(key)}`;
+export const kankoTorikumiAnchor = (shisakuId: string, key: string) => `rmt-${shisakuId}-${keySlug(key)}`;
 export const KANKO_TORIKUMI_HREF = '/keikaku/kanko/torikumi/';
 // 観光ロードマップの取組（年度をまたいで同じ名前を1行にしたもの）を、施策の順に平らにする（取組をさがすで使う）
 export function kankoTorikumiRows() {
@@ -257,7 +259,7 @@ export const ikkatsuGroups = () => (ikkatsuAll ??= groupByKey(load('ikkatsu/jigy
 export const ikkatsuShisakuIds = (g: YearGroup<IkkatsuJigyoRow>) =>
   [...new Set(Object.values(g.years).sort((a, b) => b.year - a.year).flatMap((r) => r.shisaku_ids))];
 // 施策のページの事業のカード（IkkatsuCard）の id と、そこへの URL（最初の施策のページ）
-export const ikkatsuAnchor = (key: string) => `ik-${torikumiSlug(key)}`;
+export const ikkatsuAnchor = (key: string) => `ik-${keySlug(key)}`;
 export function ikkatsuHref(g: YearGroup<IkkatsuJigyoRow>) {
   const sid = ikkatsuShisakuIds(g)[0];
   return sid ? `/shisaku/${sid}/#${ikkatsuAnchor(g.key)}` : null;

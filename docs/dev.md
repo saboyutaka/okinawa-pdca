@@ -23,7 +23,7 @@
 make build && make shot                                    # PC 幅（1280px）とスマホ幅（390px）で撮って tmp/shots に
 make shot PAGES="/ /shisaku/1-1-a-1/ --dark"               # ページとオプションを選ぶ
 make shot PAGES="/torikumi/ --top"                         # 最初の画面だけ
-make shot PAGES="/shisaku/1-1-a-1/ --selector '#seika-1'"  # 最初に当たる要素だけ
+make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"     # 最初に当たる要素だけ
 ```
 
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。

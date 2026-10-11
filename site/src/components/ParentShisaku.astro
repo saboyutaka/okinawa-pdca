@@ -1,0 +1,36 @@
+---
+// 親の施策の札（取組のページと成果指標のページの頭）。施策の判定は小さな丸いハンコで出す（丸いハンコは施策の判定だけ。docs/design.md の3章）。
+// ページの頭のステッカーは、この札の下に少し下げて置き、カギ形の線でつなぐ（styles/global.css の .hang）
+import Icon from './Icon.astro';
+import Sz from './Sz.astro';
+import { JUDGE_UI } from '../lib/icons.ts';
+import { LATEST, yearLabel, judgeOf, type Shisaku } from '../lib/data.ts';
+
+// kind は「この取組が入っている施策」のような札の頭の言葉
+interface Props { s: Shisaku; kind: string }
+const { s, kind } = Astro.props;
+const pj = judgeOf(s.judges[LATEST]);
+---
+<a class:list={['parent', `sz-${s.shouraizou}`]} href={`/shisaku/${s.id}/`}>
+  <span class="p-kind">{kind}</span>
+  <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
+  <span class="p-row">
+    <span class:list={['jstamp', `tone-${pj ? pj.tone : 'blank'}`, pj && JUDGE_UI[pj.key].hatch && 'hatch']} aria-hidden="true">{pj ? <><Icon tone={pj.tone} shape={JUDGE_UI[pj.key].shape} size={9} />{pj.key}</> : '—'}</span>
+    <span class="p-name"><Sz id={s.shouraizou} />{s.name}</span>
+    <span class="p-judge">{pj ? `${yearLabel(LATEST)}の県の判定 ${pj.key} ${pj.label}` : `${yearLabel(LATEST)}の県の判定なし`}</span>
+  </span>
+</a>
+
+<style>
+  .parent {
+    position: relative; display: grid; gap: 2px; margin-top: 12px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 16px;
+    background: var(--paper); box-shadow: 3px 3px 0 var(--shadow); color: var(--ink); text-decoration: none;
+  }
+  .parent:hover { background: var(--sky); }
+  .parent:hover .p-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
+  .p-kind { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; padding-right: 9em; }
+  .p-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+  .p-name { font-weight: 700; line-height: 1.5; flex: 1 1 10em; min-width: 0; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
+  .p-name :global(.badge-sz) { margin-right: 6px; vertical-align: 0.1em; }
+  .p-judge { font-size: 0.8125rem; color: var(--ink-2); }
+</style>

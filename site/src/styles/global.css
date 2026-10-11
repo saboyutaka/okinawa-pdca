@@ -267,6 +267,16 @@ details[open] > summary { margin-bottom: 8px; }
   font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; line-height: 1;
 }
 .row-list:empty { display: none; }
+/* 親の施策の札（components/ParentShisaku.astro）の下にぶら下げるページの頭。少し下げて置き、カギ形の線でつなぐ（取組・成果指標のページ） */
+.hang { position: relative; margin: 14px 0 0 32px; }
+.hang::before {
+  content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
+  border-left: 3px solid var(--line); border-bottom: 3px solid var(--line); border-bottom-left-radius: 12px;
+}
+@media (max-width: 640px) {
+  .hang { margin-left: 20px; }
+  .hang::before { left: -12px; width: 10px; }
+}
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
 /* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */

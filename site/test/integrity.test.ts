@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid,
+  amountEntries, budgetGroups, judgeByGrid, getSeikaGroups, seikaOfTorikumi, torikumiOfSeika,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -54,6 +54,17 @@ test('施策は施策コードの順に並ぶ（1-1-a-2 の次に 1-1-a-10）', 
 test('取組のページの URL が重複しない', () => {
   const hrefs = getTorikumiGroups().map((g) => g.href);
   assert.equal(new Set(hrefs).size, hrefs.length);
+});
+
+test('成果指標のページの URL が重複せず、どの成果指標（各年度の行）もどれかのページに入る', () => {
+  const groups = getSeikaGroups();
+  assert.equal(new Set(groups.map((g) => g.href)).size, groups.length);
+  const inGroups = new Set(groups.flatMap((g) => Object.values(g.years)));
+  none(load('seika').filter((x) => !inGroups.has(x)), (x) => `${x.year} ${x.shisaku_id} ${x.name}`);
+});
+
+test('取組のページの「対応する成果指標」の成果指標のページには、「かかわる主な取組」にその取組が出る', () => {
+  none(getTorikumiGroups().flatMap((g) => seikaOfTorikumi(g.shisaku.id, g).groups.filter((x) => !torikumiOfSeika(x).includes(g)).map((x) => [g, x] as const)), ([g, x]) => `${g.href} → ${x.href}`);
 });
 
 test('どの施策も、いずれかのくらしのテーマに入る', () => {

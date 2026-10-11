@@ -1,0 +1,37 @@
+---
+// 成果指標1つのゴールまでの道のりの図と、図を読むのに要る注意（目標値が文・中期実施計画で値が新しくなった・基準値を検証票で補った）。
+// 施策ページのカード（SeikaCard）と成果指標のページで使う。凡例（SeikaKey）は使う側で1回だけ出す
+import SeikaChart from './SeikaChart.astro';
+import Term from './Term.astro';
+import { YEARS, yearLabel, sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
+
+interface Props { row: SeikaGroup }
+const { row } = Astro.props;
+const x = row.latest;
+const yl = yearLabel(x.year);
+// 計画期間をまたいで目標値が変わった（R6→R7）
+const prev = [...YEARS].reverse().filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
+// 新しくなったのはスタート（基準値）・ゴール（目標値）のどちらか。どちらも同じ指標もある（欄の中の改行・全角半角の違いは同じとみなす）
+const sameText = (a: string | null | undefined, b: string | null | undefined) => (a || '').normalize('NFKC').replace(/\s/g, '') === (b || '').normalize('NFKC').replace(/\s/g, '');
+const renewed = prev && [!sameText(prev.base_raw, x.base_raw) && 'スタート', !sameText(prev.target_raw, x.target_raw) && 'ゴール'].filter(Boolean).join('と');
+// 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする
+const textGoal = textGoalChartRow(row);
+// 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
+const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
+---
+<SeikaChart row={textGoal || row} unit={x.unit} drawable={textGoal ? true : undefined} />
+{textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
+{prev && (
+  <p class="small secondary note">
+    {yl}から中期<Term word="実施計画" />になり、{renewed ? `${renewed}が新しくなりました` : 'スタートとゴールの値は前期と同じです'}。
+  </p>
+)}
+{x.base_fix && (
+  <p class="small secondary note">
+    基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
+  </p>
+)}
+
+<style>
+  .note { margin: 6px 0 0; }
+</style>

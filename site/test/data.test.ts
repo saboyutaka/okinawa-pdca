@@ -5,7 +5,7 @@ import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
-  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -210,9 +210,20 @@ test('JUDGE_TRENDS: 最新の年度まで3年続けて C〜G', () => {
   assert.deepEqual(trendsOf(null, null, 'C', 'C'), []);
 });
 
-test('取組のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
-  assert.equal(torikumiSlug('abc'), 'a9993e36');
+test('取組・成果指標のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
+  assert.equal(keySlug('abc'), 'a9993e36');
   assert.equal(torikumiHref('1-1-a-1', 'abc'), '/torikumi/1-1-a-1/a9993e36/');
+  assert.equal(seikaHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
+});
+
+test('seikaNameMatches: 部局票の「対応する成果指標」は、空白・記号の違いを無視し、どちらかがもう一方を含めば当たり', () => {
+  assert.ok(seikaNameMatches('入域観光客数', '入域観光客数'));
+  assert.ok(seikaNameMatches('入域 観光客数（人）', '入域観光客数(人)'));
+  // 複数の指標をまとめた名前
+  assert.ok(seikaNameMatches('観光収入及び入域観光客数', '入域観光客数'));
+  assert.ok(!seikaNameMatches('観光収入', '入域観光客数'));
+  assert.ok(!seikaNameMatches('', '入域観光客数'));
+  assert.ok(!seikaNameMatches(null, '入域観光客数'));
 });
 
 test('activityQty: 活動指標の計画・実績は、かっこの前のその年度の数と単位を読む', () => {

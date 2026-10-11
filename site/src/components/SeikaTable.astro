@@ -1,0 +1,41 @@
+---
+// 成果指標1つの年度ごとの値の表（畳む）。道のりの図（SeikaRoute）の「表で見る」。新しい年度が上。
+// open は図を描けない指標（目標が「〜との差の縮小」など）の成果指標のページで、表を開いて出すとき
+import { YEARS, yearLabel, planIndex, withUnit, type SeikaGroup } from '../lib/data.ts';
+
+interface Props { row: SeikaGroup; open?: boolean }
+const { row, open = false } = Astro.props;
+const yearsDesc = [...YEARS].reverse().filter((y) => row.years[y]);
+---
+<details open={open}>
+  <summary>表で見る</summary>
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">{row.latest.name}の年度別の値</caption>
+      <thead>
+        <tr><th>報告年度</th><th class="num">基準値</th><th class="num">その年度の計画値</th><th class="num">実績値</th><th class="num">達成率</th><th class="num">目標値</th><th>県の見通し</th></tr>
+      </thead>
+      <tbody>
+        {yearsDesc.map((y) => {
+          const r = row.years[y];
+          return (
+            <tr>
+              <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
+              <td class="num">{withUnit(r.base_raw, r.unit)}{r.base_fix && <><br /><small class="secondary">部局の検証票の値</small></>}</td>
+              <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
+              <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
+              <td class="num">{r.rate != null ? `${r.rate}%` : r.rate_raw || '—'}</td>
+              <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
+              <td>{r.judgement || '—'}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<style>
+  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
+  td.num { white-space: normal; min-width: 5em; max-width: 14em; }
+</style>

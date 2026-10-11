@@ -452,20 +452,11 @@ export function seikaRows(shisaku: Shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
-// 成果指標の行き先: 施策ページの中の成果指標の見出し（#seika-1, #seika-2 …。施策ページの並び順）
-const seikaIndex = new Map<string, Map<string, string>>();
-export function seikaAnchor(shisakuId: string, key: string) {
-  if (!seikaIndex.has(shisakuId)) {
-    const s = getShisaku(shisakuId);
-    seikaIndex.set(shisakuId, new Map((s ? seikaRows(s) : []).map((r, i) => [r.key, `seika-${i + 1}`])));
-  }
-  return seikaIndex.get(shisakuId)!.get(key) || 'seika';
-}
-export const seikaHref = (shisakuId: string, key: string) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
+// 成果指標のページの URL: /shihyou/<施策ID>/<指標名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
+export const seikaHref = (shisakuId: string, key: string) => `/shihyou/${shisakuId}/${keySlug(key)}/`;
 // 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
 export function seikaGroupOf(row: SeikaRow) {
-  const s = getShisaku(row.shisaku_id);
-  return s ? seikaRows(s).find((r) => r.years[row.year] === row) : undefined;
+  return seikaGroupsOf(row.shisaku_id).find((r) => r.years[row.year] === row);
 }
 
 // ---------------------------------------------------------------- 年度をまたいだ取組・成果指標
@@ -526,9 +517,10 @@ export function getTorikumiGroups() {
   return torikumiGroups;
 }
 
+// 名前の key のハッシュ8桁。取組・成果指標のページの URL と、観光ロードマップ・一括交付金のカードの id に使う
+export const keySlug = (key: string) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
 // 取組のページの URL: /torikumi/<施策ID>/<取組名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
-export const torikumiSlug = (key: string) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
-export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${torikumiSlug(key)}/`;
+export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${keySlug(key)}/`;
 
 // 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）
 let groupHrefs: Set<string> | undefined;
@@ -597,26 +589,77 @@ export function renameCandidates(g: TorikumiGroup) {
   return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
 }
 
-// 部局票の「対応する成果指標」（名前）から、施策ページの成果指標の見出しへのリンクを探す（名前の空白・記号の違いは無視）
-export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
-  const s = getShisaku(shisakuId);
-  const n = nameKey(name || '');
-  if (!s || !n) return null;
-  const row = seikaRows(s).find((r) => {
-    const m = nameKey(r.latest.name);
-    return m === n || n.includes(m) || m.includes(n);
-  });
-  return row ? seikaHref(shisakuId, row.key) : null;
-}
-
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
 export interface SeikaGroupOfShisaku extends SeikaGroup {
   shisaku: Shisaku;
+  href: string;
 }
 let seikaGroups: SeikaGroupOfShisaku[] | undefined;
+let seikaGroupsByShisaku: Map<string, SeikaGroupOfShisaku[]> | undefined;
 export function getSeikaGroups() {
-  seikaGroups ??= getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s })));
+  if (seikaGroups) return seikaGroups;
+  seikaGroups = getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s, href: seikaHref(s.id, row.key) })));
+  const hrefs = new Set<string>();
+  for (const g of seikaGroups) {
+    if (hrefs.has(g.href)) throw new Error(`成果指標のページの URL が重複している: ${g.href}`);
+    hrefs.add(g.href);
+  }
   return seikaGroups;
+}
+// 1つの施策の成果指標（施策ページの並び。最新の報告にあるものが先）
+export function seikaGroupsOf(shisakuId: string) {
+  if (!seikaGroupsByShisaku) {
+    seikaGroupsByShisaku = new Map();
+    for (const g of getSeikaGroups()) {
+      if (!seikaGroupsByShisaku.has(g.shisaku.id)) seikaGroupsByShisaku.set(g.shisaku.id, []);
+      seikaGroupsByShisaku.get(g.shisaku.id)!.push(g);
+    }
+  }
+  return seikaGroupsByShisaku.get(shisakuId) || [];
+}
+
+// 部局票の「対応する成果指標」（名前）が成果指標の名前に当たるか。名前の空白・記号の違いは無視する。
+// 部局票の名前が複数の指標をまとめた名前（「〜及び〜」）のこともあるので、どちらかがもう一方を含めば当たりとする
+export function seikaNameMatches(seikaName: string | null | undefined, name: string) {
+  const a = nameKey(seikaName || '');
+  const b = nameKey(name);
+  return Boolean(a && b) && (a === b || a.includes(b) || b.includes(a));
+}
+// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（最新の報告の名前で比べる）
+export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
+  return seikaGroupsOf(shisakuId).find((r) => seikaNameMatches(name, r.latest.name))?.href ?? null;
+}
+// 主な取組と成果指標の結び付き。ある年度の部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。
+// 当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
+function seikaOfTorikumiIn(shisakuId: string, key: string, year: number) {
+  const name = budgetOf(year, shisakuId, key)?.seika_name || '';
+  const groups = name ? seikaGroupsOf(shisakuId).filter((g) => g.years[year] && seikaNameMatches(name, g.years[year].name)) : [];
+  return { year, name, groups };
+}
+// 主な取組の対応する成果指標（取組のページ・施策ページの取組のカード）。部局票がある最新の年度のもの
+export function seikaOfTorikumi(shisakuId: string, row: YearGroup<TorikumiRow>) {
+  const year = [...YEARS].reverse().find((y) => row.years[y] && budgetOf(y, shisakuId, row.key));
+  return year ? seikaOfTorikumiIn(shisakuId, row.key, year) : { year, name: '', groups: [] };
+}
+// 成果指標にかかわる主な取組（成果指標のページ）。どれかの年度の部局票で、この指標に対応するとされている取組。
+// 最新の年度だけで結ぶと、R6 で終わった指標に取組が付かない（取組の R7 の部局票は、入れ替わった後の指標を指すため）。
+// 並びは施策ページの取組の並び（最新の報告にあるものが先）
+let torikumiBySeika: Map<string, TorikumiGroup[]> | undefined;
+export function torikumiOfSeika(row: SeikaGroupOfShisaku) {
+  if (!torikumiBySeika) {
+    torikumiBySeika = new Map();
+    for (const g of getTorikumiGroups()) {
+      for (const y of YEARS) {
+        if (!g.years[y]) continue;
+        for (const x of seikaOfTorikumiIn(g.shisaku.id, g.key, y).groups) {
+          if (!torikumiBySeika.has(x.href)) torikumiBySeika.set(x.href, []);
+          const list = torikumiBySeika.get(x.href)!;
+          if (!list.includes(g)) list.push(g);
+        }
+      }
+    }
+  }
+  return torikumiBySeika.get(row.href) || [];
 }
 
 // ---------------------------------------------------------------- 部局

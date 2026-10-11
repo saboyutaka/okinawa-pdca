@@ -1,127 +1,27 @@
 ---
 // 成果指標1つ（施策ページ）。①計画値に届いたか（1行） ②スタート → いま → ゴールの数字（時間の順） ③道のりの図 ④県の説明（吹き出しでいつも出す） ⑤年度ごとの表（畳む）
-// 同じ数字を何度も並べない。数字は②に1回だけ出し、図は形（計画の道すじとのずれ）を見せる
-import SeikaChart from './SeikaChart.astro';
-import Chip from './Chip.astro';
-import Term from './Term.astro';
-import { YEARS, LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, sectionHref, toneOfJudgement, sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
-import { joinLines } from '../lib/text.ts';
+// 同じ数字を何度も並べない。数字は②に1回だけ出し、図は形（計画の道すじとのずれ）を見せる。①〜③と⑤は成果指標のページと同じ部品。
+// 見出しの名前は成果指標のページ（4年分の県の説明・かかわる主な取組）へのリンク
+import SeikaGoal from './SeikaGoal.astro';
+import SeikaRoute from './SeikaRoute.astro';
+import SeikaSays from './SeikaSays.astro';
+import SeikaTable from './SeikaTable.astro';
+import { LATEST, yearLabel, sectionHref, type SeikaGroupOfShisaku } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup; id: string }
-const { row, id } = Astro.props;
+interface Props { row: SeikaGroupOfShisaku }
+const { row } = Astro.props;
 const x = row.latest;
 const u = x.unit;
-const yl = yearLabel(x.year);
-const pi = planIndex(x.year);
-// 計画値の欄が空・「―」の指標は、計画値の行を出さない
-const planRaw = /[^\s\-－―—‐]/.test(x.plan_raw?.[pi] || '') ? x.plan_raw[pi] : null;
-const yearsDesc = [...YEARS].reverse();
-// 計画期間をまたいで目標値が変わった（R6→R7）
-const prev = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
-// 新しくなったのはスタート（基準値）・ゴール（目標値）のどちらか。どちらも同じ指標もある（欄の中の改行・全角半角の違いは同じとみなす）
-const sameText = (a: string | null | undefined, b: string | null | undefined) => (a || '').normalize('NFKC').replace(/\s/g, '') === (b || '').normalize('NFKC').replace(/\s/g, '');
-const renewed = prev && [!sameText(prev.base_raw, x.base_raw) && 'スタート', !sameText(prev.target_raw, x.target_raw) && 'ゴール'].filter(Boolean).join('と');
-const { base, actual, target } = x;
-const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
-const progress = nums ? (actual - base) / (target - base) : null;
-const down = nums && target < base;
-
-// ① 計画値に届いたか。色と形は達成率の区分（RATE_BINS）、文は区分ごとに言い切る
-const bin = rateBin(x);
-const tone = RATE_BINS.find((b) => b.key === bin)?.tone;
-const chipText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
-// 「達成」とだけ書かれた指標は、印字の数では計画値に届いていないものもあるので、県の判断として書く
-const verdict = {
-  '100%以上': x.rate_raw === '達成' ? `県の報告書では${yl}の計画値を「達成」としています`
-    : progress != null && progress > 1 ? `${yl}の計画値に届き、ゴールの目標値も超えています`
-    : progress === 1 ? `${yl}の計画値に届き、ゴールの目標値にも届いています` : `${yl}の計画値に届いています`,
-  '60%以上100%未満': `${yl}の計画値にまだ届いていません`,
-  '0%超60%未満': `${yl}の計画値にまだ届いていません`,
-  '0%以下': progress != null && progress < 0 ? 'スタートの基準値より悪くなっています' : x.rate_raw === '未達成' ? `${yl}の計画値に届いていません` : 'スタートの基準値から進んでいません',
-  '達成率なし': '県の報告書に達成率がありません',
-}[bin];
-
-// ② 数字。単位は小さく添えて、数字を折り返さない。文の値（「〜の縮小」など）が長いときは縦に並べる
-const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
-const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
-const stack = [x.base_raw, x.actual_raw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
-const ref = refText(x.actual_ref_year);
-// 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする
-const textGoal = textGoalChartRow(row);
-// 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
-const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
-<article class="sticker scard" id={id}>
-  <h3>{x.name}{u && <span class="secondary small">（{u}）</span>}</h3>
+<article class="sticker scard">
+  <h3><a class="name-link" href={row.href}>{x.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
-  {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
-  <p class="verdict"><Chip tone={tone} text={chipText} /><span>{verdict}</span></p>
-
-  <ol class:list={['goal-steps', stack && 'stack']}>
-    <li>
-      <span class="gs-l">スタート</span>
-      <span class="gs-main"><span class="gs-v">{parts(x.base_raw)[0]}<small>{parts(x.base_raw)[1]}</small></span><span class="gs-s"><Term word="基準値" />{x.base_fix && '（部局の検証票の値）'}</span></span>
-    </li>
-    <li class="now">
-      <span class="gs-l">{x.year === LATEST ? 'いま' : `${yl}の報告`}</span>
-      <span class="gs-main"><span class="gs-v">{parts(x.actual_raw)[0]}<small>{parts(x.actual_raw)[1]}</small></span><span class="gs-s"><Term word="実績値" note={ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : undefined} /></span></span>
-      {planRaw && <span class="gs-s">{yl}の<Term word="計画値" /> <b class="num">{withUnit(planRaw, u)}</b></span>}
-    </li>
-    <li>
-      <span class="gs-l">ゴール</span>
-      <span class="gs-main"><span class="gs-v">{parts(x.target_raw)[0]}<small>{parts(x.target_raw)[1]}</small></span><span class="gs-s"><Term word="目標値" />（{x.target_year}）{down && '・基準値より低い目標値'}</span></span>
-      {x.judgement && <span class="gs-s judge">県の見通し <Chip tone={toneOfJudgement(x.judgement)} text={x.judgement} /></span>}
-    </li>
-  </ol>
-
-  <SeikaChart row={textGoal || row} unit={u} drawable={textGoal ? true : undefined} />
-  {textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
-  {prev && (
-    <p class="small secondary note">
-      {yl}から中期<Term word="実施計画" />になり、{renewed ? `${renewed}が新しくなりました` : 'スタートとゴールの値は前期と同じです'}。
-    </p>
-  )}
-  {x.base_fix && (
-    <p class="small secondary note">
-      基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
-    </p>
-  )}
-  {x.explanation && (
-    <div class="bubble-row says">
-      <span class="avatar" aria-hidden="true">県</span>
-      <div class="bubble">
-        <div class="small secondary label">県による説明（{yl}・{x.dept}）</div>
-        <p class="prose small">{joinLines(x.explanation)}</p>
-      </div>
-    </div>
-  )}
-  <details>
-    <summary>表で見る</summary>
-    <div class="table-wrap">
-      <table>
-        <caption class="sr-only">{x.name}の年度別の値</caption>
-        <thead>
-          <tr><th>報告年度</th><th class="num">基準値</th><th class="num">その年度の計画値</th><th class="num">実績値</th><th class="num">達成率</th><th class="num">目標値</th><th>県の見通し</th></tr>
-        </thead>
-        <tbody>
-          {yearsDesc.filter((y) => row.years[y]).map((y) => {
-            const r = row.years[y];
-            return (
-              <tr>
-                <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
-                <td class="num">{withUnit(r.base_raw, r.unit)}{r.base_fix && <><br /><small class="secondary">部局の検証票の値</small></>}</td>
-                <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
-                <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
-                <td class="num">{r.rate != null ? `${r.rate}%` : r.rate_raw || '—'}</td>
-                <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
-                <td>{r.judgement || '—'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  </details>
+  {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
+  <SeikaGoal row={row} />
+  <SeikaRoute row={row} />
+  {x.explanation && <SeikaSays r={x} />}
+  <SeikaTable row={row} />
+  <a class="to-page" href={row.href}>この指標だけのページを見る</a>
 </article>
 
 <style>
@@ -129,9 +29,5 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
   .scard h3 { margin-top: 0; }
   .meta { margin: -4px 0 4px; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
-  .note { margin: 6px 0 0; }
-  .says { margin-top: 14px; }
-  .says .prose { margin: 4px 0 0; }
-  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
-  td.num { white-space: normal; min-width: 5em; max-width: 14em; }
+  .to-page { display: inline-block; margin-top: 10px; font-size: 0.875rem; font-weight: 700; }
 </style>
