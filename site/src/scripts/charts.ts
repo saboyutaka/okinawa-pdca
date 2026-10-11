@@ -424,3 +424,6 @@ window.addEventListener('resize', () => {
   renderAll();
 });
 for (const d of document.querySelectorAll('details')) d.addEventListener('toggle', () => { if (d.open) renderAll(); });
+// 印刷の前後にも描き直す（scripts/print.ts が畳んだ内容を開いてページを紙の幅にそろえたあと・元に戻したあと）
+window.addEventListener('beforeprint', renderAll);
+window.addEventListener('afterprint', renderAll);

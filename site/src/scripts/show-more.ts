@@ -12,4 +12,7 @@ for (const list of document.querySelectorAll<HTMLElement>('[data-more]')) {
     // キーボードで押したときに、出てきた最初の行から読み進められるようにする
     rest[0].querySelector<HTMLElement>('a')?.focus();
   });
+  // 印刷するときは残りも出す（印刷が終わったら、ボタンを押していなければ隠し直す）
+  window.addEventListener('beforeprint', () => { if (!btn.hidden) for (const el of rest) el.hidden = false; });
+  window.addEventListener('afterprint', () => { if (!btn.hidden) for (const el of rest) el.hidden = true; });
 }

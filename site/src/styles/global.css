@@ -529,3 +529,22 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .sp-act path { fill: none; stroke: var(--pop); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .sp-act circle { fill: var(--pop); stroke: var(--line); stroke-width: 1; }
 .sp-act circle:last-child { stroke-width: 1.5; }
+
+/* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
+   ナビ・配色のボタン・目次・絞り込み・シェア・開け閉めのボタンは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
+   地の色は白にし、状態の色は画面と同じに印刷する（色だけでなく形と文字でも出しているので、白黒の印刷でも読める） */
+html.printing .wrap { max-width: 186mm; padding-inline: 0; }
+@media print {
+  @page { margin: 12mm; }
+  body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .wrap { max-width: none; padding-inline: 0; }
+  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-open-all], [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
+  .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
+  .site-footer .foot-links { display: none; }
+  .sticker, .card, .row-list { box-shadow: none !important; }
+  .table-wrap { overflow: visible; }
+  [data-scroll-hint] { -webkit-mask-image: none !important; mask-image: none !important; }
+  [data-chart] svg { max-width: 100%; height: auto; }
+  h1, h2, h3, h4, summary { break-after: avoid; }
+  .row-list > li, .goal-steps, tr, [data-chart] svg, .spark { break-inside: avoid; }
+}

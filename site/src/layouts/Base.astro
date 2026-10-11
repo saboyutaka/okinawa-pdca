@@ -84,6 +84,8 @@ const inItem = (n: (typeof NAV)[number]) => (n.href === '/' ? path === '/' : [n.
     <script src="../scripts/theme.ts"></script>
     <script src="../scripts/terms.ts"></script>
     <script src="../scripts/disclosure.ts"></script>
+    {/* print.ts は charts.ts より前に置く（印刷の直前に、紙の幅にそろえてから図を描き直すため） */}
+    <script src="../scripts/print.ts"></script>
     <script src="../scripts/charts.ts"></script>
     <script src="../scripts/scroll-hint.ts"></script>
   </body>
