@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
-- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。
+- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json` をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（[deploy.md](deploy.md) の 5章）、名前の変わらない控えの `/torikumi/data.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。将来像・部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
@@ -18,7 +18,7 @@
 - 抽出結果の JSON の形は `src/lib/types.ts`（`load(name)` の戻り値）。抽出の出力の欄を変えたらここも直す。
 - ページ用の形（`Shisaku`・`TorikumiGroup`・`SeikaGroup`・`KankoShisaku` など）は `lib/data.ts`・`lib/plans.ts` が出す。コンポーネントの `Props` はこれを使い、`any` にしない。状態の色と形は `lib/icons.ts` の `Tone`・`Shape`。
 - 動的なページは `getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。
-- ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図は `scripts/charts.ts` の `SeikaData`・`TrendData`・`KatsudouData`、取組の検索は `pages/torikumi/data.json.ts` の `SearchData`）。
+- ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図は `scripts/charts.ts` の `SeikaData`・`TrendData`・`KatsudouData`、取組の検索は `lib/search-data.ts` の `SearchData`）。
 - 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。
 
 ## 3. lib とスクリプト

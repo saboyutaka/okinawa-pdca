@@ -5,13 +5,16 @@ import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } 
 import { fmt } from '../../lib/format.ts';
 import { getThemes } from '../../lib/themes.ts';
 import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.ts';
+import { SEARCH_DATA_FALLBACK, searchDataPath } from '../../lib/search-data.ts';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
+// 検索用のデータ。名前に中身のハッシュが付く（lib/search-data.ts）
+const dataPath = searchDataPath();
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   {/* 検索用のデータを、ページのスクリプトが届くのを待たずに読み始める（下のスクリプトの fetch がこれを使う。crossorigin は fetch の既定に合わせる） */}
-  <link slot="head" rel="preload" href="/torikumi/data.json" as="fetch" crossorigin="anonymous" />
+  <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <h1>取組をさがす</h1>
   <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
 
@@ -69,7 +72,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件を表示</span></p>
 
-  <ul class="row-list" id="results"></ul>
+  <ul class="row-list" id="results" data-src={dataPath} data-fallback={SEARCH_DATA_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <p class="small secondary">
     同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（「子ども」「こども」のような書き方の違いは同じ名前とみなします。R7の中期実施計画で名前が変わった取組などは別の行）。キーワードは「子ども」「子供」「こども」・「障害」「障がい」のどの書き方でも同じように探せます。部局は最新の報告での所管部局です。
@@ -82,7 +85,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 <script>
   import { iconSvg } from '../../lib/icons.ts';
   import { matchesAll, searchText, searchWords, type SearchWord } from '../../lib/search.ts';
-  import type { SearchData as Data } from './data.json.ts';
+  import type { SearchData as Data } from '../../lib/search-data.ts';
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
   const form = document.getElementById('tf') as HTMLFormElement;
@@ -242,12 +245,16 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   more.addEventListener('click', showMore);
-  fetch('/torikumi/data.json')
-    .then((r) => {
+  const load = (url: string) =>
+    fetch(url).then((r) => {
       if (!r.ok) throw new Error(String(r.status));
-      return r.json();
-    })
-    .then((d: Data) => {
+      return r.json() as Promise<Data>;
+    });
+  // 名前にハッシュの付いたデータ（ずっとキャッシュされる）を読む。公開し直した直後に、キャッシュした前のページから開くと
+  // 前のハッシュのファイルはもう無いので、名前の変わらない控えを読む
+  load(list.dataset.src!)
+    .catch(() => load(list.dataset.fallback!))
+    .then((d) => {
       data = d;
       apply();
     })
