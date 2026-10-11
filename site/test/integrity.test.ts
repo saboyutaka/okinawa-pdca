@@ -4,11 +4,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
-  getTorikumi, getSeika, seikaDept, deptHref, sourceLink, amountEntries, budgetGroups, getBudgetLines, fundOf,
+  getTorikumi, getSeika, seikaDept, deptHref, sourceLink, amountEntries, budgetGroups,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import {
-  planSourceLink, kankoSeikaList, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept, ikkatsuOfBudget,
+  planSourceLink, kankoSeikaList, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
 } from '../src/lib/plans.ts';
 
 // 当てはまらなかったものを、先頭の数件だけメッセージに出す
@@ -121,13 +121,4 @@ test('最新の年度の一括交付金の事業の担当部局には、どれ�
   // R4 で終わった事業には、R5 の再編の前の部局（保健医療部など）のものがある
   const latest = ikkatsuGroups().filter((g) => g.years[IKKATSU_LATEST]);
   none(latest.filter((g) => g.latest.dept && !deptHref(ikkatsuDept(g.latest.dept))), (g) => `${g.latest.name}: ${g.latest.dept}`);
-});
-
-test('予算事業と一括交付金の事業は、財源が一括交付金（ソフト）で名前が同じものだけ結び付ける', () => {
-  const soft = getBudgetLines().filter((l) => l.report === LATEST && fundOf(l.source) === '一括交付金（ソフト）');
-  const hits = soft.filter((l) => ikkatsuOfBudget(l.name, '一括交付金（ソフト）'));
-  // R7 の報告では一括交付金（ソフト）の予算事業の半分以上が、事後評価にも同じ名前である（docs/data.md 12.2）
-  assert.ok(hits.length * 2 > new Set(soft.map((l) => l.name)).size, `${hits.length} 件`);
-  const l = hits[0];
-  assert.ok(l && !ikkatsuOfBudget(l.name, '県単等'), '財源が違えば結び付けない');
 });

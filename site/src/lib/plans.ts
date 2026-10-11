@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, nameKey, deptOf, type Shisaku, type YearGroup } from './data.ts';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, deptOf, type Shisaku, type YearGroup } from './data.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { HyokaKihonRow, IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
@@ -270,14 +270,6 @@ export function ikkatsuHref(g: YearGroup<IkkatsuJigyoRow>) {
 }
 // 担当部課の部局。教育委員会の課は、沖縄県PDCA の部局（教育庁）にそろえる
 export const ikkatsuDept = (dept: string | null | undefined) => (/^教育委員会/.test(dept || '') ? '教育庁' : deptOf(dept));
-
-// 予算事業（部局の検証票）と同じ名前の事業。予算事業の単位で事後評価されているので、財源が一括交付金（ソフト）の予算事業だけ結び付ける
-let ikkatsuByName: Map<string, YearGroup<IkkatsuJigyoRow>> | undefined;
-export function ikkatsuOfBudget(name: string | null | undefined, fund: string) {
-  if (fund !== '一括交付金（ソフト）' || !name) return undefined;
-  ikkatsuByName ??= new Map(ikkatsuGroups().map((g) => [g.key, g]));
-  return ikkatsuByName.get(nameKey(name));
-}
 
 // ---------------------------------------------------------------- 評価検証報告書
 

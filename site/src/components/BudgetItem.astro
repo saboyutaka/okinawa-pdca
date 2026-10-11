@@ -1,19 +1,13 @@
 ---
 // 予算と財源の、予算事業の一覧の1行。左に予算事業の名前・財源・書かれている取組（2件目からは畳む）、右に決算見込額と前後の年度の金額。
-// 財源が一括交付金（ソフト）で、同じ名前の事業が事後評価されていれば、その評価と施策のページの事業のカードへのリンクを添える
+// 一括交付金（ソフト）の事後評価の事業とは結び付けない（同じ名前でも複数の取組・施策にまたがり、評価の物差しも違うため）
 import Chip from './Chip.astro';
-import Icon from './Icon.astro';
 import { yearLabel, FUNDS, getTorikumi, getShisaku, statusOf, toneOfStatus, torikumiPage, type BudgetGroup } from '../lib/data.ts';
-import { IKKATSU_LATEST, ikkatsuOfBudget, ikkatsuHref, gradeOf } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 
 interface Props { g: BudgetGroup; report: number }
 const { g, report } = Astro.props;
 const funds = FUNDS.filter((f) => g.funds.has(f.key));
-const ik = g.funds.has('一括交付金（ソフト）') ? ikkatsuOfBudget(g.name, '一括交付金（ソフト）') : undefined;
-const ikRow = ik && (ik.years[IKKATSU_LATEST] ?? ik.latest);
-const ikGrade = ikRow && gradeOf(ikRow.grade_label);
-const ikHref = ik && ikkatsuHref(ik);
 const tori = g.related.map((l) => ({
   l,
   t: getTorikumi(report).find((x) => x.shisaku_id === l.shisaku_id && x.key === l.key),
@@ -28,11 +22,6 @@ const rest = tori.slice(1);
     <strong class="b-name">{g.name}</strong>
     <div class="small secondary b-sub">
       {funds.map((f) => <span class={`swatch series-${f.series}`}>{f.key}</span>)}
-      {ikRow && ikHref && (
-        <a class="sub-link ik-link" href={ikHref}>
-          {ikGrade ? <Icon tone={ikGrade.tone} shape={ikGrade.shape} /> : <Icon tone="blank" shape="ring" />}{yearLabel(ikRow.year)}の事後評価 {ikGrade ? `${ikGrade.mark} ${ikGrade.key}` : 'なし'}
-        </a>
-      )}
     </div>
     {[shown, rest].map((list, i) => {
       const items = list.map(({ l, t, s, href }) => (
@@ -60,7 +49,6 @@ const rest = tori.slice(1);
   .b-name { font-weight: 700; }
   .b-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
   .b-sub .swatch { font-size: inherit; }
-  .ik-link { display: inline-flex; align-items: center; gap: 4px; }
   .tlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
   .tlist :global(.chip) { font-size: 0.8125rem; margin-right: 2px; }
   .t-more > summary { font-size: 0.8125rem; padding: 0; }

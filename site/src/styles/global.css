@@ -24,6 +24,7 @@
   --sky: #d6e4ff;
   --lilac: #e8defc;
   --pink: #ffe0ef;
+  --sand: #f3ead2;
   --grid: #dfe3f3;
   --hair: #c4c9e6;
   --link: #2a45d6;
@@ -61,7 +62,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
-  --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --grid: #2c3260; --hair: #3a4280;
+  --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
   --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
@@ -294,6 +295,13 @@ a.ttag:hover { background: var(--sky); }
 }
 a.plan-tag:hover { background: var(--sky); }
 .t-main > .plan-tag { justify-self: start; }
+/* 一括交付金（ソフト）の事後評価の札。沖縄県PDCA の主な取組とは別の評価なので、事業の行とカードに付けて見分ける（砂色。将来像・状態・くらしのテーマ・個別計画の色と混ぜない） */
+.ik-tag {
+  display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);
+  background: var(--sand); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 8px; line-height: 1.7; white-space: nowrap; text-decoration: none;
+}
+a.ik-tag:hover { background: var(--sky); }
+.t-main > .ik-tag { justify-self: start; }
 /* 年度ごとのスタンプ */
 .stamps { display: flex; flex-wrap: wrap; gap: 8px; }
 /* 年度・丸・言葉の3段は上に詰める（ある年度の言葉だけ2行になると、ほかの年度の丸が下がって線の高さがずれるため） */

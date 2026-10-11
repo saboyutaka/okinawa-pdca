@@ -5,7 +5,7 @@ import Stamps from './Stamps.astro';
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
 import { yearLabel, type YearGroup } from '../lib/data.ts';
-import { gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
+import { IKKATSU, gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../lib/types.ts';
 
@@ -23,6 +23,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
 ---
 <article class="sticker ik anchor" id={ikkatsuAnchor(g.key)}>
   <div class="th">
+    <span class="ik-tag">{IKKATSU.short}</span>
     <h3>{j.name}</h3>
     <div class="small secondary">{j.dept || '担当部課の記載なし'}　計画期間 {j.period || '—'}</div>
   </div>
@@ -79,7 +80,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
 
 <style>
   .ik { display: grid; gap: 10px; align-content: start; padding: 16px; min-width: 0; }
-  .th { display: grid; gap: 2px; }
+  .th { display: grid; gap: 2px; justify-items: start; }
   h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
   .now { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
   table { font-size: 0.8125rem; }

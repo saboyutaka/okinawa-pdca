@@ -17,7 +17,7 @@ import {
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
   currentDeptOf, torikumiPage, type AmountEntry,
 } from '../../lib/data.ts';
-import { IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, isShort } from '../../lib/plans.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, isShort } from '../../lib/plans.ts';
 import { fmt, yen, pct } from '../../lib/format.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
@@ -130,14 +130,16 @@ const suspects = getSuspects();
       <div class="tile-sub">{yearLabel(LATEST - 1)}の決算額 {yen(sum(settled))}、{yearLabel(LATEST + 1)}の当初予算額 {yen(sum(initial))}</div>
     </div>
     <div class="sticker fact">
-      <div class="tile-label">うち一括交付金（{yearLabel(LATEST)}）</div>
+      <div class="tile-label">うち一括交付金（{yearLabel(LATEST)}の決算見込額）</div>
       <div class="tile-value">{yen(soft + hard)}<small>（{pct(soft + hard, sum(estimate))}）</small></div>
-      <div class="tile-sub"><span class="swatch series-2">ソフト</span> {yen(soft)}　<span class="swatch series-3">ハード</span> {yen(hard)}</div>
+      <div class="tile-sub split"><span class="swatch series-2">ソフト</span> {yen(soft)}　<span class="swatch series-3">ハード</span> {yen(hard)}</div>
     </div>
     <div class="sticker fact">
-      <div class="tile-label">一括交付金（ソフト）の<Term word="一括交付金の事後評価" label="事後評価" />（{yearLabel(IKKATSU_LATEST)}）</div>
-      <div class="tile-value">{fmt(ikCounts['達成'] || 0)}/{fmt(ikLatest.length)}<small>事業が◎達成</small></div>
+      <span class="ik-tag">{IKKATSU.short}</span>
+      <div class="tile-label">{yearLabel(IKKATSU_LATEST)}に成果目標を達成した事業</div>
+      <div class="tile-value">{fmt(ikCounts['達成'] || 0)}/{fmt(ikLatest.length)}<small>事業</small></div>
       <StatusBar categories={GRADES} counts={ikCounts} unit="事業" context={`${yearLabel(IKKATSU_LATEST)}の事後評価 `} size="mini" />
+      <div class="tile-sub">一括交付金（ソフト）の事業ごとの、主な取組とは別の<Term word="一括交付金の事後評価" label="評価" />です。</div>
       <a class="small" href={IKKATSU_HREF}>一括交付金の事業をさがす</a>
     </div>
   </div>
@@ -176,7 +178,7 @@ const suspects = getSuspects();
 
   <section aria-labelledby="ikkatsu">
     <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業と事後評価</h2>
-    <p class="small secondary lead">一括交付金（ソフト）を使った県の事業は、事業ごとに成果目標を立てて、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています。</p>
+    <p class="small secondary lead">主な取組の評価とは別に、一括交付金（ソフト）を使った事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています。</p>
     <StatusChart title="事後評価の結果" caption="成果目標の達成率による県の評価。" categories={GRADES} rows={ikYearRows} unit="事業" />
     <StatusChart title={`将来像ごとの事業（${yearLabel(IKKATSU_LATEST)}）`} caption="事業の施策で分けています。押すと、その将来像の事業をさがせます。" categories={GRADES} rows={ikSzRows} unit="事業" legend={false} />
     <h3>{yearLabel(IKKATSU_LATEST)}に目標に届かなかった事業（{fmt(ikShort.length)}）</h3>
@@ -200,7 +202,7 @@ const suspects = getSuspects();
     <p class="small secondary lead">同じ名前の予算事業をまとめた上位{fmt(top.length)}件です。1つの予算事業が複数の取組を支えていることがあります。</p>
     <ul class="row-list">{top.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
     <h3>財源ごとに見る</h3>
-    <p class="small secondary">財源ごとに、その財源の金額が大きい上位{TOP_BY_FUND}件です。一括交付金（ソフト）の予算事業は、同じ名前の事業の事後評価を添えています。</p>
+    <p class="small secondary">財源ごとに、その財源の金額が大きい上位{TOP_BY_FUND}件です。</p>
     {byFundTop.map((f) => (
       <details class="fund-top anchor" id={`fund-${f.series}`}>
         <summary><span class={`swatch series-${f.series}`}>{f.key}</span>の上位{fmt(f.rows.length)}件</summary>
@@ -280,8 +282,8 @@ const suspects = getSuspects();
   .head .lead { margin: 0; }
   .says .bubble p { margin: 0; }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
-  .fact { display: grid; gap: 6px; align-content: start; }
-  .fact .tile-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+  .fact { display: grid; gap: 6px; align-content: start; justify-items: start; }
+  .fact .split { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
   .funds { margin-top: 16px; padding: 12px 20px; }
   .funds summary { margin: 0; }
   .funds ul { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; font-size: 0.9rem; }
