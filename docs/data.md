@@ -26,6 +26,7 @@
 | 3. 突き合わせだけ | `make check` | ホストの python3 |
 | 4. 欠け・誤りの一覧 | `make issues`（`make extract` の最後でも実行） | ホストの python3 |
 | 5. サイトの書き出し | `make build` | Node コンテナ（[Astro](https://astro.build/) 7） |
+| テスト | `make test`（抽出の関数と、サイトが前提にしていること） | 解析用コンテナ・Node コンテナ |
 
 抽出結果（`data/extracted/soukatsu/*.json`）はコミットする。サイトはこれだけを読んでビルドするので、PDF が手元に無くてもサイトは作れる。
 
@@ -327,7 +328,8 @@ R7 で指標そのものと基準値・目標値が見直されている。数�
    そのあと `docker compose run --rm tools python scripts/extract_bukyoku.py --source kigyo` で企業局の分だけ読み直せる。
 4. 一部の年度・取得元だけ読み直すときは `--year`（部局票は `--source` も）で絞れる。出力ファイルの他の年度・取得元の行は残して、その分だけ差し替える。
 5. 新しい年度（R8 以降）を足すときは、`scripts/check_extracted.py` の `EXPECTED` に概要版の公表値を書き足す。中期実施計画の2年目以降は、計画値の列の位置（`plan_index`）がずれることに注意。
-6. `make build` でサイトを書き出す。
+6. `make test` で、抽出の関数と、サイトが前提にしていること（名前の key の規則・出典・取組の URL・くらしのテーマ・部局のページ）が崩れていないかを確かめる。
+7. `make build` でサイトを書き出す。
 
 ## 10. 今後
 

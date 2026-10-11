@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "check": "astro check",
     "build": "astro check && astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "node --test \"test/**/*.test.ts\""
   },
   "dependencies": {
     "astro": "^7.3.8"

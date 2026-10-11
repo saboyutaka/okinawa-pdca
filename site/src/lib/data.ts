@@ -414,8 +414,8 @@ export function torikumiRows(shisaku: Shisaku) {
 }
 
 // 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）。
-// 名前の正規化は抽出側の取組の key と同じ規則。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
-const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
+// 名前の正規化は抽出側の取組の key と同じ規則（scripts/extract_soukatsu.py の name_key。同じになるかは test/integrity.test.ts で確かめる）。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
+export const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
 export type SeikaGroup = YearGroup<SeikaRow>;
 export function seikaRows(shisaku: Shisaku) {
   const rows = new Map<string, SeikaGroup>();

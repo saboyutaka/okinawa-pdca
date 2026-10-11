@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract check issues site-install site-check dev build preview shot shot-typecheck down
+.PHONY: help fetch extract check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -25,6 +25,7 @@ help:
 	@echo "make extract       総括報告書・部局別の検証票・個別計画などから抽出して公表値と突き合わせ"
 	@echo "make check         抽出結果を公表値と突き合わせるだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
+	@echo "make test          テスト（抽出スクリプトの test-py とサイトの test-site の両方）"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make site-check    サイトの型を確かめるだけ（astro check。make build でも書き出しの前に行う）"
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
@@ -53,6 +54,16 @@ check:
 
 issues:
 	python3 scripts/report_issues.py
+
+test: test-py test-site
+
+# 抽出スクリプトの関数のテスト（unittest）。extract_*.py が pdfplumber を読み込むのでコンテナで動かす
+test-py:
+	$(COMPOSE) run --rm tools python -m unittest discover -s scripts/tests -t scripts
+
+# サイトの lib のテスト（node --test。Node が型を取り除いて .ts をそのまま動かす）。data/extracted を読むテストもある
+test-site:
+	$(COMPOSE) run --rm site npm test
 
 site-install:
 	$(COMPOSE) run --rm site npm ci
