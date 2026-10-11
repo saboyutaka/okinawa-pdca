@@ -29,6 +29,9 @@
   - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（すべて開く・# の行き先の details を開く）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
+- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプト・`<style>` だけ。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
+  - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
+  - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
 ## 4. ページ
 
@@ -44,5 +47,5 @@
 
 - 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
-- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。
+- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のシェアの URL も、ビルド時に本番のドメインで入れる（`components/Share.astro`）。

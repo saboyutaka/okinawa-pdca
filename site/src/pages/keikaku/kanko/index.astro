@@ -6,6 +6,7 @@ import StatusChart from '../../../components/StatusChart.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
 import RmSeikaRow from '../../../components/RmSeikaRow.astro';
+import SeikaKey from '../../../components/SeikaKey.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
 import {
@@ -69,6 +70,7 @@ const SEIKA_SHOW = 10;
       <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}<small>が基準値より前進</small></div>
       <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
+      <a class="small" href="#seika-list">成果指標の一覧</a>
     </div>
     <div class="sticker fact">
       <div class="tile-label">沖縄県PDCAと重なるもの（{yearLabel(RM_LATEST)}）</div>
@@ -76,25 +78,6 @@ const SEIKA_SHOW = 10;
       <div class="tile-sub">主な取組 {fmt(tori.length)}件のうち{fmt(overlap)}件、成果指標 {fmt(seika.length)}のうち{fmt(seikaOverlap)}は、沖縄県PDCAにも同じ名前のものがあります。</div>
     </div>
   </div>
-
-  <section aria-labelledby="seika-list">
-    <h2 id="seika-list" class="anchor">成果指標（{yearLabel(RM_LATEST)}・{fmt(seikaAll.length)}）</h2>
-    <p class="small secondary lead">報告書の順です。印は基準値と比べた県の判定（前進・横ばい・後退）です。観光の計画にしか無い指標が多くあります。</p>
-    <ul class="row-list" id="rm-seika" data-more={SEIKA_SHOW}>{seikaAll.map((r) => <RmSeikaRow r={r} />)}</ul>
-    {seikaAll.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="rm-seika" hidden>さらに表示（残り {fmt(seikaAll.length - SEIKA_SHOW)}指標）</button></p>}
-  </section>
-
-  <section aria-labelledby="progress">
-    <h2 id="progress">年度ごとの進み具合</h2>
-    <p class="small secondary lead">主な取組の<Term word="進捗状況" />は沖縄県PDCAと同じ区分で、成果指標は基準値と比べて良くなったか（前進・横ばい・後退）を見ます。</p>
-    <StatusChart title="観光ロードマップの主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
-    <StatusChart title="観光ロードマップの成果指標の達成状況（基準値との比較）" categories={RM_JUDGEMENTS} rows={seikaRows} unit="指標" />
-    {unreadable.map((y) => (
-      <p class="small secondary">
-        {yearLong(y.year)}の実施報告書（本編）は、文字に変換できないフォントで作られていて読み取れませんでした。{yearLabel(y.year)}は概要版の件数（主な取組{fmt(y.torikumi)}件・成果指標{fmt(y.seika)}のうち前進{fmt(y.zenshin)}）だけを載せています。成果指標の{yearLabel(y.year)}の実績値は、R5・R6の報告書に載っている値です。
-      </p>
-    ))}
-  </section>
 
   <section aria-labelledby="list">
     <h2 id="list">基本施策と施策展開</h2>
@@ -119,6 +102,26 @@ const SEIKA_SHOW = 10;
           })}
         </ul>
       </>
+    ))}
+  </section>
+
+  <section aria-labelledby="seika-list">
+    <h2 id="seika-list" class="anchor">成果指標（{yearLabel(RM_LATEST)}・{fmt(seikaAll.length)}）</h2>
+    <p class="small secondary lead">報告書の順です。印は基準値と比べた県の判定（前進・横ばい・後退）です。観光の計画にしか無い指標が多くあります。</p>
+    <SeikaKey mini rm />
+    <ul class="row-list" id="rm-seika" data-more={SEIKA_SHOW}>{seikaAll.map((r) => <RmSeikaRow r={r} />)}</ul>
+    {seikaAll.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="rm-seika" hidden>さらに表示（残り {fmt(seikaAll.length - SEIKA_SHOW)}指標）</button></p>}
+  </section>
+
+  <section aria-labelledby="progress">
+    <h2 id="progress">年度ごとの進み具合</h2>
+    <p class="small secondary lead">主な取組の<Term word="進捗状況" />は沖縄県PDCAと同じ区分で、成果指標は基準値と比べて良くなったか（前進・横ばい・後退）を見ます。</p>
+    <StatusChart title="観光ロードマップの主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
+    <StatusChart title="観光ロードマップの成果指標の達成状況（基準値との比較）" categories={RM_JUDGEMENTS} rows={seikaRows} unit="指標" />
+    {unreadable.map((y) => (
+      <p class="small secondary">
+        {yearLong(y.year)}の実施報告書（本編）は、文字に変換できないフォントで作られていて読み取れませんでした。{yearLabel(y.year)}は概要版の件数（主な取組{fmt(y.torikumi)}件・成果指標{fmt(y.seika)}のうち前進{fmt(y.zenshin)}）だけを載せています。成果指標の{yearLabel(y.year)}の実績値は、R5・R6の報告書に載っている値です。
+      </p>
     ))}
   </section>
 
