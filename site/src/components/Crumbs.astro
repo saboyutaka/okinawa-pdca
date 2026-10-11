@@ -1,35 +1,26 @@
 ---
 // パンくず。計画の体系（将来像 › 施策 › 取組）でたどる。トップはヘッダーのタイトルから戻れるので入れない（上の階層の無いページにはパンくずを置かない）。
 // いまのページ（href なし）は最後に置き、長い名前は1行で省略する。スマホでは折り返さず、長い名前を縮めて1行に収める。
-// share を渡すと、同じ行の右に小さなシェアパネルを置く（ページの終わりのシェアの枠 components/ShareBox.astro と同じ本文）
 import Sz from './Sz.astro';
-import Share from './Share.astro';
 
 interface Item { href?: string; label: string; sz?: number | string }
-interface Props { items: Item[]; share?: { text: string; label: string } }
-const { items, share } = Astro.props;
+interface Props { items: Item[] }
+const { items } = Astro.props;
 ---
-<div class:list={['crumbs-row', share && 'with-share']}>
-  <nav class="breadcrumb" aria-label="パンくず">
-    <ol>
-      {items.map((it, i) => (
-        <li>
-          {i > 0 && <span class="sep" aria-hidden="true">›</span>}
-          {it.href
-            ? <a href={it.href} class:list={[it.sz && ['crumb-sz', `sz-${it.sz}`]]} title={it.sz ? undefined : it.label}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</a>
-            : <span class="here" aria-current="page" title={it.label}>{it.label}</span>}
-        </li>
-      ))}
-    </ol>
-  </nav>
-  {share && <Share text={share.text} label={share.label} size="small" />}
-</div>
+<nav class="breadcrumb" aria-label="パンくず">
+  <ol>
+    {items.map((it, i) => (
+      <li>
+        {i > 0 && <span class="sep" aria-hidden="true">›</span>}
+        {it.href
+          ? <a href={it.href} class:list={[it.sz && ['crumb-sz', `sz-${it.sz}`]]} title={it.sz ? undefined : it.label}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</a>
+          : <span class="here" aria-current="page" title={it.label}>{it.label}</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
 
 <style>
-  /* シェアパネルがあるときは、パンくずを左、パネルを右に置く（狭い画面ではパネルを次の行に送る） */
-  .with-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-top: 12px; }
-  .with-share > nav { margin-top: 0; min-width: 0; }
-  .with-share > :global(.share-panel) { margin-left: auto; }
   ol { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
   li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
   .crumb-sz { display: inline-flex; align-items: center; gap: 4px; padding-left: 3px !important; background: var(--szw) !important; }

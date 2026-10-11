@@ -13,7 +13,6 @@ import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import { LATEST, yearLabel, yearLong, rateBin, seikaHref, countBy, getTorikumi, getSeika, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
 import { fmt, pct } from '../../lib/format.ts';
-import { shareText } from '../../lib/iken.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
@@ -55,7 +54,7 @@ const visions = getShouraizou()
 const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`}>
-  <Crumbs items={[{ href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} share={{ text: shareText('くらしのテーマ', t.label), label: 'このくらしのテーマを SNS でシェア' }} />
+  <Crumbs items={[{ href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} />
   <header class="sticker lift t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <div class="t-title">

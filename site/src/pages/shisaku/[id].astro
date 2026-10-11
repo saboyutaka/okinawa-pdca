@@ -14,7 +14,6 @@ import Prose from '../../components/Prose.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import ShareBox from '../../components/ShareBox.astro';
-import { shareText } from '../../lib/iken.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
   getShisakuList, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
@@ -74,7 +73,7 @@ const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} share={{ text: shareText('施策', s.name), label: 'この施策を SNS でシェア' }} />
+  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} />
 
   <header class="sticker lift head">
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>

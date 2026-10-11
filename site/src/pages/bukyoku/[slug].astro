@@ -18,7 +18,6 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import ShareBox from '../../components/ShareBox.astro';
-import { shareText } from '../../lib/iken.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
@@ -132,7 +131,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
 <Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} share={{ text: shareText('部局', dept.name), label: 'この部局を SNS でシェア' }} />
+  <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
 
   <header class="sticker lift d-head">
     <div class="kind">沖縄県の部局</div>
