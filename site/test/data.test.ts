@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
-  splitDepts, deptOf, deptHref, fundOf, budgetKey,
+  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
@@ -107,6 +107,23 @@ test('部局: 所管部課から部局を取り出し、部局のページの UR
   assert.equal(deptHref('教育庁総務課'), '/bukyoku/kyoiku/');
   // R5 の組織再編で無くなった部にはページが無い
   assert.equal(deptHref('子ども生活福祉部'), null);
+});
+
+test('課: 所管部課から部局の名前を除き、部局のページの課の行の id にする', () => {
+  assert.equal(sectionName('こども未来部子育て支援課'), '子育て支援課');
+  assert.equal(sectionName('知事公室防災危機管理課'), '防災危機管理課');
+  assert.equal(sectionName('知事公室'), '');
+  assert.equal(sectionAnchor('商工労働部産業政策課'), 'ka-産業政策課');
+});
+
+test('deptRoles: 関係部等の部局を先に、取組だけある部局を後ろに、重ねずに並べる', () => {
+  assert.deepEqual(deptRoles(['環境部'], ['企画部', '環境部']), [
+    { dept: '環境部', role: 'kankei' },
+    { dept: '企画部', role: 'torikumi' },
+  ]);
+  // 関係部等に同じ部局が2回書かれていても1つ。取組の部局の空は数えない
+  assert.deepEqual(deptRoles(['企画部', '企画部'], ['', '企画部']), [{ dept: '企画部', role: 'kankei' }]);
+  assert.deepEqual(deptRoles([], ['教育庁']), [{ dept: '教育庁', role: 'torikumi' }]);
 });
 
 test('fundOf: 財源の欄を6つの区分に寄せる', () => {

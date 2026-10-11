@@ -4,7 +4,7 @@ import Stamps from './Stamps.astro';
 import Chunk from './Chunk.astro';
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
-import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, deptHref, seikaHrefByName, torikumiHref, type YearGroup } from '../lib/data.ts';
+import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, sectionHref, seikaHrefByName, torikumiHref, type YearGroup } from '../lib/data.ts';
 import { themeIdsOfItem } from '../lib/themes.ts';
 import type { TorikumiRow } from '../lib/types.ts';
 
@@ -25,7 +25,7 @@ const ratio = comparable ? aq.v / tq.v : 0;
 <article class="sticker tcard">
   <div class="th">
     <h3><a class="name-link" href={href}>{t.name}</a></h3>
-    <div class="sec">{deptHref(t.section) ? <a class="sub-link" href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+    <div class="sec">{sectionHref(t.section) ? <a class="sub-link" href={sectionHref(t.section)}>{t.section}</a> : t.section}</div>
     <ThemeTags ids={themeIdsOfItem(shisakuId, t.name)} />
   </div>
   <Stamps items={stamps} label="4年の進捗状況" size="small" />

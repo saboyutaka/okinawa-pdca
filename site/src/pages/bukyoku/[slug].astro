@@ -1,6 +1,13 @@
 ---
+// 部局1つのページ。将来像のページと同じ並び: ひとめで（取組と成果の割合）→ 施策の判定 → 課ごと → 4年間の推移・今年のできごと・予算 → 一覧
 import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
+import Crumbs from '../../components/Crumbs.astro';
+import HeadStats from '../../components/HeadStats.astro';
+import DonutCard from '../../components/DonutCard.astro';
+import Moves from '../../components/Moves.astro';
+import JudgeMatrix from '../../components/JudgeMatrix.astro';
+import TrendChart from '../../components/TrendChart.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import AmountChart from '../../components/AmountChart.astro';
 import Stamps from '../../components/Stamps.astro';
@@ -10,15 +17,20 @@ import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
+import FilterMore from '../../components/FilterMore.astro';
+import IkenBox from '../../components/IkenBox.astro';
+import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, toneOfStatus,
-  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf,
+  getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
+  sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.ts';
-import type { AmountKind } from '../../lib/types.ts';
-import { yen } from '../../lib/format.ts';
-import { fmt, pct } from '../../lib/format.ts';
+import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
+import type { Tone } from '../../lib/icons.ts';
+import { LINKS } from '../../lib/links.ts';
+import { fmt, pct, yen } from '../../lib/format.ts';
 
 export function getStaticPaths() {
   return DEPTS.map((dept) => ({ params: { slug: dept.slug }, props: { dept } }));
@@ -26,31 +38,76 @@ export function getStaticPaths() {
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { dept } = Astro.props;
+const q = encodeURIComponent(dept.name);
 const statusKeys = STATUSES.map((s) => s.key);
 const last = YEARS.length - 1;
 const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
 const okLatest = latest.filter((g) => g.statuses[last] === '順調').length;
 const delayed = mine.filter((g) => g.patterns.includes('delay3')).sort((a, b) => b.delayYears - a.delayYears);
-const shisaku = getShisakuList().filter((s) => s.depts.includes(dept.name));
+const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
+const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
+const seikaOk = seikaLatest.filter(reached).length;
+const allTori = getTorikumi(LATEST);
+const allSeika = getSeika(LATEST);
+const allToriRate = pct(allTori.filter((t) => t.status === '順調').length, allTori.length);
+const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
 
-const progressRows = YEARS.map((y, i) => ({
-  label: yearLabel(y),
-  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!, statusKeys),
-}));
+// この部局がかかわる施策: 関係部等に名前がある施策と、関係部等には無いがこの部局の取組がある施策（lib/data.ts の shisakuDepts。施策をさがすの部局の絞り込みと同じ）
+const related = getShisakuList().flatMap((s) => {
+  const ds = shisakuDepts(s);
+  const role = ds.find((d) => d.dept === dept.name)?.role;
+  return role ? [{ s, role, kankei: ds.filter((d) => d.role === 'kankei').map((d) => d.dept) }] : [];
+});
+const kankeiList = related.filter((r) => r.role === 'kankei');
+const toriList = related.filter((r) => r.role === 'torikumi');
+// 関係部等に無い施策の行に出す、その施策のこの部局の取組の数（最新の年度。最新の年度に無ければ全年度）
+const toriText = (shisakuId: string) => {
+  const gs = mine.filter((g) => g.shisaku.id === shisakuId);
+  const n = gs.filter((g) => g.statuses[last]).length;
+  return n ? `この部局の取組 ${fmt(n)}件` : `この部局の取組 ${fmt(gs.length)}件（${yearLabel(LATEST)}の報告には無い）`;
+};
+const judgeCounts = countBy(related.map((r) => r.s), (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const nCD = (judgeCounts.C || 0) + (judgeCounts.D || 0);
 
-// 課ごと（最新年度）
+// 課ごと（最新年度）。行の id は、取組のページの「所管」のリンクの行き先（lib/data.ts の sectionHref）
 const sections = [...new Set(latest.map((g) => g.section))];
 const sectionRows = sections
-  .map((sec) => ({ label: sec.replace(dept.name, ''), counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last]!, statusKeys) }))
+  .map((sec) => ({
+    label: sectionName(sec) || sec,
+    id: sectionAnchor(sec),
+    href: `/torikumi/?dept=${q}&q=${encodeURIComponent(sectionName(sec) || sec)}`,
+    counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last]!, statusKeys),
+  }))
   .sort((a, b) => Object.values(b.counts).reduce((x, y) => x + y, 0) - Object.values(a.counts).reduce((x, y) => x + y, 0));
 
+// 4年間の推移。取組は最新の所管部局に寄せて数える。成果指標が無い年度がある部局は、折れ線を描かずに内訳の図だけ出す
+const trend = YEARS.map((y, i) => {
+  const t = mine.filter((g) => g.statuses[i]);
+  const s = getSeika(y).filter((x) => seikaDept(x) === dept.name);
+  const aOk = t.filter((g) => g.statuses[i] === '順調').length;
+  const bOk = s.filter(reached).length;
+  return { y, a: t.length ? (aOk / t.length) * 100 : 0, b: s.length ? (bOk / s.length) * 100 : 0, aOk, aN: t.length, bOk, bN: s.length };
+});
+const drawTrend = trend.every((p) => p.aN > 0 && p.bN > 0);
+const period = (y: number) => (y <= 2024 ? '前期' : '中期');
+const progressRows = YEARS.map((y, i) => ({
+  label: yearLabel(y),
+  sub: period(y),
+  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!, statusKeys),
+}));
 const seikaRows = YEARS.map((y) => ({
   label: yearLabel(y),
+  sub: period(y),
   counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
 }));
-const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
-const seikaOk = seikaLatest.filter((s) => rateBin(s) === '100%以上').length;
+
+// 今年のできごと（数え方は lib/data.ts の PATTERNS。3年以上遅れはこのページの一覧へ）
+const moves: { tone: Tone; title: string; n: number; href: string }[] = [
+  { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
+  { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },
+  { tone: 'critical', title: '4年のうち3年以上遅れた', n: delayed.length, href: '#okure' },
+];
 
 // 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
 const mineEntries = (kind: AmountKind) => amountEntries(LATEST, kind).filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === dept.name);
@@ -61,49 +118,104 @@ const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => (
 }));
 const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
   const k = budgetKey(e.budgetName);
-  const g = m.get(k) || { name: e.budgetName, amount: 0, funds: new Set(), shisaku_id: e.shisaku_id };
+  const g = m.get(k) || { name: e.budgetName, amount: 0, funds: new Set<string>(), shisaku_id: e.shisaku_id, key: e.key, torikumi: e.torikumi };
   g.amount += e.amount;
   g.funds.add(e.fund);
   return m.set(k, g);
-}, new Map()).values()].sort((a, b) => b.amount - a.amount).slice(0, 5);
+}, new Map<string, { name: string; amount: number; funds: Set<string>; shisaku_id: string; key: string; torikumi: string }>()).values()]
+  .sort((a, b) => b.amount - a.amount)
+  .slice(0, 5);
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
+const sources = deptSourcePages(dept.name);
 ---
-<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標の進み具合（令和4〜7年度）`}>
-  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/bukyoku/">部局</a> › {dept.name}</nav>
-  <h1>{dept.name}</h1>
-  {REORGANIZED.has(dept.name) && (
-    <p class="notice">
-      令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。R4の数値は、その取組がR5以降に所管されている部局に寄せて数えています。
-    </p>
-  )}
+<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
 
-  <div class="cards">
-    <div class="card">
-      <div class="tile-label">{yearLong(LATEST)}の主な取組</div>
-      <div class="tile-value">{fmt(latest.length)}<small>件</small></div>
-      <div class="tile-sub">「順調」 {fmt(okLatest)}件（{pct(okLatest, latest.length)}）</div>
-    </div>
-    <div class="card">
-      <div class="tile-label">4年のうち3年以上遅れた取組</div>
-      <div class="tile-value">{fmt(delayed.length)}<small>件</small></div>
-      <div class="tile-sub">{delayed.length ? <a href="#okure">一覧を見る</a> : '該当なし'}</div>
-    </div>
-    <div class="card">
-      <div class="tile-label">{yearLong(LATEST)}に計画値を達成した成果指標</div>
-      <div class="tile-value">{fmt(seikaOk)}<small> / {fmt(seikaLatest.length)}指標</small></div>
-      <div class="tile-sub">成果指標の担当部課がこの部局のもの</div>
-    </div>
+  <header class="sticker lift d-head">
+    <div class="kind">沖縄県の部局</div>
+    <h1>{dept.name}</h1>
+    <HeadStats items={[
+      { label: '課', n: sections.length, href: '#ka' },
+      { label: '主な取組', n: latest.length, href: `/torikumi/?dept=${q}`, note: yearLabel(LATEST) },
+      { label: '成果指標', n: seikaLatest.length, href: seikaLatest.length ? '#seika-list' : '#lists', note: yearLabel(LATEST) },
+      { label: '施策', n: related.length, href: '#shisaku' },
+    ]} />
+  </header>
+
+  <div class="donuts">
+    <DonutCard frac={latest.length ? okLatest / latest.length : 0} label={`主な取組のうち順調 ${pct(okLatest, latest.length)}`}>
+      主な取組のうち「順調」
+      <Fragment slot="sub">{fmt(latest.length)}件のうち{fmt(okLatest)}件（{yearLong(LATEST)}）。県全体は{allToriRate}。</Fragment>
+    </DonutCard>
+    {seikaLatest.length > 0 && (
+      <DonutCard frac={seikaOk / seikaLatest.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seikaLatest.length)}`}>
+        <Term word="成果指標" />のうち<Term word="計画値" />に到達
+        <Fragment slot="sub">{fmt(seikaLatest.length)}指標のうち{fmt(seikaOk)}指標（{yearLong(LATEST)}）。担当部課がこの部局の指標です。県全体は{allSeikaRate}。</Fragment>
+      </DonutCard>
+    )}
   </div>
 
-  <h2>主な取組の進捗状況</h2>
-  <StatusChart title="年度別" categories={STATUSES} rows={progressRows} />
-  {sectionRows.length > 1 && (
-    <StatusChart title={`課ごと（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} legend={false} />
+  {related.length > 0 && (
+    <section aria-labelledby="judge-h">
+      <h2 id="judge-h">かかわる施策の判定（{yearLong(LATEST)}）</h2>
+      <p class="small secondary lead">関係部等にこの部局の名前がある施策と、この部局の主な取組がある施策です。取組は進んでいるのに成果が遅れている施策（C・D）は{fmt(nCD)}です。マスを押すと、{dept.name}とその判定で絞り込んだ施策の一覧を開きます。</p>
+      <JudgeMatrix counts={judgeCounts} caption={`${dept.name}がかかわる${fmt(related.length)}施策`} hrefOf={(k) => `/shisaku/?dept=${q}&judge=${k}`} />
+    </section>
   )}
 
-  <section aria-labelledby="seika">
-    <h2 id="seika">成果指標</h2>
-    <StatusChart title="計画値に対する達成率" caption="成果指標の担当部課がこの部局のもの。R7で目標値・計画値が見直されているため、R6以前とは単純に比べられません。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+  <section aria-labelledby="ka">
+    <h2 id="ka" class="anchor">課ごとの主な取組</h2>
+    <p class="small secondary lead">{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />です。課の名前を押すと、その課の取組を取組をさがすで開きます。</p>
+    <StatusChart title={`${dept.name}の課（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} />
+  </section>
+
+  <section aria-labelledby="trend-h">
+    <h2 id="trend-h">4年間の推移</h2>
+    {drawTrend ? (
+      <>
+        <figure class="sticker">
+          <figcaption>
+            <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合（{dept.name}）</div>
+            <div class="chart-caption">点を押すと、その年度の値を出します（キーボードでは左右の矢印キー）。</div>
+          </figcaption>
+          <TrendChart points={trend} />
+          <details>
+            <summary>表で見る</summary>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
+                <tbody>
+                  {trend.map((p) => (
+                    <tr>
+                      <th>{yearLong(p.y)}（{period(p.y)}）</th>
+                      <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
+                      <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </figure>
+        <details class="breakdown">
+          <summary>内訳を見る（進捗状況・達成率の区分ごと）</summary>
+          <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
+          <StatusChart title="成果指標の達成状況" categories={RATE_BINS} rows={seikaRows} unit="指標" />
+        </details>
+      </>
+    ) : (
+      <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
+    )}
+    <p class="small secondary">R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
+    {REORGANIZED.has(dept.name) && (
+      <p class="small secondary">令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。R4の数は、その取組がR5以降に所管されている部局に寄せて数えています。</p>
+    )}
+  </section>
+
+  <section aria-labelledby="moves-h">
+    <h2 id="moves-h">今年のできごと</h2>
+    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告で、同じ名前の主な取組の進捗状況を比べました。遅れ＝やや遅れ・大幅遅れ・未着手。</p>
+    <Moves items={moves} />
   </section>
 
   <section aria-labelledby="yosan">
@@ -117,13 +229,21 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
           rows={budgetRows}
         />
         <h3>金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</h3>
-        <ul class="list">
+        <ul class="row-list">
           {topBudgets.map((g) => {
             const s = shisakuById.get(g.shisaku_id);
+            const tHref = torikumiPage(g.shisaku_id, g.key);
             return (
-              <li class="item">
-                <strong>{g.name}</strong> <span class="big">{yen(g.amount)}</span> <small class="secondary">（{[...g.funds].join('・')}）</small>
-                {s && <div class="small"><Sz id={s.shouraizou} /> 施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+              <li class="b-row">
+                <div class="b-main">
+                  <strong>{g.name}</strong>
+                  <div class="small secondary">取組 {tHref ? <a class="sub-link" href={tHref}>{g.torikumi}</a> : g.torikumi}</div>
+                  {s && <div class="small secondary"><Sz id={s.shouraizou} /> 施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+                </div>
+                <div class="b-amt">
+                  <span class="big">{yen(g.amount)}</span>
+                  <span class="small secondary">{[...g.funds].join('・')}</span>
+                </div>
               </li>
             );
           })}
@@ -136,18 +256,20 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
   <section aria-labelledby="lists" id="dept-lists">
     <h2 id="lists">{dept.name}の取組・成果指標・施策</h2>
     <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
-      <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-        <select name="theme">
-          <option value="">すべて</option>
-          {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-        </select>
-      </label>
       <label class="q" data-label="キーワード">キーワード
         <input type="search" name="q" placeholder="例: 離島、子ども" />
       </label>
+      <FilterMore id="dept-more">
+        <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
+          <select name="theme">
+            <option value="">すべて</option>
+            {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+          </select>
+        </label>
+      </FilterMore>
     </form>
     <div class="active-filters" id="active" hidden></div>
-    <p class="result-count" aria-live="polite">下の3つの一覧で <span id="dcount">{fmt(delayed.length + seikaLatest.length + shisaku.length)}</span>件を表示</p>
+    <p class="result-count" aria-live="polite">下の3つの一覧で <span id="dcount">{fmt(delayed.length + seikaLatest.length + related.length)}</span>件を表示</p>
     <p id="dempty" class="secondary" hidden>条件に合うものはありません。</p>
 
     <div class="anchor" id="okure" {...(delayed.length ? { 'data-group': '' } : {})}>
@@ -158,7 +280,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
             <li class="t-row" data-item data-theme={themeIdsOfItem(g.shisaku.id, g.latest.name).join('|')} data-text={`${g.latest.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name}`}>
               <div class="t-main">
                 <a class="name-link" href={g.href}>{g.latest.name}</a>
-                <div class="small secondary">{g.section.replace(dept.name, '')}・施策 <a class="sub-link" href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
+                <div class="small secondary">{sectionName(g.section) || g.section}・施策 <a class="sub-link" href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
                 {g.latest.indicator && <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 <b>{g.latest.actual || '—'}</b></div>}
               </div>
               <Stamps items={YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }))} label="4年の進捗状況" size="small" />
@@ -166,12 +288,13 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
           ))}
         </ul>
       )}
+      <p class="small"><a href={`/torikumi/?dept=${q}`}>{dept.name}の取組をすべて見る（取組をさがす）</a></p>
     </div>
 
     {seikaLatest.length > 0 && (
       <div class="anchor" id="seika-list" data-group>
         <h3>{yearLong(LATEST)}の成果指標（<span data-group-count>{fmt(seikaLatest.length)}</span>）</h3>
-        <p class="small secondary">右の札は<Term word="達成率" />です。</p>
+        <p class="small secondary">担当部課がこの部局の指標です。右の札は<Term word="達成率" />です。</p>
         <SeikaKey mini />
         <ul class="row-list">
           {seikaLatest.map((x) => {
@@ -188,26 +311,74 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
             );
           })}
         </ul>
-        <p class="small"><a href={`/shihyou/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の成果指標を成果指標のページでさがす</a></p>
+        <p class="small"><a href={`/shihyou/?dept=${q}`}>{dept.name}の成果指標を成果指標のページでさがす</a></p>
       </div>
     )}
 
-    <div class="anchor" id="shisaku" data-group>
-      <h3>関係する施策（<span data-group-count>{fmt(shisaku.length)}</span>）</h3>
-      <p class="small secondary">施策の「関係部等」にこの部局が書かれている施策です。</p>
-      {shisaku.length > 0 && <JudgeLegend />}
-      <ul class="row-list">
-        {shisaku.map((s) => (
-          <ShisakuItem s={s} kihon attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name}` }} />
+    {related.length > 0 && (
+      <div class="anchor" id="shisaku" data-group>
+        <h3>かかわる施策（<span data-group-count>{fmt(related.length)}</span>）</h3>
+        <JudgeLegend />
+        {kankeiList.length > 0 && (
+          <div data-group>
+            <h4>関係部等にこの部局の名前がある施策（<span data-group-count>{fmt(kankeiList.length)}</span>）</h4>
+            <ul class="row-list">
+              {kankeiList.map(({ s }) => (
+                <ShisakuItem s={s} kihon attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name}` }} />
+              ))}
+            </ul>
+          </div>
+        )}
+        {toriList.length > 0 && (
+          <div data-group>
+            <h4>この部局の取組がある、ほかの部局の施策（<span data-group-count>{fmt(toriList.length)}</span>）</h4>
+            <p class="small secondary">施策の関係部等には名前が無いものの、この部局が所管する主な取組がある施策です。</p>
+            <ul class="row-list">
+              {toriList.map(({ s, kankei }) => (
+                <ShisakuItem s={s} attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name} ${kankei.join(' ')}` }}>
+                  <Fragment slot="sub">
+                    関係部等 {kankei.length ? kankei.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}・{toriText(s.id)}
+                  </Fragment>
+                </ShisakuItem>
+              ))}
+            </ul>
+          </div>
+        )}
+        <p class="small"><a href={`/shisaku/?dept=${q}`}>{dept.name}の施策を施策をさがすで見る</a></p>
+      </div>
+    )}
+  </section>
+
+  <IkenBox kind="部局" name={dept.name} />
+
+  <section aria-labelledby="source">
+    <h2 id="source" class="anchor">出典</h2>
+    <p class="small">主な取組の進捗状況・成果指標・施策の判定は、県の「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の総括報告書から読み取っています（1件ずつの出典は、施策と取組のページにあります）。予算は、部局ごとの検証票から読み取っています。</p>
+    {sources.length > 0 && (
+      <ul class="small">
+        {sources.map((p) => (
+          <li>{p.years.map(yearLabel).join('・')}: <ExtLink href={p.href}>{p.title}</ExtLink>{p.n > 0 && <span class="secondary">（この部局の取組 {fmt(p.n)}件）</span>}</li>
         ))}
       </ul>
-    </div>
+    )}
   </section>
-  <p><a href={`/torikumi/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の取組をすべて見る</a></p>
 </Base>
 
 <script src="../../scripts/list-filter.ts"></script>
 
 <style>
+  .d-head { display: grid; gap: 4px; margin-top: 12px; }
+  .d-head h1 { margin: 2px 0 8px; }
+  .kind { font-size: 0.9375rem; color: var(--ink-2); }
+  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
+  .breakdown { margin-top: 16px; }
+  .b-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: center; }
+  .b-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
+  .b-amt { display: grid; justify-items: end; text-align: right; }
+  .b-amt .big { font-size: 1.2rem; white-space: nowrap; }
+  @media (max-width: 560px) { .b-row { grid-template-columns: 1fr; } .b-amt { justify-items: start; text-align: left; } }
+  .filters { margin-top: 12px; }
   #dept-lists h3 { margin-top: 1.8em; }
+  #dept-lists h4 { margin: 1.2em 0 0.5em; font-size: 0.98rem; }
 </style>

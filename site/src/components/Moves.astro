@@ -1,0 +1,28 @@
+---
+// 「今年のできごと」の札（将来像・部局のページ）。取組の4年間の様子（lib/data.ts の PATTERNS）ごとの件数と、その一覧へのリンク
+import Icon from './Icon.astro';
+import type { Tone } from '../lib/icons.ts';
+import { fmt } from '../lib/format.ts';
+
+interface Props { items: { tone: Tone; title: string; n: number; href: string }[] }
+const { items } = Astro.props;
+---
+<div class="moves">
+  {items.map((m) => (
+    <a class="sticker move" href={m.href}>
+      <span class="m-head"><Icon tone={m.tone} size={16} />{m.title}</span>
+      <span class="big m-n">{fmt(m.n)}<small>件</small></span>
+      <span class="m-link">一覧を見る</span>
+    </a>
+  ))}
+</div>
+
+<style>
+  .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .move { display: grid; gap: 4px; color: var(--ink); text-decoration: none; }
+  .move:hover { background: var(--sky); }
+  .m-head { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; }
+  .m-n { font-size: 2.2rem; line-height: 1.1; }
+  .m-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
+  .m-link { color: var(--link); font-weight: 700; font-size: 0.9375rem; text-decoration: underline; }
+</style>

@@ -5,7 +5,7 @@
 // R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.ts（drawSeika）で描く
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { yearLabel, withUnit, refText, deptHref } from '../lib/data.ts';
+import { yearLabel, withUnit, refText, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
 import { joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
@@ -58,7 +58,7 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
 ---
 <article class="sticker scard rm-seika anchor" id={id}>
   <h4>{x.name}{u && <span class="secondary small">（{u}）</span>}</h4>
-  {x.dept && <p class="small secondary meta">担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
+  {x.dept && <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
   <p class="verdict"><Chip tone={j.tone} shape={j.shape} text={x.judgement || 'その他'} title={j.note} /><span>{verdict}</span>{rateText && <small class="secondary">（{rateText}）</small>}</p>
 
   <ol class:list={['steps', stack && 'stack']}>

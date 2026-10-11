@@ -1,0 +1,18 @@
+---
+// ページの頭のステッカー（将来像・部局）に並べる、件数の丸い札。押すと、その一覧（さがすのページやページの中の節）へ行く
+import { fmt } from '../lib/format.ts';
+
+interface Props { items: { label: string; n: number; href: string; note?: string }[] }
+const { items } = Astro.props;
+---
+<div class="head-stats">
+  {items.map((it) => <a href={it.href}>{it.label} <b class="big">{fmt(it.n)}</b>{it.note && <small>（{it.note}）</small>}</a>)}
+</div>
+
+<style>
+  .head-stats { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+  a { display: inline-flex; align-items: baseline; gap: 6px; color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 2px 14px; font-size: 0.9375rem; }
+  a:hover { background: var(--sky); }
+  b { font-size: 1.15rem; }
+  small { font-size: 0.8125rem; color: var(--ink-2); }
+</style>

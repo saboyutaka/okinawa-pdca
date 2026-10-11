@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
-  getTorikumi, getSeika, seikaDept, deptHref, sourceLink, activityRuns,
+  getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { planSourceLink, kankoSeikaList } from '../src/lib/plans.ts';
@@ -69,6 +69,20 @@ test('最新の年度の取組・成果指標の部局には、どれも部局�
     ...getTorikumiGroups().map((g) => g.dept),
   ]);
   none([...depts].filter((d) => !deptHref(d)), (d) => d || '（空）');
+});
+
+test('最新の年度の取組の所管部課は、部局のページの課ごとの図に行がある', () => {
+  // 取組のページの「所管」のリンクは、部局のページのその課の行へ飛ぶ。部局のページの課の行は、最新の年度の取組の所管部課で作る
+  none(getTorikumi(LATEST).filter((t) => !sectionHref(t.section)?.includes('#') || deptHref(t.section) !== deptHref(t.dept)), (t) => `${t.shisaku_id} ${t.name}: ${t.section}（${t.dept}）`);
+});
+
+test('施策にかかわる部局（関係部等と取組の部局）には、どれも部局のページがある', () => {
+  // 部局のページの施策の一覧と、施策をさがすの部局の絞り込みは、shisakuDepts で同じように数える
+  none(getShisakuList().flatMap((s) => shisakuDepts(s).filter((d) => !deptHref(d.dept)).map((d) => `${s.id}: ${d.dept}`)), (x) => x);
+});
+
+test('どの部局のページにも、出典の検証票のページがある', () => {
+  none(DEPTS.filter((d) => !deptSourcePages(d.name).length), (d) => d.name);
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {

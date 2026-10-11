@@ -1,7 +1,7 @@
 ---
 // 観光ロードマップの主な取組1つ。R5・R6の進捗状況のスタンプ、活動指標、決算見込額、沖縄県PDCAの同じ取組へのリンク
 import Stamps from './Stamps.astro';
-import { yearLabel, statusOf, toneOfStatus, deptHref } from '../lib/data.ts';
+import { yearLabel, statusOf, toneOfStatus, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, type KankoTorikumiGroup } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 
@@ -14,7 +14,7 @@ const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[year
 <article class="sticker rm-tori anchor" id={id}>
   <div class="th">
     <h4>{t.name}</h4>
-    <div class="sec">{deptHref(t.section) ? <a class="sub-link" href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+    <div class="sec">{sectionHref(t.section) ? <a class="sub-link" href={sectionHref(t.section)}>{t.section}</a> : t.section}</div>
   </div>
   <Stamps items={stamps} label={`${span}の進捗状況`} size="small" />
   {t.indicator ? (

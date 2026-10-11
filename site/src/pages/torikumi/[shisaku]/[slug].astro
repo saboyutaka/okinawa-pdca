@@ -17,7 +17,7 @@ import { themeIdsOfItem } from '../../../lib/themes.ts';
 import { JUDGE_UI } from '../../../lib/icons.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
-  deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement,
+  sectionHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement,
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -61,7 +61,7 @@ const amount = (r: BudgetAmountRow, kind: AmountKind) => {
 const KINDS: AmountKind[] = ['settled', 'estimate', 'initial'];
 // 報告に載っている年度の範囲（「R4〜R6」「R7」）
 const span = (x: TorikumiGroup) => (firstYearOf(x) === x.latest.year ? yearLabel(x.latest.year) : `${yearLabel(firstYearOf(x))}〜${yearLabel(x.latest.year)}`);
-const secHref = deptHref(t.section);
+const secHref = sectionHref(t.section);
 const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 const latestStatus = statusOf(t);
 const latestTone = toneOfStatus(latestStatus);
