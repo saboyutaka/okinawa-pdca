@@ -2,9 +2,10 @@
 // 成果指標の一覧の行に添える、ゴールまでの道のりの小さな図（施策ページの図 SeikaChart の縮小版）。
 // 横は報告年度 R4〜R9 の6枠で、どの行も同じ位置にそろえる（地の色の左半分が前期、右半分が中期）。点線が計画の道すじ（スタートの基準値 → 各年度の計画値。最後の○がゴールの目標値）、
 // 青い点が実績値で、最新を大きくする。最新の報告の計画期間でない方の道すじは灰色の点線だけにする。
+// 目標値が文の指標（「跡地における〜を目指す」など）は、施策ページの図と同じく基準値・実績値を読み（textGoalChartRow）、スタートと実績値だけを描く。
 // 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
-import { YEARS } from '../lib/data.js';
+import { YEARS, textGoalChartRow } from '../lib/data.js';
 
 interface Props { row: any }
 const { row } = Astro.props;
@@ -14,10 +15,11 @@ const PAD = 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
 const sw = W / SLOTS.length;
 const num = (v) => v != null && Number.isFinite(v);
-const years = YEARS.map((y) => row.years[y]).filter(Boolean);
+const textGoal = textGoalChartRow(row);
+const years = YEARS.map((y) => (textGoal || row).years[y]).filter(Boolean);
 const last = years[years.length - 1];
 const act = years.filter((r) => num(r.actual));
-const drawable = act.length > 0 && years.some((r) => num(r.target));
+const drawable = act.length > 0 && (!!textGoal || years.some((r) => num(r.target)));
 
 let band = null;
 let plans = [];
