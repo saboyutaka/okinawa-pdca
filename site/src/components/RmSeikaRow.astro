@@ -1,17 +1,17 @@
 ---
 // 観光ロードマップの成果指標の一覧の1行（lib/plans.ts の kankoSeikaList の行）。基準値と比べた判定の印・名前・基準値から最新の実績値。
-// 名前は施策展開のページのその指標の札へのリンク。compact はテーマのページの枠の中（施策の行を出さない）
+// 名前は施策展開のページのその指標の札へのリンク
 import Chip from './Chip.astro';
 import { withUnit, refText } from '../lib/data.ts';
 import { rmJudgementOf, type KankoSeikaListRow } from '../lib/plans.ts';
 
-interface Props { r: KankoSeikaListRow; compact?: boolean }
-const { r, compact = false } = Astro.props;
+interface Props { r: KankoSeikaListRow }
+const { r } = Astro.props;
 const x = r.x;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
 const j = rmJudgementOf(r.judgement);
 ---
-<li class:list={['rm-srow', compact && 'compact']}>
+<li class="rm-srow">
   <div class="srow-head">
     <Chip tone={j.tone} shape={j.shape} text={r.judgement} title={j.note} />
     <a class="name-link" href={r.href}>{x.name}</a>
@@ -21,7 +21,7 @@ const j = rmJudgementOf(r.judgement);
     <span>→ 実績値 <strong>{withUnit(r.latestRaw, u)}</strong>{refText(r.latestRef) && <span class="secondary">（{refText(r.latestRef)}）</span>}</span>
     <span>→ 目標値 {withUnit(x.target_raw, u)}（R6）</span>
   </div>
-  {!compact && <div class="small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>}
+  <div class="small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>
 </li>
 
 <style>

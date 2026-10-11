@@ -30,7 +30,7 @@ const prev = all[i - 1];
 const next = all[i + 1];
 ---
 <Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
+  <Crumbs items={[{ href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
 
   <header class="sticker lift head">
     <span class="code-no code-corner" title="観光ロードマップの報告書での番号">施策展開 {t.code}</span>

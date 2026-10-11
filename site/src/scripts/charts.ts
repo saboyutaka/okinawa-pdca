@@ -203,13 +203,25 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
     ['a', 'var(--series-1)', 'circle', '取組「順調」'],
     ['b', 'var(--ink-2)', 'square', '成果指標 到達'],
   ];
+  // 右端のラベル（値と名前の2行）は、2つの値が近いと重なるので、上下に離して置く（図の上下の端からははみ出さない）
+  const last = points.length - 1;
+  const LABEL_H = 36;
+  const ly = { a: y(points[last].a) + 1, b: y(points[last].b) + 1 };
+  const [top, bottom] = ly.a <= ly.b ? (['a', 'b'] as const) : (['b', 'a'] as const);
+  if (ly[bottom] - ly[top] < LABEL_H) {
+    const mid = (ly[top] + ly[bottom]) / 2;
+    ly[top] = mid - LABEL_H / 2;
+    ly[bottom] = mid + LABEL_H / 2;
+  }
+  const shift = Math.max(0, m.t - ly[top]) - Math.max(0, ly[bottom] - (H - m.b - 10));
+  ly[top] += shift;
+  ly[bottom] += shift;
   for (const [k, color, shape, name] of series) {
     svg.append(sv('path', { d: points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p[k])}`).join(''), fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
     points.forEach((p, i) => svg.append(shape === 'circle'
       ? sv('circle', { cx: x(i), cy: y(p[k]), r: 6, fill: color, stroke: 'var(--line)', 'stroke-width': 2 })
       : sv('rect', { x: x(i) - 5.5, y: y(p[k]) - 5.5, width: 11, height: 11, fill: color, stroke: 'var(--line)', 'stroke-width': 2 })));
-    const last = points.length - 1;
-    const t = sv('text', { class: 'lbl', x: x(last) + 14, y: y(points[last][k]) + 1 });
+    const t = sv('text', { class: 'lbl', x: x(last) + 14, y: ly[k] });
     t.append(sv('tspan', {}, `${points[last][k].toFixed(1)}%`), sv('tspan', { class: 'lbl2', x: x(last) + 14, dy: 16 }, name));
     svg.append(t);
   }
