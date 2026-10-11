@@ -1,10 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Crumbs from '../../components/Crumbs.astro';
 import BarList from '../../components/BarList.astro';
 import Term from '../../components/Term.astro';
 import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.ts';
 import { fmt, yen, pct } from '../../lib/format.ts';
-import { IKKATSU_YEARS, ikkatsuRows } from '../../lib/plans.ts';
+import { IKKATSU_YEARS, IKKATSU_HREF, ikkatsuRows } from '../../lib/plans.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
@@ -54,12 +55,14 @@ const expenditureItems = pref.expenditure_by_nature.map((r) => ({ label: r.name,
 const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
 ---
 <Base title="予算の財源のしくみ" description="沖縄県PDCAの取組の予算に出てくる財源（県単等・一括交付金・内閣府計上・各省計上）の意味と、沖縄振興予算や県の一般会計との関係をまとめています。">
-  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/yosan/">予算と財源</a> › 財源のしくみ</nav>
-  <h1>予算の財源のしくみ</h1>
-  <p>
-    <a href="/yosan/">予算と財源</a>では、県の主な取組に書かれた予算事業を「主な財源」ごとに分けて集計しています。
-    このページでは、その財源の区分が何を意味するのかと、ニュースなどでよく出てくる「沖縄振興予算」や、県の予算全体との関係を説明します。
-  </p>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/yosan/', label: '予算と財源' }, { label: '財源のしくみ' }]} />
+  <header class="sticker lift head">
+    <h1>予算の財源のしくみ</h1>
+    <p class="lead">
+      <a href="/yosan/">予算と財源</a>では、県の主な取組に書かれた予算事業を「主な財源」ごとに分けて集計しています。
+      このページでは、その財源の区分が何を意味するのかと、ニュースなどでよく出てくる「沖縄振興予算」や、県の予算全体との関係を説明します。
+    </p>
+  </header>
 
   <section class="card points" aria-labelledby="points">
     <h2 id="points">ポイント</h2>
@@ -87,7 +90,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
           {f.key === '一括交付金（ソフト）' && (
             <p class="small ik-note">
               県はこの交付金を使った事業ごとに成果目標を立て、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています（<ExtLink href={LINKS.ikkatsu}>県の公表ページ</ExtLink>。{yearLabel(ikYear)}は{fmt(ikCount)}事業）。
-              事業ごとの評価（◎○△未）・成果目標・予算の執行は、各施策のページの「一括交付金（ソフト）の事業」で見られます（例: <a href="/shisaku/3-2-a-1/#ikkatsu">「安全・安心の島」の構築に向けた受入体制等の整備</a>）。
+              事業ごとの評価（◎○△未）は<a href={IKKATSU_HREF}>一括交付金の事業をさがす</a>で一覧でき、成果目標・予算の執行・今後の方針は各施策のページの「一括交付金（ソフト）の事業」で見られます。
             </p>
           )}
           {f.top.length > 0 && (
@@ -170,6 +173,9 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
 </Base>
 
 <style>
+  .head { display: grid; gap: 8px; margin-top: 12px; }
+  .head h1 { margin: 0; }
+  .head .lead { margin: 0; }
   .points { margin-top: 20px; }
   .points h2 { margin-top: 0; font-size: 1.1rem; }
   .points ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
