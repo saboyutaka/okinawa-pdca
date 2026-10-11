@@ -1,0 +1,62 @@
+---
+// 予算と財源の、予算事業の一覧の1行。左に予算事業の名前・財源・書かれている取組（2件目からは畳む）、右に決算見込額と前後の年度の金額。
+// 一括交付金（ソフト）の事後評価の事業とは結び付けない（同じ名前でも複数の取組・施策にまたがり、評価の物差しも違うため）
+import Chip from './Chip.astro';
+import { yearLabel, FUNDS, getTorikumi, getShisaku, statusOf, toneOfStatus, torikumiPage, type BudgetGroup } from '../lib/data.ts';
+import { yen } from '../lib/format.ts';
+
+interface Props { g: BudgetGroup; report: number }
+const { g, report } = Astro.props;
+const funds = FUNDS.filter((f) => g.funds.has(f.key));
+const tori = g.related.map((l) => ({
+  l,
+  t: getTorikumi(report).find((x) => x.shisaku_id === l.shisaku_id && x.key === l.key),
+  s: getShisaku(l.shisaku_id),
+  href: torikumiPage(l.shisaku_id, l.key),
+}));
+const shown = tori.slice(0, 1);
+const rest = tori.slice(1);
+---
+<li class="b-row">
+  <div class="b-main">
+    <strong class="b-name">{g.name}</strong>
+    <div class="small secondary b-sub">
+      {funds.map((f) => <span class={`swatch series-${f.series}`}>{f.key}</span>)}
+    </div>
+    {[shown, rest].map((list, i) => {
+      const items = list.map(({ l, t, s, href }) => (
+        <li>
+          {t && <Chip tone={toneOfStatus(statusOf(t))} text={statusOf(t)} />} {href ? <a class="sub-link t-name" href={href}>{l.torikumi}</a> : <span class="t-name">{l.torikumi}</span>}
+          {s && <span class="secondary">（施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span>）</span>}
+        </li>
+      ));
+      if (!list.length) return null;
+      return i === 0
+        ? <ul class="small tlist" aria-label="この予算事業が書かれている取組">{items}</ul>
+        : <details class="small t-more"><summary>ほかの取組（{list.length}件）</summary><ul class="tlist">{items}</ul></details>;
+    })}
+  </div>
+  <div class="b-amt">
+    <div class="big b-now"><span class="sr-only">{yearLabel(report)}の決算見込額 </span>{yen(g.estimate)}</div>
+    <div class="small secondary">{yearLabel(report - 1)}決算 {yen(g.settled)}</div>
+    <div class="small secondary">{yearLabel(report + 1)}当初 {yen(g.initial)}</div>
+  </div>
+</li>
+
+<style>
+  .b-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: start; }
+  .b-main { display: grid; gap: 3px; min-width: 0; line-height: 1.6; }
+  .b-name { font-weight: 700; }
+  .b-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+  .b-sub .swatch { font-size: inherit; }
+  .tlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+  .tlist :global(.chip) { font-size: 0.8125rem; margin-right: 2px; }
+  .t-more > summary { font-size: 0.8125rem; padding: 0; }
+  .t-more[open] > summary { margin-bottom: 2px; }
+  .b-amt { text-align: right; white-space: nowrap; }
+  .b-now { font-size: 1.15rem; }
+  @media (max-width: 640px) {
+    .b-row { grid-template-columns: 1fr; }
+    .b-amt { text-align: left; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; }
+  }
+</style>

@@ -1,10 +1,11 @@
 ---
-// 一括交付金（ソフト）の事業1つ（施策ページ）。年度ごとの評価（◎○△未）のスタンプ、最新年度の成果目標と予算の執行、県の今後の方針
+// 一括交付金（ソフト）の事業1つ（施策ページ）。年度ごとの評価（◎○△未）のスタンプ、最新年度の成果目標と予算の執行、県の今後の方針。
+// id（ikkatsuAnchor）は、一括交付金の事業をさがす・予算と財源・取組のページからの行き先
 import Stamps from './Stamps.astro';
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
 import { yearLabel, type YearGroup } from '../lib/data.ts';
-import { IKKATSU_YEARS, gradeOf, planSourceLink } from '../lib/plans.ts';
+import { IKKATSU, gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../lib/types.ts';
 
@@ -12,11 +13,7 @@ interface Props { g: YearGroup<IkkatsuJigyoRow> }
 const { g } = Astro.props;
 const j = g.latest;
 const gr = gradeOf(j.grade_label);
-const stamps = IKKATSU_YEARS.map((y) => {
-  const r = g.years[y];
-  const x = r && gradeOf(r.grade_label);
-  return x ? { year: y, tone: x.tone, shape: x.shape, text: `${x.mark} ${x.key}` } : { year: y, tone: null, text: r ? '評価なし' : '—' };
-});
+const stamps = ikkatsuStamps(g);
 // R4 の総括表は「目標値を含む文」と「実績の文」の2列（目標の列が無い）
 const sentence = j.targets.length > 0 && j.targets.every((x) => !x.target);
 const b = j.budget || {};
@@ -24,8 +21,9 @@ const past = Object.values(g.years).filter((r) => r.year !== j.year).sort((a, c)
 const src = planSourceLink('ikkatsu', j.source, j.page);
 const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.sheet_page);
 ---
-<article class="sticker ik">
+<article class="sticker ik anchor" id={ikkatsuAnchor(g.key)}>
   <div class="th">
+    <span class="ik-tag">{IKKATSU.short}</span>
     <h3>{j.name}</h3>
     <div class="small secondary">{j.dept || '担当部課の記載なし'}　計画期間 {j.period || '—'}</div>
   </div>
@@ -82,7 +80,7 @@ const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.shee
 
 <style>
   .ik { display: grid; gap: 10px; align-content: start; padding: 16px; min-width: 0; }
-  .th { display: grid; gap: 2px; }
+  .th { display: grid; gap: 2px; justify-items: start; }
   h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
   .now { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
   table { font-size: 0.8125rem; }
