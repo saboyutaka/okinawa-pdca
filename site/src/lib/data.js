@@ -25,6 +25,12 @@ export const planLabel = (y) => (y <= 2024 ? '前期実施計画（R4〜R6）' :
 export const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
 // 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
 export const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+// 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
+// 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
+export const refText = (raw) => {
+  const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
+  return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
+};
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES = [
