@@ -3,13 +3,17 @@ import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
+import { absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 
-interface Props { title?: string; description?: string }
+// canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
+interface Props { title?: string; description?: string; canonical?: boolean }
 // まだ公開前（ステルス）なので、検索エンジンに載せない。載せてよくなったら false にし、public/_headers の X-Robots-Tag も外す
 const NOINDEX = true;
-const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。' } = Astro.props;
+const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const path = Astro.url.pathname;
+// 本番のドメインでのこのページの URL（クエリを除く）。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、このページとして扱ってもらう
+const url = absUrl(path);
 // サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。くらしのテーマ（このサイト独自の分類）はナビに置かず、トップの節・施策と取組のテーマの札・フッターから入る。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
@@ -46,12 +50,15 @@ for (const code of [THEME_INIT, NAV_SCROLL]) Astro.csp?.insertScriptHash(`sha256
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={url} />}
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
+    {canonical && <meta property="og:url" content={url} />}
     <meta name="author" content={PROJECT.org} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
     <link rel="preload" href="/fonts/fredoka-num.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body>

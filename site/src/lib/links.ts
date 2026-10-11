@@ -15,11 +15,13 @@ export const LINKS = {
 };
 
 // このサイトの名前。計画が描いた沖縄のみらいが、いまどこまで来たかを見る。口で言うときは縮めて「みらいま」（SNS のハッシュタグは lib/iken.ts の HASHTAG）。
-// 「沖縄県PDCA」で探す人に見つけてもらうため、トップのページの題名には tagline も付ける
+// 「沖縄県PDCA」で探す人に見つけてもらうため、トップのページの題名には tagline も付ける。
+// url は本番のトップの URL（astro.config.ts の site・canonical・シェアの URL・sitemap・構造化データがここから作る。lib/seo.ts）
 export const SITE = {
   name: 'おきなわ、みらい、いま',
   short: 'みらいま',
   tagline: '沖縄県PDCAを読みとく非公式サイト',
+  url: 'https://okinawa-miraima.com/',
 };
 
 // このサイトを作っている団体と管理者

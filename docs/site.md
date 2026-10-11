@@ -40,3 +40,12 @@
 ## 5. くらしのテーマの定義
 
 施策名・施策展開・基本施策の名前に当たる言葉と、人が直すための追加・除外は [data/reference/themes.json](../data/reference/themes.json)。基本施策の名前は広いので、短い言葉だと関係のない施策まで入る（「働きやすい環境づくり」の「環境」、「亜熱帯海洋性気候」の「海洋」など）。言葉は長めにし、先読み・後読み（`海洋(?!性気候)`）や exclude で外す。入らない施策があるとビルドで警告し、`make test` で落ちる。
+
+## 6. 検索エンジンと SNS 向け
+
+本番のドメインは `lib/links.ts` の `SITE.url`（https://okinawa-miraima.com/）に1か所で決め、`astro.config.ts` の `site` もこれを使う。URL・sitemap・robots.txt・構造化データを作る関数は `lib/seo.ts`。
+
+- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
+- `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
+- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
+- SNS のシェアの URL も、ビルド時に本番のドメインで入れる（`components/Share.astro`）。

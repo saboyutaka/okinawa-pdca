@@ -1,7 +1,9 @@
 ---
 // パンくず。計画の体系（将来像 › 施策 › 取組）でたどる。トップはヘッダーのタイトルから戻れるので入れない（上の階層の無いページにはパンくずを置かない）。
 // いまのページ（href なし）は最後に置き、長い名前は1行で省略する。スマホでは折り返さず、長い名前を縮めて1行に収める。
+// 検索エンジン向けに、同じ項目を構造化データ（BreadcrumbList。lib/seo.ts）でも出す
 import Sz from './Sz.astro';
+import { breadcrumbLd, ldJson } from '../lib/seo.ts';
 
 interface Item { href?: string; label: string; sz?: number | string }
 interface Props { items: Item[] }
@@ -19,6 +21,7 @@ const { items } = Astro.props;
     ))}
   </ol>
 </nav>
+<script type="application/ld+json" is:inline set:html={ldJson(breadcrumbLd(items, Astro.url.pathname))} />
 
 <style>
   ol { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }
