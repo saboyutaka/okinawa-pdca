@@ -1,11 +1,11 @@
 // 用語（components/Term.astro）を押すと、短い説明を吹き出しで出す。その場所だけの一言（data-term-note）があれば説明の下に足す。
 // Esc か「×」で閉じ、押したボタンにフォーカスを戻す
-import { TERMS } from '../lib/terms.js';
+import { TERMS } from '../lib/terms.ts';
 
-let pop;
-let from = null;
+let pop: HTMLDivElement | undefined;
+let from: HTMLElement | null = null;
 function build() {
-  pop = document.createElement('div');
+  const pop = document.createElement('div');
   pop.className = 'termpop';
   pop.id = 'termpop';
   pop.setAttribute('role', 'dialog');
@@ -29,15 +29,16 @@ function build() {
   close.addEventListener('click', () => closePop());
   pop.append(title, body, note, link, close);
   document.body.append(pop);
+  return pop;
 }
-function open(btn) {
-  if (!pop) build();
+function open(btn: HTMLElement) {
+  pop ??= build();
   if (from) from.setAttribute('aria-expanded', 'false');
   from = btn;
-  const word = btn.dataset.term;
-  pop.querySelector('.termpop-title').textContent = `${word}とは`;
-  pop.querySelector('p').textContent = TERMS[word] || '';
-  const note = pop.querySelector('.termpop-note');
+  const word = btn.dataset.term || '';
+  pop.querySelector('.termpop-title')!.textContent = `${word}とは`;
+  pop.querySelector('p')!.textContent = TERMS[word] || '';
+  const note = pop.querySelector<HTMLElement>('.termpop-note')!;
   note.textContent = btn.dataset.termNote || '';
   note.hidden = !btn.dataset.termNote;
   pop.hidden = false;
@@ -58,13 +59,13 @@ function closePop(refocus = true) {
   from = null;
 }
 document.addEventListener('click', (e) => {
-  const t = e.target.closest?.('.term');
+  const t = e.target instanceof Element ? e.target.closest<HTMLElement>('.term') : null;
   if (t) {
     if (from === t) closePop();
     else open(t);
     return;
   }
-  if (pop && !pop.hidden && !pop.contains(e.target)) closePop(false);
+  if (pop && !pop.hidden && !pop.contains(e.target as Node)) closePop(false);
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closePop();

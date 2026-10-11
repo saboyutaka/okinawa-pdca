@@ -2,29 +2,32 @@
 // 観光ロードマップの成果指標1つ（施策展開のページ）。施策ページの成果指標のカード（SeikaCard）と同じ並び:
 // ①基準値と比べてどうか（1行） ②スタート → いま → ゴールの数字（時間の順。数字はここに1回だけ） ③道のりの図 ④年度ごとの表と県の説明（畳む）。
 // 観光ロードマップの判定は「前進・横ばい・後退」（基準値との比較）なので、①はそれを印にする。
-// R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.js（drawSeika）で描く
+// R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.ts（drawSeika）で描く
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { yearLabel, withUnit, refText, deptHref } from '../lib/data.js';
-import { RM_LATEST, rmJudgementOf } from '../lib/plans.js';
-import { joinLines } from '../lib/text.js';
+import { yearLabel, withUnit, refText, deptHref } from '../lib/data.ts';
+import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
+import { joinLines } from '../lib/text.ts';
+import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
 
-interface Props { g: any; id?: string }
+interface Props { g: KankoSeikaGroup; id?: string }
 const { g, id } = Astro.props;
 const x = g.latest;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
 const yl = yearLabel(x.year);
 const NO_VALUE = /^[\s\-－―—‐ー]*$/;
-const has = (raw) => !NO_VALUE.test(raw || '');
+const has = (raw: string | null | undefined) => !NO_VALUE.test(raw || '');
 // 最新の実績値は、実績値の欄（R4・R5・R6）のうち最後に値があるもの
 const i = x.actual_raw.map((v, k) => (has(v) ? k : -1)).filter((k) => k >= 0).pop();
 const latestRaw = i != null ? x.actual_raw[i] : '';
 const latestYear = i != null ? x.years[i] : '';
 const ref = i != null ? refText(x.ref_years[i]) : '';
 const planRaw = i != null && has(x.plan_raw?.[i]) ? x.plan_raw[i] : null;
-const nums = [x.base, i != null ? x.actual[i] : null, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base;
-const progress = nums ? (x.actual[i] - x.base) / (x.target - x.base) : null;
-const down = nums && x.target < x.base;
+const { base, target } = x;
+const actual = i != null ? x.actual[i] : null;
+const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
+const progress = nums ? (actual - base) / (target - base) : null;
+const down = nums && target < base;
 
 // ① 基準値と比べてどうか。印は県の判定（前進・横ばい・後退）、文は判定と R6 の目標値に届いたかで言い切る
 const j = rmJudgementOf(x.judgement || 'その他');
@@ -38,19 +41,19 @@ const verdict = {
 const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '';
 
 // ② 数字。単位は小さく添えて、数字を折り返さない。文の値が長いときは縦に並べる
-const isNum = (raw) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
-const parts = (raw) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
+const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
+const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
 const note = ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yl}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
 
 // ③ 道のりの図のデータ（components/SeikaChart.astro と同じ形）。年度ごとに、その年度の実績値と、計画期間の計画値の並び
-const years = x.years.map((yy, k) => ({
+const years: SeikaChartYear[] = x.years.map((yy, k) => ({
   y: 2018 + Number(yy.replace(/^R/, '')),
   actual: x.actual[k], actual_raw: x.actual_raw[k], ref: refText(x.ref_years[k]),
   plan: x.plan || [], plan_raw: x.plan_raw || [], target: x.target, target_raw: x.target_raw, target_year: 'R6', base: x.base, base_raw: x.base_raw,
 })).filter((r) => r.y <= RM_LATEST);
 const drawable = years.some((r) => r.actual != null) && x.target != null;
-const data = JSON.stringify({ unit: u, years, latest: x.year === RM_LATEST }).replace(/</g, '\\u003c');
+const data = JSON.stringify({ unit: u, years, latest: x.year === RM_LATEST } satisfies SeikaData).replace(/</g, '\\u003c');
 const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.base_raw, u)} から目標値 ${withUnit(x.target_raw, u)}（R6）まで。${years.map((r, k) => `${yearLabel(r.y)} 実績値 ${withUnit(r.actual_raw, u)}${r.ref ? `（${r.ref}）` : ''}、計画値 ${withUnit(x.plan_raw?.[k], u)}`).join('。')}。左右の矢印キーで年度を移れます`;
 ---
 <article class="sticker scard rm-seika anchor" id={id}>

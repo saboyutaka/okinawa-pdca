@@ -1,10 +1,11 @@
 // data-tip-value / data-tip-label を持つ要素に、マウスを乗せる・タップするで同じ内容を出す。
 // 値は表やラベルにも必ず出しているので、ツールチップは補助にとどめる（棒の区間ごとにタブでは止めない）
-import { showText, hide } from './tip.js';
+import { showText, hide } from './tip.ts';
 
-const target = (e) => e.target.closest?.('[data-tip-value]');
-const inChart = (e) => e.target.closest?.('.chart');
-let pinned = null;
+const closest = (e: Event, selector: string) => (e.target instanceof Element ? e.target.closest<HTMLElement>(selector) : null);
+const target = (e: Event) => closest(e, '[data-tip-value]');
+const inChart = (e: Event) => closest(e, '.chart');
+let pinned: HTMLElement | null = null;
 
 document.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse' || inChart(e)) return;

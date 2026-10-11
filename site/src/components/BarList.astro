@@ -1,9 +1,10 @@
 ---
 // 1系列の横棒（件数・金額の比較）。色は1色で、行のラベルに状態の印を付けられる。棒ではタブで止めない（値は棒の右に出す）
 import Chip from './Chip.astro';
-import { fmt } from '../lib/format.js';
+import { fmt } from '../lib/format.ts';
+import type { Shape, Tone } from '../lib/icons.ts';
 
-interface Item { label: string; tone?: string; shape?: string; n: number; href?: string; note?: string }
+interface Item { label: string; tone?: Tone; shape?: Shape; n: number; href?: string; note?: string }
 interface Props { title: string; caption?: string; items: Item[]; unit?: string }
 const { title, caption, items, unit = '件' } = Astro.props;
 const max = Math.max(1, ...items.map((i) => i.n));

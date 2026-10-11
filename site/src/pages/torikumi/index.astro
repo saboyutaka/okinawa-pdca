@@ -2,19 +2,21 @@
 import Base from '../../layouts/Base.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Icon from '../../components/Icon.astro';
-import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
-import { fmt } from '../../lib/format.js';
-import { getThemes } from '../../lib/themes.js';
-import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.js';
+import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.ts';
+import { fmt } from '../../lib/format.ts';
+import { getThemes } from '../../lib/themes.ts';
+import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.ts';
+import type { Pattern } from '../../lib/data.ts';
+import type { Tone } from '../../lib/icons.ts';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
-// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。lib/data.js の PATTERNS）
-const pats = [
+// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。lib/data.ts の PATTERNS）
+const pats = ([
   { pat: 'delay4', tone: 'critical', label: '4年とも遅れ' },
   { pat: 'delay3', tone: 'serious', label: '3年以上遅れ' },
   { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に` },
-].map((p) => ({ ...p, n: groups.filter((g) => g.patterns.includes(p.pat)).length }));
+] satisfies { pat: Pattern; tone: Tone; label: string }[]).map((p) => ({ ...p, n: groups.filter((g) => g.patterns.includes(p.pat)).length }));
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
@@ -87,15 +89,8 @@ const pats = [
 </Base>
 
 <script>
-  import { iconSvg } from '../../lib/icons.js';
-  type Data = {
-    years: number[];
-    statuses: [string, string][];
-    shisaku: Record<string, [string, string, number]>;
-    depts: Record<string, string>;
-    themes: [string, string][];
-    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[], string[], string[]][];
-  };
+  import { iconSvg } from '../../lib/icons.ts';
+  import type { SearchData as Data } from './data.json.ts';
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
   const form = document.getElementById('tf') as HTMLFormElement;
@@ -117,15 +112,15 @@ const pats = [
 
   function render(row: Data['rows'][number]) {
     const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
-    const [code, sname] = data.shisaku[sid];
+    const [code, sname] = data!.shisaku[sid];
     const li = el('li', 't-row');
     const main = el('div', 't-main');
     const n = el('a', 'name name-link', name) as HTMLAnchorElement;
     n.href = href;
     const s = el('div', 'small secondary');
-    if (data.depts[dept]) {
+    if (data!.depts[dept]) {
       const d = el('a', 'sub-link', section) as HTMLAnchorElement;
-      d.href = `/bukyoku/${data.depts[dept]}/`;
+      d.href = `/bukyoku/${data!.depts[dept]}/`;
       s.append(d);
     } else {
       s.append(section);
@@ -189,12 +184,12 @@ const pats = [
     const last = data.years.length - 1;
     hits = data.rows.filter((r) => {
       const [sid, name, section, d, sts, indicator] = r;
-      const sh = data.shisaku[sid];
+      const sh = data!.shisaku[sid];
       if (s && String(sh[2]) !== s) return false;
       if (dept && d !== dept) return false;
       if (ti >= 0 && !r[10].includes(ti)) return false;
       if (st === 'none' ? sts[last] != null : st === 'delay' ? !(sts[last] != null && DELAY.has(sts[last]!)) : st && sts[last] !== Number(st)) return false;
-      // 4年間の様子は、ビルド時に lib/data.js の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
+      // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
       if (q.length) {

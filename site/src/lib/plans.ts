@@ -1,19 +1,24 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページに、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName } from './data.js';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, type Shisaku, type YearGroup } from './data.ts';
+import type { Shape, Tone } from './icons.ts';
+import type { HyokaKihonRow, IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
 // ---------------------------------------------------------------- 出典
 
+// 抽出結果のフォルダ
+type PlanKind = 'kanko' | 'ikkatsu' | 'hyoka';
+
 // 県のPDFへのリンク。kind は抽出結果のフォルダ（kanko・ikkatsu・hyoka）
-const sourceMaps = new Map();
-export function planSourceLink(kind, id, page) {
+const sourceMaps = new Map<PlanKind, Map<string, PlanSourceRow>>();
+export function planSourceLink(kind: PlanKind, id: string, page?: number | null) {
   if (!sourceMaps.has(kind)) sourceMaps.set(kind, new Map(load(`${kind}/sources`).map((s) => [s.id, s])));
-  const s = sourceMaps.get(kind).get(id);
+  const s = sourceMaps.get(kind)!.get(id);
   if (!s) return null;
   const text = s.link_text.replace(/\s*（\s*(PDF|zip|Excel)[^）]*）\s*$/i, '').trim();
   return page ? { href: `${s.file_url}#page=${page}`, label: `${text} ${page}ページ` } : { href: s.file_url, label: text };
 }
-export const planSources = (kind) => load(`${kind}/sources`);
+export const planSources = (kind: PlanKind) => load(`${kind}/sources`);
 
 // ---------------------------------------------------------------- 観光ロードマップ
 
@@ -30,87 +35,115 @@ export const KANKO = {
 export const RM_YEARS = [2022, 2023, 2024];
 export const RM_LATEST = 2024;
 // 成果指標の「達成状況」（基準値と比べた向き）
-export const RM_JUDGEMENTS = [
+export const RM_JUDGEMENTS: { key: string; tone: Tone; shape?: Shape; note: string }[] = [
   { key: '前進', tone: 'good', shape: 'circle', note: '基準値より良くなっている' },
   { key: '横ばい', tone: 'warning', shape: 'diamond', note: '基準値と変わらない' },
   { key: '後退', tone: 'critical', shape: 'square', note: '基準値より悪くなっている' },
   { key: 'その他', tone: 'blank', note: '目標値の設定が難しいなどで比べられない' },
 ];
-export const rmJudgementOf = (key) => RM_JUDGEMENTS.find((j) => j.key === key) || RM_JUDGEMENTS[3];
+export const rmJudgementOf = (key: string) => RM_JUDGEMENTS.find((j) => j.key === key) || RM_JUDGEMENTS[3];
 
 export const kankoYears = () => load('kanko/years');
 export const kankoKihon = () => load('kanko/kihon');
 
 // 施策展開のページの URL と、その中の施策の見出し
-export const kankoTenkaiHref = (tenkaiId) => `/keikaku/kanko/${tenkaiId}/`;
-export const kankoShisakuHref = (s) => `${kankoTenkaiHref(s.tenkai_id)}#rm-${s.id}`;
+export const kankoTenkaiHref = (tenkaiId: string) => `/keikaku/kanko/${tenkaiId}/`;
+export const kankoShisakuHref = (s: KankoShisakuRow) => `${kankoTenkaiHref(s.tenkai_id)}#rm-${s.id}`;
 
 // 年度をまたいで同じ名前（key）を1行にまとめる（沖縄県PDCA の torikumiRows と同じ考え方）
-function groupByKey(rows) {
-  const m = new Map();
+function groupByKey<T extends { key: string; year: number; no?: number }>(rows: T[]) {
+  const m = new Map<string, YearGroup<T>>();
   for (const r of [...rows].sort((a, b) => b.year - a.year || (a.no ?? 0) - (b.no ?? 0))) {
     if (!m.has(r.key)) m.set(r.key, { key: r.key, latest: r, years: {} });
-    m.get(r.key).years[r.year] ??= r;
+    m.get(r.key)!.years[r.year] ??= r;
   }
   return [...m.values()].sort((a, b) => b.latest.year - a.latest.year || (a.latest.no ?? 0) - (b.latest.no ?? 0));
 }
 
 // 沖縄県PDCA の主な取組（同じ年度に同じ名前のもの）。取組のページがあるものだけ。name は沖縄県PDCA での取組名（よく似た名前で結び付けたものは違う）
-let groupNames;
-function pdcaLinksOf(t) {
-  groupNames ??= new Map(getTorikumiGroups().map((g) => [g.href, g.latest.name]));
-  return (t.pdca || [])
-    .map((p) => ({ ...p, href: torikumiPage(p.shisaku_id, p.key), shisaku: getShisaku(p.shisaku_id) }))
-    .filter((p) => p.href && p.shisaku)
-    .map((p) => ({ ...p, name: groupNames.get(p.href) }));
+type PdcaLink = KankoTorikumiRow['pdca'][number] & { href: string; shisaku: Shisaku; name: string | undefined };
+let groupNames: Map<string, string> | undefined;
+function pdcaLinksOf(t: KankoTorikumiRow): PdcaLink[] {
+  const names = (groupNames ??= new Map(getTorikumiGroups().map((g) => [g.href, g.latest.name])));
+  return (t.pdca || []).flatMap((p) => {
+    const href = torikumiPage(p.shisaku_id, p.key);
+    const shisaku = getShisaku(p.shisaku_id);
+    return href && shisaku ? [{ ...p, href, shisaku, name: names.get(href) }] : [];
+  });
 }
 
-let rmShisaku;
+// 観光ロードマップの施策（最新の報告の行に、年度ごとの行と、年度をまたいでまとめた取組・成果指標を付けたもの）
+export interface KankoTorikumiGroup extends YearGroup<KankoTorikumiRow> {
+  pdca: PdcaLink[];
+}
+// 成果指標の pdca は、沖縄県PDCA の施策ページの成果指標の見出しへのリンクがあるものだけ
+export interface KankoSeikaGroup extends YearGroup<KankoSeikaRow> {
+  pdca: (KankoSeikaRow['pdca'][number] & { href: string; shisaku: Shisaku })[];
+}
+export interface KankoShisaku extends KankoShisakuRow {
+  years: Record<number, KankoShisakuRow>;
+  torikumi: KankoTorikumiGroup[];
+  seika: KankoSeikaGroup[];
+}
+
+let rmShisaku: KankoShisaku[] | undefined;
 export function kankoShisakuList() {
   if (rmShisaku) return rmShisaku;
-  const tori = new Map();
+  const tori = new Map<string, KankoTorikumiRow[]>();
   for (const t of load('kanko/torikumi')) {
     if (!tori.has(t.shisaku_id)) tori.set(t.shisaku_id, []);
-    tori.get(t.shisaku_id).push(t);
+    tori.get(t.shisaku_id)!.push(t);
   }
-  const seika = new Map();
+  const seika = new Map<string, KankoSeikaRow[]>();
   for (const s of load('kanko/seika')) {
     if (!seika.has(s.shisaku_id)) seika.set(s.shisaku_id, []);
-    seika.get(s.shisaku_id).push(s);
+    seika.get(s.shisaku_id)!.push(s);
   }
-  const byId = new Map();
+  const byId = new Map<string, { id: string; years: Record<number, KankoShisakuRow> }>();
   for (const s of load('kanko/shisaku')) {
     if (!byId.has(s.id)) byId.set(s.id, { id: s.id, years: {} });
-    byId.get(s.id).years[s.year] = s;
+    byId.get(s.id)!.years[s.year] = s;
   }
   rmShisaku = [...byId.values()].map((v) => {
     const latest = v.years[RM_LATEST] || Object.values(v.years).sort((a, b) => b.year - a.year)[0];
     const torikumi = groupByKey(tori.get(v.id) || []).map((g) => ({ ...g, pdca: pdcaLinksOf(g.latest) }));
     const seikaRows = groupByKey(seika.get(v.id) || []).map((g) => ({
       ...g,
-      pdca: (g.latest.pdca || []).map((p) => ({ ...p, href: seikaHrefByName(p.shisaku_id, p.name), shisaku: getShisaku(p.shisaku_id) })).filter((p) => p.href),
+      pdca: (g.latest.pdca || []).flatMap((p) => {
+        // 成果指標の見出しへのリンクがあれば、施策もある
+        const href = seikaHrefByName(p.shisaku_id, p.name);
+        const shisaku = getShisaku(p.shisaku_id);
+        return href && shisaku ? [{ ...p, href, shisaku }] : [];
+      }),
     }));
     return { ...latest, years: v.years, torikumi, seika: seikaRows };
   });
-  const order = (id) => id.split('-').map((x) => (/^\d+$/.test(x) ? x.padStart(3, '0') : x)).join('-');
+  const order = (id: string) => id.split('-').map((x) => (/^\d+$/.test(x) ? x.padStart(3, '0') : x)).join('-');
   rmShisaku.sort((a, b) => order(a.id).localeCompare(order(b.id)));
   return rmShisaku;
 }
 
+export interface KankoTenkai {
+  id: string;
+  code: string;
+  name: string;
+  kihon_id: string;
+  shisaku: KankoShisaku[];
+}
 export function kankoTenkaiList() {
-  const m = new Map();
+  const m = new Map<string, KankoTenkai>();
   for (const s of kankoShisakuList()) {
     if (!m.has(s.tenkai_id)) m.set(s.tenkai_id, { id: s.tenkai_id, code: s.tenkai_code, name: s.tenkai_name, kihon_id: s.kihon_id, shisaku: [] });
-    m.get(s.tenkai_id).shisaku.push(s);
+    m.get(s.tenkai_id)!.shisaku.push(s);
   }
   return [...m.values()];
 }
-export const kankoTenkai = (id) => kankoTenkaiList().find((t) => t.id === id);
+export const kankoTenkai = (id: string) => kankoTenkaiList().find((t) => t.id === id);
 
 // 観光ロードマップの成果指標の行き先（施策展開のページの指標の札）
-export const kankoSeikaAnchor = (shisakuId, key) => `rms-${shisakuId}-${torikumiSlug(key)}`;
+export const kankoSeikaAnchor = (shisakuId: string, key: string) => `rms-${shisakuId}-${torikumiSlug(key)}`;
 // 成果指標の一覧の並び（基準値より悪いものを先に）
-const JUDGE_ORDER = { 後退: 0, 横ばい: 1, その他: 2, 前進: 3 };
+const JUDGE_ORDER: Record<string, number> = { 後退: 0, 横ばい: 1, その他: 2, 前進: 3 };
 const NO_VALUE = new Set(['', '―', '-', '－', 'ー']);
 // 最新の報告（R6）の成果指標を1行ずつにする。最新の実績値（実績値の欄の最後の値と、その参照年）と、
 // 基準値から目標値までのうちどこまで進んだか（progress。0 で基準値、1 で目標値、マイナスは基準値より悪い）を付け、悪い順に並べる
@@ -130,10 +163,11 @@ export function kankoSeikaList() {
   );
   return rows.sort((a, b) => JUDGE_ORDER[a.judgement] - JUDGE_ORDER[b.judgement] || (a.progress ?? 0) - (b.progress ?? 0));
 }
-export const isBehind = (r) => r.judgement === '後退' || r.judgement === '横ばい';
+export type KankoSeikaListRow = ReturnType<typeof kankoSeikaList>[number];
+export const isBehind = (r: { judgement: string }) => r.judgement === '後退' || r.judgement === '横ばい';
 
 // 観光ロードマップの取組には自分のページが無いので、施策展開のページの取組のカードを行き先にする
-export const kankoTorikumiAnchor = (shisakuId, key) => `rmt-${shisakuId}-${torikumiSlug(key)}`;
+export const kankoTorikumiAnchor = (shisakuId: string, key: string) => `rmt-${shisakuId}-${torikumiSlug(key)}`;
 export const KANKO_TORIKUMI_HREF = '/keikaku/kanko/torikumi/';
 // 観光ロードマップの取組（年度をまたいで同じ名前を1行にしたもの）を、施策の順に平らにする（取組をさがすで使う）
 export function kankoTorikumiRows() {
@@ -143,21 +177,21 @@ export function kankoTorikumiRows() {
 }
 
 // その年度の観光ロードマップの主な取組（延べ）
-export const kankoTorikumi = (year) => load('kanko/torikumi').filter((t) => t.year === year);
-export const kankoSeika = (year) => load('kanko/seika').filter((s) => s.year === year);
+export const kankoTorikumi = (year: number) => load('kanko/torikumi').filter((t) => t.year === year);
+export const kankoSeika = (year: number) => load('kanko/seika').filter((s) => s.year === year);
 
 // 沖縄県PDCA の主な取組（施策ID・key）が、観光ロードマップのどの施策に載っているか。取組のページで使う
-let reverse;
-export function kankoOfPdca(shisakuId, key) {
+let reverse: Map<string, { rm: KankoShisaku; row: KankoTorikumiGroup }[]> | undefined;
+export function kankoOfPdca(shisakuId: string, key: string) {
   if (!reverse) {
     reverse = new Map();
     for (const s of kankoShisakuList()) {
       for (const g of s.torikumi) {
-        for (const y of Object.keys(g.years)) {
-          for (const p of g.years[y].pdca || []) {
+        for (const t of Object.values(g.years)) {
+          for (const p of t.pdca || []) {
             const k = `${p.shisaku_id}|${p.key}`;
             if (!reverse.has(k)) reverse.set(k, []);
-            const list = reverse.get(k);
+            const list = reverse.get(k)!;
             if (!list.some((x) => x.rm.id === s.id && x.row.key === g.key)) list.push({ rm: s, row: g });
           }
         }
@@ -168,8 +202,8 @@ export function kankoOfPdca(shisakuId, key) {
 }
 
 // 沖縄県PDCA の施策に入っている取組のうち、観光ロードマップでも評価されているもの（施策のページで使う）
-export function kankoOfPdcaShisaku(shisaku) {
-  const out = new Map();
+export function kankoOfPdcaShisaku(shisaku: Shisaku) {
+  const out = new Map<string, KankoShisaku>();
   for (const t of shisaku.torikumi) {
     for (const x of kankoOfPdca(shisaku.id, t.key)) out.set(x.rm.id, x.rm);
   }
@@ -185,36 +219,36 @@ export const IKKATSU = {
 };
 export const IKKATSU_YEARS = [2022, 2023, 2024];
 // 総括表の評価（成果目標の達成率。1事業で複数の目標があれば平均）
-export const GRADES = [
+export const GRADES: { key: string; mark: string; tone: Tone; shape: Shape; note: string }[] = [
   { key: '達成', mark: '◎', tone: 'good', shape: 'circle', note: '達成率100%' },
   { key: '概ね達成', mark: '○', tone: 'warning', shape: 'diamond', note: '達成率70%以上100%未満' },
   { key: '一部達成', mark: '△', tone: 'serious', shape: 'up', note: '達成率70%未満で、一部の目標値は達成' },
   { key: '未達成', mark: '未', tone: 'critical', shape: 'square', note: '達成率70%未満で、どの目標値も未達成' },
 ];
-export const gradeOf = (label) => GRADES.find((g) => g.key === label);
+export const gradeOf = (label: string) => GRADES.find((g) => g.key === label);
 
-let ikkatsuIndex;
+let ikkatsuIndex: Map<string, YearGroup<IkkatsuJigyoRow>[]> | undefined;
 // 施策ごとの事業（年度をまたいで同じ名前の事業を1行に）。1つの事業が複数の施策コードを持つときは、それぞれの施策に出す
-export function ikkatsuOf(shisakuId) {
+export function ikkatsuOf(shisakuId: string) {
   if (!ikkatsuIndex) {
-    const m = new Map();
+    const m = new Map<string, IkkatsuJigyoRow[]>();
     for (const j of load('ikkatsu/jigyo')) {
       for (const sid of j.shisaku_ids) {
         if (!m.has(sid)) m.set(sid, []);
-        m.get(sid).push(j);
+        m.get(sid)!.push(j);
       }
     }
     ikkatsuIndex = new Map([...m].map(([sid, rows]) => [sid, groupByKey(rows)]));
   }
   return ikkatsuIndex.get(shisakuId) || [];
 }
-export const ikkatsuRows = (year) => load('ikkatsu/jigyo').filter((j) => j.year === year);
+export const ikkatsuRows = (year: number) => load('ikkatsu/jigyo').filter((j) => j.year === year);
 
 // ---------------------------------------------------------------- 評価検証報告書
 
 export const HYOKA = { name: '新・沖縄21世紀ビジョン基本計画 評価検証報告書', period: 'R4〜R6', published: '令和8年5月' };
-let hyokaIndex;
-export function hyokaOf(kihonId) {
+let hyokaIndex: Map<string, HyokaKihonRow> | undefined;
+export function hyokaOf(kihonId: string) {
   hyokaIndex ??= new Map(load('hyoka/kihon').map((k) => [k.id, k]));
   return hyokaIndex.get(kihonId);
 }

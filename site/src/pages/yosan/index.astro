@@ -6,17 +6,18 @@ import Chip from '../../components/Chip.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, statusOf, toneOfStatus,
   amountEntries, getBudgetLines, getSuspects, budgetOf, getTorikumi, getShisakuList, getShouraizou, sourceLink,
-  currentDeptOf, torikumiPage, budgetKey as bkey,
-} from '../../lib/data.js';
-import { fmt, yen, pct } from '../../lib/format.js';
+  currentDeptOf, torikumiPage, budgetKey as bkey, type AmountEntry,
+} from '../../lib/data.ts';
+import { fmt, yen, pct } from '../../lib/format.ts';
 import ExtLink from '../../components/ExtLink.astro';
+import type { AmountKind } from '../../lib/types.ts';
 
-const sum = (xs) => xs.reduce((s, x) => s + x.amount, 0);
-const byFund = (entries) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
-const oku = (v) => Math.round(v / 1e4) / 10; // 千円 → 億円（小数1桁）
+const sum = (xs: { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0);
+const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
+const oku = (v: number) => Math.round(v / 1e4) / 10; // 千円 → 億円（小数1桁）
 
 // 財源別の推移。各年度の報告に載っている金額のうち、確定に近いもの（決算額）を優先して並べる
-const SERIES = [
+const SERIES: { report: number; kind: AmountKind }[] = [
   { report: 2022, kind: 'settled' },
   { report: 2023, kind: 'settled' },
   { report: 2024, kind: 'settled' },
@@ -32,13 +33,13 @@ const trendRows = SERIES.map(({ report, kind }) => {
 const settled = amountEntries(LATEST, 'settled');
 const estimate = amountEntries(LATEST, 'estimate');
 const initial = amountEntries(LATEST, 'initial');
-const ikkatsu = (es) => sum(es.filter((e) => e.fund.startsWith('一括交付金')));
+const ikkatsu = (es: AmountEntry[]) => sum(es.filter((e) => e.fund.startsWith('一括交付金')));
 
 // 取組 → 部局・施策
 const latestTori = getTorikumi(LATEST);
 const toriByKey = new Map(latestTori.map((t) => [`${t.shisaku_id}|${t.key}`, t]));
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
-const deptOf = (e) => toriByKey.get(`${e.shisaku_id}|${e.key}`)?.dept || '';
+const deptOf = (e: { shisaku_id: string; key: string }) => toriByKey.get(`${e.shisaku_id}|${e.key}`)?.dept || '';
 
 const deptItems = DEPTS.map((d) => ({ label: d.name, n: oku(sum(estimate.filter((e) => deptOf(e) === d.name))), href: `/bukyoku/${d.slug}/` }))
   .filter((i) => i.n > 0)
@@ -51,16 +52,16 @@ const visionItems = getShouraizou().map((s) => ({
 }));
 
 // 予算事業ごと（R7の決算見込額の大きい順）
-const groups = new Map();
+const groups = new Map<string, { name: string; estimate: number; funds: Set<string> }>();
 for (const e of estimate) {
   const k = bkey(e.budgetName);
   if (!groups.has(k)) groups.set(k, { name: e.budgetName, estimate: 0, funds: new Set() });
-  const g = groups.get(k);
+  const g = groups.get(k)!;
   g.estimate += e.amount;
   g.funds.add(e.fund);
 }
-const amountByName = (entries) => {
-  const m = new Map();
+const amountByName = (entries: AmountEntry[]) => {
+  const m = new Map<string, number>();
   for (const e of entries) m.set(bkey(e.budgetName), (m.get(bkey(e.budgetName)) || 0) + e.amount);
   return m;
 };
@@ -199,7 +200,7 @@ const suspects = getSuspects();
       <tbody>
         {suspects.map((x) => {
           const src = sourceLink(x.file, x.page);
-          const others = Object.keys(AMOUNT_KINDS).filter((k) => k !== x.kind && x[k] != null).map((k) => `${AMOUNT_KINDS[k].label} ${yen(x[k])}`).join('、');
+          const others = (Object.keys(AMOUNT_KINDS) as AmountKind[]).filter((k) => k !== x.kind && x[k] != null).map((k) => `${AMOUNT_KINDS[k].label} ${yen(x[k])}`).join('、');
           return (
             <tr>
               <th>{yearLabel(x.report)}</th>

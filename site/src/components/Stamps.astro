@@ -2,9 +2,10 @@
 // 年度ごとのスタンプ（判定・進捗状況）。items は年度の順。size="small" は小さい丸を横の線でつなぐ（報告のない年度にかかる線は点線）。
 // 見た目は styles/global.css の .stamps（取組の検索のように、ブラウザのスクリプトで同じ形を描くところがあるため）
 import Icon from './Icon.astro';
-import { yearLabel } from '../lib/data.js';
+import { yearLabel } from '../lib/data.ts';
+import type { Shape, Tone } from '../lib/icons.ts';
 
-interface Item { year: number; tone?: string | null; shape?: string; key?: string; text: string; hatch?: boolean }
+interface Item { year: number; tone?: Tone | null; shape?: Shape; key?: string; text: string; hatch?: boolean }
 interface Props { items: Item[]; label: string; size?: 'normal' | 'small' }
 const { items, label, size = 'normal' } = Astro.props;
 const small = size === 'small';

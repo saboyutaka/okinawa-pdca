@@ -7,10 +7,10 @@
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone } from '../lib/data.js';
-import { JUDGE_UI } from '../lib/icons.js';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone, type Shisaku } from '../lib/data.ts';
+import { JUDGE_UI } from '../lib/icons.ts';
 
-interface Props { s: any; attrs?: Record<string, string>; kihon?: boolean }
+interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean }
 const { s, attrs = {}, kihon: showKihon = false } = Astro.props;
 const kihon = showKihon ? getKihonList().find((k) => k.id === s.kihon_id) : null;
 const latestTori = s.torikumi.filter((t) => t.year === LATEST);
@@ -22,7 +22,7 @@ const ui = j && JUDGE_UI[j.key];
 const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : '判定なし'}`;
 ---
 <li class="s-item" {...attrs}>
-  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
+  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j && ui ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
   <div class="name-row">
     <a class="item-name name-link" href={`/shisaku/${s.id}/`}>{s.name}</a>
     <span class="code-no">{s.code}</span>

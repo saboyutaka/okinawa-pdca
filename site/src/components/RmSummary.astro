@@ -5,9 +5,9 @@
 import StatusBar from './StatusBar.astro';
 import RmSeikaRow from './RmSeikaRow.astro';
 import Term from './Term.astro';
-import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.js';
-import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoSeikaList, isBehind } from '../lib/plans.js';
-import { fmt } from '../lib/format.js';
+import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.ts';
+import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoSeikaList, isBehind } from '../lib/plans.ts';
+import { fmt } from '../lib/format.ts';
 
 const SHOW = 5;
 const tori = kankoTorikumi(RM_LATEST);

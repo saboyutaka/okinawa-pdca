@@ -1,11 +1,11 @@
 ---
-// 4年間の推移（主な取組の「順調」の割合と、成果指標の計画値に届いた割合）。図は scripts/charts.js が表示幅で描く
-import { yearLabel } from '../lib/data.js';
+// 4年間の推移（主な取組の「順調」の割合と、成果指標の計画値に届いた割合）。図は scripts/charts.ts が表示幅で描く
+import { yearLabel } from '../lib/data.ts';
+import type { TrendData, TrendPoint } from '../scripts/charts.ts';
 
-interface Point { y: number; a: number; b: number; aOk: number; aN: number; bOk: number; bN: number }
-interface Props { points: Point[] }
+interface Props { points: TrendPoint[] }
 const { points } = Astro.props;
-const data = JSON.stringify({ points }).replace(/</g, '\\u003c');
+const data = JSON.stringify({ points } satisfies TrendData).replace(/</g, '\\u003c');
 const f = (v: number) => `${v.toFixed(1)}%`;
 const aria = `4年間の推移。主な取組のうち順調の割合は ${points.map((p) => `${yearLabel(p.y)} ${f(p.a)}`).join('、')}。成果指標のうち計画値に届いた割合は ${points.map((p) => `${yearLabel(p.y)} ${f(p.b)}`).join('、')}。左右の矢印キーで年度を移れます`;
 ---

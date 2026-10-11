@@ -4,10 +4,10 @@
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { YEARS, LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, deptHref, toneOfJudgement, sourceLink, textGoalChartRow } from '../lib/data.js';
-import { joinLines } from '../lib/text.js';
+import { YEARS, LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, deptHref, toneOfJudgement, sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
+import { joinLines } from '../lib/text.ts';
 
-interface Props { row: any; id: string }
+interface Props { row: SeikaGroup; id: string }
 const { row, id } = Astro.props;
 const x = row.latest;
 const u = x.unit;
@@ -18,9 +18,10 @@ const planRaw = /[^\s\-－―—‐]/.test(x.plan_raw?.[pi] || '') ? x.plan_raw[
 const yearsDesc = [...YEARS].reverse();
 // 計画期間をまたいで目標値が変わった（R6→R7）
 const prev = yearsDesc.filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
-const nums = [x.base, x.actual, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base;
-const progress = nums ? (x.actual - x.base) / (x.target - x.base) : null;
-const down = nums && x.target < x.base;
+const { base, actual, target } = x;
+const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
+const progress = nums ? (actual - base) / (target - base) : null;
+const down = nums && target < base;
 
 // ① 計画値に届いたか。色と形は達成率の区分（RATE_BINS）、文は区分ごとに言い切る
 const bin = rateBin(x);
@@ -35,8 +36,8 @@ const verdict = {
 }[bin];
 
 // ② 数字。単位は小さく添えて、数字を折り返さない。文の値（「〜の縮小」など）が長いときは縦に並べる
-const isNum = (raw) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
-const parts = (raw) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
+const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
+const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, x.actual_raw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
 const ref = refText(x.actual_ref_year);
 // 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする

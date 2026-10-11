@@ -8,9 +8,9 @@ import Term from '../../components/Term.astro';
 import Chip from '../../components/Chip.astro';
 import {
   LATEST, yearLong, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi,
-} from '../../lib/data.js';
-import { fmt, pct } from '../../lib/format.js';
-import { LINKS } from '../../lib/links.js';
+} from '../../lib/data.ts';
+import { fmt, pct } from '../../lib/format.ts';
+import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
 const kihon = getKihonList();
@@ -25,7 +25,7 @@ const visions = getShouraizou().map((v) => {
     n: t.length,
     ok: t.filter((x) => x.status === '順調').length,
     shisaku: ss.length,
-    cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST])).length,
+    cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST] ?? '')).length,
     rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
       label: k.name,
       sub: `${k.code}・${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
@@ -47,7 +47,7 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
   <div class="legend-box">
     <span class="legend-l">棒は{yearLong(LATEST)}の主な取組の<Term word="進捗状況" /></span>
     <ul class="legend" aria-label="棒の凡例">
-      {legend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
+      {legend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}
     </ul>
   </div>
   {visions.map((v) => (

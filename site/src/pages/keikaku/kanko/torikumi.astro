@@ -1,14 +1,14 @@
 ---
 // 観光ロードマップの取組をさがす。観光ロードマップにしか無い取組も含めて、基本施策・進捗状況・沖縄県PDCAとの重なり・部局で絞り込む。
-// 取組には自分のページが無いので、名前は施策展開のページの取組のカードへのリンクにする（scripts/list-filter.js で絞り込む）
+// 取組には自分のページが無いので、名前は施策展開のページの取組のカードへのリンクにする（scripts/list-filter.ts で絞り込む）
 import Base from '../../../layouts/Base.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import FilterMore from '../../../components/FilterMore.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
-import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, deptHref, deptOf, DEPTS } from '../../../lib/data.js';
-import { KANKO, RM_LATEST, kankoYears, kankoKihon, kankoTorikumiRows, kankoShisakuHref } from '../../../lib/plans.js';
-import { fmt } from '../../../lib/format.js';
+import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, deptHref, deptOf, DEPTS } from '../../../lib/data.ts';
+import { KANKO, RM_LATEST, kankoYears, kankoKihon, kankoTorikumiRows, kankoShisakuHref, type KankoTorikumiGroup } from '../../../lib/plans.ts';
+import { fmt } from '../../../lib/format.ts';
 
 // 進捗状況のスタンプは本編を読めた年度だけ（R4 は読めない）
 const years = kankoYears().filter((y) => y.readable).map((y) => y.year);
@@ -17,7 +17,7 @@ const kihon = kankoKihon();
 const latestCount = rows.filter((g) => g.years[RM_LATEST]).length;
 const overlap = rows.filter((g) => g.pdca.length).length;
 const depts = DEPTS.filter((d) => rows.some((g) => deptOf(g.latest.section) === d.name));
-const stOf = (g) => {
+const stOf = (g: KankoTorikumiGroup) => {
   const t = g.years[RM_LATEST];
   if (!t) return 'none';
   const st = statusOf(t);
@@ -114,7 +114,7 @@ const stOf = (g) => {
   </p>
 </Base>
 
-<script src="../../../scripts/list-filter.js"></script>
+<script src="../../../scripts/list-filter.ts"></script>
 
 <style>
   .search-form .q input { font-size: 1rem; min-height: 44px; }

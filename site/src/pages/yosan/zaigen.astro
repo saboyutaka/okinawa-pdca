@@ -2,16 +2,16 @@
 import Base from '../../layouts/Base.astro';
 import BarList from '../../components/BarList.astro';
 import Term from '../../components/Term.astro';
-import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.js';
-import { fmt, yen, pct } from '../../lib/format.js';
-import { IKKATSU_YEARS, ikkatsuRows } from '../../lib/plans.js';
-import { LINKS } from '../../lib/links.js';
+import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.ts';
+import { fmt, yen, pct } from '../../lib/format.ts';
+import { IKKATSU_YEARS, ikkatsuRows } from '../../lib/plans.ts';
+import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
 const ref = getFinanceReference();
 const shinko = ref.okinawa_shinko;
 const pref = ref.prefecture;
-const reiwa = (y) => `令和${y - 2018}年度`;
+const reiwa = (y: number) => `令和${y - 2018}年度`;
 
 // このサイトの集計（R7 の決算見込額。同じ予算事業の重複と要確認を除く）
 const estimate = amountEntries(LATEST, 'estimate');
@@ -39,7 +39,7 @@ const byKey = Object.fromEntries(funds.map((f) => [f.key, f.amount]));
 const overlap = byKey['内閣府計上'] + byKey['一括交付金（ソフト）'] + byKey['一括交付金（ハード）'];
 const outside = byKey['県単等'] + byKey['各省計上'];
 const loan = lines.filter((l) => bkey(l.name) === '県単融資事業費').reduce((m, l) => Math.max(m, l.estimate || 0), 0);
-const oku = (v) => Math.round(v / 1e4) / 10; // 千円 → 億円
+const oku = (v: number) => Math.round(v / 1e4) / 10; // 千円 → 億円
 
 const shinkoItems = [
   ...shinko.items.map((i) => ({ label: i.name, n: i.amount, note: i.note })),
@@ -139,7 +139,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
     </p>
     <p>
       県に入ってくるお金のうち、県税など自分で集めるお金（自主財源）の割合は{pref.self_financing_ratio}%で、過去最高です。
-      ただし、国から配られる地方交付税（{fmt(pref.revenue.find((r) => r.name === '地方交付税').amount)}億円）は、県税（{fmt(pref.revenue.find((r) => r.name === '県税').amount)}億円）より多くなっています。
+      ただし、国から配られる地方交付税（{fmt(pref.revenue.find((r) => r.name === '地方交付税')!.amount)}億円）は、県税（{fmt(pref.revenue.find((r) => r.name === '県税')!.amount)}億円）より多くなっています。
     </p>
     <BarList title={`県に入ってくるお金（歳入、${reiwa(pref.year)}当初、${fmt(pref.total)}億円）`} caption="自主財源・依存財源の区分と説明は県の資料による。" items={revenueItems} unit="億円" />
     <BarList title={`県から出ていくお金（歳出・性質別、${reiwa(pref.year)}当初）`} caption="四捨五入のため合計が一致しないことがあります。" items={expenditureItems} unit="億円" />

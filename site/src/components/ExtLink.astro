@@ -1,7 +1,9 @@
 ---
 // 外のサイトへのリンク。別のタブで開き、外部リンクの印（箱から出る矢印）と、読み上げ用の「別のタブで開きます」を付ける。
 // 県の報告書の PDF・県のページ・外部のサービスへのリンクはすべてこれを使う（サイトの中のリンクは素の <a>）
-interface Props { href: string; class?: string; [attr: string]: any }
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'a'> { href: string }
 const { href, class: cls, ...rest } = Astro.props;
 ---
 <a href={href} class={cls} target="_blank" rel="noopener" {...rest}><slot /><svg class="ext" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M9.5 7v2.5a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5H5M7.5 1.5h3v3M10.5 1.5 6 6" /></svg><span class="sr-only">（別のタブで開きます）</span></a>

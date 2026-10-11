@@ -1,14 +1,29 @@
 // 取組をさがす（/torikumi/）が読み込む検索用データ。ビルド時に1つの JSON として書き出す。
 // 行は配列で持ってファイルを小さくする（並びは fields のとおり）
-import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups } from '../../lib/data.js';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
-import { kankoOfPdca } from '../../lib/plans.js';
+import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups } from '../../lib/data.ts';
+import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { kankoOfPdca } from '../../lib/plans.ts';
+import type { Tone } from '../../lib/icons.ts';
+
+// JSON の形（ブラウザのスクリプト pages/torikumi/index.astro もこの型で読む）
+export interface SearchData {
+  years: number[];
+  statuses: [key: string, tone: Tone][];
+  depts: Record<string, string>;
+  shisaku: Record<string, [code: string, name: string, shouraizou: number]>;
+  themes: [id: string, label: string][];
+  fields: string[];
+  rows: [
+    shisaku_id: string, name: string, section: string, dept: string, statuses: (number | null)[], indicator: string, target: string, actual: string,
+    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[],
+  ][];
+}
 
 export function GET() {
   const code = Object.fromEntries(STATUSES.map((s, i) => [s.key, i]));
   const themes = getThemes();
   const themeIndex = new Map(themes.map((t, i) => [t.id, i]));
-  const body = {
+  const body: SearchData = {
     years: YEARS,
     statuses: STATUSES.map((s) => [s.key, s.tone]),
     depts: Object.fromEntries(DEPTS.map((d) => [d.name, d.slug])), // 部局名 → 部局ページの slug
@@ -26,8 +41,8 @@ export function GET() {
       g.latest.actual,
       g.latest.year,
       g.href,
-      themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)),
-      g.patterns, // 4年間の様子（lib/data.js の PATTERNS のうち当てはまるもの）
+      themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),
+      g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
     ]),
   };

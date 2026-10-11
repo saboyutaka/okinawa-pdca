@@ -9,39 +9,43 @@
 // 条件は URL のクエリに残すので、そのまま共有できる。
 // 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
 // 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
-const norm = (s) => s.normalize('NFKC').toLowerCase();
+const norm = (s: string) => s.normalize('NFKC').toLowerCase();
+// 絞り込みの入力（キーワード・チェックボックス・ラジオ・select）
+type Field = HTMLInputElement | HTMLSelectElement;
+type CheckInput = HTMLInputElement & { type: 'checkbox' | 'radio' };
+const isCheck = (el: Element): el is CheckInput => el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio');
 
-for (const form of document.querySelectorAll('form[data-filter]')) {
-  const scope = document.querySelector(form.dataset.filter);
-  const items = [...scope.querySelectorAll('[data-item]')];
-  const groups = [...scope.querySelectorAll('[data-group]')];
-  const count = document.querySelector(form.dataset.count);
-  const empty = document.querySelector(form.dataset.empty);
-  const summary = form.dataset.summary && document.querySelector(form.dataset.summary);
-  const inputsOf = (name) => [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]')) {
+  const scope = document.querySelector(form.dataset.filter!)!;
+  const items = [...scope.querySelectorAll<HTMLElement>('[data-item]')];
+  const groups = [...scope.querySelectorAll<HTMLElement>('[data-group]')];
+  const count = form.dataset.count ? document.querySelector(form.dataset.count) : null;
+  const empty = form.dataset.empty ? document.querySelector<HTMLElement>(form.dataset.empty) : null;
+  const summary = form.dataset.summary && document.querySelector<HTMLElement>(form.dataset.summary);
+  const inputsOf = (name: string) => [...form.querySelectorAll<Field>(`[name="${CSS.escape(name)}"]`)];
   // 入力の初めの値（select は selected の付いた選択肢。無ければ先頭）
-  const defaultOf = (el) => (el.tagName === 'SELECT' ? (([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value ?? '') : el.defaultValue);
-  const selects = [...form.querySelectorAll('select[name]')];
+  const defaultOf = (el: Field) => (el instanceof HTMLSelectElement ? (([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value ?? '') : el.defaultValue);
+  const selects = [...form.querySelectorAll<HTMLSelectElement>('select[name]')];
   // 初めの選択のままの条件か（成果指標の「対象: R7の報告にある指標」のように、初めから選んである条件は数えない）
-  const isDefault = (name, value) => {
+  const isDefault = (name: string, value: string) => {
     const first = inputsOf(name)[0];
     if (!first) return false;
-    if (first.tagName === 'SELECT') return value === defaultOf(first);
-    if (first.type === 'checkbox' || first.type === 'radio') return inputsOf(name).some((x) => x.value === value && x.defaultChecked);
+    if (first instanceof HTMLSelectElement) return value === defaultOf(first);
+    if (isCheck(first)) return inputsOf(name).some((x) => x.value === value && isCheck(x) && x.defaultChecked);
     return value === first.defaultValue;
   };
   // 入力を初めの値に戻す
-  const reset = (el) => {
-    if (el.type === 'checkbox' || el.type === 'radio') el.checked = el.defaultChecked;
-    else if (el.name && el.tagName !== 'BUTTON') el.value = defaultOf(el);
+  const reset = (el: Element) => {
+    if (isCheck(el)) el.checked = el.defaultChecked;
+    else if ((el instanceof HTMLInputElement || el instanceof HTMLSelectElement) && el.name) el.value = defaultOf(el);
   };
 
   const conditions = () => {
-    const conds = new Map();
+    const conds = new Map<string, string[]>();
     for (const [k, v] of new FormData(form)) {
       if (v === '') continue;
       if (!conds.has(k)) conds.set(k, []);
-      conds.get(k).push(String(v));
+      conds.get(k)!.push(String(v));
     }
     // 初めから選んである select を「すべて」（空）にしたときも、条件として残す
     for (const el of selects) if (el.value === '' && defaultOf(el) !== '') conds.set(el.name, ['']);
@@ -49,29 +53,31 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
   };
 
   // 条件1つの表示名（「くらしのテーマ」「子ども・子育て」）と、それを外す処理
-  const describe = (name, value) => {
+  const describe = (name: string, value: string): [label: string, text: string, clear: () => void] => {
     const inputs = inputsOf(name);
     const first = inputs[0];
-    const label = first?.closest('[data-label]')?.dataset.label || '';
-    if (first && (first.type === 'checkbox' || first.type === 'radio')) {
-      const input = inputs.find((x) => x.value === value);
-      const text = input?.dataset.text || input?.nextElementSibling?.textContent.trim() || value;
+    const label = first?.closest<HTMLElement>('[data-label]')?.dataset.label || '';
+    if (first && isCheck(first)) {
+      // 同じ name の入力は、どれもチェックボックスかラジオ
+      const boxes = inputs.filter(isCheck);
+      const input = boxes.find((x) => x.value === value);
+      const text = input?.dataset.text || input?.nextElementSibling?.textContent?.trim() || value;
       return [label, text, () => {
         if (input) input.checked = false;
-        const all = inputs.find((x) => x.type === 'radio' && x.value === '');
+        const all = boxes.find((x) => x.type === 'radio' && x.value === '');
         if (all) all.checked = true;
       }];
     }
-    if (first?.tagName === 'SELECT') {
+    if (first instanceof HTMLSelectElement) {
       const opt = [...first.options].find((o) => o.value === value);
       // 外すと初めの選択に戻す。初めの選択のままの条件を外すときは「すべて」にする
       const def = defaultOf(first);
-      return [label, opt?.textContent.trim() || value, () => { first.value = value === def ? '' : def; }];
+      return [label, opt?.textContent?.trim() || value, () => { first.value = value === def ? '' : def; }];
     }
     return [label, `「${value}」`, () => { if (first) first.value = ''; }];
   };
 
-  const renderSummary = (conds) => {
+  const renderSummary = (conds: Map<string, string[]>) => {
     if (!summary) return;
     const parts = [...conds].flatMap(([name, values]) => values.map((v) => [name, v]));
     if (!parts.length) {
@@ -147,8 +153,8 @@ for (const form of document.querySelectorAll('form[data-filter]')) {
   for (const k of new Set(params.keys())) {
     const values = params.getAll(k).flatMap((v) => [v, ...v.split('|')]);
     for (const input of inputsOf(k)) {
-      if (input.type === 'checkbox' || input.type === 'radio') input.checked = values.includes(input.value);
-      else input.value = params.get(k);
+      if (isCheck(input)) input.checked = values.includes(input.value);
+      else input.value = params.get(k)!;
     }
   }
   form.addEventListener('input', apply);

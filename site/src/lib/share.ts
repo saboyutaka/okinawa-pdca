@@ -1,11 +1,16 @@
 // SNS のシェアボタン（components/Share.astro）が開く投稿画面・共有画面の URL。並びは Facebook・LINE・X・Threads・Bluesky。
 // 公開の場の SNS（X・Threads・Bluesky）には #okinawa_pdca を付ける。渡せる引数は各社の資料で 2026-10-11 に確かめた
-import { HASHTAG } from './iken.js';
+import { HASHTAG } from './iken.ts';
 
 const enc = encodeURIComponent;
-const query = (pairs) => pairs.filter(([, v]) => v).map(([k, v]) => `${k}=${enc(v)}`).join('&');
+const query = (pairs: [string, string][]) => pairs.filter(([, v]) => v).map(([k, v]) => `${k}=${enc(v)}`).join('&');
 
-export const SNS = [
+// text は投稿の本文、url はシェアするページ（どちらも空でもよい）
+interface ShareOpts {
+  text: string;
+  url: string;
+}
+export const SNS: { id: string; label: string; href: (o: ShareOpts) => string }[] = [
   // アプリ ID なしで使える sharer.php は URL しか確実に渡せない（本文・ハッシュタグは見る人が書き足す）
   { id: 'facebook', label: 'Facebook', href: ({ url }) => `https://www.facebook.com/sharer/sharer.php?${query([['u', url]])}` },
   // LINE は知り合いに送るもので公開の場ではないので、ハッシュタグは付けない
@@ -18,4 +23,4 @@ export const SNS = [
   { id: 'bluesky', label: 'Bluesky', href: ({ text, url }) => `https://bsky.app/intent/compose?${query([['text', [text, url, `#${HASHTAG}`].filter(Boolean).join('\n')]])}` },
 ];
 
-export const shareHref = (id, opts) => SNS.find((s) => s.id === id).href({ text: '', url: '', ...opts });
+export const shareHref = (id: string, opts: Partial<ShareOpts>) => SNS.find((s) => s.id === id)!.href({ text: '', url: '', ...opts });

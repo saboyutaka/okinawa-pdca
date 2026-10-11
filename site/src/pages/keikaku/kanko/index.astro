@@ -7,13 +7,13 @@ import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
 import RmSeikaRow from '../../../components/RmSeikaRow.astro';
 import ExtLink from '../../../components/ExtLink.astro';
-import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.js';
+import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
-  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, isBehind,
-} from '../../../lib/plans.js';
-import { LINKS } from '../../../lib/links.js';
-import { fmt, pct } from '../../../lib/format.js';
+  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, isBehind, type KankoTenkai,
+} from '../../../lib/plans.ts';
+import { LINKS } from '../../../lib/links.ts';
+import { fmt, pct } from '../../../lib/format.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const judgeKeys = RM_JUDGEMENTS.map((j) => j.key);
@@ -34,7 +34,7 @@ const progressRows = years.map((y) => ({
 const seikaRows = years.filter((y) => y.readable).map((y) => ({ label: yearLabel(y.year), counts: countBy(kankoSeika(y.year), (s) => s.judgement || 'その他', judgeKeys) }));
 const tenkai = kankoTenkaiList();
 const kihon = kankoKihon();
-const latestOf = (t) => t.shisaku.flatMap((s) => s.torikumi.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
+const latestOf = (t: KankoTenkai) => t.shisaku.flatMap((s) => s.torikumi.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
 const sources = planSources('kanko');
 // 成果指標（R6）。基準値より後退・横ばいのものを先に、悪い順に出し、前進しているものは畳む
 const seikaAll = kankoSeikaList();

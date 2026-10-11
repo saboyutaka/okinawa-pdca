@@ -1,6 +1,7 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
 // 頭は親の施策の札の下にぶら下げる。①いまの状態（進捗・活動指標・予算・対応する成果指標） ②年度ごとの進捗 ③年度別計画 ④予算の推移 ⑤年度ごとの PDCA。表と原文は畳む
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
 import Icon from '../../../components/Icon.astro';
@@ -11,19 +12,22 @@ import Sz from '../../../components/Sz.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import IkenBox from '../../../components/IkenBox.astro';
-import { themeIdsOfItem } from '../../../lib/themes.js';
-import { JUDGE_UI } from '../../../lib/icons.js';
+import { themeIdsOfItem } from '../../../lib/themes.ts';
+import { JUDGE_UI } from '../../../lib/icons.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
-  deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS,
-} from '../../../lib/data.js';
-import { yen } from '../../../lib/format.js';
+  deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, type TorikumiGroup,
+} from '../../../lib/data.ts';
+import { yen } from '../../../lib/format.ts';
 import ExtLink from '../../../components/ExtLink.astro';
-import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.js';
+import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
+import type { Tone } from '../../../lib/icons.ts';
+import type { AmountKind, BudgetAmountRow, BukyokuTorikumiRow } from '../../../lib/types.ts';
 
 export function getStaticPaths() {
   return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: torikumiSlug(g.key) }, props: { g } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { g } = Astro.props;
 const s = g.shisaku;
@@ -36,7 +40,7 @@ const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
 // 年度別計画は前期（R4〜R6）と中期（R7〜R9）で違う。計画期間ごとに最新の報告の記載を出す
-const plans = new Map();
+const plans = new Map<string, { years: string[]; rows: BukyokuTorikumiRow['plan']; report: number }>();
 for (const y of present) {
   const b = recs[y];
   if (b?.plan?.length && !plans.has(b.plan_years.join())) plans.set(b.plan_years.join(), { years: b.plan_years, rows: b.plan, report: y });
@@ -44,23 +48,23 @@ for (const y of present) {
 const seikaName = latestRec?.seika_name;
 const seikaHref = seikaName && seikaHrefByName(s.id, seikaName);
 // 対応する成果指標の最新の達成率（名前の空白・記号の違いは無視して施策の成果指標から探す）
-const norm = (v) => (v || '').normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
+const norm = (v: string | null | undefined) => (v || '').normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
 const seikaRow = seikaName && s.seika.filter((x) => x.year === LATEST).find((x) => { const a = norm(x.name); const b = norm(seikaName); return a === b || a.includes(b) || b.includes(a); });
-const seikaTone = seikaRow && RATE_BINS.find((b) => b.key === rateBin(seikaRow))?.tone;
+const seikaTone = seikaRow ? RATE_BINS.find((b) => b.key === rateBin(seikaRow))?.tone : undefined;
 const seikaRate = seikaRow && (seikaRow.rate != null ? `達成率 ${seikaRow.rate}%` : seikaRow.rate_raw || '達成率なし');
 const candidates = renameCandidates(g);
 const reposts = repostsOf(g);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
 const rm = kankoOfPdca(s.id, g.key);
-const okUrl = (u) => /^https?:\/\/\S+$/.test(u || '');
-const amount = (r, kind) => {
+const okUrl = (u: string | null | undefined) => /^https?:\/\/\S+$/.test(u || '');
+const amount = (r: BudgetAmountRow, kind: AmountKind) => {
   const v = r[kind];
   const text = v != null ? yen(v) : r[`${kind}_raw`] || '—';
   return r.suspect?.includes(kind) ? `${text}（桁の誤記の疑い）` : text;
 };
-const KINDS = ['settled', 'estimate', 'initial'];
+const KINDS: AmountKind[] = ['settled', 'estimate', 'initial'];
 // 報告に載っている年度の範囲（「R4〜R6」「R7」）
-const span = (x) => (firstYearOf(x) === x.latest.year ? yearLabel(x.latest.year) : `${yearLabel(firstYearOf(x))}〜${yearLabel(x.latest.year)}`);
+const span = (x: TorikumiGroup) => (firstYearOf(x) === x.latest.year ? yearLabel(x.latest.year) : `${yearLabel(firstYearOf(x))}〜${yearLabel(x.latest.year)}`);
 const secHref = deptHref(t.section);
 const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 const latestStatus = statusOf(t);
@@ -69,8 +73,8 @@ const latestTone = toneOfStatus(latestStatus);
 const pj = judgeOf(s.judges[LATEST]);
 
 // 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「目標 10件 → 実績 54件」のように同じ単位の数から計算する
-const qty = (raw) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
-function achievementOf(y) {
+const qty = (raw: string | null | undefined) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
+function achievementOf(y: number) {
   const raw = recs[y]?.achievement;
   const m = (raw || '').normalize('NFKC').match(/(-?[\d,.]+)\s*%/);
   if (m) return { pct: Number(m[1].replace(/,/g, '')), text: raw };
@@ -79,18 +83,21 @@ function achievementOf(y) {
   const b = qty(r?.target);
   return a && b && b.v > 0 && a.u === b.u ? { pct: (a.v / b.v) * 100, text: `${Math.round((a.v / b.v) * 100)}%（計算）` } : null;
 }
-const toneOfPct = (p) => (p >= 90 ? 'good' : p >= 75 ? 'warning' : p >= 60 ? 'serious' : 'critical');
+const toneOfPct = (p: number): Tone => (p >= 90 ? 'good' : p >= 75 ? 'warning' : p >= 60 ? 'serious' : 'critical');
 const latestAch = achievementOf(t.year);
 
 // 予算の推移。各報告に前年度の決算額・その年度の決算見込額・翌年度の当初予算額が載っているので、年度ごとに確定に近い金額（決算 → 決算見込 → 当初予算）を選ぶ。
 // 1つの取組に予算事業が複数あるときは合計する（桁の誤記の疑いがある金額は入れない）
-const byFy = new Map();
+const byFy = new Map<number, { fy: number; rank: number; kind: AmountKind; amount: number; report: number }>();
 for (const y of present) {
   const b = recs[y];
   if (!b?.budgets?.length) continue;
   for (const kind of KINDS) {
     const fy = y + AMOUNT_KINDS[kind].offset;
-    const vals = b.budgets.flatMap((blk) => blk.rows).filter((r) => r[kind] != null && !r.suspect?.includes(kind)).map((r) => r[kind]);
+    const vals = b.budgets.flatMap((blk) => blk.rows).flatMap((r) => {
+      const v = r[kind];
+      return v != null && !r.suspect?.includes(kind) ? [v] : [];
+    });
     if (!vals.length) continue;
     const rank = KINDS.indexOf(kind);
     const cur = byFy.get(fy);
@@ -99,7 +106,8 @@ for (const y of present) {
 }
 const budgetSeries = [...byFy.values()].sort((a, b) => a.fy - b.fy);
 const budgetMax = Math.max(1, ...budgetSeries.map((x) => x.amount));
-const latestEstimate = byFy.get(t.year)?.kind === 'estimate' ? byFy.get(t.year).amount : null;
+const latestBudget = byFy.get(t.year);
+const latestEstimate = latestBudget?.kind === 'estimate' ? latestBudget.amount : null;
 const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).map((b) => b.name)).filter(Boolean))];
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 ---
@@ -289,7 +297,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
           ))}
         </div>
       ))}
-      {okUrl(latestRec?.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
+      {latestRec && okUrl(latestRec.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
     </section>
   )}
 
@@ -323,7 +331,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
           <tbody>
             {present.flatMap((y) => {
               const b = recs[y];
-              const yl = (k) => yearLabel(y + AMOUNT_KINDS[k].offset);
+              const yl = (k: AmountKind) => yearLabel(y + AMOUNT_KINDS[k].offset);
               if (!b?.budgets.length) {
                 return [<tr><th>{yearLabel(y)}</th><td colspan="5" class="small secondary wide">部局の検証票が手に入っていません。総括報告書の決算見込額: {yen(g.years[y].budget)}{g.years[y].budget == null && g.years[y].budget_raw ? `（${g.years[y].budget_raw}）` : ''}</td></tr>];
               }

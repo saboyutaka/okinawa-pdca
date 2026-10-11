@@ -1,16 +1,16 @@
 ---
 // 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①県の見通し ②スタート → いま → ゴールの数字（時間の順） ③道のりの図
 // ④4年間の見通し ⑤年度ごとの表（畳む）。主要指標には達成率と年度ごとの計画値がないので、①は県の見通しにし、図には計画の道すじを引かない。
-// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに①〜④を並べる（分け方と、図に置く数の読み取りは lib/data.js の shuyouRows）
+// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに①〜④を並べる（分け方と、図に置く数の読み取りは lib/data.ts の shuyouRows）
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import ExtLink from './ExtLink.astro';
-import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink } from '../lib/data.js';
-import { oneLine } from '../lib/text.js';
+import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, type Cell, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+import { oneLine } from '../lib/text.ts';
 
-interface Props { row: any }
+interface Props { row: ShuyouGroup }
 const { row } = Astro.props;
 const x = row.latest;
 const yl = yearLabel(x.year);
@@ -19,7 +19,7 @@ const split = row.parts.length > 1;
 // 計画期間をまたいで基準値・目標値が変わった（R6→R7）
 const prev = yearsDesc.some((y) => y < x.year && row.years[y] && (y <= 2024) !== (x.year <= 2024));
 // 値は数字を大きく、位と単位を小さく出す（「3兆2,885億円」→ 3 兆 2,885 億円）。単位の書かれていない数には指標の単位を添える。文の値はそのまま
-const pieces = (c, p) => {
+const pieces = (c: Cell, p: ShuyouPart) => {
   if (c.value == null) return [{ t: c.text, n: true }];
   const out = c.text.split(/([-△]?\d[\d,.]*)/).filter(Boolean).map((t) => ({ t, n: /\d/.test(t) }));
   return !c.unit && p.scale === 1 && p.unit ? [...out, { t: p.unit, n: false }] : out;

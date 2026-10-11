@@ -5,46 +5,49 @@
 // 目標値が文の指標（「跡地における〜を目指す」など）は、施策ページの図と同じく基準値・実績値を読み（textGoalChartRow）、スタートと実績値だけを描く。
 // 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
-import { YEARS, textGoalChartRow } from '../lib/data.js';
+import { YEARS, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
+import type { SeikaRow } from '../lib/types.ts';
 
-interface Props { row: any }
+interface Props { row: SeikaGroup }
+type Pt = [x: number, y: number];
 const { row } = Astro.props;
 const W = 120;
 const H = 40;
 const PAD = 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
 const sw = W / SLOTS.length;
-const num = (v) => v != null && Number.isFinite(v);
+const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
 const textGoal = textGoalChartRow(row);
 const years = YEARS.map((y) => (textGoal || row).years[y]).filter(Boolean);
 const last = years[years.length - 1];
-const act = years.filter((r) => num(r.actual));
+const act = years.filter((r): r is SeikaRow & { actual: number } => num(r.actual));
 const drawable = act.length > 0 && (!!textGoal || years.some((r) => num(r.target)));
 
-let band = null;
-let plans = [];
-let dots = [];
-let actPath = null;
+let band: number | null = null;
+let plans: { cur: boolean; start: Pt | null; rings: Pt[]; path: string | null }[] = [];
+let dots: Pt[] = [];
+let actPath: string | null = null;
 if (drawable) {
   // 計画期間ごとの最後の報告（基準値・計画値・目標値はこれを使う）
-  const periods = [SLOTS.slice(0, 3), SLOTS.slice(3)]
-    .map((ys) => ({ ys, r: years.filter((r) => ys.includes(r.year)).pop(), cur: ys.includes(last.year) }))
-    .filter((p) => p.r);
+  const periods = [SLOTS.slice(0, 3), SLOTS.slice(3)].flatMap((ys) => {
+    const r = years.filter((r) => ys.includes(r.year)).pop();
+    return r ? [{ ys, r, cur: ys.includes(last.year) }] : [];
+  });
   const vals = [...act.map((r) => r.actual), ...periods.flatMap(({ r }) => [r.base, r.target, ...(r.plan || [])])].filter(num);
   const lo = Math.min(...vals);
   const hi = Math.max(...vals);
-  const f = (n) => Math.round(n * 10) / 10;
-  const x = (y) => f((SLOTS.indexOf(y) + 0.5) * sw);
-  const y = (v) => f(hi === lo ? H / 2 : PAD + (1 - (v - lo) / (hi - lo)) * (H - PAD * 2));
-  const d = (pts) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join('');
+  const f = (n: number) => Math.round(n * 10) / 10;
+  const x = (y: number) => f((SLOTS.indexOf(y) + 0.5) * sw);
+  const y = (v: number) => f(hi === lo ? H / 2 : PAD + (1 - (v - lo) / (hi - lo)) * (H - PAD * 2));
+  const d = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join('');
   band = W / 2;
   plans = periods.map(({ ys, r, cur }) => {
-    const start = num(r.base) ? [f(SLOTS.indexOf(ys[0]) * sw + 2), y(r.base)] : null;
-    const rings = (r.plan || []).map((v, i) => num(v) && [x(ys[i]), y(v)]).filter(Boolean);
+    const start: Pt | null = num(r.base) ? [f(SLOTS.indexOf(ys[0]) * sw + 2), y(r.base)] : null;
+    const rings = (r.plan || []).flatMap((v, i): Pt[] => (num(v) ? [[x(ys[i]), y(v)]] : []));
     const pts = [...(start ? [start] : []), ...rings];
     return { cur, start, rings, path: pts.length > 1 ? d(pts) : null };
   });
-  dots = act.map((r) => [x(r.year), y(r.actual)]);
+  dots = act.map((r): Pt => [x(r.year), y(r.actual)]);
   actPath = dots.length > 1 ? d(dots) : null;
 }
 ---

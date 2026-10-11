@@ -1,36 +1,71 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
-import { showRows, hide } from './tip.js';
+import { showRows, hide, type TipRow } from './tip.ts';
+
+// 図の JSON の形。書き出すのは components/TrendChart.astro（trend）と SeikaChart.astro・RmSeika.astro（seika）
+export interface TrendPoint {
+  y: number; // 報告年度
+  a: number; // 主な取組のうち順調の割合（%）
+  b: number; // 成果指標のうち計画値に届いた割合（%）
+  aOk: number;
+  aN: number;
+  bOk: number;
+  bN: number;
+}
+export interface TrendData {
+  points: TrendPoint[];
+}
+export interface SeikaChartYear {
+  y: number; // 報告年度
+  actual: number | null;
+  actual_raw: string;
+  ref: string; // 実績値が何年度の値か
+  plan: (number | null)[];
+  plan_raw: string[];
+  target: number | null;
+  target_raw: string;
+  target_year: string;
+  base: number | null;
+  base_raw: string;
+}
+export interface SeikaData {
+  unit: string;
+  years: SeikaChartYear[];
+  latest: boolean; // 最新の報告にある指標か（無ければ「いまここ」を「最後の報告」にする）
+}
+
+type Pt = [x: number, y: number];
+type Box = [x1: number, y1: number, x2: number, y2: number];
 
 const NS = 'http://www.w3.org/2000/svg';
-function sv(tag, attrs = {}, text) {
+function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number | null | undefined> = {}, text?: string) {
   const e = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v);
+  for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, String(v));
   if (text != null) e.textContent = text;
   return e;
 }
 const nf = new Intl.NumberFormat('ja-JP');
-const yl = (y) => `R${y - 2018}`;
-const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
-const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC')) && unit ? `${raw}${unit}` : raw || '—');
-function niceTicks(lo, hi, n = 4) {
+const yl = (y: number) => `R${y - 2018}`;
+const planIndex = (y: number) => (y <= 2024 ? y - 2022 : y - 2025);
+const withUnit = (raw: string | null | undefined, unit: string) => (raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC')) && unit ? `${raw}${unit}` : raw || '—');
+function niceTicks(lo: number, hi: number, n = 4) {
   const raw = (hi - lo || 1) / n;
   const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
-  const out = [];
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw)!;
+  const out: number[] = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
   return out;
 }
 
 // 横に並ぶ点（年度）を、ポインターと矢印キーで選ぶ
-function crosshair(wrap, svg, xs, top, bottom, onShow, start) {
+function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: number, bottom: number, onShow: (i: number, x: number, y: number) => void, start: number) {
   let idx = -1;
   const line = sv('line', { class: 'cross', y1: top, y2: bottom, visibility: 'hidden' });
   svg.append(line);
-  const show = (i, pt) => {
+  const show = (i: number, pt?: Pt) => {
     idx = i;
-    line.setAttribute('x1', xs[i]);
-    line.setAttribute('x2', xs[i]);
+    line.setAttribute('x1', String(xs[i]));
+    line.setAttribute('x2', String(xs[i]));
     line.setAttribute('visibility', 'visible');
     const r = svg.getBoundingClientRect();
     onShow(i, pt ? pt[0] : r.left + xs[i], pt ? pt[1] : r.top + top);
@@ -40,7 +75,7 @@ function crosshair(wrap, svg, xs, top, bottom, onShow, start) {
     line.setAttribute('visibility', 'hidden');
     hide();
   };
-  const nearest = (cx) => {
+  const nearest = (cx: number) => {
     const x = cx - svg.getBoundingClientRect().left;
     let b = 0;
     xs.forEach((v, i) => { if (Math.abs(v - x) < Math.abs(xs[b] - x)) b = i; });
@@ -61,13 +96,13 @@ function crosshair(wrap, svg, xs, top, bottom, onShow, start) {
 }
 
 // トップの4年間の推移: 主な取組の「順調」の割合と、成果指標の計画値に届いた割合（どちらも0〜100%の同じ目盛り）
-function drawTrend(wrap, W, { points }) {
+function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
   const H = 250;
   const m = { l: 46, r: Math.min(140, W * 0.3), t: 32, b: 34 };
   const iw = W - m.l - m.r;
   const ih = H - m.t - m.b;
-  const x = (i) => m.l + (points.length === 1 ? iw / 2 : (i * iw) / (points.length - 1));
-  const y = (v) => m.t + (1 - v / 100) * ih;
+  const x = (i: number) => m.l + (points.length === 1 ? iw / 2 : (i * iw) / (points.length - 1));
+  const y = (v: number) => m.t + (1 - v / 100) * ih;
   const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
   for (const v of [0, 25, 50, 75, 100]) {
     svg.append(sv('line', { class: v === 0 ? 'base' : 'gridl', x1: m.l, x2: W - m.r + 8, y1: y(v), y2: y(v) }));
@@ -81,7 +116,7 @@ function drawTrend(wrap, W, { points }) {
     svg.append(sv('text', { class: 'lbl2', x: dx - 8, y: m.t - 10, 'text-anchor': 'end' }, '前期実施計画'));
     svg.append(sv('text', { class: 'lbl2', x: dx + 8, y: m.t - 10 }, '中期'));
   }
-  const series = [
+  const series: [key: 'a' | 'b', color: string, shape: string, name: string][] = [
     ['a', 'var(--series-1)', 'circle', '取組「順調」'],
     ['b', 'var(--ink-2)', 'square', '成果指標 到達'],
   ];
@@ -110,14 +145,17 @@ function drawTrend(wrap, W, { points }) {
 // 前期と中期で基準値・目標値が変わるので、最新の報告の計画期間でない方は地の色の帯に灰色の点線で描く。
 // 主要指標（基本施策のページ）のように年度ごとの計画値がない指標は、道すじを引かず、ゴールの丸（目標値）を計画期間の最後の年度に置く。
 // 数字はカードの「スタート → いま → ゴール」に出しているので、図の中の文字は「スタート」「ゴール」「いまここ」だけにし、ほかの印と重ならない場所に置く
-function drawSeika(wrap, W, { unit, years, latest }) {
-  const num = (v) => v != null && Number.isFinite(v);
+function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaData) {
+  const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
   const last = years[years.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]]
-    .map((ys) => ({ ys, r: years.filter((q) => ys.includes(q.y)).pop(), cur: ys.includes(last.y) }))
-    .filter((p) => p.r);
+  // 計画期間ごとの最後の報告（r。基準値・計画値・目標値はこれを使う）と、最新の報告の計画期間か（cur）
+  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+    const r = years.filter((q) => ys.includes(q.y)).pop();
+    return r ? [{ ys, r, cur: ys.includes(last.y) }] : [];
+  });
+  type Period = (typeof periods)[number];
   const slots = periods.flatMap((p) => p.ys);
-  const vals = [];
+  const vals: number[] = [];
   for (const r of years) if (num(r.actual)) vals.push(r.actual);
   for (const { r } of periods) [r.base, r.target, ...r.plan].forEach((v) => num(v) && vals.push(v));
   let lo = Math.min(...vals);
@@ -130,13 +168,13 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   hi = Math.max(hi, ticks[ticks.length - 1]);
   // 目盛りの単位は1文字（%・人・件など）のときだけ付ける。長い単位はカードの見出しにある
   const u = (unit || '').normalize('NFKC');
-  const tickText = (t) => `${nf.format(t)}${u.length === 1 ? u : ''}`;
+  const tickText = (t: number) => `${nf.format(t)}${u.length === 1 ? u : ''}`;
   // スマホ幅では低くして、カード1枚が1画面に収まるようにする
   const H = W < 480 ? 200 : 240;
   const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
   // 文字の幅を測るため、先に置いておく
   wrap.replaceChildren(svg);
-  const textW = (text, cls) => {
+  const textW = (text: string, cls: string) => {
     const t = sv('text', { class: cls }, text);
     svg.append(t);
     const w = t.getComputedTextLength();
@@ -147,24 +185,24 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   const iw = W - m.l - m.r;
   const ih = H - m.t - m.b;
   const sw = iw / slots.length;
-  const x = (s) => m.l + (slots.indexOf(s) + 0.5) * sw;
-  const y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * ih;
-  const left = (p) => x(p.ys[0]) - sw / 2;
-  const line = (pts) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
+  const x = (s: number) => m.l + (slots.indexOf(s) + 0.5) * sw;
+  const y = (v: number) => m.t + (1 - (v - lo) / (hi - lo)) * ih;
+  const left = (p: Period) => x(p.ys[0]) - sw / 2;
+  const line = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
 
   // 置く印の範囲 [x1, y1, x2, y2]。文字の場所は、これと重ならないように選ぶ
-  const boxes = [];
-  const mark = (cx, cy, r) => boxes.push([cx - r, cy - r, cx + r, cy + r]);
-  const markPath = (pts) => pts.slice(1).forEach(([bx, by], i) => {
+  const boxes: Box[] = [];
+  const mark = (cx: number, cy: number, r: number) => boxes.push([cx - r, cy - r, cx + r, cy + r]);
+  const markPath = (pts: Pt[]) => pts.slice(1).forEach(([bx, by], i) => {
     const [ax, ay] = pts[i];
     const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 5));
     for (let k = 0; k <= n; k++) mark(ax + ((bx - ax) * k) / n, ay + ((by - ay) * k) / n, 1.5);
   });
-  const overlap = (b) => boxes.reduce((s, o) => s + Math.max(0, Math.min(b[2], o[2]) - Math.max(b[0], o[0])) * Math.max(0, Math.min(b[3], o[3]) - Math.max(b[1], o[1])), 0);
-  const fits = (b) => b[0] >= 0 && b[2] <= W && b[1] >= 24 && b[3] <= m.t + ih + 2;
+  const overlap = (b: Box) => boxes.reduce((s, o) => s + Math.max(0, Math.min(b[2], o[2]) - Math.max(b[0], o[0])) * Math.max(0, Math.min(b[3], o[3]) - Math.max(b[1], o[1])), 0);
+  const fits = (b: Box) => b[0] >= 0 && b[2] <= W && b[1] >= 24 && b[3] <= m.t + ih + 2;
   // 候補（左上の座標）のうち、図に収まって重なりのいちばん少ない場所（同じなら先の候補）
-  const place = (w, h, cands) => {
-    const bs = cands.map(([bx, by]) => [bx, by, bx + w, by + h]);
+  const place = (w: number, h: number, cands: Pt[]) => {
+    const bs = cands.map(([bx, by]): Box => [bx, by, bx + w, by + h]);
     const ok = bs.filter(fits);
     const b = (ok.length ? ok : bs).reduce((a, q) => (overlap(q) < overlap(a) ? q : a));
     boxes.push(b);
@@ -175,10 +213,10 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   const plans = periods.map((p) => {
     const { r } = p;
     const sx = left(p) + 6;
-    const pts = [];
+    const pts: Pt[] = [];
     if (num(r.base)) pts.push([sx, y(r.base)]);
-    const circles = r.plan.length
-      ? r.plan.map((v, i) => num(v) && [x(p.ys[i]), y(v)]).filter(Boolean)
+    const circles: Pt[] = r.plan.length
+      ? r.plan.flatMap((v, i): Pt[] => (num(v) ? [[x(p.ys[i]), y(v)]] : []))
       : num(r.target) ? [[x(p.ys[2]), y(r.target)]] : [];
     if (r.plan.length) pts.push(...circles);
     markPath(pts);
@@ -186,13 +224,13 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     circles.forEach(([cx, cy]) => mark(cx, cy, 6));
     return { p, sx, pts, circles };
   });
-  const act = years.filter((r) => num(r.actual)).map((r) => ({ r, cx: x(r.y), cy: y(r.actual) }));
+  const act = years.flatMap((r) => (num(r.actual) ? [{ r, cx: x(r.y), cy: y(r.actual) }] : []));
   markPath(act.map((a) => [a.cx, a.cy]));
   const now = act[act.length - 1];
   act.forEach((a) => mark(a.cx, a.cy, a === now ? 9 : 6.5));
 
   // 「スタート」「ゴール」の文字を添える点（最新の報告の計画期間だけ）。道すじの外側を先に探す
-  const ends = [];
+  const ends: { name: string; ex: number; ey: number; start: boolean; rising: boolean }[] = [];
   for (const { p, sx } of plans) {
     const { r } = p;
     if (!p.cur) continue;
@@ -236,8 +274,8 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     const w = textW(name, 'lbl2');
     const h = 14;
     // 道すじの外側（上がる指標ならスタートの下・ゴールの上。下がる指標は逆）を先に試す
-    const up = start ? [[ex + 6, ey - 19], [ex + 18, ey - 20]] : [[ex - w / 2, ey - 22], [ex - w - 8, ey - 20]];
-    const down = start ? [[ex + 6, ey + 5], [ex + 18, ey + 6]] : [[ex - w / 2, ey + 9], [ex - w - 8, ey + 6]];
+    const up: Pt[] = start ? [[ex + 6, ey - 19], [ex + 18, ey - 20]] : [[ex - w / 2, ey - 22], [ex - w - 8, ey - 20]];
+    const down: Pt[] = start ? [[ex + 6, ey + 5], [ex + 18, ey + 6]] : [[ex - w / 2, ey + 9], [ex - w - 8, ey + 6]];
     // スタートは、実績値が基準値と同じだと「いまここ」の札のすぐ横になるので、札の上下に外した場所も最後に試す
     const [bx, by] = place(w, h, (start !== rising ? [...up, ...down] : [...down, ...up]).concat(start ? [[ex + 8, ey - 7], [ex + 6, ey + 15], [ex + 6, ey - 30]] : []));
     // 文字の後ろに地の色を敷き、下を通る薄い線を隠す
@@ -248,8 +286,8 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   crosshair(wrap, svg, slots.map(x), m.t - 8, m.t + ih, (i, cx, cy) => {
     const s = slots[i];
     const r = years.find((q) => q.y === s);
-    const per = periods.find((p) => p.ys.includes(s)).r;
-    const rows = [];
+    const per = periods.find((p) => p.ys.includes(s))!.r;
+    const rows: TipRow[] = [];
     if (r) rows.push([withUnit(r.actual_raw, unit), `実績値${r.ref ? `（${r.ref}）` : ''}`, 'var(--pop)']);
     // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は出さない
     const pr = per.plan_raw?.[planIndex(s)];
@@ -261,12 +299,12 @@ function drawSeika(wrap, W, { unit, years, latest }) {
 }
 
 const DRAW = { trend: drawTrend, seika: drawSeika };
-const charts = [];
-for (const el of document.querySelectorAll('[data-chart]')) {
+const charts: { el: HTMLElement; render: () => void }[] = [];
+for (const el of document.querySelectorAll<HTMLElement>('[data-chart]')) {
   const json = el.querySelector('script[type="application/json"]');
-  const draw = DRAW[el.dataset.chart];
+  const draw = DRAW[el.dataset.chart as keyof typeof DRAW];
   if (!json || !draw) continue;
-  const data = JSON.parse(json.textContent);
+  const data = JSON.parse(json.textContent!);
   charts.push({ el, render: () => el.clientWidth && draw(el, el.clientWidth, data) });
 }
 const renderAll = () => { for (const c of charts) c.render(); };

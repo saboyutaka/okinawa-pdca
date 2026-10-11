@@ -1,4 +1,5 @@
 ---
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Crumbs from '../../components/Crumbs.astro';
@@ -8,18 +9,19 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ShuyouCard from '../../components/ShuyouCard.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import { oneLine } from '../../lib/text.js';
-import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.js';
+import { oneLine } from '../../lib/text.ts';
+import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
   getKihonList, getShouraizou, getShisakuList, shuyouRows, sourceLink,
-} from '../../lib/data.js';
+} from '../../lib/data.ts';
 
 export function getStaticPaths() {
-  return getKihonList().map((k) => ({ params: { id: k.id } }));
+  return getKihonList().map((k) => ({ params: { id: k.id }, props: { k } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const k = getKihonList().find((x) => x.id === Astro.params.id);
+const { k } = Astro.props;
 const shou = getShouraizou().find((x) => x.id === k.shouraizou);
 const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
 const statusKeys = STATUSES.map((x) => x.key);

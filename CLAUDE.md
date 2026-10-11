@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## このリポジトリ
 
-沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策・主な取組の進捗評価）を、県が公開している報告書の PDF から構造化し、県民向けの静的サイト（Astro）で見せる非公式のシビックテック。Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL は `site/src/lib/links.js` の `PROJECT`）。対象は令和4〜7年度。README・docs・コードのコメント・コミットはすべて日本語。
+沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策・主な取組の進捗評価）を、県が公開している報告書の PDF から構造化し、県民向けの静的サイト（Astro）で見せる非公式のシビックテック。Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL は `site/src/lib/links.ts` の `PROJECT`）。対象は令和4〜7年度。README・docs・コードのコメント・コミットはすべて日本語。
 
 ## コマンド
 
@@ -16,13 +16,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `make extract` | zip 展開 → 総括報告書・部局別の検証票・個別計画などの抽出 → 公表値との突き合わせ → `docs/issues.md` の作り直し |
 | `make check` | 抽出結果を概要版の公表値と突き合わせるだけ（ホストの python3）。`NG` は件数の不一致 |
 | `make issues` | 取れていないデータ・誤りの疑いの一覧（`docs/issues.md`）を作り直す |
-| `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/。`SITE_PORT=4400 make dev` で変えられる）・`site/dist` への書き出し・書き出したものの確認 |
+| `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/。`SITE_PORT=4400 make dev` で変えられる）・`site/dist` への書き出し（先に型を確かめる）・書き出したものの確認 |
+| `make site-check` | サイトの型を確かめるだけ（`astro check`。`make build` でも書き出しの前に行う） |
 | `make down` | コンテナを止めて消す（worktree ではその worktree の node_modules のボリュームも消す） |
 
 - 一部だけ読み直す: `docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025`、部局票は `scripts/extract_bukyoku.py --source kigyo --year 2025` のように絞る（出力の他の年度・取得元の行は残る）。
 - 県企業局は robots.txt で自動取得できないので、ブラウザでダウンロードして `python3 scripts/import_manual.py <フォルダ> --source kigyo --since 2022` で取り込む。
 - git worktree（`.claude/worktrees/<名前>`）の中では、Makefile が `compose.worktree.yaml` を重ねて、コンテナと node_modules のボリュームを worktree ごとに分け（`okinawa-pdca-<名前>`）、開発サーバーのポートを名前から決める（4322〜4921。番号は `make help` に出る）。コマンドは main と同じで、node_modules は初めて動かすときに自動で入る。片付ける前に `make down`。PDF（`data/raw`・`data/interim`）は git に入れていないので worktree には無く、`make extract` は main で行う。
-- テストはない。データを変えたら `make check`、サイトを変えたら `make build` を通す。見た目の変更は、書き出した `site/dist` をローカルで配信して PC 幅とスマホ幅（390px）で確かめる。
+- テストはない。データを変えたら `make check`、サイトを変えたら `make build`（型の確かめを含む）を通す。見た目の変更は、書き出した `site/dist` をローカルで配信して PC 幅とスマホ幅（390px）で確かめる。
 
 ## データの流れ
 
@@ -42,27 +43,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## サイトの作り（site/）
 
-- 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.js` が `data/extracted` を読み、施策の索引・年度をまたいだ取組のまとまり（`getTorikumiGroups`）・部局票との結び付け（`budgetOf`）・予算の重複除去（`amountEntries`）などページ用の形にする。取組の4年間の様子（4年とも遅れ・3年以上遅れ・R5からR7まで続けて遅れ・遅れから順調に など）の数え方は `PATTERNS` に1か所で決め、取組のまとまりの `patterns` に入れる。トップ・将来像・テーマ・部局の数と、取組をさがすの絞り込み（`/torikumi/data.json` の `patterns`）は、どれもこれを使う（ページごとに書くと、数とリンク先の件数がずれる）。施策の判定の移り変わり（前の年度より上がった・下がった・3年続けて遅れ）も同じように `JUDGE_TRENDS` に1か所で決め、施策の `trends` に入れる（施策をさがすの絞り込み `?trend=down` など。上がった・下がったは A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない）。ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。
+- 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読み、施策の索引・年度をまたいだ取組のまとまり（`getTorikumiGroups`）・部局票との結び付け（`budgetOf`）・予算の重複除去（`amountEntries`）などページ用の形にする。取組の4年間の様子（4年とも遅れ・3年以上遅れ・R5からR7まで続けて遅れ・遅れから順調に など）の数え方は `PATTERNS` に1か所で決め、取組のまとまりの `patterns` に入れる。トップ・将来像・テーマ・部局の数と、取組をさがすの絞り込み（`/torikumi/data.json` の `patterns`）は、どれもこれを使う（ページごとに書くと、数とリンク先の件数がずれる）。施策の判定の移り変わり（前の年度より上がった・下がった・3年続けて遅れ）も同じように `JUDGE_TRENDS` に1か所で決め、施策の `trends` に入れる（施策をさがすの絞り込み `?trend=down` など。上がった・下がったは A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない）。ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。
+- TypeScript で書く（`tsconfig.json` は Astro の `strict`）。`npm run build` は `astro check` で型を確かめてから書き出すので、型の誤りがあると Cloudflare のビルドも止まる。`astro check` が TypeScript 7 に対応していないので、TypeScript は 6 にしている。
+  - 抽出結果の JSON の1行の形は `src/lib/types.ts`（`load(name)` の戻り値はこれで決まる）。抽出の出力の欄を変えたらここも直す。
+  - ページ用にまとめた形（施策 `Shisaku`・取組のまとまり `TorikumiGroup`・成果指標のまとまり `SeikaGroup`・観光ロードマップの `KankoShisaku` など）は `lib/data.ts`・`lib/plans.ts` が型も出す。コンポーネントの `Props` はこれを使い、`any` にしない。状態の色と形は `lib/icons.ts` の `Tone`・`Shape`。
+  - 動的なページ（`[id].astro` など）は、`getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。
+  - ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図の `[data-chart]` は `scripts/charts.ts` の `SeikaData`・`TrendData`、取組の検索は `pages/torikumi/data.json.ts` の `SearchData`）。
 - 外のサイトへのリンク（県のページ・報告書の PDF・外部のサービス）は、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と、読み上げ用の「別のタブで開きます」を付ける。`class` などの属性もそのまま渡せる）。素の `<a>` はサイトの中のリンクだけに使う。
-- 意見: `/iken/` に県民意見募集（パブリックコメント）の受付の状態・いつでも使える県の窓口・SNS で話す方法をまとめる。募集の期間と県のページは `lib/iken.js` の `BOSHU`（新しい募集が出たら書き換える。受付中・終了は**ビルドした日**で決まる）。募集の箱は「募集しています」の告知として書き、終わったら告知の上に「この募集は終了しました」の張り紙（`.harigami`）を重ねる。SNS のシェアは `components/Share.astro` のシェアパネル（白い枠に「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky の順のアイコンだけの丸いボタンを並べる。開く URL は `lib/share.js`、ロゴは Simple Icons の形を写した `lib/share-icons.js`）。名前は読み上げ用の文字とツールチップ（`data-tip-value`）で出し、パネルとしてまとめるため外部リンクの印は付けない（`ExtLink` の例外。読み上げの「別のタブで開きます」は付ける）。公開の場の X・Threads・Bluesky にはハッシュタグ `#okinawa_pdca` を付け、Facebook（sharer.php は URL だけ）と LINE（知り合いに送る）には付けない。ページの URL は本番のドメインがビルド時に決まらないのでブラウザで入れる。施策・基本施策・取組のページは出典の前に `components/IkenBox.astro` を置き、名前とそのページの URL を入れてシェアできるようにする。SNS に書いても県には届かないことを必ず添える。
-- ほかの lib: `plans.js`（個別計画などの読み出し: 観光ロードマップの施策・取組・成果指標と沖縄県PDCAとの結び付き、一括交付金の事業、評価検証報告書）、`themes.js`（くらしのテーマ）、`icons.js`（状態の形・判定 A〜G の形と短い言い方・テーマのアイコン）、`terms.js`（用語の説明）、`text.js`（PDF の改行の整形・県の分析の小見出し分け）。
+- 意見: `/iken/` に県民意見募集（パブリックコメント）の受付の状態・いつでも使える県の窓口・SNS で話す方法をまとめる。募集の期間と県のページは `lib/iken.ts` の `BOSHU`（新しい募集が出たら書き換える。受付中・終了は**ビルドした日**で決まる）。募集の箱は「募集しています」の告知として書き、終わったら告知の上に「この募集は終了しました」の張り紙（`.harigami`）を重ねる。SNS のシェアは `components/Share.astro` のシェアパネル（白い枠に「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky の順のアイコンだけの丸いボタンを並べる。開く URL は `lib/share.ts`、ロゴは Simple Icons の形を写した `lib/share-icons.ts`）。名前は読み上げ用の文字とツールチップ（`data-tip-value`）で出し、パネルとしてまとめるため外部リンクの印は付けない（`ExtLink` の例外。読み上げの「別のタブで開きます」は付ける）。公開の場の X・Threads・Bluesky にはハッシュタグ `#okinawa_pdca` を付け、Facebook（sharer.php は URL だけ）と LINE（知り合いに送る）には付けない。ページの URL は本番のドメインがビルド時に決まらないのでブラウザで入れる。施策・基本施策・取組のページは出典の前に `components/IkenBox.astro` を置き、名前とそのページの URL を入れてシェアできるようにする。SNS に書いても県には届かないことを必ず添える。
+- ほかの lib: `plans.ts`（個別計画などの読み出し: 観光ロードマップの施策・取組・成果指標と沖縄県PDCAとの結び付き、一括交付金の事業、評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態の形・判定 A〜G の形と短い言い方・テーマのアイコン）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形・県の分析の小見出し分け）。
 - ページ: トップ、`/theme/<id>/`（くらしのテーマ。一覧はトップの節 `/#themes` だけで、一覧のページとナビの項目は置かない）、`/future/`（将来像の一覧と将来像1〜5）、`/keikaku/`（個別計画の入口と、観光ロードマップ `/keikaku/kanko/`・その施策展開30・観光ロードマップの取組をさがす `/keikaku/kanko/torikumi/`）、`/kihon/<id>/`（基本施策）、`/shisaku/`（一覧と施策339）、`/torikumi/`（検索と取組。URL は `key` の SHA-1 の先頭8桁。4年のうち3年以上遅れた取組などは「4年間の様子」の絞り込みで見る（`?pat=delay3` など）。前にあった `/okure/` はこれと重なるので消した）、`/shihyou/`、`/bukyoku/`、`/yosan/`、`/about/`、`/code-for-okinawa/`（作っている団体と問い合わせ先）、`/iken/`（意見を伝えたい人へ。トップの最後とフッターから入る）。パンくずは計画の体系「トップ › 将来像N › 基本施策 › 施策」「トップ › 将来像N › 施策 › 取組」（`components/Crumbs.astro`。スマホでは、すぐ下の見出しと同じいまのページの名前を見せない）。
 - ブラウザのスクリプト（`src/scripts/`）:
-  - `charts.js`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。成果指標の一覧の行の小さな道のりの図（`components/SeikaSpark.astro`）は文字を入れないので、ビルド時に SVG にする（行が多いので scoped な style を置かず、色は `global.css` の `.spark`）。
-  - `list-filter.js`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。キーワード以外の条件は `components/FilterMore.astro` で畳み（初めは閉じる。最初の画面に一覧が入るように）、初めの選択から変えた条件の数をボタンに出す（スクリプトがフォームの `data-filter-n` と `filters:change` で知らせる。取組の検索も同じ）。
-  - `disclosure.js`（すべて開く・# の行き先が閉じた details の中なら開く。最新の年度の県のふりかえり・活動と検証は途中で切らずに全部出す）、`tooltip.js` / `tip.js`、`terms.js`、`theme.js`。
-  - `scroll-hint.js`: 横にすべらせる帯（`[data-scroll-hint]`。ヘッダーのナビと、施策・取組のページの目次のリンクの並び `.toc-links`）の、続きがある側の端をぼかす。
+  - `charts.ts`: `[data-chart]` の中の JSON から、表示幅に合わせて SVG の図を描く（`trend`・`seika`）。固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため。成果指標の一覧の行の小さな道のりの図（`components/SeikaSpark.astro`）は文字を入れないので、ビルド時に SVG にする（行が多いので scoped な style を置かず、色は `global.css` の `.spark`）。
+  - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残し、`data-summary` の場所に「× で外せる」条件を並べる。キーワード以外の条件は `components/FilterMore.astro` で畳み（初めは閉じる。最初の画面に一覧が入るように）、初めの選択から変えた条件の数をボタンに出す（スクリプトがフォームの `data-filter-n` と `filters:change` で知らせる。取組の検索も同じ）。
+  - `disclosure.ts`（すべて開く・# の行き先が閉じた details の中なら開く。最新の年度の県のふりかえり・活動と検証は途中で切らずに全部出す）、`tooltip.ts` / `tip.ts`、`terms.ts`、`theme.ts`。
+  - `scroll-hint.ts`: 横にすべらせる帯（`[data-scroll-hint]`。ヘッダーのナビと、施策・取組のページの目次のリンクの並び `.toc-links`）の、続きがある側の端をぼかす。
 
 ## デザインの決まり（ユーザーと決めたこと）
 
 - 太い線と硬い影の「ステッカー」を並べるポップな見た目。色はすべて `styles/global.css` のトークンで参照する。はじめは端末の設定に関係なくライトで表示し、ダークはヘッダーのボタンで選んだとき（`data-theme="dark"`）だけ。
 - ステッカーの強さは3段階にして、全部を同じ強さにしない（どこから見ればいいか分からなくなるため）。太い線と大きな影（`.sticker.lift`）はページの頭とトップのヒーローだけ。並ぶカード・図・絞り込みは `.sticker`（細めの線と小さな影）。ステッカーの中の箱は線も影も付けず地の色だけ（`.inset`）にし、中の吹き出しやステッカーにも影を付けない。
-- 一覧（施策・成果指標・遅れている取組・取組の検索）は1件ずつをステッカーにせず、1つの箱の中に細い線で区切った行で並べる（`.row-list`）。1件は2〜3行に収め、一覧の見出しにあること（将来像・基本施策）は行に書かない。部局・くらしのテーマは絞り込み（`data-*`）と詳しいページに任せる。施策の行は `components/ShisakuItem.astro`（判定はハンコだけで出し、判定の言い方や前の年度の判定は行に書かない。A〜G の意味は一覧の上に `components/JudgeLegend.astro` で1回だけ出す。年度ごとの判定は施策のページの「4年間の判定」に任せる）、成果指標の行は `components/SeikaRow.astro`（左に名前と施策の2行、右に達成率の札と施策ページの図の縮小版 `SeikaSpark`。札は施策の行の成果指標の札と同じ数字だけの形（`lib/data.js` の `rateText`・`rateTone`）。図の横は R4〜R9 の6枠でどの行もそろえ、地の色が前期。凡例は一覧の上に `SeikaKey mini` で1回だけ。見通しは達成率の区分とほぼ重なるので行に出さず絞り込みに任せ、基準値・実績値・目標値は図に任せて読み上げ用の文にだけ残す）、取組の行は `.t-row`（styles/global.css。取組をさがすはブラウザで同じ形を描く）を使う（部局のページの一覧も同じ）。
-- 状態（順調〜大幅遅れ、判定 A〜G）は青信号系の色に加えて、形（● ◆ ▲ ■、判定 E・F は ▼ と斜線）と文字で出す。色だけで伝えない。形は `lib/icons.js` を通して出す（`Icon`・`Chip`）。
+- 一覧（施策・成果指標・遅れている取組・取組の検索）は1件ずつをステッカーにせず、1つの箱の中に細い線で区切った行で並べる（`.row-list`）。1件は2〜3行に収め、一覧の見出しにあること（将来像・基本施策）は行に書かない。部局・くらしのテーマは絞り込み（`data-*`）と詳しいページに任せる。施策の行は `components/ShisakuItem.astro`（判定はハンコだけで出し、判定の言い方や前の年度の判定は行に書かない。A〜G の意味は一覧の上に `components/JudgeLegend.astro` で1回だけ出す。年度ごとの判定は施策のページの「4年間の判定」に任せる）、成果指標の行は `components/SeikaRow.astro`（左に名前と施策の2行、右に達成率の札と施策ページの図の縮小版 `SeikaSpark`。札は施策の行の成果指標の札と同じ数字だけの形（`lib/data.ts` の `rateText`・`rateTone`）。図の横は R4〜R9 の6枠でどの行もそろえ、地の色が前期。凡例は一覧の上に `SeikaKey mini` で1回だけ。見通しは達成率の区分とほぼ重なるので行に出さず絞り込みに任せ、基準値・実績値・目標値は図に任せて読み上げ用の文にだけ残す）、取組の行は `.t-row`（styles/global.css。取組をさがすはブラウザで同じ形を描く）を使う（部局のページの一覧も同じ）。
+- 状態（順調〜大幅遅れ、判定 A〜G）は青信号系の色に加えて、形（● ◆ ▲ ■、判定 E・F は ▼ と斜線）と文字で出す。色だけで伝えない。形は `lib/icons.ts` を通して出す（`Icon`・`Chip`）。
 - 施策と主な取組を見た目で取り違えないようにする。大きな丸いハンコは施策の判定（A〜G）だけに使い（一覧の行と親の施策の札では小さな丸いハンコ `.jstamp`）、取組の進捗状況は横長の札と線でつないだ4年分のスタンプで出す。取組のページの頭は、親の施策の札の下にカギ形の線でぶら下げる。
-- 施策ページの成果指標のカード（`components/SeikaCard.astro`）は「計画値に届いたか（達成率の印と1文）→ スタート → いま → ゴール（基準値・実績値と計画値・目標値と県の見通しを時間の順に。数字はここに1回だけ）→ 道のりの図 → 表と県の説明（畳む）」の順にする。図（`charts.js` の `seika`）は横が報告年度で、スタート（基準値）から点線の計画の道すじをたどってゴール（目標値）へ向かう形に、青い点の実績値と「いまここ」を重ねる（前は道のりの棒と推移の図の2つがあり、同じ数字を何度も並べていた）。凡例は節の頭に1回だけ。
-- 基本施策ページの主要指標のカード（`components/ShuyouCard.astro`）も同じ並びと図にする。主要指標には達成率と年度ごとの計画値がないので、頭の1行は県の見通しにし、図には計画の道すじを引かずにゴールの丸だけを置く。主要指標は報告書の文字のまま持っているので、図に置く数は `lib/data.js` の `shuyouRows` で読み取る（「3兆2,885億円」などの位も読む。画面に出す値は報告書の文字のまま）。男性・女性のように1つの欄に値が並ぶ指標は、見通しの欄の名前で分けて、部分ごとに図を出す。目標値が文の指標（「可能な限り減少させる」など）は、ゴールの丸を置かずにスタートと実績値だけを描く。分けられない・数で読めない指標は図を出さず、値を文のまま並べる。
-- 施策ページの成果指標でも、目標値が文の指標（「跡地における〜を目指す」など）は、基準値・実績値を同じように読んで（`lib/data.js` の `textGoalChartRow`）、スタートと実績値だけの図を出す（一覧の行の小さな図 `SeikaSpark` も同じ）。目標が「〜との差の縮小」の指標は、値の図では目標に近づいたか分からないので図を出さない。
+- 施策ページの成果指標のカード（`components/SeikaCard.astro`）は「計画値に届いたか（達成率の印と1文）→ スタート → いま → ゴール（基準値・実績値と計画値・目標値と県の見通しを時間の順に。数字はここに1回だけ）→ 道のりの図 → 表と県の説明（畳む）」の順にする。図（`charts.ts` の `seika`）は横が報告年度で、スタート（基準値）から点線の計画の道すじをたどってゴール（目標値）へ向かう形に、青い点の実績値と「いまここ」を重ねる（前は道のりの棒と推移の図の2つがあり、同じ数字を何度も並べていた）。凡例は節の頭に1回だけ。
+- 基本施策ページの主要指標のカード（`components/ShuyouCard.astro`）も同じ並びと図にする。主要指標には達成率と年度ごとの計画値がないので、頭の1行は県の見通しにし、図には計画の道すじを引かずにゴールの丸だけを置く。主要指標は報告書の文字のまま持っているので、図に置く数は `lib/data.ts` の `shuyouRows` で読み取る（「3兆2,885億円」などの位も読む。画面に出す値は報告書の文字のまま）。男性・女性のように1つの欄に値が並ぶ指標は、見通しの欄の名前で分けて、部分ごとに図を出す。目標値が文の指標（「可能な限り減少させる」など）は、ゴールの丸を置かずにスタートと実績値だけを描く。分けられない・数で読めない指標は図を出さず、値を文のまま並べる。
+- 施策ページの成果指標でも、目標値が文の指標（「跡地における〜を目指す」など）は、基準値・実績値を同じように読んで（`lib/data.ts` の `textGoalChartRow`）、スタートと実績値だけの図を出す（一覧の行の小さな図 `SeikaSpark` も同じ）。目標が「〜との差の縮小」の指標は、値の図では目標に近づいたか分からないので図を出さない。
 - 報告書の施策の番号（`1-(1)-ア-①`・基本施策の `1-(1)`）は名前より目立たせない。ページの頭のステッカーと一覧のカードでは右上の隅に、カードの無い一覧のリンクや見出しでは名前の後ろに、小さく薄い字で置く（`styles/global.css` の `.code-no`・`.code-corner`・`.name-row`）。パンくずとページの題名は名前だけにする。施策・基本施策・取組のページの最後の「出典」の節に「県の報告書での番号」として説明を置く（報告書の PDF をこの番号で探せる）。検索の文字（`data-text`・`/torikumi/data.json`）にも番号を入れ、番号でも探せるようにする。
 - 将来像の色は基本計画パンフレットの色（`--sz-1`〜`--sz-5`）。番号の印と見出しの帯だけに使い、状態の色（棒・印）とは混ぜない。
 - 個別計画（観光ロードマップ）は県の基本計画とは別の計画。県民は計画の名前ではなく分野から探すので、計画が1つのうちはヘッダーのナビに置かず、くらしのテーマ（観光ロードマップはテーマ「観光」）の要約の枠（`components/RmSummary.astro`。観光の計画にしか無い成果指標のうち、基準値より後退・横ばいのものを悪い順に出す）・関係する施策と取組のページ・フッターから入る。将来像の一覧の中には入れない。観光ロードマップのページでは成果指標を主役にし、後退・横ばいの指標を先に並べる。施策をさがす・取組をさがすの一覧と件数には混ぜない（沖縄県PDCAの公表値と合わせるため）。取組をさがすでは、観光ロードマップでも評価されている取組に札を付け、絞り込める（`/torikumi/data.json` の `plans`）。観光ロードマップの取組（観光ロードマップにしか無いものも含む）は `/keikaku/kanko/torikumi/` でさがし、名前は施策展開のページの取組のカードへのリンクにする（取組ごとのページは無い）。淡い紫の札（`.plan-tag`）で沖縄県PDCAの施策・取組と見分ける。観光ロードマップの施策の番号（1-ア-①）も沖縄県PDCAの番号と同じく名前より目立たせず（`.code-no`）、出典の行で「観光ロードマップの報告書での番号」と説明する。沖縄県PDCAと同じ取組は、取組のページから相互にたどれるようにする。一括交付金の事業は施策のページ、評価検証報告書は基本施策のページに出す。この2つは個別計画ではないので個別計画の入口には置かず、資料の説明は「データについて」に置く（一括交付金は財源の説明のページからも案内する）。

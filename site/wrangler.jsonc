@@ -10,7 +10,7 @@
     "directory": "./dist",
     // 無いページには Astro が書き出した 404.html を返す
     "not_found_handling": "404-page",
-    // /shisaku/1-1-a-1 → /shisaku/1-1-a-1/ のように末尾のスラッシュに揃える（astro.config.mjs の trailingSlash: 'always' と同じ）
+    // /shisaku/1-1-a-1 → /shisaku/1-1-a-1/ のように末尾のスラッシュに揃える（astro.config.ts の trailingSlash: 'always' と同じ）
     "html_handling": "auto-trailing-slash"
   }
 }

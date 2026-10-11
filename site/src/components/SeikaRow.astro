@@ -6,9 +6,11 @@
 // 担当・くらしのテーマも絞り込みと施策のページに任せる
 import Chip from './Chip.astro';
 import SeikaSpark from './SeikaSpark.astro';
-import { LATEST, yearLabel, withUnit, refText, rateText, rateTone } from '../lib/data.js';
+import { LATEST, yearLabel, withUnit, refText, rateText, rateTone, type SeikaGroup, type Shisaku } from '../lib/data.ts';
+import type { SeikaRow as SeikaRecord } from '../lib/types.ts';
 
-interface Props { x: any; row: any; shisaku: any; href: string; attrs?: Record<string, string> }
+// x はその年度の成果指標の行、row は年度をまたいだまとまり
+interface Props { x: SeikaRecord; row: SeikaGroup; shisaku: Shisaku | undefined; href: string; attrs?: Record<string, string> }
 const { x, row, shisaku: s, href, attrs = {} } = Astro.props;
 const past = x.year !== LATEST;
 const rateLabel = `${yearLabel(x.year)}の達成率`;

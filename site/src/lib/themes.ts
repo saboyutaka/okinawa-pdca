@@ -2,14 +2,23 @@
 // 施策は、施策名・施策展開・基本施策の名前に当たる言葉で決める。主な取組・成果指標は、その施策のテーマに加えて、取組・指標の名前に当たるテーマにも入れる
 import fs from 'node:fs';
 import path from 'node:path';
-import { getShisakuList, getKihonList } from './data.js';
+import { getShisakuList, getKihonList } from './data.ts';
+import type { ThemeConfig } from './types.ts';
+
+// くらしのテーマ（themes.json の1つに、当てる正規表現と、入る施策 ID を付けたもの）
+export interface Theme extends ThemeConfig {
+  re: RegExp;
+  words: string[]; // 画面に出す「決め方」の言葉
+  ids: string[];
+  idSet: Set<string>;
+}
 
 const FILE = path.resolve(process.cwd(), '../data/reference/themes.json');
 
-let themes;
-export function getThemes() {
+let themes: Theme[] | undefined;
+export function getThemes(): Theme[] {
   if (themes) return themes;
-  const conf = JSON.parse(fs.readFileSync(FILE, 'utf-8'));
+  const conf: { themes: ThemeConfig[] } = JSON.parse(fs.readFileSync(FILE, 'utf-8'));
   const kihonName = new Map(getKihonList().map((k) => [k.id, k.name]));
   const list = getShisakuList();
   themes = conf.themes.map((t) => {
@@ -26,16 +35,16 @@ export function getThemes() {
   return themes;
 }
 
-export const getTheme = (id) => getThemes().find((t) => t.id === id);
-export const themesOf = (shisakuId) => getThemes().filter((t) => t.idSet.has(shisakuId));
+export const getTheme = (id: string) => getThemes().find((t) => t.id === id);
+export const themesOf = (shisakuId: string) => getThemes().filter((t) => t.idSet.has(shisakuId));
 export function unthemed() {
   const inAny = new Set(getThemes().flatMap((t) => t.ids));
   return getShisakuList().filter((s) => !inAny.has(s.id));
 }
 
 // 主な取組・成果指標のテーマ（施策のテーマ ＋ 名前に当たるテーマ）。テーマの並びは themes.json の順
-export function themesOfItem(shisakuId, name) {
+export function themesOfItem(shisakuId: string, name: string | null | undefined) {
   const n = name || '';
   return getThemes().filter((t) => t.idSet.has(shisakuId) || (!t.exclude.includes(shisakuId) && t.re.test(n)));
 }
-export const themeIdsOfItem = (shisakuId, name) => themesOfItem(shisakuId, name).map((t) => t.id);
+export const themeIdsOfItem = (shisakuId: string, name: string | null | undefined) => themesOfItem(shisakuId, name).map((t) => t.id);
