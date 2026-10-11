@@ -9,6 +9,8 @@ import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou, getTorikumiGroups, getSeikaGroups } from '../../lib/data.js';
 import { getThemes, getTheme, themeIdsOfItem } from '../../lib/themes.js';
 import { fmt, pct } from '../../lib/format.js';
+import { KANKO } from '../../lib/plans.js';
+import RmSummary from '../../components/RmSummary.astro';
 
 export function getStaticPaths() {
   return getThemes().map((t) => ({ params: { id: t.id } }));
@@ -58,6 +60,8 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
       <div class="tile-sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標。<a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a></div>
     </div>
   </div>
+
+  {t.id === KANKO.theme && <RmSummary />}
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">このテーマの施策の判定（{yearLong(LATEST)}）</h2>

@@ -18,6 +18,7 @@ import {
 } from '../../../lib/data.js';
 import { yen } from '../../../lib/format.js';
 import ExtLink from '../../../components/ExtLink.astro';
+import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.js';
 
 export function getStaticPaths() {
   return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: torikumiSlug(g.key) }, props: { g } }));
@@ -48,6 +49,8 @@ const seikaTone = seikaRow && RATE_BINS.find((b) => b.key === rateBin(seikaRow))
 const seikaRate = seikaRow && (seikaRow.rate != null ? `達成率 ${seikaRow.rate}%` : seikaRow.rate_raw || '達成率なし');
 const candidates = renameCandidates(g);
 const reposts = repostsOf(g);
+// 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
+const rm = kankoOfPdca(s.id, g.key);
 const okUrl = (u) => /^https?:\/\/\S+$/.test(u || '');
 const amount = (r, kind) => {
   const v = r[kind];
@@ -119,6 +122,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       <ThemeTags ids={themeIdsOfItem(s.id, t.name)} />
+      {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}でも評価</a>}
     </div>
     <div class="now inset">
       <div class="now-l">
@@ -177,6 +181,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       {plans.size > 0 && <a href="#plan">年度別計画</a>}
       <a href="#yosan">予算</a>
       <a href="#pdca">活動と検証</a>
+      {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
       <a href="#source">出典</a>
     </div>
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
@@ -417,6 +422,24 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       );
     })}
   </section>
+
+  {rm.length > 0 && (
+    <section aria-labelledby="rm">
+      <h2 id="rm" class="anchor">{KANKO.short}でも評価されています</h2>
+      <p class="small secondary lead">県の観光の<a href="/keikaku/">個別計画</a>「{KANKO.name}」でも、同じ名前の主な取組が同じ区分で評価されています。</p>
+      <ul class="row-list">
+        {rm.map((x) => (
+          <li>
+            <div class="name-row"><span><span class="plan-tag">{KANKO.short}</span> <a class="name-link" href={kankoShisakuHref(x.rm)}>{x.rm.name}</a></span><span class="code-no">施策 {x.rm.code}</span></div>
+            <div class="small secondary">
+              {Object.values(x.row.years).sort((a, b) => a.year - b.year).map((r, k) => <>{k > 0 && '　'}{yearLabel(r.year)}: {statusOf(r)}</>)}
+              {x.row.latest.name !== t.name && <>（観光ロードマップでの名前: {x.row.latest.name}）</>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   {reposts.length > 0 && (
     <section aria-labelledby="repost">

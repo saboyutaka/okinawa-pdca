@@ -83,6 +83,9 @@ class Source:
     hosts: set
     scope: list = dataclasses.field(default_factory=list)       # 巡回してよいパスの接頭辞
     follow: list = dataclasses.field(default_factory=list)      # (パス接頭辞, リンク文言に含む語) の追加巡回条件
+    file_match: str | None = None   # 取るファイルのリンク文言（正規表現）。None ならページ内のファイルをすべて取る
+    since: int | None = None        # この対象年度（西暦）より前のファイルは取らない（--since より優先して絞る）
+    fiscal_year: int | None = None  # ページ名・リンク文言から年度が分からないときの対象年度
 
 
 EXTERNAL_SOURCES = [
@@ -100,6 +103,26 @@ EXTERNAL_SOURCES = [
            "https://byoinjigyokyoku.pref.okinawa.jp/data/pdca/",
            {"byoinjigyokyoku.pref.okinawa.jp"}, scope=["/data/pdca/"]),
 ]
+
+# 沖縄県PDCA とは別に県が公表している評価（サイトの「個別計画」と、施策・基本施策のページで使う）。
+# 部局票ではないので scripts/extract_bukyoku.py は読まない（RELATED_SLUGS）
+RELATED_SOURCES = [
+    # 沖縄観光推進ロードマップ（第6次沖縄県観光振興基本計画の実施計画）の PDCA。年度別のページはロードマップのページからたどる。
+    # ロードマップ本文や意見提出用紙は取らない
+    Source("kanko-rm", "沖縄観光推進ロードマップPDCA",
+           "https://www.pref.okinawa.jp/shigoto/kankotokusan/1011671/1011741/1011810.html",
+           PREF_HOSTS, follow=[("/shigoto/kankotokusan/1011671/1011741/", "PDCA")],
+           file_match=r"PDCA", since=2022),
+    # 沖縄振興特別推進交付金（ソフトの一括交付金）の事後評価。年度別のページに検証シートが基本施策ごとに並ぶ
+    Source("ikkatsu", "沖縄振興特別推進交付金の事後評価",
+           "https://www.pref.okinawa.jp/kensei/yosan/1015205/1015216/index.html",
+           PREF_HOSTS, scope=["/kensei/yosan/1015205/1015216/"], since=2022),
+    # 新・沖縄21世紀ビジョン基本計画の評価検証報告書（R4〜R6 をまとめて評価したもの。年度は R6 として保存する）
+    Source("hyoka", "新・沖縄21世紀ビジョン基本計画 評価検証報告書",
+           "https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html",
+           PREF_HOSTS, fiscal_year=2024),
+]
+RELATED_SLUGS = {s.slug for s in RELATED_SOURCES}
 
 
 # ---------------------------------------------------------------- HTML 解析
@@ -366,7 +389,7 @@ class Fetcher:
         except Exception as e:
             print(f"! 部局一覧の取得に失敗（外部局のみ取得します）: {e}")
             self.stats["errors"] += 1
-            return list(EXTERNAL_SOURCES)
+            return EXTERNAL_SOURCES + RELATED_SOURCES
         _, links = parse_html(decode(body, hdrs), CHIJI_ROOT)
         found, seen = [], set()
         for url, text in links:
@@ -379,7 +402,7 @@ class Fetcher:
             if pid not in KNOWN_DEPTS:
                 print(f"! 未登録の部局ページを検出: {pid} {text} → {slug} として保存")
             found.append(Source(slug, name, clean_url(url), PREF_HOSTS, scope=[f"{CHIJI_DIR}{pid}/"]))
-        return found + EXTERNAL_SOURCES
+        return found + EXTERNAL_SOURCES + RELATED_SOURCES
 
     # ---- 巡回
     def in_scope(self, src: Source, url: str, text: str) -> bool:
@@ -412,7 +435,7 @@ class Fetcher:
                 self.stats["errors"] += 1
                 continue
             title, links = parse_html(decode(body, hdrs), url)
-            page_fy = infer_fy(title) or parent_fy
+            page_fy = infer_fy(title) or parent_fy or src.fiscal_year
             key = re.sub(r"[^\w.-]+", "_", urllib.parse.urlsplit(url).path.strip("/")) or "index"
             pdir = self.raw / src.slug / "_pages"
             pdir.mkdir(parents=True, exist_ok=True)
@@ -421,6 +444,8 @@ class Fetcher:
             for link, text in links:
                 link = clean_url(link)
                 if is_attachment(link) and urllib.parse.urlsplit(link).netloc in src.hosts:
+                    if src.file_match and not re.search(src.file_match, nfkc(text)):
+                        continue
                     if link not in {f for f, _ in files}:
                         files.append((link, text))
                 elif depth < MAX_DEPTH and link not in visited and self.in_scope(src, link, text):
@@ -456,7 +481,8 @@ class Fetcher:
 
     def fetch_file(self, src, furl, link_text, page_url, page_title, fy, fy_source) -> None:
         a = self.args
-        if fy is not None and ((a.since and fy < a.since) or (a.until and fy > a.until)):
+        since = max(a.since or 0, src.since or 0)
+        if fy is not None and ((since and fy < since) or (a.until and fy > a.until)):
             self.stats["filtered"] += 1
             return
         dest = self.dest_for(src, furl, fy)

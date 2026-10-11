@@ -1,0 +1,122 @@
+---
+// 観光ロードマップの取組をさがす。観光ロードマップにしか無い取組も含めて、基本施策・進捗状況・沖縄県PDCAとの重なり・部局で絞り込む。
+// 取組には自分のページが無いので、名前は施策展開のページの取組のカードへのリンクにする（scripts/list-filter.js で絞り込む）
+import Base from '../../../layouts/Base.astro';
+import Crumbs from '../../../components/Crumbs.astro';
+import FilterMore from '../../../components/FilterMore.astro';
+import Stamps from '../../../components/Stamps.astro';
+import Term from '../../../components/Term.astro';
+import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, deptHref, deptOf, DEPTS } from '../../../lib/data.js';
+import { KANKO, RM_LATEST, kankoYears, kankoKihon, kankoTorikumiRows, kankoShisakuHref } from '../../../lib/plans.js';
+import { fmt } from '../../../lib/format.js';
+
+// 進捗状況のスタンプは本編を読めた年度だけ（R4 は読めない）
+const years = kankoYears().filter((y) => y.readable).map((y) => y.year);
+const rows = kankoTorikumiRows();
+const kihon = kankoKihon();
+const latestCount = rows.filter((g) => g.years[RM_LATEST]).length;
+const overlap = rows.filter((g) => g.pdca.length).length;
+const depts = DEPTS.filter((d) => rows.some((g) => deptOf(g.latest.section) === d.name));
+const stOf = (g) => {
+  const t = g.years[RM_LATEST];
+  if (!t) return 'none';
+  const st = statusOf(t);
+  return DELAYS.has(st) ? `${st}|delay` : st;
+};
+---
+<Base title={`${KANKO.short}の取組をさがす`} description={`${KANKO.name}の主な取組（観光ロードマップにしか無い取組も含む）を、進捗状況・基本施策・部局でさがせます。`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: '取組をさがす' }]} />
+  <h1>{KANKO.short}の取組をさがす</h1>
+  <p class="secondary lead">観光ロードマップの<Term word="主な取組" /> {fmt(rows.length)}件を、{years.map(yearLabel).join('・')}の進捗状況つきでさがせます。</p>
+
+  <form class="filters sticker search-form" role="search" aria-label="観光ロードマップの取組の絞り込み" data-filter="#rm-list" data-count="#count" data-empty="#empty" data-summary="#active">
+    <label class="q" data-label="キーワード">キーワード（取組の名前・所管課・施策・活動指標）
+      <input type="search" name="q" placeholder="例: 空手、クルーズ、離島、観光振興課" />
+    </label>
+    <FilterMore id="rm-more">
+    <label data-label="基本施策">観光ロードマップの基本施策
+      <select name="k">
+        <option value="">すべて</option>
+        {kihon.map((k) => <option value={k.id}>{k.code} {k.name}</option>)}
+      </select>
+    </label>
+    <label data-label={`${yearLabel(RM_LATEST)}の進捗`}>{yearLabel(RM_LATEST)}の進捗
+      <select name="st">
+        <option value="">すべて</option>
+        {STATUSES.map((s) => <option value={s.key}>{s.key}</option>)}
+        <option value="delay">遅れ（やや遅れ・大幅遅れ・未着手）</option>
+        <option value="none">{yearLabel(RM_LATEST)}の報告に無い</option>
+      </select>
+    </label>
+    <label data-label="沖縄県PDCA">沖縄県PDCAとの重なり
+      <select name="pdca">
+        <option value="">すべて</option>
+        <option value="same">沖縄県PDCAにも同じ取組がある</option>
+        <option value="only">観光ロードマップにしか無い</option>
+      </select>
+    </label>
+    <label data-label="部局">所管部局
+      <select name="dept">
+        <option value="">すべて</option>
+        {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+      </select>
+    </label>
+    </FilterMore>
+  </form>
+  <div class="active-filters" id="active" hidden></div>
+  <p class="result-count" aria-live="polite"><span id="count">{fmt(rows.length)}</span>件を表示</p>
+
+  <div id="rm-list">
+    {kihon.map((k) => {
+      const items = rows.filter((g) => g.rm.kihon_id === k.id);
+      if (!items.length) return null;
+      return (
+        <section data-group>
+          <h2 class="group-title">{k.name} <span class="code-no">基本施策 {k.code}</span></h2>
+          <ul class="row-list">
+            {items.map((g) => {
+              const t = g.latest;
+              const sec = deptHref(t.section);
+              const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+              return (
+                <li
+                  class="t-row"
+                  data-item
+                  data-k={g.rm.kihon_id}
+                  data-st={stOf(g)}
+                  data-pdca={g.pdca.length ? 'same' : 'only'}
+                  data-dept={deptOf(t.section)}
+                  data-text={`${t.name} ${t.section} ${t.indicator || ''} ${g.rm.code} ${g.rm.name} ${g.rm.tenkai_name}`}
+                >
+                  <div class="t-main">
+                    <a class="name name-link" href={g.href}>{t.name}</a>
+                    <div class="small secondary">
+                      {sec ? <a class="sub-link" href={sec}>{t.section}</a> : t.section}・施策 <a class="sub-link" href={kankoShisakuHref(g.rm)}>{g.rm.name}</a> <span class="code-no">{g.rm.code}</span>
+                    </div>
+                    {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>}
+                    {g.pdca.length > 0
+                      ? <div class="small secondary">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a></>)}</div>
+                      : <div class="small secondary">観光ロードマップにしか無い取組</div>}
+                  </div>
+                  <Stamps items={stamps} label={`${years.map(yearLabel).join('・')}の進捗状況`} size="small" />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      );
+    })}
+  </div>
+  <p id="empty" class="secondary" hidden>条件に合う取組はありません。</p>
+  <p class="small secondary">
+    {yearLabel(RM_LATEST)}の報告にある取組は{fmt(latestCount)}件で、そのうち{fmt(rows.filter((g) => g.years[RM_LATEST] && g.pdca.length).length)}件は沖縄県PDCAにも同じ名前の主な取組があります（全体では{fmt(overlap)}件）。
+    R4 の実施報告書（本編）は読み取れないため、進捗状況は R5・R6 だけです。同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています。
+  </p>
+</Base>
+
+<script src="../../../scripts/list-filter.js"></script>
+
+<style>
+  .search-form .q input { font-size: 1rem; min-height: 44px; }
+  .group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
+</style>

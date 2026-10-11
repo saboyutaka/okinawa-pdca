@@ -1,0 +1,5 @@
+[
+{"year":2022,"source":"kanko-rm/2022-r04/r5pdca_rm_zissihoukokusyo_.pdf","readable":false,"torikumi":282,"status":{"順調":224,"概ね順調":34,"やや遅れ":9,"大幅遅れ":14,"未着手":1},"seika":100,"zenshin":69,"reason":"本編のPDFが文字に変換できないフォントで書かれていて、表を読めない"},
+{"year":2023,"source":"kanko-rm/2023-r05/r6pdca_rm_zissihoukokusyo.pdf","readable":true,"torikumi":291,"status":{"順調":236,"概ね順調":21,"やや遅れ":6,"大幅遅れ":21,"未着手":4},"seika":100,"zenshin":77},
+{"year":2024,"source":"kanko-rm/2024-r06/r7pdca_rm_zissikekka.keiryo.pdf","readable":true,"torikumi":291,"status":{"順調":228,"概ね順調":17,"やや遅れ":16,"大幅遅れ":13,"未着手":16},"seika":100,"zenshin":78}
+]

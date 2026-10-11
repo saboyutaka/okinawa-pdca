@@ -8,6 +8,10 @@ export const LINKS = {
   zenki: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/1014251.html', // 実施計画（前期: R4〜R6）
   chuki: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/1034436.html', // 実施計画（中期: R7〜R9）
   kikakuChousei: 'https://enq.pref.okinawa.lg.jp/cgi-bin/contacts/G030010010', // 企画部企画調整課（沖縄県PDCAの担当）の問い合わせフォーム
+  kankoRm: 'https://www.pref.okinawa.jp/shigoto/kankotokusan/1011671/1011741/1011810.html', // 沖縄観光推進ロードマップ（年度別の PDCA へのリンクがある）
+  kankoPlan: 'https://www.pref.okinawa.jp/shigoto/kankotokusan/1011671/1011741/1011762/index.html', // 沖縄県観光振興基本計画
+  ikkatsu: 'https://www.pref.okinawa.jp/kensei/yosan/1015205/1015216/index.html', // 沖縄振興特別推進交付金の事後評価（年度別）
+  hyoka: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html', // 新・沖縄21世紀ビジョン基本計画 評価検証報告書
 };
 
 // このサイトを作っている団体と管理者

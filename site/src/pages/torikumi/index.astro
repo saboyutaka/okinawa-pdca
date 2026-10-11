@@ -5,6 +5,7 @@ import Icon from '../../components/Icon.astro';
 import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.js';
 import { fmt } from '../../lib/format.js';
 import { getThemes } from '../../lib/themes.js';
+import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.js';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
@@ -64,6 +65,12 @@ const pats = [
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
+    <label data-label="個別計画">個別計画
+      <select name="plan">
+        <option value="">すべて</option>
+        <option value="kanko">{KANKO.short}でも評価されている</option>
+      </select>
+    </label>
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
@@ -71,6 +78,7 @@ const pats = [
   <p class="small secondary">
     遅れ＝「やや遅れ」「大幅遅れ」「未着手」。「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。遅れの理由は、取組のページの「年度ごとの活動と検証」にあります。
     同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
+    観光ロードマップにしか無い取組は、<a href={KANKO_TORIKUMI_HREF}>{KANKO.short}の取組をさがす</a>で見られます。
   </p>
 
   <ul class="row-list" id="results"></ul>
@@ -86,7 +94,7 @@ const pats = [
     shisaku: Record<string, [string, string, number]>;
     depts: Record<string, string>;
     themes: [string, string][];
-    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[], string[]][];
+    rows: [string, string, string, string, (number | null)[], string, string, string, number, string, number[], string[], string[]][];
   };
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -127,6 +135,8 @@ const pats = [
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
     main.append(n, s);
+    // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
+    if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
     if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
     li.append(main, stamps(sts));
@@ -174,6 +184,7 @@ const pats = [
     const st = String(f.get('st') || '');
     const pat = String(f.get('pat') || '');
     const theme = String(f.get('theme') || '');
+    const plan = String(f.get('plan') || '');
     const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
     hits = data.rows.filter((r) => {
@@ -185,6 +196,7 @@ const pats = [
       if (st === 'none' ? sts[last] != null : st === 'delay' ? !(sts[last] != null && DELAY.has(sts[last]!)) : st && sts[last] !== Number(st)) return false;
       // 4年間の様子は、ビルド時に lib/data.js の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
+      if (plan && !r[12].includes(plan)) return false;
       if (q.length) {
         const text = norm(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`);
         if (!q.every((w) => text.includes(w))) return false;

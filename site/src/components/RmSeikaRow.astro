@@ -1,0 +1,32 @@
+---
+// 観光ロードマップの成果指標の一覧の1行（lib/plans.js の kankoSeikaList の行）。基準値と比べた判定の印・名前・基準値から最新の実績値。
+// 名前は施策展開のページのその指標の札へのリンク。compact はテーマのページの枠の中（施策の行を出さない）
+import Chip from './Chip.astro';
+import { withUnit, refText } from '../lib/data.js';
+import { rmJudgementOf } from '../lib/plans.js';
+
+interface Props { r: any; compact?: boolean }
+const { r, compact = false } = Astro.props;
+const x = r.x;
+const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
+const j = rmJudgementOf(r.judgement);
+---
+<li class:list={['rm-srow', compact && 'compact']}>
+  <div class="srow-head">
+    <Chip tone={j.tone} shape={j.shape} text={r.judgement} title={j.note} />
+    <a class="name-link" href={r.href}>{x.name}</a>
+  </div>
+  <div class="vals small">
+    <span>基準値 {withUnit(x.base_raw, u)}</span>
+    <span>→ 実績値 <strong>{withUnit(r.latestRaw, u)}</strong>{refText(r.latestRef) && <span class="secondary">（{refText(r.latestRef)}）</span>}</span>
+    <span>→ 目標値 {withUnit(x.target_raw, u)}（R6）</span>
+  </div>
+  {!compact && <div class="small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>}
+</li>
+
+<style>
+  .rm-srow { display: grid; gap: 2px; min-width: 0; }
+  .srow-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .srow-head :global(.chip) { flex: none; }
+  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
+</style>
