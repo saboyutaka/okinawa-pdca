@@ -14,7 +14,6 @@ const [ey, em, ed] = BOSHU.end.split('-').map(Number);
 const endText = `${ey}年${em}月${ed}日`;
 ---
 <Base title="意見を伝えたい人へ" description={`沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、SNS で #${HASHTAG} を付けて話す方法`}>
-  <nav class="breadcrumb"><a href="/">トップ</a> › 意見を伝えたい人へ</nav>
   <h1>意見を伝えたい人へ</h1>
   <p class="lead">
     県の施策や主な取組について、思うことや気づいたことがあるときに使える方法をまとめました。県に届く方法（県民意見募集・県民ご意見箱）と、SNS で <strong>#{HASHTAG}</strong> を付けて話す方法があります。
@@ -83,7 +82,7 @@ const endText = `${ey}年${em}月${ed}日`;
     <Share link="top" label="このサイトを SNS でシェア" />
   </div>
   <p class="small secondary">
-    X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#{HASHTAG} を書き足してください。LINE は知り合いに送る画面です。施策・主な取組・基本施策のページの下からは、そのページへのリンクを付けて投稿できます。
+    X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#{HASHTAG} を書き足してください。LINE は知り合いに送る画面です。将来像・基本施策・施策・主な取組・部局・くらしのテーマのページの上と下のシェアからは、そのページへのリンクを付けて投稿できます。
   </p>
   <p class="small">#{HASHTAG} の投稿を見る: {TAG_PAGES.map((t, i) => <>{i > 0 && '・'}<ExtLink href={t.href}>{t.label}</ExtLink></>)}</p>
   <p class="x-note small">SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>

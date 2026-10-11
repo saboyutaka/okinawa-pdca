@@ -10,7 +10,6 @@ import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendChart from '../../components/TrendChart.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import AmountChart from '../../components/AmountChart.astro';
-import Stamps from '../../components/Stamps.astro';
 import Sz from '../../components/Sz.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
@@ -18,11 +17,12 @@ import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
-import IkenBox from '../../components/IkenBox.astro';
+import ShareBox from '../../components/ShareBox.astro';
+import { shareText } from '../../lib/iken.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, toneOfStatus,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
@@ -44,7 +44,6 @@ const last = YEARS.length - 1;
 const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
 const okLatest = latest.filter((g) => g.statuses[last] === '順調').length;
-const delayed = mine.filter((g) => g.patterns.includes('delay3')).sort((a, b) => b.delayYears - a.delayYears);
 const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
 const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
 const seikaOk = seikaLatest.filter(reached).length;
@@ -68,7 +67,6 @@ const toriText = (shisakuId: string) => {
   return n ? `この部局の取組 ${fmt(n)}件` : `この部局の取組 ${fmt(gs.length)}件（${yearLabel(LATEST)}の報告には無い）`;
 };
 const judgeCounts = countBy(related.map((r) => r.s), (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
-const nCD = (judgeCounts.C || 0) + (judgeCounts.D || 0);
 
 // 課ごと（最新年度）。行の id は、取組のページの「所管」のリンクの行き先（lib/data.ts の sectionHref）
 const sections = [...new Set(latest.map((g) => g.section))];
@@ -102,11 +100,10 @@ const seikaRows = YEARS.map((y) => ({
   counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
 }));
 
-// 今年のできごと（数え方は lib/data.ts の PATTERNS。3年以上遅れはこのページの一覧へ）
+// 今年のできごと（前の年度から進捗状況が変わった取組。数え方は lib/data.ts の PATTERNS。良くなったものと遅れになったものを同じ重みで並べる）
 const moves: { tone: Tone; title: string; n: number; href: string }[] = [
   { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
   { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },
-  { tone: 'critical', title: '4年のうち3年以上遅れた', n: delayed.length, href: '#okure' },
 ];
 
 // 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
@@ -129,7 +126,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
 <Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
+  <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} share={{ text: shareText('部局', dept.name), label: 'この部局を SNS でシェア' }} />
 
   <header class="sticker lift d-head">
     <div class="kind">沖縄県の部局</div>
@@ -158,7 +155,7 @@ const sources = deptSourcePages(dept.name);
   {related.length > 0 && (
     <section aria-labelledby="judge-h">
       <h2 id="judge-h">かかわる施策の判定（{yearLong(LATEST)}）</h2>
-      <p class="small secondary lead">関係部等にこの部局の名前がある施策と、この部局の主な取組がある施策です。取組は進んでいるのに成果が遅れている施策（C・D）は{fmt(nCD)}です。マスを押すと、{dept.name}とその判定で絞り込んだ施策の一覧を開きます。</p>
+      <p class="small secondary lead">関係部等にこの部局の名前がある施策と、この部局の主な取組がある施策です。マスを押すと、{dept.name}とその判定で絞り込んだ施策の一覧を開きます。</p>
       <JudgeMatrix counts={judgeCounts} caption={`${dept.name}がかかわる${fmt(related.length)}施策`} hrefOf={(k) => `/shisaku/?dept=${q}&judge=${k}`} />
     </section>
   )}
@@ -254,9 +251,10 @@ const sources = deptSourcePages(dept.name);
   </section>
 
   <section aria-labelledby="lists" id="dept-lists">
-    <h2 id="lists">{dept.name}の取組・成果指標・施策</h2>
+    <h2 id="lists">{dept.name}の成果指標・施策</h2>
+    <p class="small">{dept.name}の主な取組（{yearLabel(LATEST)}・{fmt(latest.length)}件）は、<a href={`/torikumi/?dept=${q}`}>取組をさがす</a>で進捗状況や4年間の様子で絞り込んで見られます。</p>
     <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
-      <label class="q" data-label="キーワード">キーワード
+      <label class="q" data-label="キーワード">キーワード（指標・施策の名前）
         <input type="search" name="q" placeholder="例: 離島、子ども" />
       </label>
       <FilterMore id="dept-more">
@@ -269,27 +267,8 @@ const sources = deptSourcePages(dept.name);
       </FilterMore>
     </form>
     <div class="active-filters" id="active" hidden></div>
-    <p class="result-count" aria-live="polite">下の3つの一覧で <span id="dcount">{fmt(delayed.length + seikaLatest.length + related.length)}</span>件を表示</p>
+    <p class="result-count" aria-live="polite">下の一覧で <span id="dcount">{fmt(seikaLatest.length + related.length)}</span>件を表示</p>
     <p id="dempty" class="secondary" hidden>条件に合うものはありません。</p>
-
-    <div class="anchor" id="okure" {...(delayed.length ? { 'data-group': '' } : {})}>
-      <h3>4年のうち3年以上遅れた取組（<span data-group-count>{fmt(delayed.length)}</span>件）</h3>
-      {delayed.length === 0 ? <p class="secondary">4年のうち3年以上遅れている取組はありません。</p> : (
-        <ul class="row-list">
-          {delayed.map((g) => (
-            <li class="t-row" data-item data-theme={themeIdsOfItem(g.shisaku.id, g.latest.name).join('|')} data-text={`${g.latest.name} ${g.section} ${g.shisaku.code} ${g.shisaku.name}`}>
-              <div class="t-main">
-                <a class="name-link" href={g.href}>{g.latest.name}</a>
-                <div class="small secondary">{sectionName(g.section) || g.section}・施策 <a class="sub-link" href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
-                {g.latest.indicator && <div class="small secondary">活動指標（{yearLabel(g.latest.year)}）: {g.latest.indicator}　目標 {g.latest.target || '—'} → 実績 <b>{g.latest.actual || '—'}</b></div>}
-              </div>
-              <Stamps items={YEARS.map((y, i) => (g.statuses[i] ? { year: y, tone: toneOfStatus(g.statuses[i]), text: g.statuses[i] } : { year: y, tone: null, text: '報告なし' }))} label="4年の進捗状況" size="small" />
-            </li>
-          ))}
-        </ul>
-      )}
-      <p class="small"><a href={`/torikumi/?dept=${q}`}>{dept.name}の取組をすべて見る（取組をさがす）</a></p>
-    </div>
 
     {seikaLatest.length > 0 && (
       <div class="anchor" id="seika-list" data-group>
@@ -349,7 +328,7 @@ const sources = deptSourcePages(dept.name);
     )}
   </section>
 
-  <IkenBox kind="部局" name={dept.name} />
+  <ShareBox kind="部局" name={dept.name} />
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>

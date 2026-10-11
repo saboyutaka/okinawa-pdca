@@ -9,7 +9,7 @@ import {
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import {
-  planSourceLink, kankoSeikaList, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
+  planSourceLink, kankoSeikaList, kankoShisakuList, RM_JUDGEMENTS, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
 } from '../src/lib/plans.ts';
 
 // 当てはまらなかったものを、先頭の数件だけメッセージに出す
@@ -118,10 +118,11 @@ test('取組の活動指標のまとまりは、報告の年度を1回ずつ含�
   none(bad, (x) => x);
 });
 
-test('観光ロードマップの成果指標は、後退・横ばいを先に並べる', () => {
-  const order = ['後退', '横ばい', 'その他', '前進'];
-  const ranks = kankoSeikaList().map((r) => order.indexOf(r.judgement));
-  assert.ok(!ranks.includes(-1), '知らない達成状況がある');
+test('観光ロードマップの成果指標の一覧は、良い・悪いで並べ替えず報告書の順（施策の順）に並べる', () => {
+  const order = kankoShisakuList().map((s) => s.id);
+  const rows = kankoSeikaList();
+  none(rows.filter((r) => !RM_JUDGEMENTS.some((j) => j.key === r.judgement)), (r) => `${r.x.name}: 知らない達成状況 ${r.judgement}`);
+  const ranks = rows.map((r) => order.indexOf(r.rm.id));
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
 });
 

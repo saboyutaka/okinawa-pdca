@@ -2,7 +2,6 @@
 // 個別計画の入口。沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別に、県が分野ごとの計画について公表している評価をまとめる。
 // 一括交付金の事後評価・評価検証報告書は個別計画ではないので、ここには置かない（施策・基本施策のページと「このサイトについて」）
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -20,7 +19,6 @@ const overlap = tori.filter((t) => t.pdca.length).length;
 const tenkai = kankoTenkaiList();
 ---
 <Base title="個別計画" description="沖縄県PDCAとは別に、県が分野ごとの計画（個別計画）について公表している評価をまとめています。いまは観光ロードマップPDCAを載せています。">
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '個別計画' }]} />
   <h1>個別計画</h1>
   <p class="lead">
     県には、<ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>のほかに、観光・離島・教育など分野ごとの<Term word="個別計画" />があり、計画ごとに評価を公表しているものがあります。このサイトでは、観光の計画の評価を載せています。

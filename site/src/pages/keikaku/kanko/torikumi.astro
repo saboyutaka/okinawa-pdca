@@ -25,7 +25,7 @@ const stOf = (g: KankoTorikumiGroup) => {
 };
 ---
 <Base title={`${KANKO.short}の取組をさがす`} description={`${KANKO.name}の主な取組（観光ロードマップにしか無い取組も含む）を、進捗状況・基本施策・部局でさがせます。`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: '取組をさがす' }]} />
+  <Crumbs items={[{ href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: '取組をさがす' }]} />
   <h1>{KANKO.short}の取組をさがす</h1>
   <p class="secondary lead">観光ロードマップの<Term word="主な取組" /> {fmt(rows.length)}件を、{years.map(yearLabel).join('・')}の進捗状況つきでさがせます。</p>
 
@@ -93,7 +93,7 @@ const stOf = (g: KankoTorikumiGroup) => {
                     <div class="small secondary">
                       {sec ? <a class="sub-link" href={sec}>{t.section}</a> : t.section}・施策 <a class="sub-link" href={kankoShisakuHref(g.rm)}>{g.rm.name}</a> <span class="code-no">{g.rm.code}</span>
                     </div>
-                    {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>}
+                    {t.indicator && <div class="small secondary">活動指標（{yearLabel(t.year)}）: {t.indicator}　計画 {t.target || '—'} → 実績 {t.actual || '—'}</div>}
                     {g.pdca.length > 0
                       ? <div class="small secondary">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a></>)}</div>
                       : <div class="small secondary">観光ロードマップにしか無い取組</div>}
