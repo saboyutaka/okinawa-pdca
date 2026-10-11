@@ -99,12 +99,13 @@ make check     # 突き合わせだけ（ホストの python3）
 - **見た目**: 太い線と硬い影の「ステッカー」を並べるポップなデザイン（`site/src/styles/global.css` のトークン）。状態（順調〜大幅遅れ、判定A〜G）は青信号系の色に加えて形（● ◆ ▲ ■、取組の遅れは ▼ と斜線）と文字で区別する。日本語のウェブフォントは読み込まず、数字だけ丸い英字フォント Fredoka（数字と記号だけの部分集合、約4KB、`site/public/fonts/`、SIL Open Font License）を使う。
 - **くらしのテーマ**（17）はこのサイト独自の分類で、県の計画の分類ではない（画面にもそう出す）。施策名・施策展開・基本施策の名前に当たる言葉と、人が直すための追加・除外は [data/reference/themes.json](data/reference/themes.json)。どの施策もいずれかのテーマに入るようにしていて、入らない施策があるとビルドで警告する。主な取組・成果指標は、施策のテーマに加えて名前に当たるテーマにも入れる。施策・取組・成果指標・部局のページでテーマで絞り込める。
 - **将来像の色**は[基本計画のパンフレット](https://www.pref.okinawa.jp/_res/projects/default_project/_page_/001/014/250/shin21seikivision-kihonnkeikaku-pamphlet.pdf)の色（1 緑・2 青・3 橙・4 ピンク・5 青緑）に合わせ、番号の印と見出しの帯だけに使う（状態の色とは混ぜない）。
-- 図は、表示幅に合わせてブラウザで描く（`site/src/scripts/charts.js`。値は各図の「表で見る」にもある）。棒の区間ごとにはタブで止めず、用語は押すと説明が出る（`site/src/lib/terms.js`）。
+- 図は、表示幅に合わせてブラウザで描く（`site/src/scripts/charts.ts`。値は各図の「表で見る」にもある）。棒の区間ごとにはタブで止めず、用語は押すと説明が出る（`site/src/lib/terms.ts`）。
 
 ```sh
 make site-install  # 初回のみ
 make dev           # http://localhost:4321/（SITE_PORT=4400 make dev でポートを変えられる）
-make build         # site/dist に書き出し
+make build         # 型を確かめて（astro check）から site/dist に書き出し
+make site-check    # 型を確かめるだけ
 ```
 
 git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使うと、`compose.worktree.yaml` を重ねて、コンテナと node_modules を worktree ごとに分け、開発サーバーを worktree の名前から決めたポート（4322〜4921、`make help` に出る）で立てる。main と並べて動かせる。node_modules は初めて動かすときに自動で入る。worktree を消す前に `make down` でコンテナと node_modules のボリュームを片付ける。
@@ -120,7 +121,7 @@ git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使�
 | プロジェクト名 | `okinawa-pdca`（`site/wrangler.jsonc` の `name` と同じにする） |
 | 本番ブランチ | `main` |
 | ルートディレクトリ | `site` |
-| ビルドコマンド | `npm run build` |
+| ビルドコマンド | `npm run build`（`astro check` で型を確かめてから書き出す。型の誤りがあると止まる） |
 | デプロイコマンド | `npx wrangler deploy` |
 | Node | `site/.node-version`（24）。読まれないときは環境変数 `NODE_VERSION=24` |
 

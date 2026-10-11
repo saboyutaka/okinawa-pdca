@@ -1,4 +1,5 @@
 ---
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
@@ -6,19 +7,20 @@ import ThemeIcon from '../../components/ThemeIcon.astro';
 import Chunk from '../../components/Chunk.astro';
 import Sz from '../../components/Sz.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou, getTorikumiGroups, getSeikaGroups } from '../../lib/data.js';
-import { getThemes, getTheme, themeIdsOfItem } from '../../lib/themes.js';
-import { fmt, pct } from '../../lib/format.js';
-import { KANKO } from '../../lib/plans.js';
+import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
+import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { fmt, pct } from '../../lib/format.ts';
+import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
 
 export function getStaticPaths() {
-  return getThemes().map((t) => ({ params: { id: t.id } }));
+  return getThemes().map((t) => ({ params: { id: t.id }, props: { t } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const t = getTheme(Astro.params.id);
+const { t } = Astro.props;
 const byId = new Map(getShisakuList().map((s) => [s.id, s]));
-const items = t.ids.map((id) => byId.get(id));
+const items = t.ids.map((id) => byId.get(id)!);
 // 主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る
 const groups = getTorikumiGroups().filter((g) => themeIdsOfItem(g.shisaku.id, g.latest.name).includes(t.id));
 const tori = groups.filter((g) => g.statuses[g.statuses.length - 1]);
@@ -29,7 +31,7 @@ const seikaOk = seika.filter((r) => rateBin(r.latest) === '100%以上').length;
 const judgeCounts = countBy(items, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
 const visions = getShouraizou().map((v) => ({ ...v, items: items.filter((s) => s.shouraizou === v.id) })).filter((v) => v.items.length);
 // マス目を押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く
-const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
+const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`}>
   <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/#themes">くらしのテーマ</a> › {t.label}</nav>

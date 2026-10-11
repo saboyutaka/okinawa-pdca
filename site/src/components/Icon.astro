@@ -1,8 +1,8 @@
 ---
-// 状態の印（形）。色だけで意味を伝えないよう、状態ごとに形を変える（lib/icons.js）
-import { iconSvg } from '../lib/icons.js';
+// 状態の印（形）。色だけで意味を伝えないよう、状態ごとに形を変える（lib/icons.ts）
+import { iconSvg, type Shape, type Tone } from '../lib/icons.ts';
 
-interface Props { tone?: string | null; shape?: string; size?: number }
+interface Props { tone?: Tone | null; shape?: Shape; size?: number }
 const { tone = 'blank', shape, size = 12 } = Astro.props;
 ---
 <Fragment set:html={iconSvg(tone || 'blank', shape, size)} />

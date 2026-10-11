@@ -5,13 +5,13 @@ import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.js';
+import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, seikaDept,
   getSeikaGroups, getKihonList, getShouraizou, seikaHref,
-} from '../../lib/data.js';
-import { fmt } from '../../lib/format.js';
-import { LINKS } from '../../lib/links.js';
+} from '../../lib/data.ts';
+import { fmt } from '../../lib/format.ts';
+import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
 const kihon = getKihonList();
@@ -116,7 +116,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
   <p id="empty" class="secondary" hidden>条件に合う成果指標はありません。</p>
 </Base>
 
-<script src="../../scripts/list-filter.js"></script>
+<script src="../../scripts/list-filter.ts"></script>
 
 <style>
   .search-form .q input { font-size: 1rem; min-height: 44px; }

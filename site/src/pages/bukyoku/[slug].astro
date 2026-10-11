@@ -1,8 +1,8 @@
 ---
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import AmountChart from '../../components/AmountChart.astro';
-import Chip from '../../components/Chip.astro';
 import Stamps from '../../components/Stamps.astro';
 import Sz from '../../components/Sz.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
@@ -10,20 +10,22 @@ import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
-import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.js';
+import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, toneOfStatus,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
-} from '../../lib/data.js';
-import { yen } from '../../lib/format.js';
-import { fmt, pct } from '../../lib/format.js';
+} from '../../lib/data.ts';
+import type { AmountKind } from '../../lib/types.ts';
+import { yen } from '../../lib/format.ts';
+import { fmt, pct } from '../../lib/format.ts';
 
 export function getStaticPaths() {
-  return DEPTS.map((d) => ({ params: { slug: d.slug } }));
+  return DEPTS.map((dept) => ({ params: { slug: dept.slug }, props: { dept } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const dept = DEPTS.find((d) => d.slug === Astro.params.slug);
+const { dept } = Astro.props;
 const statusKeys = STATUSES.map((s) => s.key);
 const last = YEARS.length - 1;
 const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
@@ -34,13 +36,13 @@ const shisaku = getShisakuList().filter((s) => s.depts.includes(dept.name));
 
 const progressRows = YEARS.map((y, i) => ({
   label: yearLabel(y),
-  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i], statusKeys),
+  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!, statusKeys),
 }));
 
 // 課ごと（最新年度）
 const sections = [...new Set(latest.map((g) => g.section))];
 const sectionRows = sections
-  .map((sec) => ({ label: sec.replace(dept.name, ''), counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last], statusKeys) }))
+  .map((sec) => ({ label: sec.replace(dept.name, ''), counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last]!, statusKeys) }))
   .sort((a, b) => Object.values(b.counts).reduce((x, y) => x + y, 0) - Object.values(a.counts).reduce((x, y) => x + y, 0));
 
 const seikaRows = YEARS.map((y) => ({
@@ -51,8 +53,8 @@ const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
 const seikaOk = seikaLatest.filter((s) => rateBin(s) === '100%以上').length;
 
 // 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
-const mineEntries = (kind) => amountEntries(LATEST, kind).filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === dept.name);
-const budgetRows = ['settled', 'estimate', 'initial'].map((kind) => ({
+const mineEntries = (kind: AmountKind) => amountEntries(LATEST, kind).filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === dept.name);
+const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
   label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
   sub: AMOUNT_KINDS[kind].label,
   amounts: Object.fromEntries(FUNDS.map((f) => [f.key, mineEntries(kind).filter((e) => e.fund === f.key).reduce((s, e) => s + e.amount, 0)])),
@@ -174,13 +176,13 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
         <ul class="row-list">
           {seikaLatest.map((x) => {
             const s = shisakuById.get(x.shisaku_id);
-            const row = seikaGroupOf(x);
+            const row = seikaGroupOf(x)!; // どの成果指標の行も、施策の成果指標のまとまりにある
             return (
               <SeikaRow
                 x={x}
                 row={row}
                 shisaku={s}
-                href={seikaHref(x.shisaku_id, row?.key)}
+                href={seikaHref(x.shisaku_id, row.key)}
                 attrs={{ 'data-item': '', 'data-theme': themeIdsOfItem(x.shisaku_id, x.name).join('|'), 'data-text': `${x.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );
@@ -204,7 +206,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
   <p><a href={`/torikumi/?dept=${encodeURIComponent(dept.name)}`}>{dept.name}の取組をすべて見る</a></p>
 </Base>
 
-<script src="../../scripts/list-filter.js"></script>
+<script src="../../scripts/list-filter.ts"></script>
 
 <style>
   #dept-lists h3 { margin-top: 1.8em; }

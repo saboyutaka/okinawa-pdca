@@ -4,7 +4,7 @@ const root = document.documentElement;
 const btn = document.getElementById('theme-toggle');
 const current = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
 
-function render() {
+function render(btn: HTMLElement) {
   const dark = current() === 'dark';
   // 記号と文字を分けて、狭い画面では記号だけ見せる（読み上げは aria-label）
   const icon = document.createElement('span');
@@ -27,7 +27,7 @@ if (btn) {
     } catch {
       // 保存できない環境（プライベートブラウズなど）では、このページを開いている間だけ切り替える
     }
-    render();
+    render(btn);
   });
-  render();
+  render(btn);
 }

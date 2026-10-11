@@ -1,11 +1,11 @@
 ---
-// 観光ロードマップの成果指標の一覧の1行（lib/plans.js の kankoSeikaList の行）。基準値と比べた判定の印・名前・基準値から最新の実績値。
+// 観光ロードマップの成果指標の一覧の1行（lib/plans.ts の kankoSeikaList の行）。基準値と比べた判定の印・名前・基準値から最新の実績値。
 // 名前は施策展開のページのその指標の札へのリンク。compact はテーマのページの枠の中（施策の行を出さない）
 import Chip from './Chip.astro';
-import { withUnit, refText } from '../lib/data.js';
-import { rmJudgementOf } from '../lib/plans.js';
+import { withUnit, refText } from '../lib/data.ts';
+import { rmJudgementOf, type KankoSeikaListRow } from '../lib/plans.ts';
 
-interface Props { r: any; compact?: boolean }
+interface Props { r: KankoSeikaListRow; compact?: boolean }
 const { r, compact = false } = Astro.props;
 const x = r.x;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;

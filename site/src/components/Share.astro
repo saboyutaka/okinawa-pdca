@@ -1,12 +1,12 @@
 ---
 // SNS のシェアパネル。「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky のアイコンだけのボタンを1つの枠にまとめる。
-// X・Threads・Bluesky は #okinawa_pdca を付けた投稿画面を開く（lib/share.js）。
-// アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.js）で出す。
+// X・Threads・Bluesky は #okinawa_pdca を付けた投稿画面を開く（lib/share.ts）。
+// アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
 // 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を入れる。本番のドメインはビルド時に決まっていないので、URL はブラウザで入れる
 // （スクリプトが動かないときは URL なしで開く）
-import { SNS, shareHref } from '../lib/share.js';
-import { SHARE_ICONS } from '../lib/share-icons.js';
+import { SNS, shareHref } from '../lib/share.ts';
+import { SHARE_ICONS } from '../lib/share-icons.ts';
 
 interface Props { text?: string; link?: 'page' | 'top'; label?: string }
 const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
@@ -26,11 +26,11 @@ const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
 </div>
 
 <script>
-  import { shareHref } from '../lib/share.js';
-  for (const panel of document.querySelectorAll('.share-panel')) {
+  import { shareHref } from '../lib/share.ts';
+  for (const panel of document.querySelectorAll<HTMLElement>('.share-panel')) {
     const url = location.origin + (panel.dataset.shareLink === 'top' ? '/' : location.pathname);
     const text = panel.dataset.shareText || '';
-    for (const a of panel.querySelectorAll('a[data-sns]')) a.href = shareHref(a.dataset.sns, { text, url });
+    for (const a of panel.querySelectorAll<HTMLAnchorElement>('a[data-sns]')) a.href = shareHref(a.dataset.sns!, { text, url });
   }
 </script>
 

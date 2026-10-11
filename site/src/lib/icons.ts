@@ -1,5 +1,9 @@
 // 状態の印。色だけで意味を伝えないよう、状態ごとに形を変える（ページの HTML とブラウザのスクリプトの両方で使う）
-export const SHAPES = { good: 'circle', warning: 'diamond', serious: 'up', critical: 'square', none: 'dash', blank: 'ring' };
+// 状態の色（styles/global.css の .tone-*）。good 順調 → warning → serious → critical 大幅遅れ、none 未着手、blank 記載なし・公表なし
+export type Tone = 'good' | 'warning' | 'serious' | 'critical' | 'none' | 'blank';
+export type Shape = keyof typeof PATHS;
+
+export const SHAPES: Record<Tone, Shape> = { good: 'circle', warning: 'diamond', serious: 'up', critical: 'square', none: 'dash', blank: 'ring' };
 
 const PATHS = {
   circle: '<circle cx="6" cy="6" r="5"/>',
@@ -11,13 +15,13 @@ const PATHS = {
   ring: '<circle class="ring" cx="6" cy="6" r="4.6"/>',
 };
 
-export function iconSvg(tone, shape, size = 12) {
-  const s = shape || SHAPES[tone] || 'ring';
+export function iconSvg(tone?: Tone | null, shape?: Shape | null, size = 12) {
+  const s = shape || (tone && SHAPES[tone]) || 'ring';
   return `<svg class="ic tone-${tone || 'blank'}" viewBox="0 0 12 12" width="${size}" height="${size}" aria-hidden="true" focusable="false">${PATHS[s]}</svg>`;
 }
 
 // 施策の判定（A〜G）の形と短い言い方。C・D は成果の遅れ（▲）、E・F は取組の遅れ（▼・斜線）
-export const JUDGE_UI = {
+export const JUDGE_UI: Record<string, { shape: Shape; short: string; hatch?: boolean }> = {
   A: { shape: 'circle', short: '順調' },
   B: { shape: 'diamond', short: '概ね順調' },
   C: { shape: 'up', short: '成果が遅れている' },
@@ -27,17 +31,17 @@ export const JUDGE_UI = {
   G: { shape: 'square', short: '大幅遅れ' },
 };
 // 判定をまとめて数えるときの区分（トップ・テーマの棒）
-export const JUDGE_GROUPS = [
+export const JUDGE_GROUPS: { key: string; keys: string[]; label: string; tone: Tone; shape: Shape; hatch?: boolean }[] = [
   { key: 'A', keys: ['A'], label: 'A 順調', tone: 'good', shape: 'circle' },
   { key: 'B', keys: ['B'], label: 'B 概ね順調', tone: 'warning', shape: 'diamond' },
   { key: 'C・D', keys: ['C', 'D'], label: 'C・D 成果が遅れている', tone: 'serious', shape: 'up' },
   { key: 'E・F', keys: ['E', 'F'], label: 'E・F 取組が遅れている', tone: 'serious', shape: 'down', hatch: true },
   { key: 'G', keys: ['G'], label: 'G 大幅遅れ', tone: 'critical', shape: 'square' },
 ];
-export const judgeGroupOf = (key) => JUDGE_GROUPS.find((g) => g.keys.includes(key));
+export const judgeGroupOf = (key: string | null | undefined) => JUDGE_GROUPS.find((g) => key != null && g.keys.includes(key));
 
 // くらしのテーマの線画（24×24）。C は円、R は角丸の四角、それ以外は path
-const THEME_ICONS = {
+const THEME_ICONS: Record<string, string[]> = {
   kosodate: ['C8 7 3', 'M3 21v-3a5 5 0 0 1 10 0v3', 'C17 10.5 2.2', 'M14 21v-2a3 3 0 0 1 6 0v2'],
   manabi: ['M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z', 'M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z'],
   iryo: ['R3 3 18 18 4', 'M12 8v8', 'M8 12h8'],
@@ -56,7 +60,7 @@ const THEME_ICONS = {
   kyosei: ['C8 6 2.5', 'C16 6 2.5', 'M4 20v-5a4 4 0 0 1 8 0', 'M12 15a4 4 0 0 1 8 0v5', 'M10 14.5h4'],
   kokusai: ['C12 12 9', 'M3 12h18', 'M12 3c3.5 3 3.5 15 0 18', 'M12 3c-3.5 3-3.5 15 0 18'],
 };
-export function themeIconSvg(id) {
+export function themeIconSvg(id: string) {
   const parts = (THEME_ICONS[id] || []).map((p) => {
     const n = p.slice(1).trim().split(' ');
     if (p[0] === 'C') return `<circle cx="${n[0]}" cy="${n[1]}" r="${n[2]}"/>`;

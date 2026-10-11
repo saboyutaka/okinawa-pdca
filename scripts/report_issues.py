@@ -83,7 +83,7 @@ class Report:
         self.sources = {x["id"]: x for x in load(s / "sources.json")}
         b = ex / "bukyoku"
         budget = load(b / "torikumi.json") if (b / "torikumi.json").exists() else []
-        # 同じ取組が複数の部局のファイルに載っているときは最初の1件だけ使う（サイトの data.js と同じ）
+        # 同じ取組が複数の部局のファイルに載っているときは最初の1件だけ使う（サイトの data.ts と同じ）
         seen = set()
         self.budget = []
         for r in budget:
@@ -381,8 +381,8 @@ class Report:
             "| R4 の基本施策総括のページが回転していて、表として読むと文字が逆順になる | PyMuPDF のテキストから読む（extract_soukatsu.py） |",
             "| R5〜R7 の 5-(5)-イ-① の成果指標の基準値が、列の幅が足りず「########」と印字されている | 文化観光スポーツ部の「成果指標」検証票の値で補う（extract_soukatsu.py の BASE_FIXES） |",
             "| 部局票の見出しの表で、見出しと値が別の行に入るファイルがある | 値の形（施策コード、①で始まる施策名）で探す（extract_bukyoku.py） |",
-            "| R5 は組織再編の年で、12取組が2つの部局のファイルに載っている | 最初の1件だけ使う（サイトの data.js） |",
-            "| 同じ施策に同じ名前の成果指標が複数ある（男女別など） | 出てくる順番で区別する（サイトの data.js） |",
+            "| R5 は組織再編の年で、12取組が2つの部局のファイルに載っている | 最初の1件だけ使う（サイトの data.ts） |",
+            "| 同じ施策に同じ名前の成果指標が複数ある（男女別など） | 出てくる順番で区別する（サイトの data.ts） |",
             "",
         ]
         return "\n".join(head + ["", "## A. 取れていないデータ"] + body_a + ["## B. 誤りの疑いがあるデータ"] + body_b + fixed)

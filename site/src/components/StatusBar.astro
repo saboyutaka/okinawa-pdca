@@ -1,9 +1,10 @@
 ---
 // 100%積み上げの横棒1本。区切りは2pxのすき間。棒全体を1つの画像として読み上げ、区間ごとにタブでは止めない（値は表やラベルにもある）
-import { fmt, pct } from '../lib/format.js';
+import { fmt, pct } from '../lib/format.ts';
+import type { Tone } from '../lib/icons.ts';
 
 interface Props {
-  categories: { key: string; tone: string; hatch?: boolean }[];
+  categories: { key: string; tone: Tone; hatch?: boolean }[];
   counts: Record<string, number>;
   unit?: string;
   context?: string;

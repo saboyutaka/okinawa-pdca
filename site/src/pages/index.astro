@@ -12,14 +12,14 @@ import TrendChart from '../components/TrendChart.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
-} from '../lib/data.js';
-import { getThemes, unthemed } from '../lib/themes.js';
-import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.js';
-import { fmt, pct } from '../lib/format.js';
-import { LINKS } from '../lib/links.js';
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, type Pattern, type TorikumiGroup,
+} from '../lib/data.ts';
+import { getThemes, unthemed } from '../lib/themes.ts';
+import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
+import { fmt, pct } from '../lib/format.ts';
+import { LINKS } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
-import { BOSHU, boshuState, dayText } from '../lib/iken.js';
+import { BOSHU, boshuState, dayText } from '../lib/iken.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
@@ -39,11 +39,11 @@ const nCD = (judgeCounts.C || 0) + (judgeCounts.D || 0);
 const groupKeys = JUDGE_GROUPS.map((g) => g.key);
 const themes = getThemes().map((t) => ({
   ...t,
-  counts: countBy(t.ids.map((id) => byId.get(id)), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
+  counts: countBy(t.ids.map((id) => byId.get(id)!), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
 }));
 
 // ヒーローの「まだ進んでいないところ」（取組の遅れ・成果の遅れ・取組は順調でも成果が遅れている施策）
-const has = (pat) => (g) => g.patterns.includes(pat);
+const has = (pat: Pattern) => (g: TorikumiGroup) => g.patterns.includes(pat);
 const toriDelay = latestGroups.filter((g) => DELAYS.has(g.statuses[L])).length;
 // 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になる
 const streak = groups.filter(has('streak')).length;

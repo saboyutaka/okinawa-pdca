@@ -1,6 +1,6 @@
 ---
 // 金額の積み上げ横棒。棒の長さが金額（行どうしで比べられる）、区分は系列の色。凡例は上、表は下に畳む
-import { yen } from '../lib/format.js';
+import { yen } from '../lib/format.ts';
 
 interface Category { key: string; series: number; note?: string }
 interface Row { label: string; sub?: string; amounts: Record<string, number> }

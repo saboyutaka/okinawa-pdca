@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract check issues site-install dev build preview down
+.PHONY: help fetch extract check issues site-install site-check dev build preview down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -26,8 +26,9 @@ help:
 	@echo "make check         抽出結果を公表値と突き合わせるだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make site-install  サイトの依存パッケージを入れる"
+	@echo "make site-check    サイトの型を確かめるだけ（astro check。make build でも書き出しの前に行う）"
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
-	@echo "make build         サイトを site/dist に書き出す"
+	@echo "make build         サイトの型を確かめてから site/dist に書き出す"
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
@@ -53,6 +54,10 @@ issues:
 
 site-install:
 	$(COMPOSE) run --rm site npm ci
+
+# 型を確かめるだけ（npm run build も書き出しの前に同じことをする）
+site-check:
+	$(COMPOSE) run --rm site npm run check
 
 dev:
 	$(COMPOSE) up site

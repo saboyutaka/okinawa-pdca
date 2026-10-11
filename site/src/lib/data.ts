@@ -3,37 +3,58 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Tone } from './icons.ts';
+import type {
+  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, ShisakuRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
+} from './types.ts';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
-const cache = new Map();
+const cache = new Map<string, unknown>();
 // name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi'、個別計画などは 'kanko/torikumi' のように指定する
-export function load(name) {
+export function load<K extends keyof ExtractedFiles>(name: K): ExtractedFiles[K] {
   const rel = name.includes('/') ? name : `soukatsu/${name}`;
   if (!cache.has(rel)) {
     cache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, `${rel}.json`), 'utf-8')));
   }
-  return cache.get(rel);
+  return cache.get(rel) as ExtractedFiles[K];
+}
+
+// Object.keys の型付き版（PATTERNS・JUDGE_TRENDS の名前を並べる）
+const keysOf = <T extends object>(o: T) => Object.keys(o) as (keyof T)[];
+
+// 区分（進捗状況・判定・達成率など）。key は報告書の言い方、tone は状態の色と形（lib/icons.ts）
+export interface Category {
+  key: string;
+  tone: Tone;
+  note?: string;
+}
+
+// 年度をまたいだ1つの取組・成果指標など（key が同じもの）。years は報告のある年度だけ持つ
+export interface YearGroup<T> {
+  key: string;
+  latest: T;
+  years: Record<number, T>;
 }
 
 export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
-export const yearLabel = (y) => `R${y - 2018}`;
-export const yearLong = (y) => `令和${y - 2018}年度`;
+export const yearLabel = (y: number) => `R${y - 2018}`;
+export const yearLong = (y: number) => `令和${y - 2018}年度`;
 // R4〜R6 は前期実施計画（目標年度R6）、R7からは中期実施計画（目標年度R9）。基準値・目標値が切り替わる
-export const planLabel = (y) => (y <= 2024 ? '前期実施計画（R4〜R6）' : '中期実施計画（R7〜R9）');
+export const planLabel = (y: number) => (y <= 2024 ? '前期実施計画（R4〜R6）' : '中期実施計画（R7〜R9）');
 // 成果指標の計画値の欄は計画期間の3年分が並ぶ。その年度の計画値が何番目か（scripts/check_extracted.py の plan_index と同じ）
-export const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
+export const planIndex = (y: number) => (y <= 2024 ? y - 2022 : y - 2025);
 // 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
-export const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+export const withUnit = (raw: string | null | undefined, unit?: string | null) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
 // 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
 // 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
-export const refText = (raw) => {
+export const refText = (raw: string | null | undefined) => {
   const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
   return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
 };
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
-export const STATUSES = [
+export const STATUSES: Category[] = [
   { key: '順調', tone: 'good', note: '計画の90%以上' },
   { key: '概ね順調', tone: 'warning', note: '75%以上90%未満' },
   { key: 'やや遅れ', tone: 'serious', note: '60%以上75%未満' },
@@ -41,11 +62,11 @@ export const STATUSES = [
   { key: '未着手', tone: 'none', note: '活動に未着手' },
   { key: '記載なし', tone: 'blank', note: '報告書の欄が空欄など' },
 ];
-export const statusOf = (t) => t.status || '記載なし';
-export const toneOfStatus = (s) => (STATUSES.find((x) => x.key === s) || STATUSES[5]).tone;
+export const statusOf = (t: { status: string }) => t.status || '記載なし';
+export const toneOfStatus = (s: string) => (STATUSES.find((x) => x.key === s) || STATUSES[5]).tone;
 
 // 施策の推進状況（県の判定区分）。R5から施策ごとに公表されている
-export const JUDGES = [
+export const JUDGES: (Category & { label: string })[] = [
   { key: 'A', label: '順調', tone: 'good' },
   { key: 'B', label: '概ね順調', tone: 'warning' },
   { key: 'C', label: '取組は順調だが、成果は遅れている', tone: 'serious' },
@@ -54,28 +75,33 @@ export const JUDGES = [
   { key: 'F', label: '成果は概ね順調だが、取組は遅れている', tone: 'serious' },
   { key: 'G', label: '大幅遅れ', tone: 'critical' },
 ];
-export const judgeOf = (key) => JUDGES.find((j) => j.key === key);
+export const judgeOf = (key: string | null | undefined) => JUDGES.find((j) => j.key === key);
 
 // 施策の判定の移り変わり（施策をさがすの「判定の移り変わり」）。数え方はここだけで決め、施策の trends に入れる。判定は R5 から（R4 は公表されていない）。
 // 上がった・下がったは、判定を A 順調 → B 概ね順調 → C〜F（取組か成果が遅れている）→ G 大幅遅れ の順に並べて前の年度と比べる（C〜F の中での入れ替わりは数えない）
-const JUDGE_RANK = { good: 0, warning: 1, serious: 2, critical: 3 };
-const judgeRank = (key) => JUDGE_RANK[judgeOf(key)?.tone] ?? null;
-const bothYears = (r) => r.at(-2) != null && r.at(-1) != null;
+// ranks は年度の順の判定の順位（判定の無い年度は null）
+type Ranks = (number | null)[];
+const JUDGE_RANK: Record<string, number> = { good: 0, warning: 1, serious: 2, critical: 3 };
+const judgeRank = (key: string | null) => JUDGE_RANK[judgeOf(key)?.tone ?? ''] ?? null;
+const bothYears = (r: Ranks) => r.at(-2) != null && r.at(-1) != null;
 export const JUDGE_TRENDS = {
-  down: (r) => bothYears(r) && r.at(-1) > r.at(-2), // 前の年度より下がった
-  up: (r) => bothYears(r) && r.at(-1) < r.at(-2), // 前の年度より上がった
+  down: (r) => bothYears(r) && r.at(-1)! > r.at(-2)!, // 前の年度より下がった
+  up: (r) => bothYears(r) && r.at(-1)! < r.at(-2)!, // 前の年度より上がった
   streak: (r) => r.slice(-3).every((x) => x != null && x >= JUDGE_RANK.serious), // 最新の年度まで3年続けて C〜G
-};
+} satisfies Record<string, (r: Ranks) => boolean>;
+export type JudgeTrend = keyof typeof JUDGE_TRENDS;
 
 // 成果指標の計画値に対する達成率の区分（概要版と同じ区切り）
-export const RATE_BINS = [
+export const RATE_BINS: Category[] = [
   { key: '100%以上', tone: 'good' },
   { key: '60%以上100%未満', tone: 'warning' },
   { key: '0%超60%未満', tone: 'serious' },
   { key: '0%以下', tone: 'critical' },
   { key: '達成率なし', tone: 'blank', note: '報告書の達成率が「-」など' },
 ];
-export function rateBin(s) {
+// 達成率の欄（成果指標の行）
+type Rate = Pick<SeikaRow, 'rate' | 'rate_raw'>;
+export function rateBin(s: Rate) {
   if (s.rate_raw === '達成') return '100%以上';
   if (s.rate_raw === '未達成') return '0%以下';
   if (s.rate == null) return '達成率なし';
@@ -85,22 +111,22 @@ export function rateBin(s) {
   return '0%以下';
 }
 // 一覧の行の達成率の札（施策・成果指標の一覧）。文字は数字だけで（「達成」「未達成」とだけ書かれた指標はその言葉）、色と形は RATE_BINS の区分
-export const rateText = (s) => (s.rate != null ? `${s.rate}%` : s.rate_raw === '達成' || s.rate_raw === '未達成' ? s.rate_raw : 'なし');
-export const rateTone = (s) => RATE_BINS.find((b) => b.key === rateBin(s))?.tone;
+export const rateText = (s: Rate) => (s.rate != null ? `${s.rate}%` : s.rate_raw === '達成' || s.rate_raw === '未達成' ? s.rate_raw : 'なし');
+export const rateTone = (s: Rate) => RATE_BINS.find((b) => b.key === rateBin(s))?.tone;
 
 // 成果指標の「達成状況」欄（目標の見通し）
-export const JUDGEMENTS = [
+export const JUDGEMENTS: Category[] = [
   { key: '目標達成', tone: 'good' },
   { key: '目標達成の見込み', tone: 'good' },
   { key: '達成に努める', tone: 'warning' },
   { key: '達成は困難', tone: 'critical' },
 ];
-export const toneOfJudgement = (j) => JUDGEMENTS.find((x) => x.key === j)?.tone;
+export const toneOfJudgement = (j: string | null | undefined) => JUDGEMENTS.find((x) => x.key === j)?.tone;
 
 const DEPT_RE = /(知事公室|県警本部|警察本部|教育庁|企業局|病院事業局|.+?部)/g;
-export const splitDepts = (s) => (s || '').match(DEPT_RE) || [];
+export const splitDepts = (s: string | null | undefined): string[] => (s || '').match(DEPT_RE) || [];
 
-export function countBy(rows, keyFn, keys) {
+export function countBy<T>(rows: T[], keyFn: (r: T) => string, keys: string[]) {
   const out = Object.fromEntries(keys.map((k) => [k, 0]));
   for (const r of rows) {
     const k = keyFn(r);
@@ -126,32 +152,32 @@ export function getKihonList() {
     }));
 }
 
-export function getShuyou(kihonId) {
+export function getShuyou(kihonId: string) {
   return load('shuyou').filter((s) => s.kihon_id === kihonId);
 }
 
-export function getShuyouByYear(year) {
+export function getShuyouByYear(year: number) {
   return load('shuyou').filter((s) => s.year === year);
 }
 
 // 主要指標は報告書の文字のまま持っている（基準値に基準年が付く・1つの欄に男女別などの値が並ぶ・目標値が文章のものがある）。
 // 成果指標と同じ「ゴールまでの道のり」の図に置くため、ここで数を読み取る。画面に出す値は報告書の文字で、読み取った数は図の位置にだけ使う
-const MULT = { 兆: 1e12, 億: 1e8, 百万: 1e6, 万: 1e4, 千: 1e3 };
+const MULT: Record<string, number> = { 兆: 1e12, 億: 1e8, 百万: 1e6, 万: 1e4, 千: 1e3 };
 const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]));
 // 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
-export const halfWidth = (s) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 // 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
-const joinCell = (raw) => (raw || '').replace(/\s*\n\s*/g, '').trim();
+const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
 
 // 「1,032万t-CO₂」「３兆2,885億円」「8,060億92百万円」を { value: 数, scale: 最初の位（万なら1e4）, unit: 位の後ろの単位 } にする。数と単位だけの値でなければ null
-function jaNum(text) {
+function jaNum(text: string) {
   const s = halfWidth(text).replace(/,/g, '').replace(/^△/, '-');
   const re = /(-?\d+(?:\.\d+)?)(兆|億|百万|万|千)?/y;
   let value = 0;
-  let scale = null;
+  let scale: number | null = null;
   let last = Infinity;
   let end = 0;
-  let m;
+  let m: RegExpExecArray | null;
   while ((m = re.exec(s))) {
     const k = MULT[m[2]] || 1;
     if (k >= last) return null;
@@ -167,20 +193,22 @@ function jaNum(text) {
 
 // 欄の値。数と単位の後ろが括弧（基準年・「速報値」など。PDF で途中で切れて閉じていないものも）だけなら、括弧を note に分けて数を読む。
 // 文章の値（「可能な限り減少させる」など）や、1つの欄に値が並ぶもの（「1,117億円（R３年）農業922億円…」）は value が null
-function cellOf(raw) {
+type NumCell = { text: string; note: string; value: number; scale: number; unit: string };
+export type Cell = NumCell | { text: string; note: string; value: null };
+function cellOf(raw: string | null | undefined): Cell {
   const s = joinCell(raw);
-  const [, text, note] = s.match(/^(.*?)((?:\s*[（(][^（()）]*(?:[）)]|$))*)$/);
+  const [, text, note] = s.match(/^(.*?)((?:\s*[（(][^（()）]*(?:[）)]|$))*)$/)!;
   const n = jaNum(text);
   return n ? { text: halfWidth(text), note: halfWidth(note.trim()), ...n } : { text: halfWidth(s) || '—', note: '', value: null };
 }
-const unitKey = (c) => (c.value == null ? null : c.unit.normalize('NFKC'));
+const unitKey = (c: Cell) => (c.value == null ? null : c.unit.normalize('NFKC'));
 
 // 見通しの欄を [{ label, key }] にする。「男性:目標達成\n女性:達成は困難」のように1つの欄に並ぶものは名前ごとに分ける。決まった言い方でできていなければ null
 const JUDGE_KEYS = JUDGEMENTS.map((j) => j.key).sort((a, b) => b.length - a.length);
-export function judgesOf(raw) {
+export function judgesOf(raw: string | null | undefined) {
   const s = joinCell(raw);
   if (JUDGE_KEYS.includes(s)) return [{ label: '', key: s }];
-  const out = [];
+  const out: { label: string; key: string }[] = [];
   let end = 0;
   for (const m of s.matchAll(new RegExp(`(.*?)[:：](${JUDGE_KEYS.join('|')})`, 'gy'))) {
     out.push({ label: m[1].trim(), key: m[2] });
@@ -190,9 +218,9 @@ export function judgesOf(raw) {
 }
 
 // 1つの欄に並ぶ値を、見通しの欄の名前（男性・女性など）で分ける。欄が名前で始まり、名前が順に見つかるときだけ
-function splitByLabels(raw, labels) {
+function splitByLabels(raw: string, labels: string[]) {
   const s = joinCell(raw);
-  const at = [];
+  const at: number[] = [];
   for (const l of labels) {
     const i = s.indexOf(l, at.length ? at[at.length - 1] + 1 : 0);
     if (i < 0 || (!at.length && i !== 0)) return null;
@@ -201,49 +229,77 @@ function splitByLabels(raw, labels) {
   return labels.map((l, k) => s.slice(at[k] + l.length, at[k + 1] ?? s.length).trim());
 }
 
+// 道のりの図（components/SeikaChart.astro）に渡す1年度分。成果指標の行（SeikaRow）はそのまま渡せる
+export type ChartYear = Pick<SeikaRow, 'year' | 'base' | 'actual' | 'target' | 'plan' | 'plan_raw' | 'base_raw' | 'actual_raw' | 'actual_ref_year' | 'target_raw' | 'target_year'>;
+// 道のりの図に渡す指標。成果指標の年度をまたいだまとまり（SeikaGroup）と、主要指標の部分（ShuyouPart）を渡せる
+export interface ChartRow {
+  latest: { year: number; name: string };
+  years: Record<number, ChartYear>;
+}
+// 主要指標の部分の1年度分。b・a・t は基準値・実績値・目標値の欄を読んだもの（画面には text を出す）
+export interface ShuyouYear extends ChartYear {
+  b: Cell;
+  a: Cell;
+  t: Cell;
+  judgement: string;
+}
+export interface ShuyouPart {
+  label: string; // 男性・女性など（分けない指標は ''）
+  name: string;
+  years: Record<number, ShuyouYear>;
+  unit: string; // 図の目盛りの位と単位
+  scale: number;
+  drawable: boolean;
+  goal: boolean; // 目標値が数で読めるか（読めなければゴールの丸を置かない）
+  latest: ShuyouYear & { name: string };
+}
+
 // 主要指標1つの図と「スタート → いま → ゴール」の材料（部分ごと）。男性・女性のように1つの欄に並ぶ指標は、最新の報告の見通しの名前で分ける
 // （どの年度も分けられた年度だけを載せる）。分けられない指標は1つのまま。形は成果指標の行（SeikaChart の row）に合わせる
-function shuyouParts(latest, years) {
+function shuyouParts(latest: ShuyouRow, years: Record<number, ShuyouRow>): ShuyouPart[] {
   const labels = (judgesOf(latest.judgement) || []).map((j) => j.label);
-  const pick = (x) => [x.base_raw, x.actual_raw, x.target_raw].map((raw) => splitByLabels(raw, labels));
+  const pick = (x: ShuyouRow) => [x.base_raw, x.actual_raw, x.target_raw].map((raw) => splitByLabels(raw, labels));
   const split = labels.length > 1 && labels.every(Boolean) && pick(latest).every(Boolean);
-  const parts = (split ? labels : ['']).map((label) => ({ label, name: label ? `${latest.name}（${label}）` : latest.name, years: {} }));
+  type Cells = Pick<ShuyouYear, 'year' | 'b' | 'a' | 't' | 'judgement'>;
+  const parts = (split ? labels : ['']).map((label) => ({ label, name: label ? `${latest.name}（${label}）` : latest.name, cells: {} as Record<number, Cells> }));
   for (const [y, x] of Object.entries(years)) {
-    const cells = split ? pick(x) : [[x.base_raw], [x.actual_raw], [x.target_raw]];
-    if (!cells.every(Boolean)) continue;
+    const cells: (string[] | null)[] = split ? pick(x) : [[x.base_raw], [x.actual_raw], [x.target_raw]];
+    if (!cells.every((c): c is string[] => c != null)) continue;
     const judges = judgesOf(x.judgement);
     parts.forEach((p, i) => {
       const [b, a, t] = cells.map((c) => cellOf(c[i]));
-      p.years[y] = { year: +y, b, a, t, judgement: split ? judges?.find((j) => j.label === p.label)?.key || '' : x.judgement };
+      p.cells[+y] = { year: +y, b, a, t, judgement: split ? judges?.find((j) => j.label === p.label)?.key || '' : x.judgement };
     });
   }
-  return parts.map((p) => {
+  return parts.map(({ cells, ...p }) => {
     // 図の目盛りの位と単位は、最新の報告の目標値（なければ基準値・実績値）の書き方に合わせる
-    const now = p.years[latest.year];
-    const ref = [now.t, now.b, now.a].find((c) => c.value != null);
-    const scaled = (c) => (ref && c.value != null && (!c.unit || unitKey(c) === unitKey(ref)) ? c.value / ref.scale : null);
-    for (const r of Object.values(p.years)) {
-      Object.assign(r, {
+    const cur = cells[latest.year];
+    const ref = [cur.t, cur.b, cur.a].find((c): c is NumCell => c.value != null);
+    const scaled = (c: Cell) => (ref && c.value != null && (!c.unit || unitKey(c) === unitKey(ref)) ? c.value / ref.scale : null);
+    const years: Record<number, ShuyouYear> = {};
+    for (const [y, r] of Object.entries(cells)) {
+      years[+y] = {
+        ...r,
         base: scaled(r.b), actual: scaled(r.a), target: scaled(r.t),
         base_raw: r.b.text, actual_raw: r.a.text, actual_ref_year: r.a.note, target_raw: r.t.text,
         target_year: r.year <= 2024 ? 'R6年度' : 'R9年度', plan: [], plan_raw: [],
-      });
+      };
     }
     // 図は、実績値と基準値か目標値が数で読めれば描く（目標値が「可能な限り減少させる」のような文の指標も、スタートからの動きを見せる）
-    const ys = Object.values(p.years);
+    const ys = Object.values(years);
     const goal = ys.some((r) => r.target != null);
     const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
-    return { ...p, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...now, name: p.name } };
+    return { ...p, years, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...years[latest.year], name: p.name } };
   });
 }
 
 // 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
 // 単位や名前（指標の名前の括弧の中）付きで書かれていて数になっていないので、主要指標と同じように読む。図はゴールの丸を置かず、スタートと実績値だけを描く。
 // 目標が「〜との差の縮小」のもの（県平均・全国一位の都道府県との差）は、値の図では目標に近づいたか分からないので描かない。描けなければ null
-export function textGoalChartRow(row) {
+export function textGoalChartRow(row: SeikaGroup): SeikaGroup | null {
   const rs = Object.values(row.years);
   if (rs.some((r) => r.target != null || /差/.test(r.target_raw || ''))) return null;
-  const read = (r, raw) => {
+  const read = (r: SeikaRow, raw: string) => {
     const label = r.name.match(/[（(]([^（()）]+)[)）]$/)?.[1];
     const s = joinCell(raw);
     const c = cellOf(label && s.startsWith(label) ? s.slice(label.length) : s);
@@ -260,14 +316,19 @@ export function textGoalChartRow(row) {
 // 基本施策の主要指標を、年度をまたいだ指標ごとのまとまりにする。最新の報告の指標ごとに、4年分の行を名前で結び付ける
 // （名前が少し変わった年度は、その年度の指標が1つだけで単位が同じなら同じ指標とみなす）。
 // どれにも結び付かなかった行（最新の報告に無い指標）も、名前ごとに1つのまとまりにして、ページから落とさない
-export function shuyouRows(kihonId) {
+export interface ShuyouGroup {
+  latest: ShuyouRow;
+  years: Record<number, ShuyouRow>;
+  parts: ShuyouPart[];
+}
+export function shuyouRows(kihonId: string): ShuyouGroup[] {
   const rows = getShuyou(kihonId);
   const latestRows = rows.filter((r) => r.year === LATEST);
-  const used = new Set();
-  const unitOf = (r) => [r.target_raw, r.base_raw, r.actual_raw].map((raw) => unitKey(cellOf(raw))).find((u) => u != null);
-  const sameUnit = (a, b) => !unitOf(a) || !unitOf(b) || unitOf(a) === unitOf(b);
-  const group = (r, single) => {
-    const years = {};
+  const used = new Set<ShuyouRow>();
+  const unitOf = (r: ShuyouRow) => [r.target_raw, r.base_raw, r.actual_raw].map((raw) => unitKey(cellOf(raw))).find((u) => u != null);
+  const sameUnit = (a: ShuyouRow, b: ShuyouRow) => !unitOf(a) || !unitOf(b) || unitOf(a) === unitOf(b);
+  const group = (r: ShuyouRow, single: boolean) => {
+    const years: Record<number, ShuyouRow> = {};
     for (const y of YEARS) {
       const ys = rows.filter((x) => x.year === y && !used.has(x));
       const x = y === r.year ? r : ys.find((q) => q.name === r.name) || (single && ys.length === 1 && sameUnit(ys[0], r) ? ys[0] : null);
@@ -285,24 +346,34 @@ export function shuyouRows(kihonId) {
 
 // ---------------------------------------------------------------- 施策
 
-let shisakuIndex;
+// 施策（最新の報告の行に、4年分の行・判定と、取組・成果指標の全年度の行を付けたもの）
+export interface Shisaku extends ShisakuRow {
+  years: Record<number, ShisakuRow>;
+  judges: Record<number, string | null>;
+  trends: JudgeTrend[];
+  depts: string[];
+  torikumi: TorikumiRow[];
+  seika: SeikaRow[];
+}
+
+let shisakuIndex: Shisaku[] | undefined;
 function buildShisakuIndex() {
-  const byId = new Map();
+  const byId = new Map<string, { id: string; years: Record<number, ShisakuRow> }>();
   for (const s of load('shisaku')) {
     if (!byId.has(s.id)) byId.set(s.id, { id: s.id, years: {} });
-    byId.get(s.id).years[s.year] = s;
+    byId.get(s.id)!.years[s.year] = s;
   }
-  const tori = new Map();
+  const tori = new Map<string, TorikumiRow[]>();
   for (const t of load('torikumi')) {
     if (!tori.has(t.shisaku_id)) tori.set(t.shisaku_id, []);
-    tori.get(t.shisaku_id).push(t);
+    tori.get(t.shisaku_id)!.push(t);
   }
-  const seika = new Map();
+  const seika = new Map<string, SeikaRow[]>();
   for (const s of load('seika')) {
     if (!seika.has(s.shisaku_id)) seika.set(s.shisaku_id, []);
-    seika.get(s.shisaku_id).push(s);
+    seika.get(s.shisaku_id)!.push(s);
   }
-  const list = [];
+  const list: Shisaku[] = [];
   for (const [id, v] of byId) {
     const latest = v.years[LATEST];
     const judges = Object.fromEntries(YEARS.map((y) => [y, v.years[y]?.judge ?? null]));
@@ -311,13 +382,13 @@ function buildShisakuIndex() {
       ...latest,
       years: v.years,
       judges,
-      trends: Object.keys(JUDGE_TRENDS).filter((k) => JUDGE_TRENDS[k](ranks)),
+      trends: keysOf(JUDGE_TRENDS).filter((k) => JUDGE_TRENDS[k](ranks)),
       depts: splitDepts(latest.kankei),
       torikumi: tori.get(id) || [],
       seika: seika.get(id) || [],
     });
   }
-  const order = (sid) => sid.split('-').map((x) => (/^\d+$/.test(x) ? x.padStart(3, '0') : x)).join('-');
+  const order = (sid: string) => sid.split('-').map((x) => (/^\d+$/.test(x) ? x.padStart(3, '0') : x)).join('-');
   list.sort((a, b) => order(a.id).localeCompare(order(b.id)));
   return list;
 }
@@ -327,27 +398,28 @@ export function getShisakuList() {
   return shisakuIndex;
 }
 
-export function getShisaku(id) {
+export function getShisaku(id: string) {
   return getShisakuList().find((s) => s.id === id);
 }
 
 // 年度をまたいで同じ取組を1行にまとめる。名前（key）が同じものを同じ取組とみなす
-export function torikumiRows(shisaku) {
-  const rows = new Map();
+export function torikumiRows(shisaku: Shisaku) {
+  const rows = new Map<string, YearGroup<TorikumiRow>>();
   const sorted = [...shisaku.torikumi].sort((a, b) => b.year - a.year || a.no - b.no);
   for (const t of sorted) {
     if (!rows.has(t.key)) rows.set(t.key, { key: t.key, latest: t, years: {} });
-    rows.get(t.key).years[t.year] = t;
+    rows.get(t.key)!.years[t.year] = t;
   }
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year || a.latest.no - b.latest.no);
 }
 
 // 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）。
 // 名前の正規化は抽出側の取組の key と同じ規則。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
-const nameKey = (s) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
-export function seikaRows(shisaku) {
-  const rows = new Map();
-  const seen = new Map();
+const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
+export type SeikaGroup = YearGroup<SeikaRow>;
+export function seikaRows(shisaku: Shisaku) {
+  const rows = new Map<string, SeikaGroup>();
+  const seen = new Map<string, number>();
   const sorted = [...shisaku.seika].sort((a, b) => b.year - a.year);
   for (const s of sorted) {
     const base = nameKey(s.name);
@@ -355,47 +427,60 @@ export function seikaRows(shisaku) {
     seen.set(`${s.year}|${base}`, n);
     const k = `${base}#${n}`;
     if (!rows.has(k)) rows.set(k, { key: k, latest: s, years: {} });
-    rows.get(k).years[s.year] = s;
+    rows.get(k)!.years[s.year] = s;
   }
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
 // 成果指標の行き先: 施策ページの中の成果指標の見出し（#seika-1, #seika-2 …。施策ページの並び順）
-const seikaIndex = new Map();
-export function seikaAnchor(shisakuId, key) {
+const seikaIndex = new Map<string, Map<string, string>>();
+export function seikaAnchor(shisakuId: string, key: string) {
   if (!seikaIndex.has(shisakuId)) {
     const s = getShisaku(shisakuId);
     seikaIndex.set(shisakuId, new Map((s ? seikaRows(s) : []).map((r, i) => [r.key, `seika-${i + 1}`])));
   }
-  return seikaIndex.get(shisakuId).get(key) || 'seika';
+  return seikaIndex.get(shisakuId)!.get(key) || 'seika';
 }
-export const seikaHref = (shisakuId, key) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
+export const seikaHref = (shisakuId: string, key: string) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
 // 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
-export function seikaGroupOf(row) {
+export function seikaGroupOf(row: SeikaRow) {
   const s = getShisaku(row.shisaku_id);
   return s ? seikaRows(s).find((r) => r.years[row.year] === row) : undefined;
 }
 
 // ---------------------------------------------------------------- 年度をまたいだ取組・成果指標
 
-export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
+// 遅れている進捗状況（報告の無い年度の null を渡してもよい）
+export const DELAYS: ReadonlySet<string | null | undefined> = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
 // 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
 // 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
 // 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
-const isDelay = (x) => DELAYS.has(x);
+type Statuses = (string | null)[];
+const isDelay = (x: string | null | undefined) => DELAYS.has(x);
 export const PATTERNS = {
   delay4: (st) => st.every(Boolean) && st.filter(isDelay).length === 4, // 4年とも遅れ
   delay3: (st) => st.every(Boolean) && st.filter(isDelay).length >= 3, // 4年のうち3年以上遅れた（4年とも報告にあるもの。間に順調の年度をはさむものも入る）
   streak: (st) => st.slice(-3).every(isDelay), // 最新の年度まで3年続けて遅れ（今も遅れている）
   recover: (st) => isDelay(st.at(-2)) && st.at(-1) === '順調', // 前の年度の遅れから順調に
-  newdelay: (st) => ['順調', '概ね順調'].includes(st.at(-2)) && isDelay(st.at(-1)), // 前の年度の順調・概ね順調から遅れ
+  newdelay: (st) => ['順調', '概ね順調'].includes(st.at(-2) ?? '') && isDelay(st.at(-1)), // 前の年度の順調・概ね順調から遅れ
   new: (st) => Boolean(st.at(-1)) && !st.at(-2), // 最新の年度で新しく出た
   ended: (st) => !st.at(-1), // 最新の年度の報告に無い（終了・名称変更）
-};
+} satisfies Record<string, (st: Statuses) => boolean>;
+export type Pattern = keyof typeof PATTERNS;
 
 // 全施策の取組を、年度をまたいで1行にまとめたもの。部局は最新年度の所管部局（docs/data.md 7.2）
-let torikumiGroups;
+export interface TorikumiGroup extends YearGroup<TorikumiRow> {
+  shisaku: Shisaku;
+  dept: string;
+  section: string;
+  statuses: Statuses; // 年度の順の進捗状況（報告の無い年度は null）
+  inAllYears: boolean;
+  delayYears: number;
+  patterns: Pattern[];
+  href: string;
+}
+let torikumiGroups: TorikumiGroup[] | undefined;
 export function getTorikumiGroups() {
   torikumiGroups ??= getShisakuList().flatMap((s) =>
     torikumiRows(s).map((row) => {
@@ -407,13 +492,13 @@ export function getTorikumiGroups() {
         section: row.latest.section,
         statuses,
         inAllYears: statuses.every(Boolean),
-        delayYears: statuses.filter((x) => DELAYS.has(x)).length,
-        patterns: Object.keys(PATTERNS).filter((k) => PATTERNS[k](statuses)),
+        delayYears: statuses.filter(isDelay).length,
+        patterns: keysOf(PATTERNS).filter((k) => PATTERNS[k](statuses)),
         href: torikumiHref(s.id, row.key),
       };
     }),
   );
-  const hrefs = new Set();
+  const hrefs = new Set<string>();
   for (const g of torikumiGroups) {
     if (hrefs.has(g.href)) throw new Error(`取組のページの URL が重複している: ${g.href}`);
     hrefs.add(g.href);
@@ -422,38 +507,38 @@ export function getTorikumiGroups() {
 }
 
 // 取組のページの URL: /torikumi/<施策ID>/<取組名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
-export const torikumiSlug = (key) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
-export const torikumiHref = (shisakuId, key) => `/torikumi/${shisakuId}/${torikumiSlug(key)}/`;
+export const torikumiSlug = (key: string) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
+export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${torikumiSlug(key)}/`;
 
 // 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）
-let groupHrefs;
-export function torikumiPage(shisakuId, key) {
+let groupHrefs: Set<string> | undefined;
+export function torikumiPage(shisakuId: string, key: string) {
   groupHrefs ??= new Set(getTorikumiGroups().map((g) => g.href));
   const h = torikumiHref(shisakuId, key);
   return groupHrefs.has(h) ? h : null;
 }
 
 // 同じ名前の取組が別の施策にも載っているもの（総括報告書の「再掲」）
-let groupsByKey;
-export function repostsOf(g) {
+let groupsByKey: Map<string, TorikumiGroup[]> | undefined;
+export function repostsOf(g: TorikumiGroup) {
   if (!groupsByKey) {
     groupsByKey = new Map();
     for (const x of getTorikumiGroups()) {
       if (!groupsByKey.has(x.key)) groupsByKey.set(x.key, []);
-      groupsByKey.get(x.key).push(x);
+      groupsByKey.get(x.key)!.push(x);
     }
   }
-  return groupsByKey.get(g.key).filter((x) => x.shisaku.id !== g.shisaku.id);
+  return groupsByKey.get(g.key)!.filter((x) => x.shisaku.id !== g.shisaku.id);
 }
 
 // 名前が変わった（または分割・統合された）可能性のある取組。同じ施策で、この取組が最後に載った年度の翌年度から載り始めた取組（またはその逆）のうち、
 // 部局票に同じ予算事業名があるもの、または名前が似ているもの（文字の2つ組の一致率 0.5 以上）。年度をまたぐ照合は名前だけなので、その補い
 const NO_BUDGET = /^([ー―\-－]|なし|県事業なし|)$/;
-const budgetNameCache = new Map();
-function budgetNamesOf(g) {
+const budgetNameCache = new Map<string, Map<string, string>>();
+function budgetNamesOf(g: TorikumiGroup) {
   const k = `${g.shisaku.id}|${g.key}`;
   if (!budgetNameCache.has(k)) {
-    const m = new Map();
+    const m = new Map<string, string>();
     for (const y of YEARS) {
       if (!g.years[y]) continue;
       for (const b of budgetOf(y, g.shisaku.id, g.key)?.budgets || []) {
@@ -462,23 +547,24 @@ function budgetNamesOf(g) {
     }
     budgetNameCache.set(k, m);
   }
-  return budgetNameCache.get(k);
+  return budgetNameCache.get(k)!;
 }
-const bigrams = (s) => {
+const bigrams = (s: string) => {
   const k = nameKey(s);
   return new Set([...k].slice(0, -1).map((c, i) => c + k[i + 1]));
 };
-const similarity = (a, b) => {
+const similarity = (a: string, b: string) => {
   const [x, y] = [bigrams(a), bigrams(b)];
   if (!x.size || !y.size) return 0;
   return (2 * [...x].filter((v) => y.has(v)).length) / (x.size + y.size);
 };
-export const firstYearOf = (g) => YEARS.find((y) => g.years[y]);
-export function renameCandidates(g) {
+// 報告のある最初の年度（まとまりには、どれかの年度の報告がある）
+export const firstYearOf = (g: { years: Record<number, unknown> }) => YEARS.find((y) => g.years[y])!;
+export function renameCandidates(g: TorikumiGroup) {
   const last = g.latest.year;
   const first = firstYearOf(g);
   const mine = budgetNamesOf(g);
-  const out = [];
+  const out: { group: TorikumiGroup; after: boolean; shared: string[]; sim: number }[] = [];
   for (const o of getTorikumiGroups()) {
     if (o.shisaku.id !== g.shisaku.id || o.key === g.key) continue;
     const after = last < LATEST && firstYearOf(o) === last + 1;
@@ -492,7 +578,7 @@ export function renameCandidates(g) {
 }
 
 // 部局票の「対応する成果指標」（名前）から、施策ページの成果指標の見出しへのリンクを探す（名前の空白・記号の違いは無視）
-export function seikaHrefByName(shisakuId, name) {
+export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
   const s = getShisaku(shisakuId);
   const n = nameKey(name || '');
   if (!s || !n) return null;
@@ -504,7 +590,10 @@ export function seikaHrefByName(shisakuId, name) {
 }
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
-let seikaGroups;
+export interface SeikaGroupOfShisaku extends SeikaGroup {
+  shisaku: Shisaku;
+}
+let seikaGroups: SeikaGroupOfShisaku[] | undefined;
 export function getSeikaGroups() {
   seikaGroups ??= getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s })));
   return seikaGroups;
@@ -533,27 +622,27 @@ export const DEPTS = [
 // R5の組織再編で無くなった部。R4の報告書にだけ出てくる
 export const FORMER_DEPTS = ['子ども生活福祉部', '保健医療部'];
 export const REORGANIZED = new Set(['知事公室', 'こども未来部', '生活福祉部', '保健医療介護部']);
-export const deptOf = (section) => (section || '').match(DEPT_RE)?.[0] || '';
+export const deptOf = (section: string | null | undefined) => (section || '').match(DEPT_RE)?.[0] || '';
 // 部局ページの URL。部局名（「商工労働部」）でも所管部課名（「商工労働部産業政策課」）でもよい。旧部局名など該当が無ければ null
-export function deptHref(nameOrSection) {
+export function deptHref(nameOrSection: string) {
   const name = DEPTS.some((d) => d.name === nameOrSection) ? nameOrSection : deptOf(nameOrSection);
   const d = DEPTS.find((x) => x.name === name);
   return d ? `/bukyoku/${d.slug}/` : null;
 }
 
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
-let currentDept;
-export function currentDeptOf(year, shisakuId, key) {
+let currentDept: Map<string, string> | undefined;
+export function currentDeptOf(year: number, shisakuId: string, key: string) {
   currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${g.key}`, g.dept])));
   return currentDept.get(`${year}|${shisakuId}|${key}`) || '';
 }
 
 // R4の旧部局の課 → R5でその課の取組が最も多く移った先の課（成果指標の担当部課の読み替えに使う）
-let sectionMap;
+let sectionMap: Map<string, string> | undefined;
 function formerSectionMap() {
   if (sectionMap) return sectionMap;
   const r5 = new Map(load('torikumi').filter((t) => t.year === 2023).map((t) => [`${t.shisaku_id}|${t.key}`, t.section]));
-  const votes = new Map();
+  const votes = new Map<string, Map<string, number>>();
   for (const t of load('torikumi')) {
     if (t.year !== 2022 || !FORMER_DEPTS.includes(t.dept)) continue;
     const to = r5.get(`${t.shisaku_id}|${t.key}`);
@@ -566,7 +655,7 @@ function formerSectionMap() {
   return sectionMap;
 }
 // 成果指標の担当部局（R4の旧部局名は読み替える）。担当部課に複数の課が書かれているときは最初の課で決める
-export function seikaDept(s) {
+export function seikaDept(s: SeikaRow) {
   const first = (s.dept || '').split(/[、,，]/)[0];
   const section = s.year === 2022 ? formerSectionMap().get(first) || first : first;
   return deptOf(section);
@@ -574,34 +663,34 @@ export function seikaDept(s) {
 
 // ---------------------------------------------------------------- 全体集計
 
-export function getTorikumi(year) {
+export function getTorikumi(year: number) {
   return load('torikumi').filter((t) => t.year === year);
 }
-export function getSeika(year) {
+export function getSeika(year: number) {
   return load('seika').filter((s) => s.year === year);
 }
 
 // ---------------------------------------------------------------- 出典
 
 // 読み込んだ県の PDF の数（取得台帳 data/raw/manifest.jsonl のうち、取得できた対象年度 R4〜R7 の PDF。zip の中の PDF は数えない）
-let pdfCount;
+let pdfCount: number | undefined;
 export function getPdfCount() {
   if (pdfCount != null) return pdfCount;
   const file = path.resolve(process.cwd(), '../data/raw/manifest.jsonl');
-  pdfCount = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
+  pdfCount = fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map((l): { sha256?: string; local_path?: string; fiscal_year?: string | number } => JSON.parse(l))
     .filter((r) => r.sha256 && /\.pdf$/i.test(r.local_path || '') && YEARS.includes(Number(r.fiscal_year))).length;
   return pdfCount;
 }
 
-let sources;
-export function sourceOf(id) {
+let sources: Map<string, SourceRow> | undefined;
+export function sourceOf(id: string) {
   sources ??= new Map(load('sources').map((s) => [s.id, s]));
   return sources.get(id);
 }
 
-let bukyokuFiles;
+let bukyokuFiles: Map<string, BukyokuFileRow> | undefined;
 // 県のPDFへのリンク。zip の中のPDFはページ指定できないので zip へのリンクにする
-export function sourceLink(id, page) {
+export function sourceLink(id: string, page: number): { href: string; label: string } | null {
   // 部局票（data/raw/<部局>/...）は bukyoku/files.json に URL がある
   if (!id.startsWith('soukatsu/')) {
     bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
@@ -662,7 +751,7 @@ export const FUNDS = [
     desc: '国が直接行う事業（国直轄）や市町村の事業、財源の欄が「―」のものです。金額はわずかです。',
   },
 ];
-export function fundOf(raw) {
+export function fundOf(raw: string | null | undefined) {
   const t = (raw || '').normalize('NFKC').replace(/\s/g, '');
   if (t === '県単等') return '県単等';
   if (t.startsWith('一括交付金')) return t.includes('ハード') ? '一括交付金（ハード）' : '一括交付金（ソフト）';
@@ -670,21 +759,21 @@ export function fundOf(raw) {
   return 'その他';
 }
 
-export const AMOUNT_KINDS = {
+export const AMOUNT_KINDS: Record<AmountKind, { label: string; offset: number }> = {
   settled: { label: '決算額', offset: -1 },
   estimate: { label: '決算見込額', offset: 0 },
   initial: { label: '当初予算額', offset: 1 },
 };
-export const budgetKey = (s) => (s || '').normalize('NFKC').replace(/\s/g, '');
+export const budgetKey = (s: string | null | undefined) => (s || '').normalize('NFKC').replace(/\s/g, '');
 
 // 桁の誤記の疑い（r.suspect）は抽出時に判定している（scripts/extract_bukyoku.py の suspect_kinds）。
 // 同じ行の3つの金額のうち1つだけが他の50倍以上・10億円以上のもの。合計から除く
 
-let budgetRecords;
+let budgetRecords: BukyokuTorikumiRow[] | undefined;
 // 年度×取組の予算の記載。同じ取組が複数の部局のファイルに載っている（R5の組織再編の年）ときは最初の1件
 export function getBudgetRecords() {
   if (budgetRecords) return budgetRecords;
-  const seen = new Set();
+  const seen = new Set<string>();
   budgetRecords = [];
   for (const b of load('bukyoku/torikumi')) {
     const k = `${b.year}|${b.shisaku_id}|${b.key}`;
@@ -697,11 +786,11 @@ export function getBudgetRecords() {
 // 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける。
 // 総括報告書で別の施策に再掲された取組は、部局票では元の施策にしか載っていないことがあるので、
 // 同じ年度に同じ名前の取組が部局票に1件だけなら名前で結び付ける（matchedByName）
-let budgetIndex;
-export function budgetOf(year, shisakuId, key) {
+let budgetIndex: { exact: Map<string, BukyokuTorikumiRow>; byName: Map<string, BukyokuTorikumiRow | null> } | undefined;
+export function budgetOf(year: number, shisakuId: string, key: string): (BukyokuTorikumiRow & { matchedByName?: boolean }) | undefined {
   if (!budgetIndex) {
-    const exact = new Map();
-    const byName = new Map();
+    const exact = new Map<string, BukyokuTorikumiRow>();
+    const byName = new Map<string, BukyokuTorikumiRow | null>();
     for (const b of getBudgetRecords()) {
       exact.set(`${b.year}|${b.shisaku_id}|${b.key}`, b);
       const k = `${b.year}|${b.key}`;
@@ -716,7 +805,23 @@ export function budgetOf(year, shisakuId, key) {
 }
 
 // 予算事業の金額を1行ずつに平らにしたもの
-let budgetLines;
+export interface BudgetLine {
+  report: number; // 報告年度
+  shisaku_id: string;
+  key: string;
+  torikumi: string;
+  name: string;
+  name_next: string;
+  source: string;
+  source_next: string;
+  settled: number | null;
+  estimate: number | null;
+  initial: number | null;
+  suspect: AmountKind[];
+  file: string;
+  page: number;
+}
+let budgetLines: BudgetLine[] | undefined;
 export function getBudgetLines() {
   budgetLines ??= getBudgetRecords().flatMap((b) =>
     b.budgets.flatMap((blk) =>
@@ -743,9 +848,15 @@ export function getBudgetLines() {
 
 // 報告年度・金額の種類ごとに、同じ予算事業（名前・財源・金額が同じもの）を1回だけ数えた金額の一覧。
 // 1つの予算事業が複数の取組に載っているときは、最初に出てくる取組（施策コード順）に寄せる
-export function amountEntries(report, kind) {
-  const seen = new Set();
-  const out = [];
+export interface AmountEntry extends BudgetLine {
+  budgetName: string;
+  fund: string;
+  amount: number;
+  year: number; // 金額の年度
+}
+export function amountEntries(report: number, kind: AmountKind) {
+  const seen = new Set<string>();
+  const out: AmountEntry[] = [];
   for (const l of getBudgetLines()) {
     if (l.report !== report) continue;
     const v = l[kind];
@@ -765,6 +876,6 @@ export function getSuspects() {
 }
 
 // 財源の説明ページで使う、国・県の公式資料の数字（data/reference/finance.json。出典つきで人が転記したもの）
-export function getFinanceReference() {
+export function getFinanceReference(): FinanceReference {
   return JSON.parse(fs.readFileSync(path.resolve(process.cwd(), '../data/reference/finance.json'), 'utf-8'));
 }

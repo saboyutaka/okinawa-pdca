@@ -1,7 +1,7 @@
 ---
 // 主な取組の進捗状況を年度ごとに並べる（R4 ●順調 R5 ●順調 …）。その年度の報告に無い取組は「—」
 import Chip from './Chip.astro';
-import { YEARS, yearLabel, toneOfStatus } from '../lib/data.js';
+import { YEARS, yearLabel, toneOfStatus } from '../lib/data.ts';
 
 interface Props { statuses: (string | null)[] }
 const { statuses } = Astro.props;

@@ -1,8 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, getTorikumiGroups, getShisakuList } from '../../lib/data.js';
-import { fmt, pct } from '../../lib/format.js';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, getTorikumiGroups, getShisakuList } from '../../lib/data.ts';
+import { fmt, pct } from '../../lib/format.ts';
 
 const groups = getTorikumiGroups();
 const shisaku = getShisakuList();
@@ -15,8 +15,8 @@ const depts = DEPTS.map((d) => {
   return {
     ...d,
     latestCount: latest.length,
-    counts: countBy(latest, (g) => g.statuses[last], statusKeys),
-    okRates: YEARS.map((y, i) => {
+    counts: countBy(latest, (g) => g.statuses[last]!, statusKeys),
+    okRates: YEARS.map((_, i) => {
       const inYear = mine.filter((g) => g.statuses[i]);
       return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
     }),

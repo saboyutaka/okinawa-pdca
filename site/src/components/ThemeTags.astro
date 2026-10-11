@@ -1,11 +1,11 @@
 ---
 // くらしのテーマのラベル（このサイト独自の分類）。押すとテーマのページを開く。カードの中など、リンクを重ねられない所では link={false}
-import { getThemes } from '../lib/themes.js';
+import { getThemes } from '../lib/themes.ts';
 
 interface Props { ids: string[]; link?: boolean; label?: boolean }
 const { ids, link = true, label = true } = Astro.props;
 const byId = new Map(getThemes().map((t) => [t.id, t]));
-const items = ids.map((id) => byId.get(id)).filter(Boolean);
+const items = ids.map((id) => byId.get(id)).filter((t) => t != null);
 ---
 {items.length > 0 && (
   <span class="ttags">

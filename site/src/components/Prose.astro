@@ -1,6 +1,6 @@
 ---
 // 県の分析などの長い文章。「[主な取組]」などの行を小見出しにする
-import { sections } from '../lib/text.js';
+import { sections } from '../lib/text.ts';
 
 interface Props { text: string; level?: 'h4' | 'h5' }
 const { text, level = 'h4' } = Astro.props;

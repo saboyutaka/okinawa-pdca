@@ -1,4 +1,5 @@
 ---
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
@@ -15,22 +16,24 @@ import ThemeTags from '../../components/ThemeTags.astro';
 import IkenBox from '../../components/IkenBox.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getShisaku, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
-} from '../../lib/data.js';
-import { JUDGE_UI } from '../../lib/icons.js';
-import { themesOf } from '../../lib/themes.js';
-import { joinLines, firstSentence } from '../../lib/text.js';
-import { fmt } from '../../lib/format.js';
+  getShisakuList, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
+} from '../../lib/data.ts';
+import type { SeikaRow } from '../../lib/types.ts';
+import { JUDGE_UI } from '../../lib/icons.ts';
+import { themesOf } from '../../lib/themes.ts';
+import { joinLines, firstSentence } from '../../lib/text.ts';
+import { fmt } from '../../lib/format.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
-import { KANKO, IKKATSU_YEARS, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.js';
+import { KANKO, IKKATSU_YEARS, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
 
 export function getStaticPaths() {
-  return getShisakuList().map((s) => ({ params: { id: s.id } }));
+  return getShisakuList().map((s) => ({ params: { id: s.id }, props: { s } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const s = getShisaku(Astro.params.id);
-const kihon = getKihonList().find((k) => k.id === s.kihon_id);
+const { s } = Astro.props;
+const kihon = getKihonList().find((k) => k.id === s.kihon_id)!;
 const tRows = torikumiRows(s);
 const sRows = seikaRows(s);
 const statusKeys = STATUSES.map((x) => x.key);
@@ -47,8 +50,8 @@ const toriCounts = countBy(toriLatest, statusOf, statusKeys);
 const seikaLatest = sRows.filter((r) => r.latest.year === LATEST);
 const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
 const reached = seikaLatest.filter((r) => rateBin(r.latest) === '100%以上').length;
-const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
-const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
+const toneOfBin = (x: SeikaRow) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
+const rateText = (x: SeikaRow) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
 
 const j = judgeOf(s.judges[LATEST]);
 const judgeStamps = YEARS.map((y) => {

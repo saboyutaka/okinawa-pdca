@@ -5,10 +5,10 @@ import Icon from '../../components/Icon.astro';
 import Sz from '../../components/Sz.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
-import { LATEST, yearLabel, yearLong, JUDGES, getShisakuList, getShouraizou, getKihonList } from '../../lib/data.js';
-import { getThemes } from '../../lib/themes.js';
-import { JUDGE_UI } from '../../lib/icons.js';
-import { LINKS } from '../../lib/links.js';
+import { LATEST, yearLabel, yearLong, JUDGES, getShisakuList, getShouraizou, getKihonList, type JudgeTrend } from '../../lib/data.ts';
+import { getThemes } from '../../lib/themes.ts';
+import { JUDGE_UI } from '../../lib/icons.ts';
+import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
 const shisaku = getShisakuList();
@@ -17,13 +17,13 @@ const kihon = getKihonList();
 const themes = getThemes();
 const depts = [...new Set(shisaku.flatMap((s) => s.depts))].sort((a, b) => a.localeCompare(b, 'ja'));
 const groups = kihon.map((k) => ({ kihon: k, items: shisaku.filter((s) => s.kihon_id === k.id) }));
-const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t.id).join('|');
-// 判定の移り変わり（数え方は lib/data.js の JUDGE_TRENDS。施策の trends に入っている）。short は頭のリンクの短い言い方（左から続けて読む）
-const trends = [
+const themeIdsOf = (id: string) => themes.filter((t) => t.ids.includes(id)).map((t) => t.id).join('|');
+// 判定の移り変わり（数え方は lib/data.ts の JUDGE_TRENDS。施策の trends に入っている）。short は頭のリンクの短い言い方（左から続けて読む）
+const trends = ([
   { key: 'down', label: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で下がった`, short: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で下がった` },
   { key: 'up', label: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で上がった`, short: '上がった' },
   { key: 'streak', label: `${yearLabel(LATEST)}まで3年続けて遅れ（C〜G）`, short: '3年続けて遅れ' },
-].map((t) => ({ ...t, n: shisaku.filter((s) => s.trends.includes(t.key)).length }));
+] satisfies { key: JudgeTrend; label: string; short: string }[]).map((t) => ({ ...t, n: shisaku.filter((s) => s.trends.includes(t.key)).length }));
 ---
 <Base title="施策をさがす" description="沖縄県PDCAの339施策を、将来像・判定・くらしのテーマ・担当部局・キーワードで絞り込んで探せます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
@@ -110,7 +110,7 @@ const trends = [
   </p>
 </Base>
 
-<script src="../../scripts/list-filter.js"></script>
+<script src="../../scripts/list-filter.ts"></script>
 <script>
   // 頭の「判定の移り変わり」のリンクは、ページを開き直さずに絞り込みの「判定の移り変わり」だけを変える（キーワードなど、いま入っている条件は残す）
   const trend = document.querySelector<HTMLSelectElement>('form[data-filter] select[name="trend"]');

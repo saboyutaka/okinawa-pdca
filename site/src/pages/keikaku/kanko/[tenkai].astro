@@ -1,5 +1,6 @@
 ---
 // 観光ロードマップの施策展開1つ。施策ごとに、成果指標・主な取組・県の分析（Check）と推進戦略案（Action）
+import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../../layouts/Base.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import StatusBar from '../../../components/StatusBar.astro';
@@ -8,16 +9,17 @@ import ExtLink from '../../../components/ExtLink.astro';
 import Prose from '../../../components/Prose.astro';
 import RmSeika from '../../../components/RmSeika.astro';
 import RmTorikumi from '../../../components/RmTorikumi.astro';
-import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.js';
-import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkai, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.js';
-import { joinLines, firstSentence } from '../../../lib/text.js';
-import { fmt } from '../../../lib/format.js';
+import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.ts';
+import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.ts';
+import { joinLines, firstSentence } from '../../../lib/text.ts';
+import { fmt } from '../../../lib/format.ts';
 
 export function getStaticPaths() {
-  return kankoTenkaiList().map((t) => ({ params: { tenkai: t.id } }));
+  return kankoTenkaiList().map((t) => ({ params: { tenkai: t.id }, props: { t } }));
 }
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const t = kankoTenkai(Astro.params.tenkai);
+const { t } = Astro.props;
 const kihon = kankoKihon().find((k) => k.id === t.kihon_id);
 const statusKeys = STATUSES.map((s) => s.key);
 // 進捗状況のスタンプは本編を読めた年度だけ（R4 は読めない）

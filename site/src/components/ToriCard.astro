@@ -4,10 +4,11 @@ import Stamps from './Stamps.astro';
 import Chunk from './Chunk.astro';
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
-import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, deptHref, seikaHrefByName, torikumiHref } from '../lib/data.js';
-import { themeIdsOfItem } from '../lib/themes.js';
+import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, deptHref, seikaHrefByName, torikumiHref, type YearGroup } from '../lib/data.ts';
+import { themeIdsOfItem } from '../lib/themes.ts';
+import type { TorikumiRow } from '../lib/types.ts';
 
-interface Props { row: any; shisakuId: string }
+interface Props { row: YearGroup<TorikumiRow>; shisakuId: string }
 const { row, shisakuId } = Astro.props;
 const t = row.latest;
 const b = budgetOf(t.year, t.shisaku_id, t.key);
@@ -15,7 +16,7 @@ const seikaHref = b?.seika_name ? seikaHrefByName(shisakuId, b.seika_name) : nul
 const href = torikumiHref(shisakuId, row.key);
 const stamps = YEARS.map((y) => (row.years[y] ? { year: y, tone: toneOfStatus(statusOf(row.years[y])), text: statusOf(row.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 // 「目標 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
-const qty = (raw) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
+const qty = (raw: string) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
 const tq = qty(t.target);
 const aq = qty(t.actual);
 const comparable = tq && aq && tq.v > 0 && tq.u === aq.u;

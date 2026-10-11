@@ -1,5 +1,11 @@
 // 県へ意見を伝える方法（/iken/）と、X で話すためのハッシュタグ。県のページの記載は 2026-10-10 に確認した
 
+// 募集の期間（日付は YYYY-MM-DD）
+interface Period {
+  start: string;
+  end: string;
+}
+
 // 県民意見募集（沖縄県PDCA実施結果に対する意見の募集。いわゆるパブリックコメント）のうち、いちばん新しいもの。
 // 県は結果を公表したあとに募集している。新しい募集が出たらここを書き換える。受付中・終了は**ビルドした日**で決まる
 export const BOSHU = {
@@ -25,7 +31,7 @@ export const KANGAEKATA = { label: '平成30年度', count: 2, href: 'https://ww
 export const GOIKENBAKO = 'https://www.pref.okinawa.jp/kensei/kochokoho/1014932/1015136/1015137.html';
 
 // 募集の状態。日付は沖縄（日本時間）の1日の始めと終わりで比べる
-export function boshuState(b = BOSHU, now = new Date()) {
+export function boshuState(b: Period = BOSHU, now = new Date()) {
   if (now < new Date(`${b.start}T00:00:00+09:00`)) return 'before';
   if (now <= new Date(`${b.end}T23:59:59+09:00`)) return 'open';
   return 'closed';
@@ -33,14 +39,14 @@ export function boshuState(b = BOSHU, now = new Date()) {
 
 // 2026-09-04 → 2026年（令和8年）9月4日（金）。withYear が false なら 9月4日（金）
 const WEEK = '日月火水木金土';
-export function dayText(iso, withYear = true) {
+export function dayText(iso: string, withYear = true) {
   const [y, m, d] = iso.split('-').map(Number);
   const w = WEEK[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   return `${withYear ? `${y}年（令和${y - 2018}年）` : ''}${m}月${d}日（${w}）`;
 }
-export const periodText = (b) => `${dayText(b.start)}〜${dayText(b.end, b.end.slice(0, 4) !== b.start.slice(0, 4))}`;
+export const periodText = (b: Period) => `${dayText(b.start)}〜${dayText(b.end, b.end.slice(0, 4) !== b.start.slice(0, 4))}`;
 
-// SNS で話すときのハッシュタグ（# なし）と、そのタグの投稿を見るページ。投稿画面を開くリンクは lib/share.js
+// SNS で話すときのハッシュタグ（# なし）と、そのタグの投稿を見るページ。投稿画面を開くリンクは lib/share.ts
 export const HASHTAG = 'okinawa_pdca';
 export const TAG_PAGES = [
   { label: 'X', href: `https://x.com/search?q=${encodeURIComponent(`#${HASHTAG}`)}&f=live` },
@@ -48,4 +54,4 @@ export const TAG_PAGES = [
 ];
 
 // 投稿の本文に入れる名前。X は日本語を1字で2字分に数えて140字までなので、長い名前は途中で切る
-export const shortName = (s, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
+export const shortName = (s: string, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);

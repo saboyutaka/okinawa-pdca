@@ -1,17 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
-import { YEARS, LATEST, yearLabel, yearLong, getTorikumi, amountEntries, getFinanceReference, getBudgetRecords } from '../lib/data.js';
-import { fmt } from '../lib/format.js';
-import fs from 'node:fs';
-import { LINKS, PROJECT } from '../lib/links.js';
-import { TERMS } from '../lib/terms.js';
-import { getThemes, unthemed } from '../lib/themes.js';
-import path from 'node:path';
+import { YEARS, LATEST, yearLabel, yearLong, load, getTorikumi, amountEntries, getFinanceReference, getBudgetRecords } from '../lib/data.ts';
+import { fmt } from '../lib/format.ts';
+import { LINKS, PROJECT } from '../lib/links.ts';
+import { TERMS } from '../lib/terms.ts';
+import { getThemes, unthemed } from '../lib/themes.ts';
 import ExtLink from '../components/ExtLink.astro';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）
-const sources = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), '../data/extracted/soukatsu/sources.json'), 'utf-8'));
-const pages = YEARS.map((y) => sources.find((s) => s.year === y && s.page_url)).filter(Boolean);
+const sources = load('sources');
+const pages = YEARS.map((y) => sources.find((s) => s.year === y && s.page_url)).filter((s) => s != null);
 // 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
 const torikumiBudget = Math.round(amountEntries(LATEST, 'estimate').reduce((s, e) => s + e.amount, 0) / 1e5);
 const prefBudget = getFinanceReference().prefecture;
@@ -19,7 +17,7 @@ const prefBudget = getFinanceReference().prefecture;
 const blanks = YEARS.map((y) => [y, getTorikumi(y).filter((t) => !t.status).length]).filter(([, n]) => n > 0);
 // 部局票の取組のうち、活動内容・判定の根拠・改善案の反映状況・検証・改善案のどれかが空のもの（docs/issues.md の A9 と同じ欄）
 const records = getBudgetRecords();
-const emptyFields = records.filter((b) => ['activity_done', 'basis', 'improvements', 'check', 'action'].some((k) => !b[k]?.length)).length;
+const emptyFields = records.filter((b) => (['activity_done', 'basis', 'improvements', 'check', 'action'] as const).some((k) => !b[k]?.length)).length;
 const themes = getThemes();
 ---
 <Base title="データについて" description="このサイトのデータの出典・作り方・注意点">

@@ -6,10 +6,10 @@ import Crumbs from '../../components/Crumbs.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.js';
-import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.js';
-import { LINKS } from '../../lib/links.js';
-import { fmt } from '../../lib/format.js';
+import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.ts';
+import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.ts';
+import { LINKS } from '../../lib/links.ts';
+import { fmt } from '../../lib/format.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const tori = kankoTorikumi(RM_LATEST);

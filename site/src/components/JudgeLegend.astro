@@ -3,8 +3,8 @@
 // C・D と E・F はまとめて出す（細かい違いは「県の判定」の用語の説明と施策のページに任せる）
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { LATEST, yearLabel } from '../lib/data.js';
-import { JUDGE_GROUPS } from '../lib/icons.js';
+import { LATEST, yearLabel } from '../lib/data.ts';
+import { JUDGE_GROUPS } from '../lib/icons.ts';
 ---
 <div class="jlegend small">
   <span class="jl-head">ハンコは{yearLabel(LATEST)}の<Term word="推進状況" label="県の判定" />:</span>

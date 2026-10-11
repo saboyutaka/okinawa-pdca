@@ -3,13 +3,14 @@
 // 同じ区分の図をいくつも並べるページでは、凡例をページに1回だけ出し、図には legend={false} を渡す（毎回の凡例はくどいため）
 import StatusBar from './StatusBar.astro';
 import Chip from './Chip.astro';
-import { fmt, pct } from '../lib/format.js';
+import { fmt, pct } from '../lib/format.ts';
+import type { Shape, Tone } from '../lib/icons.ts';
 
 interface Row { label: string; sub?: string; href?: string; counts: Record<string, number> }
 interface Props {
   title: string;
   caption?: string;
-  categories: { key: string; tone: string; note?: string; shape?: string; hatch?: boolean }[];
+  categories: { key: string; tone: Tone; note?: string; shape?: Shape; hatch?: boolean }[];
   rows: Row[];
   unit?: string;
   legend?: boolean;
