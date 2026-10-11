@@ -1,7 +1,7 @@
 // 県民意見募集の受付の状態と日付の書き方（lib/iken.js）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BOSHU, BOSHU_PAST, boshuState, dayText, periodText, shortName } from '../src/lib/iken.ts';
+import { BOSHU, BOSHU_PAST, boshuState, dayText, periodText, shareText, shortName } from '../src/lib/iken.ts';
 
 const b = { start: '2026-09-04', end: '2026-10-04' };
 
@@ -37,4 +37,9 @@ test('BOSHU: いちばん新しい募集が、これまでの募集の一覧の�
   const last = BOSHU_PAST.at(-1);
   assert.deepEqual({ year: BOSHU.year, start: BOSHU.start, end: BOSHU.end }, last);
   for (const x of BOSHU_PAST) assert.ok(x.start <= x.end, `${x.year} の募集の期間`);
+});
+
+test('shareText: 種類と名前から投稿の本文を作る（長い名前は shortName で切る）', () => {
+  assert.equal(shareText('施策', '離島の振興'), '施策「離島の振興」について');
+  assert.equal(shareText('部局', 'あ'.repeat(41)), `部局「${'あ'.repeat(39)}…」について`);
 });

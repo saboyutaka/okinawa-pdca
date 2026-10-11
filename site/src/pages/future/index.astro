@@ -25,7 +25,6 @@ const visions = getShouraizou().map((v) => {
     n: t.length,
     ok: t.filter((x) => x.status === '順調').length,
     shisaku: ss.length,
-    cd: ss.filter((s) => ['C', 'D'].includes(s.judges[LATEST] ?? '')).length,
     rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
       label: k.name,
       sub: `${k.code}・${fmt(shisaku.filter((s) => s.kihon_id === k.id).length)}施策`,
@@ -55,7 +54,7 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} />将来像{v.id} {v.name}</a></h2>
       <div class="v-stats">
         <span>基本施策 <b class="big">{fmt(v.rows.length)}</b></span>
-        <span>施策 <b class="big">{fmt(v.shisaku)}</b>（うち成果が遅れている <b class="big">{fmt(v.cd)}</b>）</span>
+        <span>施策 <b class="big">{fmt(v.shisaku)}</b></span>
         <span class="v-ok">主な取組のうち「順調」 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
       </div>
       <StatusChart title={`将来像${v.id}の基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} legend={false} />

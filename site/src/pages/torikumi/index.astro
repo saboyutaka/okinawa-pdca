@@ -1,31 +1,21 @@
 ---
 import Base from '../../layouts/Base.astro';
 import FilterMore from '../../components/FilterMore.astro';
-import Icon from '../../components/Icon.astro';
 import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
 import { getThemes } from '../../lib/themes.ts';
 import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.ts';
-import type { Pattern } from '../../lib/data.ts';
-import type { Tone } from '../../lib/icons.ts';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
-// 遅れの様子（「4年間の様子」の絞り込みと同じ数え方。lib/data.ts の PATTERNS）
-const pats = ([
-  { pat: 'delay4', tone: 'critical', label: '4年とも遅れ' },
-  { pat: 'delay3', tone: 'serious', label: '3年以上遅れ' },
-  { pat: 'recover', tone: 'good', label: `${yearLabel(LATEST - 1)}の遅れから${yearLabel(LATEST)}で順調に` },
-] satisfies { pat: Pattern; tone: Tone; label: string }[]).map((p) => ({ ...p, n: groups.filter((g) => g.patterns.includes(p.pat)).length }));
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
   <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
-  <p class="small pats"><span class="secondary">遅れの様子:</span>{pats.map((p) => <a href={`?pat=${p.pat}`} data-pat={p.pat}><Icon tone={p.tone} />{p.label} {fmt(p.n)}件</a>)}</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
-    <label class="q" data-label="キーワード">キーワード
+    <label class="q" data-label="キーワード">キーワード（取組の名前・所管課・施策・活動指標）
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
     <FilterMore id="tori-more">
@@ -58,11 +48,11 @@ const pats = ([
     <label data-label="4年間の様子">4年間の様子
       <select name="pat">
         <option value="">すべて</option>
+        <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
+        <option value="newdelay">{yearLabel(LATEST - 1)}の順調・概ね順調から{yearLabel(LATEST)}で遅れ</option>
         <option value="delay4">4年とも遅れ</option>
         <option value="delay3">3年以上遅れ</option>
         <option value="streak">{yearLabel(LATEST - 2)}から{yearLabel(LATEST)}まで続けて遅れ（今も遅れている）</option>
-        <option value="recover">{yearLabel(LATEST - 1)}の遅れから{yearLabel(LATEST)}で順調に</option>
-        <option value="newdelay">{yearLabel(LATEST - 1)}の順調・概ね順調から{yearLabel(LATEST)}で遅れ</option>
         <option value="new">{yearLabel(LATEST)}で新しく出た</option>
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
@@ -76,15 +66,15 @@ const pats = ([
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件</span></p>
-  <p class="small secondary">
-    遅れ＝「やや遅れ」「大幅遅れ」「未着手」。「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。遅れの理由は、取組のページの「年度ごとの活動と検証」にあります。
-    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
-    観光ロードマップにしか無い取組は、<a href={KANKO_TORIKUMI_HREF}>{KANKO.short}の取組をさがす</a>で見られます。
-  </p>
+  <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件を表示</span></p>
 
   <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
+  <p class="small secondary">
+    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
+    絞り込みの「遅れ」は「やや遅れ」「大幅遅れ」「未着手」で、「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。進捗状況の理由は、取組のページの「年度ごとの活動と検証」にあります。
+    観光ロードマップにしか無い取組は、<a href={KANKO_TORIKUMI_HREF}>{KANKO.short}の取組をさがす</a>で見られます。
+  </p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/shisaku/">施策の一覧</a>から各施策のページで取組を見ることもできます。</p></noscript>
 </Base>
 
@@ -132,7 +122,7 @@ const pats = ([
     main.append(n, s);
     // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
-    if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　目標 ${target || '—'} → 実績 ${actual || '—'}`));
+    if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
     li.append(main, stamps(sts));
     return li;
@@ -238,14 +228,6 @@ const pats = ([
     const input = form.elements.namedItem(k) as HTMLInputElement | null;
     if (input) input.value = v;
   }
-  // 頭の「遅れの様子」のリンクは、ページを開き直さずに「4年間の様子」だけを変える（キーワードなど、いま入っている条件は残す）
-  for (const a of document.querySelectorAll<HTMLAnchorElement>('.pats [data-pat]')) {
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      (form.elements.namedItem('pat') as HTMLSelectElement).value = a.dataset.pat!;
-      apply();
-    });
-  }
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   more.addEventListener('click', showMore);
@@ -264,7 +246,5 @@ const pats = ([
 </script>
 
 <style>
-  .pats { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
-  .pats a { display: inline-flex; align-items: center; gap: 6px; }
-  /* 結果の行の形は styles/global.css の .t-row（部局のページと同じ） */
+  /* 結果の行の形は styles/global.css の .t-row */
 </style>

@@ -1,20 +1,17 @@
 ---
 // くらしのテーマのページに出す、県の分野別の計画（個別計画）の要約の枠。いまは観光ロードマップ（テーマ「観光」）だけ。
 // テーマ（このサイト独自の分類）とは別の県の計画なので、淡い紫の札で分け、テーマの数字には混ぜない。
-// 観光ロードマップならではの情報は観光の計画にしか無い成果指標なので、基準値より後退・横ばいの指標を悪い順に数件出す
+// 主な取組の進捗状況と、成果指標の基準値との比較（前進・横ばい・後退）の内訳だけを出す（良い・悪いのどちらかの指標を選んで並べない）
 import StatusBar from './StatusBar.astro';
-import RmSeikaRow from './RmSeikaRow.astro';
 import Term from './Term.astro';
 import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.ts';
-import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoSeikaList, isBehind } from '../lib/plans.ts';
+import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika } from '../lib/plans.ts';
 import { fmt } from '../lib/format.ts';
 
-const SHOW = 5;
 const tori = kankoTorikumi(RM_LATEST);
 const toriCounts = countBy(tori, statusOf, STATUSES.map((s) => s.key));
 const seika = kankoSeika(RM_LATEST);
 const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
-const behind = kankoSeikaList().filter(isBehind);
 ---
 <section class="sticker plan-sum" aria-labelledby="plan-sum-h">
   <div><span class="plan-tag">個別計画</span></div>
@@ -32,27 +29,16 @@ const behind = kankoSeikaList().filter(isBehind);
       <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`観光ロードマップの${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
     </div>
   </div>
-  {behind.length > 0 && (
-    <>
-      <h3>基準値より後退・横ばいの指標（{yearLabel(RM_LATEST)}・{fmt(behind.length)}）</h3>
-      <ul class="ps-list">{behind.slice(0, SHOW).map((r) => <RmSeikaRow r={r} compact />)}</ul>
-    </>
-  )}
   <p class="small ps-links">
-    {behind.length > SHOW && <><a href={`${KANKO.href}#seika-list`}>後退・横ばいの指標をすべて見る（{fmt(behind.length)}）</a>・</>}
-    <a href={KANKO.href}>観光ロードマップを見る</a>・<a href={KANKO_TORIKUMI_HREF}>観光ロードマップの取組をさがす</a>
+    <a href={KANKO.href}>観光ロードマップを見る</a>・<a href={`${KANKO.href}#seika-list`}>成果指標の一覧</a>・<a href={KANKO_TORIKUMI_HREF}>観光ロードマップの取組をさがす</a>
   </p>
 </section>
 
 <style>
   .plan-sum { margin-top: 18px; display: grid; gap: 8px; }
   .plan-sum h2 { margin: 0; font-size: 1.15rem; }
-  .plan-sum h3 { margin: 6px 0 0; font-size: 1rem; }
   .plan-sum p { margin: 0; }
   .ps-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
   .ps-nums > div { display: grid; gap: 4px; padding: 10px 12px; }
   .ps-nums .big { font-size: 1.3rem; }
-  .ps-list { list-style: none; padding: 0; margin: 0; display: grid; }
-  .ps-list > :global(li) { padding: 8px 0; border-top: 1.5px solid var(--grid); }
-  .ps-list > :global(li:last-child) { border-bottom: 1.5px solid var(--grid); }
 </style>

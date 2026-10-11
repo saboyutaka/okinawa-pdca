@@ -10,7 +10,7 @@ import ExtLink from '../../../components/ExtLink.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
-  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, isBehind, type KankoTenkai,
+  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, type KankoTenkai,
 } from '../../../lib/plans.ts';
 import { LINKS } from '../../../lib/links.ts';
 import { fmt, pct } from '../../../lib/format.ts';
@@ -36,10 +36,10 @@ const tenkai = kankoTenkaiList();
 const kihon = kankoKihon();
 const latestOf = (t: KankoTenkai) => t.shisaku.flatMap((s) => s.torikumi.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
 const sources = planSources('kanko');
-// 成果指標（R6）。基準値より後退・横ばいのものを先に、悪い順に出し、前進しているものは畳む
+// 成果指標（R6）。報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）。
+// 良い・悪いで並べ替えない（前進・横ばい・後退は行の印と頭の棒で見る）
 const seikaAll = kankoSeikaList();
-const behind = seikaAll.filter(isBehind);
-const ahead = seikaAll.filter((r) => !isBehind(r));
+const SEIKA_SHOW = 10;
 ---
 <Base title={`${KANKO.name}（個別計画）`} description={`${KANKO.basis}の実施計画「${KANKO.name}」のPDCA（成果指標と主な取組の評価）を、施策展開ごとに整理しています。`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { label: KANKO.short }]} />
@@ -78,13 +78,10 @@ const ahead = seikaAll.filter((r) => !isBehind(r));
   </div>
 
   <section aria-labelledby="seika-list">
-    <h2 id="seika-list" class="anchor">基準値より後退・横ばいの成果指標（{yearLabel(RM_LATEST)}・{fmt(behind.length)}）</h2>
-    <p class="small secondary lead">観光の計画にしか無い指標が多いので、悪い順に並べています。</p>
-    <ul class="row-list">{behind.map((r) => <RmSeikaRow r={r} />)}</ul>
-    <details class="past">
-      <summary>前進している指標など（{fmt(ahead.length)}）</summary>
-      <ul class="row-list">{ahead.map((r) => <RmSeikaRow r={r} />)}</ul>
-    </details>
+    <h2 id="seika-list" class="anchor">成果指標（{yearLabel(RM_LATEST)}・{fmt(seikaAll.length)}）</h2>
+    <p class="small secondary lead">報告書の順です。印は基準値と比べた県の判定（前進・横ばい・後退）です。観光の計画にしか無い指標が多くあります。</p>
+    <ul class="row-list" id="rm-seika" data-more={SEIKA_SHOW}>{seikaAll.map((r) => <RmSeikaRow r={r} />)}</ul>
+    {seikaAll.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="rm-seika" hidden>さらに表示（残り {fmt(seikaAll.length - SEIKA_SHOW)}指標）</button></p>}
   </section>
 
   <section aria-labelledby="progress">
@@ -145,10 +142,12 @@ const ahead = seikaAll.filter((r) => !isBehind(r));
   </section>
 </Base>
 
+<script src="../../../scripts/show-more.ts"></script>
+
 <style>
   .head { display: grid; gap: 8px; margin-top: 12px; }
   .row-list { margin-top: 8px; }
-  .past { margin-top: 14px; }
+  .more-row { margin-top: 14px; }
   .head h1 { margin: 0; }
   .meta { margin: 0; color: var(--ink-2); }
   .says .bubble p { margin: 0 0 4px; }
