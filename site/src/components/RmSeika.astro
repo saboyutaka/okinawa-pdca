@@ -1,6 +1,6 @@
 ---
 // 観光ロードマップの成果指標1つ（施策展開のページ）。施策ページの成果指標のカード（SeikaCard）と同じ並び:
-// ①基準値と比べてどうか（1行） ②スタート → いま → ゴールの数字（時間の順。数字はここに1回だけ） ③道のりの図 ④年度ごとの表と県の説明（畳む）。
+// ①基準値と比べてどうか（1行） ②スタート → いま → ゴールの数字（時間の順。数字はここに1回だけ） ③道のりの図 ④県の説明（吹き出しでいつも出す） ⑤年度ごとの表（畳む）。
 // 観光ロードマップの判定は「前進・横ばい・後退」（基準値との比較）なので、①はそれを印にする。
 // R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.ts（drawSeika）で描く
 import Chip from './Chip.astro';
@@ -85,6 +85,15 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
   {g.pdca.length > 0 && (
     <p class="small note">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, k) => <>{k > 0 && '、'}施策 <a class="sub-link" href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
   )}
+  {x.explanation && (
+    <div class="bubble-row says">
+      <span class="avatar" aria-hidden="true">県</span>
+      <div class="bubble">
+        <div class="small secondary label">県による説明（{yl}{x.dept && `・${x.dept}`}）</div>
+        <p class="prose small">{joinLines(x.explanation)}</p>
+      </div>
+    </div>
+  )}
   <details>
     <summary>表で見る</summary>
     <div class="table-wrap">
@@ -104,12 +113,6 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
     </div>
     <p class="small secondary">基準値 {withUnit(x.base_raw, u)}、目標値（R6） {withUnit(x.target_raw, u)}、達成率 {x.rate_raw || '—'}（{yl}の報告）</p>
   </details>
-  {x.explanation && (
-    <details>
-      <summary>県による説明（{yl}{x.dept && `・${x.dept}`}）</summary>
-      <p class="prose small">{joinLines(x.explanation)}</p>
-    </details>
-  )}
 </article>
 
 <style>
@@ -117,6 +120,8 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
   .scard { margin: 0; }
   .scard h4 { margin: 0; font-size: 1.02rem; line-height: 1.5; }
   .meta { margin: 2px 0 4px; }
+  .says { margin-top: 14px; }
+  .says .prose { margin: 4px 0 0; }
   .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
   .verdict small { font-weight: 400; }
   .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); background: var(--bg); border-radius: 12px; overflow: hidden; }

@@ -1,5 +1,5 @@
 ---
-// 成果指標1つ（施策ページ）。①計画値に届いたか（1行） ②スタート → いま → ゴールの数字（時間の順） ③道のりの図 ④年度ごとの表と県の説明（畳む）
+// 成果指標1つ（施策ページ）。①計画値に届いたか（1行） ②スタート → いま → ゴールの数字（時間の順） ③道のりの図 ④県の説明（吹き出しでいつも出す） ⑤年度ごとの表（畳む）
 // 同じ数字を何度も並べない。数字は②に1回だけ出し、図は形（計画の道すじとのずれ）を見せる
 import SeikaChart from './SeikaChart.astro';
 import Chip from './Chip.astro';
@@ -86,6 +86,15 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
       基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
     </p>
   )}
+  {x.explanation && (
+    <div class="bubble-row says">
+      <span class="avatar" aria-hidden="true">県</span>
+      <div class="bubble">
+        <div class="small secondary label">県による説明（{yl}・{x.dept}）</div>
+        <p class="prose small">{joinLines(x.explanation)}</p>
+      </div>
+    </div>
+  )}
   <details>
     <summary>表で見る</summary>
     <div class="table-wrap">
@@ -113,12 +122,6 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
       </table>
     </div>
   </details>
-  {x.explanation && (
-    <details>
-      <summary>県による説明（{yl}・{x.dept}）</summary>
-      <p class="prose small">{joinLines(x.explanation)}</p>
-    </details>
-  )}
 </article>
 
 <style>
@@ -127,6 +130,8 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
   .meta { margin: -4px 0 4px; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   .note { margin: 6px 0 0; }
+  .says { margin-top: 14px; }
+  .says .prose { margin: 4px 0 0; }
   /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
   td.num { white-space: normal; min-width: 5em; max-width: 14em; }
 </style>
