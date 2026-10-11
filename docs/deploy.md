@@ -51,8 +51,9 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 | 対象 | Cache-Control | 理由 |
 |---|---|---|
 | `/_astro/*` | 1年・immutable | ファイル名に中身のハッシュが付く（CSS・JS・数字のフォント） |
+| `/torikumi/data-*.json` | 1年・immutable | 取組をさがすの検索用データ。ファイル名に中身のハッシュが付く（`lib/search-data.ts`） |
 | ページ（`/` と末尾が `/` の URL） | 5分 | HTML にだけ ETag が付かず、304 で済ませられないため（開くたびに全部を取り直していた） |
-| ほか（`/torikumi/data.json`・favicon など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
+| ほか（検索用データの控えの `/torikumi/data.json`・favicon など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
 
 - HTML に ETag が付かないのは、workers.dev でも独自ドメイン（okinawa-miraima.com）でも同じ。Cloudflare の配信の途中で外れていて、ゾーンの設定では直らない（2026-10-12 に確かめた）。
   - 静的アセットを返す Cloudflare のプログラム（workers-sdk の `asset-worker`）は、HTML にも ETag を付け、`If-None-Match` には 304 を返す作りになっている。その手前の `router-worker` も ETag を外さない。外しているのはその後ろ（ソースは公開されていない）。
