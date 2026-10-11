@@ -130,7 +130,8 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   // 目盛りの単位は1文字（%・人・件など）のときだけ付ける。長い単位はカードの見出しにある
   const u = (unit || '').normalize('NFKC');
   const tickText = (t) => `${nf.format(t)}${u.length === 1 ? u : ''}`;
-  const H = 240;
+  // スマホ幅では低くして、カード1枚が1画面に収まるようにする
+  const H = W < 480 ? 200 : 240;
   const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
   // 文字の幅を測るため、先に置いておく
   wrap.replaceChildren(svg);
@@ -141,7 +142,7 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     t.remove();
     return w;
   };
-  const m = { l: Math.ceil(Math.max(...ticks.map((t) => textW(tickText(t), 'tick')))) + 14, r: 8, t: 50, b: 30 };
+  const m = { l: Math.ceil(Math.max(...ticks.map((t) => textW(tickText(t), 'tick')))) + 14, r: 8, t: W < 480 ? 44 : 50, b: 30 };
   const iw = W - m.l - m.r;
   const ih = H - m.t - m.b;
   const sw = iw / slots.length;
