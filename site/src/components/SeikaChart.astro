@@ -13,7 +13,8 @@ const drawable = years.some((r) => r.actual != null) && years.some((r) => r.targ
 const data = JSON.stringify({ unit, years, latest: row.latest.year === LATEST }).replace(/</g, '\\u003c');
 const periodText = (r) => `${r.y <= 2024 ? '前期' : '中期'}は基準値 ${withUnit(r.base_raw, unit)} から目標値 ${withUnit(r.target_raw, unit)}（${r.target_year}）まで`;
 const periods = [years.filter((r) => r.y <= 2024).pop(), years.filter((r) => r.y >= 2025).pop()].filter(Boolean);
-const aria = `${row.latest.name}のゴールまでの道のり。${periods.map(periodText).join('、')}。${years.map((r) => `${yearLabel(r.y)}報告 実績値 ${withUnit(r.actual_raw, unit)}${r.ref ? `（${r.ref}）` : ''}、計画値 ${withUnit(r.plan_raw[planIndex(r.y)], unit)}`).join('。')}。左右の矢印キーで年度を移れます`;
+// 主要指標には年度ごとの計画値がない（plan_raw が空）
+const aria = `${row.latest.name}のゴールまでの道のり。${periods.map(periodText).join('、')}。${years.map((r) => `${yearLabel(r.y)}報告 実績値 ${withUnit(r.actual_raw, unit)}${r.ref ? `（${r.ref}）` : ''}${r.plan_raw.length ? `、計画値 ${withUnit(r.plan_raw[planIndex(r.y)], unit)}` : ''}`).join('。')}。左右の矢印キーで年度を移れます`;
 ---
 {drawable && (
   <div class="chart seika-chart" data-chart="seika" tabindex="0" role="img" aria-label={aria}>

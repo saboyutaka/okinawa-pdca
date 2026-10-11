@@ -1,0 +1,122 @@
+---
+// 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①県の見通し ②スタート → いま → ゴールの数字（時間の順） ③道のりの図
+// ④4年間の見通し ⑤年度ごとの表（畳む）。主要指標には達成率と年度ごとの計画値がないので、①は県の見通しにし、図には計画の道すじを引かない。
+// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに①〜④を並べる（分け方と、図に置く数の読み取りは lib/data.js の shuyouRows）
+import SeikaChart from './SeikaChart.astro';
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import Stamps from './Stamps.astro';
+import ExtLink from './ExtLink.astro';
+import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink } from '../lib/data.js';
+import { oneLine } from '../lib/text.js';
+
+interface Props { row: any }
+const { row } = Astro.props;
+const x = row.latest;
+const yl = yearLabel(x.year);
+const yearsDesc = [...YEARS].reverse();
+const split = row.parts.length > 1;
+// 計画期間をまたいで基準値・目標値が変わった（R6→R7）
+const prev = yearsDesc.some((y) => y < x.year && row.years[y] && (y <= 2024) !== (x.year <= 2024));
+// 値は数字を大きく、位と単位を小さく出す（「3兆2,885億円」→ 3 兆 2,885 億円）。単位の書かれていない数には指標の単位を添える。文の値はそのまま
+const pieces = (c, p) => {
+  if (c.value == null) return [{ t: c.text, n: true }];
+  const out = c.text.split(/([-△]?\d[\d,.]*)/).filter(Boolean).map((t) => ({ t, n: /\d/.test(t) }));
+  return !c.unit && p.scale === 1 && p.unit ? [...out, { t: p.unit, n: false }] : out;
+};
+---
+<article class="sticker scard">
+  <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+  {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
+
+  {row.parts.map((p) => {
+    const now = p.latest;
+    const judges = judgesOf(now.judgement);
+    const stack = [now.b, now.a, now.t].some((c) => c.value == null && c.text.length > 10);
+    const ref = refText(now.a.note);
+    // 4年間の見通しは、どの年度も決まった言い方（か報告なし）のときだけスタンプにする
+    const plain = YEARS.every((y) => !p.years[y]?.judgement || toneOfJudgement(p.years[y].judgement));
+    return (
+      <div class="part">
+        {split && <h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>}
+        {now.judgement && (
+          <p class="verdict">
+            <span class="small secondary">県の<Term word="見通し" /></span>
+            {judges
+              ? judges.map((j) => <span class="vj">{j.label && <span class="small">{j.label}</span>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
+              : <span class="prose small">{now.judgement}</span>}
+          </p>
+        )}
+        <ol class:list={['goal-steps', stack && 'stack']}>
+          <li>
+            <span class="gs-l">スタート</span>
+            <span class="gs-main"><span class:list={['gs-v', now.b.value == null && 'text']}>{pieces(now.b, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="基準値" />{now.b.note}</span></span>
+          </li>
+          <li class="now">
+            <span class="gs-l">{x.year === LATEST ? 'いま' : `${yl}の報告`}</span>
+            <span class="gs-main"><span class:list={['gs-v', now.a.value == null && 'text']}>{pieces(now.a, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="実績値" note={ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : undefined} /></span></span>
+          </li>
+          <li>
+            <span class="gs-l">ゴール</span>
+            <span class="gs-main"><span class:list={['gs-v', now.t.value == null && 'text']}>{pieces(now.t, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="目標値" />（{now.target_year}）{now.t.note}</span></span>
+          </li>
+        </ol>
+        <SeikaChart row={p} unit={p.scale === 1 ? p.unit : ''} />
+        {plain && (
+          <div class="j-years">
+            <div class="small secondary label">4年間の見通し</div>
+            <Stamps items={YEARS.map((y) => (p.years[y]?.judgement ? { year: y, tone: toneOfJudgement(p.years[y].judgement), text: p.years[y].judgement } : { year: y, tone: null, text: '報告なし' }))} label={`${p.name}の4年間の見通し`} size="small" />
+          </div>
+        )}
+      </div>
+    );
+  })}
+  {prev && (
+    <p class="small secondary note">
+      {yl}から中期<Term word="実施計画" />になり、スタートとゴールが新しくなりました。
+    </p>
+  )}
+  <details>
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">{x.name}の年度別の値</caption>
+        <thead><tr><th>報告年度</th><th>基準値</th><th>実績値</th><th>目標値</th><th>見通し</th><th>出典</th></tr></thead>
+        <tbody>
+          {yearsDesc.map((y) => {
+            const r = row.years[y];
+            if (!r) return <tr><th>{yearLabel(y)}</th><td colspan="5" class="secondary small">この年度の報告に、この指標はありません</td></tr>;
+            const src = sourceLink(r.source, r.page);
+            return (
+              <tr>
+                <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small>{r.name !== x.name && <><br /><small class="secondary">{r.name}</small></>}</th>
+                <td class="small">{oneLine(r.base_raw)}</td>
+                <td>{oneLine(r.actual_raw)}</td>
+                <td class="small">{oneLine(r.target_raw)}<br /><small class="secondary">{y <= 2024 ? 'R6年度' : 'R9年度'}</small></td>
+                <td class="small prose">{r.judgement || '—'}</td>
+                <td class="small">{src ? <ExtLink href={src.href}>{src.label}</ExtLink> : '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</article>
+
+<style>
+  .scard { margin-top: 18px; }
+  .scard h3 { margin-top: 0; }
+  .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
+  /* 男性・女性のように分けた部分は、細い線で区切って名前の見出しを付ける */
+  .part + .part { margin-top: 16px; padding-top: 4px; border-top: 2px solid var(--hair); }
+  .part h4 { margin: 10px 0 0; }
+  /* 文の値（「可能な限り減少させる」など）は数字の字にしない */
+  .gs-v.text { font-family: var(--font); font-size: 0.9375rem; font-weight: 700; }
+  .vj { display: inline-flex; align-items: center; gap: 6px; }
+  .vj :global(.chip) { white-space: normal; }
+  .j-years { max-width: 420px; margin-top: 12px; }
+  .label { font-weight: 700; margin-bottom: 4px; }
+  .note { margin: 6px 0 0; }
+  .scard table { min-width: 560px; }
+</style>

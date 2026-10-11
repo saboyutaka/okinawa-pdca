@@ -5,13 +5,12 @@ import Crumbs from '../../components/Crumbs.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
-import Chip from '../../components/Chip.astro';
-import Stamps from '../../components/Stamps.astro';
+import ShuyouCard from '../../components/ShuyouCard.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { oneLine } from '../../lib/text.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getKihonList, getShouraizou, getShisakuList, getShuyou, sourceLink, toneOfJudgement,
+  getKihonList, getShouraizou, getShisakuList, shuyouRows, sourceLink,
 } from '../../lib/data.js';
 
 export function getStaticPaths() {
@@ -22,27 +21,14 @@ const k = getKihonList().find((x) => x.id === Astro.params.id);
 const shou = getShouraizou().find((x) => x.id === k.shouraizou);
 const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
 const statusKeys = STATUSES.map((x) => x.key);
-const shuyou = getShuyou(k.id);
-const yearsDesc = [...YEARS].reverse();
 const src = k.source && sourceLink(k.source, k.page);
 
-// 主要指標。最新の報告の指標ごとに、4年分の行を名前で結び付ける（名前が少し変わった年度は、その年度の指標が1つだけなら同じ指標とみなす）。
-// どの札にも結び付かなかった行（最新の報告に無い指標）も、名前ごとに1枚の札にして、ページから落とさない
-const latestShuyou = shuyou.filter((r) => r.year === LATEST);
-const used = new Set();
-const cardOf = (r, single) => ({
-  latest: r,
-  years: YEARS.map((y) => {
-    const ys = shuyou.filter((x) => x.year === y && !used.has(x));
-    const x = y === r.year ? r : ys.find((x) => x.name === r.name) || (single && ys.length === 1 ? ys[0] : null);
-    if (x) used.add(x);
-    return x;
-  }),
-});
-const shuyouCards = latestShuyou.map((r) => cardOf(r, latestShuyou.length === 1));
-for (const r of [...shuyou].sort((a, b) => b.year - a.year)) if (!used.has(r)) shuyouCards.push(cardOf(r, false));
-// 目標値の年度（前期実施計画は R6、中期実施計画は R9）
-const targetYearOf = (y) => (y <= 2024 ? 'R6' : 'R9');
+// 主要指標（年度をまたいだ指標ごと）。最新の報告で使われなくなった指標は、施策ページの成果指標と同じく畳んで後ろに置く
+const shuyou = shuyouRows(k.id);
+const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
+const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
+// 図を描ける（実績値と目標値が数で読める）部分があるときだけ凡例を出す
+const drawable = shuyou.some((r) => r.parts.some((p) => Object.values(p.years).some((y) => y.actual != null) && Object.values(p.years).some((y) => y.target != null)));
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -68,57 +54,23 @@ const progressRows = YEARS.map((y) => ({
   </header>
 
   <section aria-labelledby="shuyou">
-    <h2 id="shuyou"><Term word="主要指標" /></h2>
-    <p class="small secondary lead">見通しは、目標値（R7からはR9、R6まではR6）に届くかの県の見立てです。</p>
-    {shuyouCards.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
-    {shuyouCards.map(({ latest: r, years }) => {
-      const tone = toneOfJudgement(r.judgement);
-      // 見通しが「策定率:目標達成 改定率:…」のように決まった言い方でないときは、スタンプにせず文章のまま出す
-      const plain = years.every((x) => !x?.judgement || toneOfJudgement(x.judgement));
-      return (
-        <article class="sticker s-card">
-          <h3>{r.name}{r.year !== LATEST && <small class="past-badge">{yearLabel(r.year)}の報告まで</small>}</h3>
-          <dl class="kv">
-            <div><dt>基準値</dt><dd>{oneLine(r.base_raw)}</dd></div>
-            <div><dt>実績値（{yearLabel(r.year)}報告）</dt><dd class="big">{oneLine(r.actual_raw)}</dd></div>
-            <div><dt>目標値（{targetYearOf(r.year)}）</dt><dd>{oneLine(r.target_raw)}</dd></div>
-            <div class="kv-j"><dt>見通し</dt><dd>{!r.judgement ? '—' : tone ? <Chip tone={tone} text={r.judgement} /> : <span class="prose small">{r.judgement}</span>}</dd></div>
-          </dl>
-          {plain && (
-            <div class="j-years">
-              <div class="small secondary label">4年間の見通し</div>
-              <Stamps items={YEARS.map((y, i) => (years[i]?.judgement ? { year: y, tone: toneOfJudgement(years[i].judgement), text: years[i].judgement } : { year: y, tone: null, text: '報告なし' }))} label="4年間の見通し" size="small" />
-            </div>
-          )}
-          <details>
-            <summary>表で見る</summary>
-            <div class="table-wrap">
-              <table>
-                <caption class="sr-only">{r.name}の年度別の値</caption>
-                <thead><tr><th>報告年度</th><th>基準値</th><th>実績値</th><th>目標値</th><th>見通し</th><th>出典</th></tr></thead>
-                <tbody>
-                  {yearsDesc.map((y) => {
-                    const x = years[YEARS.indexOf(y)];
-                    if (!x) return <tr><th>{yearLabel(y)}</th><td colspan="5" class="secondary small">この年度の報告に、この指標はありません</td></tr>;
-                    const s2 = sourceLink(x.source, x.page);
-                    return (
-                      <tr>
-                        <th>{yearLabel(y)}{x.name !== r.name && <><br /><small class="secondary">{x.name}</small></>}</th>
-                        <td class="small">{oneLine(x.base_raw)}</td>
-                        <td>{oneLine(x.actual_raw)}</td>
-                        <td class="small">{oneLine(x.target_raw)}</td>
-                        <td class="small prose">{x.judgement || '—'}</td>
-                        <td class="small">{s2 ? <ExtLink href={s2.href}>{s2.label}</ExtLink> : '—'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </article>
-      );
-    })}
+    <h2 id="shuyou"><Term word="主要指標" />：ゴールまでの道のり</h2>
+    <p class="small secondary lead">スタートの基準値からゴールの目標値へ、青い点の実績値がどこまで進んだかを見ます。</p>
+    {drawable && (
+      <ul class="chart-key" aria-hidden="true">
+        <li><span class="k-ring"></span>ゴールの目標値</li>
+        <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+      </ul>
+    )}
+    {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
+    {shuyouLatest.map((row) => <ShuyouCard row={row} />)}
+    {shuyouPast.length > 0 && (
+      <details class="past">
+        <summary>R6まで使われていた主要指標（{shuyouPast.length}）</summary>
+        {shuyouPast.map((row) => <ShuyouCard row={row} />)}
+      </details>
+    )}
+    {drawable && <p class="small secondary">主要指標には、成果指標のような年度ごとの計画値がないため、図に計画の道すじ（点線）はありません。</p>}
   </section>
 
   <section aria-labelledby="progress">
@@ -152,14 +104,7 @@ const progressRows = YEARS.map((y) => ({
   .k-head h1 { margin: 2px 0 10px; }
   .kind { font-size: 0.9375rem; color: var(--ink-2); }
   .label { font-weight: 700; margin-bottom: 4px; }
+  .past { margin-top: 18px; }
   .says .first { margin: 4px 0 0; }
-  /* 主要指標。最新の値と見通しを大きく出し、4年間の見通しはスタンプ、年度ごとの値と出典は表に畳む */
-  .s-card { display: grid; gap: 12px; margin-top: 12px; }
-  .s-card h3 { margin: 0; }
-  .past-badge { font-family: var(--font); font-size: 0.8125rem; font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); vertical-align: 0.1em; }
-  .kv-j :global(.chip) { font-weight: 700; white-space: normal; }
-  .j-years { max-width: 420px; }
-  .s-card details { margin: 0; }
-  .s-card table { min-width: 560px; }
   .report-no { white-space: nowrap; }
 </style>
