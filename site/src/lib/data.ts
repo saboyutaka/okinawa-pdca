@@ -804,6 +804,96 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
   return named ? { ...named, matchedByName: true } : undefined;
 }
 
+// 活動指標の計画・実績の「10件」「10件（20件）」の先頭の数と単位（かっこの中は累計や内訳）。「△0.0015t-CO₂/千㎥」の △ は減らす量。数で始まらなければ null
+// 単位は NFKC で比べる（「t-CO₂」の ₂ も 2 になるので、単位の中の数字も単位に入れる）
+export function activityQty(raw: string | null | undefined) {
+  const m = (raw || '').normalize('NFKC').match(/^([-−△▲]?)\s*([\d,.]+)\s*([^\s（(→]*)/);
+  const v = m ? Number(m[2].replace(/,/g, '')) * (m[1] ? -1 : 1) : NaN;
+  return m && Number.isFinite(v) ? { v, u: m[3] } : null;
+}
+// 画面に出す単位は報告書の文字のまま（₂ や ㎥ を崩さない）
+const activityUnitText = (raw: string) => raw.match(/^[-−△▲－]?\s*[\d０-９,，.．]+\s*([^\s（(→]*)/)?.[1] ?? '';
+// 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「計画 10件 → 実績 54件」のように同じ単位の数から計算する
+export function activityAchievement(g: TorikumiGroup, y: number) {
+  const raw = budgetOf(y, g.shisaku.id, g.key)?.achievement ?? '';
+  const m = raw.normalize('NFKC').match(/(-?[\d,.]+)\s*%/);
+  if (m) return { pct: Number(m[1].replace(/,/g, '')), text: raw };
+  const r = g.years[y];
+  const a = activityQty(r?.actual);
+  const b = activityQty(r?.target);
+  return a && b && b.v > 0 && a.u === b.u ? { pct: (a.v / b.v) * 100, text: `${Math.round((a.v / b.v) * 100)}%（計算）` } : null;
+}
+
+// 活動指標の1年分。future は部局票の年度別計画にだけある、この先の年度（実績はまだ無い）
+export interface ActivityYear {
+  y: number;
+  plan_raw: string; // 計画（総括報告書の「目標」。future は年度別計画）
+  actual_raw: string;
+  plan: number | null; // 図に置く、かっこの前のその年度の数（単位がそろわない値は null）
+  actual: number | null;
+  status: string; // 進捗状況（future は ''）
+  ach: string; // 達成割合（無ければ ''）
+  future: boolean;
+}
+export interface ActivityRun {
+  indicator: string;
+  unit: string;
+  years: ActivityYear[];
+  chart: boolean; // 図に置ける実績があるか
+  skipped: boolean; // 書いてあるのに数で読めず、図に入れなかった値があるか
+  cumulative: boolean; // かっこの中に累計や内訳が書いてある値があるか
+  planFrom: string; // future の出どころ（無ければ ''）
+}
+const blankCell = (s: string) => !/[^\s\-－―—‐]/.test(s);
+// 取組の活動指標を、同じ活動指標が続く年度ごとにまとめる（新しい活動指標が先。R7の中期実施計画で入れ替わったものが多い）。
+// 最新の報告にある取組には、部局票の年度別計画から、この先の年度（R8・R9）の計画も足す
+export function activityRuns(g: TorikumiGroup): ActivityRun[] {
+  const runs: { indicator: string; years: Omit<ActivityYear, 'plan' | 'actual'>[] }[] = [];
+  for (const y of YEARS) {
+    const r = g.years[y];
+    if (!r) continue;
+    const indicator = r.indicator || budgetOf(y, g.shisaku.id, g.key)?.indicator_name || '';
+    const row = { y, plan_raw: r.target, actual_raw: r.actual, status: statusOf(r), ach: activityAchievement(g, y)?.text ?? '', future: false };
+    const last = runs.at(-1);
+    if (last && nameKey(last.indicator) === nameKey(indicator)) last.years.push(row);
+    else runs.push({ indicator, years: [row] });
+  }
+  // 年度別計画の行は、活動指標の名前が同じもの。名前が違っても、行が1つで最新の年度の値が総括報告書の計画と同じなら使う
+  let planFrom = '';
+  const cur = runs.at(-1);
+  const rec = g.latest.year === LATEST ? budgetOf(LATEST, g.shisaku.id, g.key) : undefined;
+  if (cur && rec?.plan.length) {
+    const ys = rec.plan_years.map((l) => Number(l.normalize('NFKC').replace(/\D/g, '')) + 2018);
+    const i = ys.indexOf(LATEST);
+    const p = rec.plan.find((x) => nameKey(x.indicator) === nameKey(cur.indicator))
+      ?? (rec.plan.length === 1 && i >= 0 && nameKey(rec.plan[0].values[i] ?? '') === nameKey(g.latest.target) ? rec.plan[0] : undefined);
+    ys.forEach((y, k) => {
+      const v = p?.values[k] ?? '';
+      if (y > LATEST && !blankCell(v)) cur.years.push({ y, plan_raw: v, actual_raw: '', status: '', ach: '', future: true });
+    });
+    if (cur.years.some((r) => r.future)) planFrom = `${yearLabel(LATEST)}の部局の検証票の「年度別計画」`;
+  }
+  return runs.reverse().map((run, k) => {
+    // 単位は、数で読めた値でいちばん多いもの
+    const count = new Map<string, number>();
+    for (const r of run.years) for (const q of [activityQty(r.plan_raw), activityQty(r.actual_raw)]) if (q) count.set(q.u, (count.get(q.u) ?? 0) + 1);
+    const unit = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    const val = (raw: string) => { const q = activityQty(raw); return q && q.u === unit ? q.v : null; };
+    const years = run.years.map((r) => ({ ...r, plan: val(r.plan_raw), actual: val(r.actual_raw) }));
+    const chart = years.some((r) => r.actual != null);
+    const unitRaw = years.flatMap((r) => [r.actual_raw, r.plan_raw]).find((raw) => val(raw) != null);
+    return {
+      indicator: run.indicator,
+      unit: unitRaw ? activityUnitText(unitRaw) : unit,
+      years,
+      chart,
+      skipped: chart && years.some((r) => (!blankCell(r.plan_raw) && r.plan == null) || (!blankCell(r.actual_raw) && r.actual == null)),
+      cumulative: chart && years.some((r) => /[（(]/.test(r.plan_raw + r.actual_raw)),
+      planFrom: k === 0 ? planFrom : '',
+    };
+  });
+}
+
 // 予算事業の金額を1行ずつに平らにしたもの
 export interface BudgetLine {
   report: number; // 報告年度
