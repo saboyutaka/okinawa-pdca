@@ -33,7 +33,7 @@ const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s
 <style>
   .sbar { display: flex; gap: 2px; height: 24px; width: 100%; padding: 2px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
   .sbar.mini { height: 14px; padding: 1.5px; border-width: 1.5px; gap: 1.5px; }
-  .seg { flex-basis: 0; min-width: 3px; background-color: var(--tone); display: flex; align-items: center; padding-left: 8px; }
+  .seg { flex-basis: 0; min-width: 3px; background-color: var(--tone); display: flex; align-items: center; padding-left: 8px; container-type: inline-size; }
   .mini .seg { min-width: 2px; padding: 0; }
   .seg:first-child { border-radius: 999px 0 0 999px; }
   .seg:last-child { border-radius: 0 999px 999px 0; }
@@ -41,4 +41,6 @@ const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s
   .seg:hover { filter: brightness(1.1); }
   /* 塗りの上の文字は塗りの明るさで決める（青緑・黄・橙は濃い文字が読める） */
   .seg-label { color: var(--on-fill); font-family: var(--font-num); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+  /* 棒が短い（スマホで名前と同じ行に置いたときなど）と割合の文字が隣の区間にはみ出すので、区間の幅が足りなければ書かない */
+  @container (max-width: 40px) { .seg-label { display: none; } }
 </style>
