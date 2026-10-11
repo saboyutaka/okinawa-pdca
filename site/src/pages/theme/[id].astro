@@ -6,12 +6,16 @@ import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
 import Chunk from '../../components/Chunk.astro';
 import Sz from '../../components/Sz.astro';
+import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import { LATEST, yearLong, rateBin, countBy, getShisakuList, getShouraizou, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
+import { LATEST, yearLong, rateBin, seikaHref, countBy, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
 import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
 import { fmt, pct } from '../../lib/format.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
+import SeikaRow from '../../components/SeikaRow.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
+import Term from '../../components/Term.astro';
 
 export function getStaticPaths() {
   return getThemes().map((t) => ({ params: { id: t.id }, props: { t } }));
@@ -28,38 +32,50 @@ const toriOk = tori.filter((g) => g.statuses[g.statuses.length - 1] === '順調'
 const delay3 = groups.filter((g) => g.patterns.includes('delay3')).length;
 const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && themeIdsOfItem(r.shisaku.id, r.latest.name).includes(t.id));
 const seikaOk = seika.filter((r) => rateBin(r.latest) === '100%以上').length;
+// 成果指標の一覧は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
+const SEIKA_SHOW = 10;
 const judgeCounts = countBy(items, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
-const visions = getShouraizou().map((v) => ({ ...v, items: items.filter((s) => s.shouraizou === v.id) })).filter((v) => v.items.length);
+// 一覧は将来像 › 基本施策の見出しの下に施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
+const kihonList = getKihonList();
+const visions = getShouraizou()
+  .map((v) => {
+    const vItems = items.filter((s) => s.shouraizou === v.id);
+    const kihon = kihonList.map((k) => ({ ...k, items: vItems.filter((s) => s.kihon_id === k.id) })).filter((k) => k.items.length);
+    return { ...v, n: vItems.length, kihon };
+  })
+  .filter((v) => v.n);
+const nKihon = visions.reduce((n, v) => n + v.kihon.length, 0);
 // マス目を押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く
 const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`}>
-  <nav class="breadcrumb"><a href="/">トップ</a> › <a href="/#themes">くらしのテーマ</a> › {t.label}</nav>
-  <header class="t-head">
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} />
+  <header class="sticker lift t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-    <div>
+    <div class="t-title">
+      <div class="kind">くらしのテーマ</div>
       <h1>{t.label}<span class="own">このサイト独自の分類</span></h1>
-      <p class="small secondary">県の計画の分類ではありません。施策の名前・施策展開・基本施策の名前に「{t.words.join('」「')}」のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標（名前にこれらの言葉を含むものも）です（<a href="/about/#theme">テーマの決め方</a>）。</p>
     </div>
+    <p class="small secondary t-desc">施策・施策展開・基本施策の名前に{t.words.map((w) => <span class="nw">「{w}」</span>)}のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標です（<a href="/about/#theme">テーマの決め方</a>）。</p>
   </header>
 
   <div class="facts">
     <div class="sticker fact">
-      <div class="tile-label">施策</div>
+      <div class="tile-label">このテーマの施策</div>
       <div class="tile-value">{fmt(items.length)}<small>施策</small></div>
-      <div class="tile-sub">成果が遅れている（C・D）のは {fmt((judgeCounts.C || 0) + (judgeCounts.D || 0))}。<a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a></div>
+      <div class="tile-sub">将来像{fmt(visions.length)}つ・基本施策{fmt(nKihon)}にまたがります。<a class="nw" href="#list-h">一覧を見る</a></div>
     </div>
     <div class="sticker fact">
-      <div class="tile-label">主な取組のうち「順調」（{yearLong(LATEST)}）</div>
+      <div class="tile-label">主な取組のうち「順調」<span class="nw">（{yearLong(LATEST)}）</span></div>
       <div class="tile-value">{pct(toriOk, tori.length)}</div>
       <Chunk frac={tori.length ? toriOk / tori.length : 0} label={`主な取組 ${tori.length}件のうち順調 ${toriOk}件`} thin />
-      <div class="tile-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件。<a href={`/torikumi/?theme=${t.id}`}>取組をさがす</a>{delay3 > 0 && <>・<a href={`/torikumi/?theme=${t.id}&pat=delay3`}>3年以上遅れ {fmt(delay3)}件</a></>}</div>
+      <div class="tile-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件。<a class="nw" href={`/torikumi/?theme=${t.id}`}>取組をさがす</a>{delay3 > 0 && <>・<a class="nw" href={`/torikumi/?theme=${t.id}&pat=delay3`}>3年以上遅れ {fmt(delay3)}件</a></>}</div>
     </div>
     <div class="sticker fact">
-      <div class="tile-label">成果指標のうち計画値に到達（{yearLong(LATEST)}）</div>
+      <div class="tile-label">成果指標のうち計画値に到達<span class="nw">（{yearLong(LATEST)}）</span></div>
       <div class="tile-value">{pct(seikaOk, seika.length)}</div>
       <Chunk frac={seika.length ? seikaOk / seika.length : 0} label={`成果指標 ${seika.length}のうち計画値に到達 ${seikaOk}`} thin />
-      <div class="tile-sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標。<a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a></div>
+      <div class="tile-sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標。<a class="nw" href="#seika-h">一覧を見る</a></div>
     </div>
   </div>
 
@@ -67,32 +83,67 @@ const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
-    <p class="small secondary">マスを押すと、このテーマとその判定で絞り込んだ施策の一覧を開きます。</p>
+    <p class="small secondary">取組は進んでいるのに成果が遅れている施策（C・D）は{fmt((judgeCounts.C || 0) + (judgeCounts.D || 0))}です。マスを押すと、このテーマとその判定で絞り込んだ施策の一覧を開きます。</p>
     <JudgeMatrix counts={judgeCounts} caption={`「${t.label}」の${fmt(items.length)}施策`} hrefOf={listHref} />
   </section>
 
   <section aria-labelledby="list-h">
-    <h2 id="list-h">施策（{fmt(items.length)}）</h2>
+    <h2 id="list-h" class="anchor">施策（{fmt(items.length)}）</h2>
     <p class="small"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
     <JudgeLegend />
     {visions.map((v) => (
       <>
-        <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a>（{v.items.length}）</h3>
-        <ul class="row-list">
-          {v.items.map((s) => <ShisakuItem s={s} kihon />)}
-        </ul>
+        {/* 件数は名前の最後の行に続けて置き、数字の途中で折り返さない */}
+        <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a><span class="n">（{v.n}）</span></span></h3>
+        {v.kihon.map((k) => (
+          <>
+            <h4 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></h4>
+            <ul class="row-list">
+              {k.items.map((s) => <ShisakuItem s={s} />)}
+            </ul>
+          </>
+        ))}
       </>
     ))}
   </section>
+
+  {seika.length > 0 && (
+    <section aria-labelledby="seika-h">
+      <h2 id="seika-h" class="anchor">成果指標（{fmt(seika.length)}）</h2>
+      <p class="small"><a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
+      <p class="small secondary">{yearLong(LATEST)}の報告にある指標です。右の札は<Term word="達成率" />です。</p>
+      <SeikaKey mini />
+      <ul class="row-list" id="theme-seika" data-more={SEIKA_SHOW}>
+        {seika.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
+      </ul>
+      {seika.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="theme-seika" hidden>さらに表示（残り {fmt(seika.length - SEIKA_SHOW)}指標）</button></p>}
+    </section>
+  )}
 </Base>
 
+<script src="../../scripts/show-more.ts"></script>
+
 <style>
-  .t-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; align-items: center; margin-top: 8px; }
+  /* アイコンと名前を1行に並べ、説明はその下に置く（スマホでは説明を全幅に広げる） */
+  .t-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: 'ico title' '. desc'; gap: 6px 16px; align-items: center; margin-top: 12px; }
+  .t-head .ico { grid-area: ico; }
+  .t-title { grid-area: title; min-width: 0; }
+  .t-desc { grid-area: desc; margin: 0; }
+  .kind { font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .t-head h1 { margin: 0; }
-  .t-head p { margin: 4px 0 0; }
   .ico { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--pink); border: 2.5px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
   .ico :global(.theme-ic) { width: 36px; height: 36px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
   .fact { display: grid; gap: 4px; align-content: start; }
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
+  .sz-ribbon .n { white-space: nowrap; }
+  .k-h { font-size: 1rem; margin: 1.2em 0 0.5em; }
+  .sz-ribbon + .k-h { margin-top: 0.8em; }
+  .nw { white-space: nowrap; }
+  .more-row { margin-top: 14px; }
+  @media (max-width: 520px) {
+    .t-head { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: 'ico title' 'desc desc'; gap: 10px 12px; }
+    .ico { width: 52px; height: 52px; }
+    .ico :global(.theme-ic) { width: 30px; height: 30px; }
+  }
 </style>

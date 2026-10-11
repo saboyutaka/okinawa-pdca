@@ -2,6 +2,7 @@
 // 施策の判定（A〜G）のマス目。縦は主な取組のうち「順調」の割合、横は成果指標の達成率（境目は40%と80%）。
 // B は3マスにまたがるので、真ん中のマスにだけ件数を書く。マスを押すと、その判定の施策の一覧を開く。
 // 判定の意味はマスの短い言い方と縦横の見出しで読めるので、凡例は付けない（C と D の違いは行、E と F の違いは列で分かる）
+// スマホでは縦書きの軸の名前が長くて窮屈なので、横書きにして「よこ」「たて」を付け、マス目の上に2行で並べる
 import Icon from './Icon.astro';
 import { judgeOf } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
@@ -14,9 +15,9 @@ const GRID = [['A', 'B', 'C'], ['B', 'B', 'D'], ['E', 'F', 'G']];
 ---
 <figure class="matrix-fig sticker">
   <figcaption class="mx-cap">{caption}</figcaption>
-  <div class="mx-xtitle" aria-hidden="true">成果指標の達成率（左ほど高い）</div>
+  <div class="mx-xtitle" aria-hidden="true"><span class="mx-ax">よこ</span><span>成果指標の達成率<span class="nw">（左ほど高い）</span></span></div>
   <div class="mx-body">
-    <div class="mx-ytitle" aria-hidden="true">主な取組のうち「順調」の割合（上ほど高い）</div>
+    <div class="mx-ytitle" aria-hidden="true"><span class="mx-ax">たて</span><span>主な取組のうち「順調」の割合<span class="nw">（上ほど高い）</span></span></div>
     <div class="matrix">
       <div class="mx-hd" aria-hidden="true"></div>
       {AX.map((a) => <div class="mx-hd" aria-hidden="true">成果<br />{a}</div>)}
@@ -54,6 +55,7 @@ const GRID = [['A', 'B', 'C'], ['B', 'B', 'D'], ['E', 'F', 'G']];
   .mx-xtitle { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); text-align: center; margin-left: calc(2em + 5em + 14px); }
   .mx-body { display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 8px; margin-top: 4px; }
   .mx-ytitle { writing-mode: vertical-rl; font-size: 0.875rem; font-weight: 700; color: var(--ink-2); justify-self: center; align-self: center; letter-spacing: 0.08em; }
+  .mx-ax { display: none; }
   .matrix { display: grid; grid-template-columns: 5em repeat(3, minmax(0, 1fr)); gap: 6px; }
   .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; }
   .mcell {
@@ -72,7 +74,12 @@ const GRID = [['A', 'B', 'C'], ['B', 'B', 'D'], ['E', 'F', 'G']];
   .mn small { font-family: var(--font); font-size: 0.8125rem; font-weight: 700; margin-left: 2px; }
   @media (max-width: 600px) {
     .matrix { grid-template-columns: 3.4em repeat(3, minmax(0, 1fr)); gap: 4px; }
-    .mx-xtitle { margin-left: calc(2em + 3.4em + 12px); }
+    /* 折り返したときは「よこ」「たて」の札の右にそろえる */
+    .mx-xtitle, .mx-ytitle { display: flex; align-items: baseline; writing-mode: horizontal-tb; justify-self: start; text-align: left; margin-left: 0; letter-spacing: 0; line-height: 1.5; }
+    .nw { white-space: nowrap; }
+    .mx-body { grid-template-columns: minmax(0, 1fr); gap: 2px; margin-top: 0; }
+    .matrix { margin-top: 8px; }
+    .mx-ax { display: inline-block; flex: none; font-size: 0.75rem; color: var(--ink); background: var(--bg); border-radius: 6px; padding: 0 6px; margin-right: 6px; }
     .mcell { min-height: 84px; padding: 8px; }
     .ms { font-size: 0.75rem; line-height: 1.35; }
     .ms .b3 { display: none; }
