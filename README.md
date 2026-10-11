@@ -58,4 +58,4 @@ make extract       # PDF を読んで data/extracted を作り直し、公表値
 
 ## 公開
 
-main に push すると Cloudflare Workers でビルドして公開される（[docs/deploy.md](docs/deploy.md)）。
+公開先は https://okinawa-miraima.com/ 。main に push すると Cloudflare Workers でビルドして公開される（[docs/deploy.md](docs/deploy.md)）。
