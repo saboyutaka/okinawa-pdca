@@ -84,9 +84,7 @@ body {
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
-/* 文章の最後の行に1〜2文字だけ落ちる（「…見通しで / す。」）のを避ける（見出しは balance）。段落など文章のかたまりだけに付ける
-   （一覧の行や表のセルまで付けると、大きな一覧のページで折り返しの計算が重くなるため）。対応していないブラウザでは今までどおり */
-p, dd, figcaption, summary { text-wrap: pretty; }
+/* 文章に text-wrap: pretty は付けない。iOS の Safari は段落の全部の行の長さをそろえるので、どの行も早めに折り返されて右が空く */
 a { color: var(--link); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
 a:hover { text-decoration-thickness: 2.5px; }
 /* リンクは3種類。文章の中のリンクは上の青と下線のまま（黒の太字にすると強調と見分けがつかないため）。
@@ -337,6 +335,12 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 }
 /* ステッカーの中の吹き出しは影を付けない（箱の中の箱を浮かせない） */
 .sticker .bubble { box-shadow: none; }
+/* スマホでは印を上に置き、吹き出しを上から出す（横に並べると印の分だけ本文の幅が狭くなるため）。尾は印の真ん中の下に置く */
+@media (max-width: 640px) {
+  .bubble-row { flex-direction: column; gap: 14px; }
+  .bubble { flex: none; align-self: stretch; }
+  .bubble::before { left: 12px; top: -11px; border-bottom: 0; border-top: 2px solid var(--line); }
+}
 
 /* ツールチップ（scripts/tooltip.js・scripts/charts.js） */
 .tooltip {
@@ -361,6 +365,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 }
 .termpop-title { font-family: var(--font-display); font-weight: 700; }
 .termpop p { margin: 4px 0 0; }
+.termpop .termpop-note { margin-top: 8px; font-weight: 700; }
 .termpop a { font-size: 0.875rem; }
 .termpop-close { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
 
@@ -470,3 +475,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .k-sq { width: 10px; height: 10px; background: var(--k); border: 1.5px solid var(--line); }
 .k-ring { width: 11px; height: 11px; border-radius: 50%; border: 2.5px solid var(--ink-2); }
 .k-line { width: 16px; height: 3px; background: var(--k); }
+/* 成果指標の計画の道すじ（charts.js の drawSeika の点線） */
+.k-path { width: 18px; height: 0; border-top: 2px dashed var(--ink-2); }
+.chart .here { fill: var(--ink); }

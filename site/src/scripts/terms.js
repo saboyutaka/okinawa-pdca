@@ -1,4 +1,5 @@
-// 用語（components/Term.astro）を押すと、短い説明を吹き出しで出す。Esc か「×」で閉じ、押したボタンにフォーカスを戻す
+// 用語（components/Term.astro）を押すと、短い説明を吹き出しで出す。その場所だけの一言（data-term-note）があれば説明の下に足す。
+// Esc か「×」で閉じ、押したボタンにフォーカスを戻す
 import { TERMS } from '../lib/terms.js';
 
 let pop;
@@ -15,6 +16,8 @@ function build() {
   title.className = 'termpop-title';
   title.id = 'termpop-title';
   const body = document.createElement('p');
+  const note = document.createElement('p');
+  note.className = 'termpop-note';
   const link = document.createElement('a');
   link.href = '/about/#yougo';
   link.textContent = '用語の一覧';
@@ -24,7 +27,7 @@ function build() {
   close.setAttribute('aria-label', '用語の説明を閉じる');
   close.textContent = '×';
   close.addEventListener('click', () => closePop());
-  pop.append(title, body, link, close);
+  pop.append(title, body, note, link, close);
   document.body.append(pop);
 }
 function open(btn) {
@@ -34,6 +37,9 @@ function open(btn) {
   const word = btn.dataset.term;
   pop.querySelector('.termpop-title').textContent = `${word}とは`;
   pop.querySelector('p').textContent = TERMS[word] || '';
+  const note = pop.querySelector('.termpop-note');
+  note.textContent = btn.dataset.termNote || '';
+  note.hidden = !btn.dataset.termNote;
   pop.hidden = false;
   const r = btn.getBoundingClientRect();
   const w = pop.offsetWidth;

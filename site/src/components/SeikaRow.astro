@@ -2,7 +2,7 @@
 // 成果指標の一覧の1行（成果指標をさがす・部局のページ。親は ul.row-list）。
 // 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・くらしのテーマは絞り込みと施策のページに任せる
 import Chip from './Chip.astro';
-import { LATEST, yearLabel, RATE_BINS, rateBin, toneOfJudgement, withUnit } from '../lib/data.js';
+import { LATEST, yearLabel, RATE_BINS, rateBin, toneOfJudgement, withUnit, refText } from '../lib/data.js';
 
 interface Props { x: any; shisaku: any; href: string; attrs?: Record<string, string> }
 const { x, shisaku: s, href, attrs = {} } = Astro.props;
@@ -24,7 +24,7 @@ const past = x.year !== LATEST;
   </div>
   <div class="vals small">
     <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
-    <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{x.actual_ref_year && <span class="secondary">（{x.actual_ref_year}の値）</span>}</span>
+    <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{refText(x.actual_ref_year) && <span class="secondary">（{refText(x.actual_ref_year)}）</span>}</span>
     <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
   </div>
   {s && <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}

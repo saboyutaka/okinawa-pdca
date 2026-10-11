@@ -25,6 +25,12 @@ export const planLabel = (y) => (y <= 2024 ? '前期実施計画（R4〜R6）' :
 export const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
 // 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
 export const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+// 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
+// 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
+export const refText = (raw) => {
+  const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
+  return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
+};
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES = [
@@ -209,7 +215,7 @@ export function seikaKeyOf(row) {
 export const DELAYS = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
 // 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
-// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・トップと将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
+// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・将来像の「今年のできごと」・トップの文章・テーマと部局の件数で、
 // 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
 const isDelay = (x) => DELAYS.has(x);
 export const PATTERNS = {

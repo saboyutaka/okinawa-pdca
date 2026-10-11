@@ -69,6 +69,7 @@ data/
 
 - `raw/` は不変。抽出結果は必ず `manifest.jsonl` の `file_url`（＋PDFページ番号）を出典として持つ。
 - PDF・zip・HTMLはリポジトリに含めない（`.gitignore`）。`manifest.jsonl`・`pages.jsonl` はコミットする。
+- 別の PC へは `data/raw` を zip にして移す（[docs/new-pc.md](docs/new-pc.md)）。台帳とそろったかは `python3 scripts/check_raw.py` で確かめる。
 
 ## 抽出（総括報告書 R4〜R7）
 
