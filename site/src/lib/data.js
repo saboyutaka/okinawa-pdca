@@ -218,10 +218,10 @@ export function seikaAnchor(shisakuId, key) {
   return seikaIndex.get(shisakuId).get(key) || 'seika';
 }
 export const seikaHref = (shisakuId, key) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
-// 成果指標1件（seika.json の行）から、年度をまたいだまとまりの key を求める
-export function seikaKeyOf(row) {
+// 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
+export function seikaGroupOf(row) {
   const s = getShisaku(row.shisaku_id);
-  return s ? seikaRows(s).find((r) => r.years[row.year] === row)?.key : undefined;
+  return s ? seikaRows(s).find((r) => r.years[row.year] === row) : undefined;
 }
 
 // ---------------------------------------------------------------- 年度をまたいだ取組・成果指標

@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
@@ -76,6 +77,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
     <Term word="達成率" />はその年度の計画値に対する割合、見通しは目標値に届くかの県の見立てです。
     目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
   </p>
+  <SeikaKey mini />
 
   <div id="seika-list">
     {kihon.map((k) => {
@@ -90,6 +92,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
               return (
                 <SeikaRow
                   x={x}
+                  row={r}
                   shisaku={r.shisaku}
                   href={seikaHref(r.shisaku.id, r.key)}
                   attrs={{

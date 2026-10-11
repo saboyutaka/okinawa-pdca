@@ -6,12 +6,13 @@ import Chip from '../../components/Chip.astro';
 import Stamps from '../../components/Stamps.astro';
 import Sz from '../../components/Sz.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, toneOfStatus,
-  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaKeyOf,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
 } from '../../lib/data.js';
 import { yen } from '../../lib/format.js';
@@ -167,14 +168,17 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
     {seikaLatest.length > 0 && (
       <div class="anchor" id="seika-list" data-group>
         <h3>{yearLong(LATEST)}の成果指標（<span data-group-count>{fmt(seikaLatest.length)}</span>）</h3>
+        <SeikaKey mini />
         <ul class="row-list">
           {seikaLatest.map((x) => {
             const s = shisakuById.get(x.shisaku_id);
+            const row = seikaGroupOf(x);
             return (
               <SeikaRow
                 x={x}
+                row={row}
                 shisaku={s}
-                href={seikaHref(x.shisaku_id, seikaKeyOf(x))}
+                href={seikaHref(x.shisaku_id, row?.key)}
                 attrs={{ 'data-item': '', 'data-theme': themeIdsOfItem(x.shisaku_id, x.name).join('|'), 'data-text': `${x.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );

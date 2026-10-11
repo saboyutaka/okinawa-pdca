@@ -1,11 +1,13 @@
 ---
 // 成果指標の一覧の1行（成果指標をさがす・部局のページ。親は ul.row-list）。
-// 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・くらしのテーマは絞り込みと施策のページに任せる
+// 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。右にゴールまでの道のりの小さな図（SeikaSpark。凡例は一覧の上に SeikaKey で1回だけ）。
+// 担当・くらしのテーマは絞り込みと施策のページに任せる
 import Chip from './Chip.astro';
+import SeikaSpark from './SeikaSpark.astro';
 import { LATEST, yearLabel, RATE_BINS, rateBin, toneOfJudgement, withUnit, refText } from '../lib/data.js';
 
-interface Props { x: any; shisaku: any; href: string; attrs?: Record<string, string> }
-const { x, shisaku: s, href, attrs = {} } = Astro.props;
+interface Props { x: any; row: any; shisaku: any; href: string; attrs?: Record<string, string> }
+const { x, row, shisaku: s, href, attrs = {} } = Astro.props;
 const bin = rateBin(x);
 const binTone = RATE_BINS.find((b) => b.key === bin)?.tone;
 const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
@@ -27,14 +29,23 @@ const past = x.year !== LATEST;
     <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{refText(x.actual_ref_year) && <span class="secondary">（{refText(x.actual_ref_year)}）</span>}</span>
     <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
   </div>
-  {s && <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  {s && <div class="sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  <div class="m-spark"><SeikaSpark row={row} /></div>
 </li>
 
 <style>
-  .m-row { display: grid; gap: 2px; }
-  .m-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+  /* 図の列の幅はどの行も同じにする（文字の値で図の無い行も、名前と札の位置をそろえる） */
+  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px; grid-template-areas: "head spark" "vals spark" "sub spark"; gap: 2px 20px; align-items: center; }
+  .m-head { grid-area: head; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+  .vals { grid-area: vals; display: flex; flex-wrap: wrap; gap: 0 10px; }
+  .sub { grid-area: sub; }
+  .m-spark { grid-area: spark; }
+  .m-spark :global(.spark) { width: 100%; height: auto; }
   .ind-name { min-width: 0; }
   .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
-  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
   .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  /* スマホでは名前と札・施策の行を幅いっぱいに使い、図は数字の行（3行に折り返す）の右に小さく置く */
+  @media (max-width: 640px) {
+    .m-row { grid-template-columns: minmax(0, 1fr) 96px; grid-template-areas: "head head" "vals spark" "sub sub"; gap: 2px 12px; }
+  }
 </style>

@@ -7,6 +7,7 @@ import Icon from '../../components/Icon.astro';
 import Stamps from '../../components/Stamps.astro';
 import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
 import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
 import Crumbs from '../../components/Crumbs.astro';
@@ -124,10 +125,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
     <p class="small secondary lead">スタートからゴールまで、点線の計画どおりに進んでいるかを青い点の実績値で見ます。</p>
     {sRows.length > 0 && (
-      <ul class="chart-key seika-key" aria-hidden="true">
-        <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴールの目標値）</li>
-        <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
-      </ul>
+      <SeikaKey />
     )}
     {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
     {seikaPast.length > 0 && (
