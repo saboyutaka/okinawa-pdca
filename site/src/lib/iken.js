@@ -40,12 +40,12 @@ export function dayText(iso, withYear = true) {
 }
 export const periodText = (b) => `${dayText(b.start)}〜${dayText(b.end, b.end.slice(0, 4) !== b.start.slice(0, 4))}`;
 
-// X（旧 Twitter）。投稿画面は Web Intent（https://x.com/intent/tweet）で開く。hashtags は # を付けずに渡す
+// SNS で話すときのハッシュタグ（# なし）と、そのタグの投稿を見るページ。投稿画面を開くリンクは lib/share.js
 export const HASHTAG = 'okinawa_pdca';
-export const X_SEARCH = `https://x.com/search?q=${encodeURIComponent(`#${HASHTAG}`)}&f=live`;
-export function xIntent(text = '') {
-  return `https://x.com/intent/tweet?${text ? `text=${encodeURIComponent(text)}&` : ''}hashtags=${HASHTAG}`;
-}
+export const TAG_PAGES = [
+  { label: 'X', href: `https://x.com/search?q=${encodeURIComponent(`#${HASHTAG}`)}&f=live` },
+  { label: 'Bluesky', href: `https://bsky.app/hashtag/${HASHTAG}` },
+];
 
-// X の本文に入れる名前。日本語は1字を2字分に数えて140字までなので、長い名前は途中で切る
+// 投稿の本文に入れる名前。X は日本語を1字で2字分に数えて140字までなので、長い名前は途中で切る
 export const shortName = (s, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);

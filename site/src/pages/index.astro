@@ -9,7 +9,7 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
-import XPost from '../components/XPost.astro';
+import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
@@ -196,11 +196,11 @@ const boshu = boshuState();
         {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
         {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
         {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-        県にいつでも意見を送れる窓口や、X で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
+        県にいつでも意見を送れる窓口や、SNS で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
       </p>
       <div class="iken-actions">
         <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
-        <XPost />
+        <Share link="top" label="このサイトを SNS でシェア" />
       </div>
     </div>
   </section>

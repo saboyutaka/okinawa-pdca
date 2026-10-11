@@ -1,0 +1,36 @@
+---
+// SNS のシェアボタン（Facebook・LINE・X・Threads・Bluesky）。X・Threads・Bluesky は #okinawa_pdca を付けた投稿画面を開く（lib/share.js）。
+// link="page" は見ているページ、link="top" はサイトのトップの URL を入れる。本番のドメインはビルド時に決まっていないので、URL はブラウザで入れる
+// （スクリプトが動かないときは URL なしで開く）
+import ExtLink from './ExtLink.astro';
+import { SNS, shareHref } from '../lib/share.js';
+import { SHARE_ICONS } from '../lib/share-icons.js';
+
+interface Props { text?: string; link?: 'page' | 'top'; label?: string }
+const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
+---
+<ul class="share" aria-label={label} data-share-text={text} data-share-link={link}>
+  {SNS.map((s) => (
+    <li>
+      <ExtLink href={shareHref(s.id, { text })} class="button share-btn" data-sns={s.id}>
+        <svg class="sns-logo" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d={SHARE_ICONS[s.id]} /></svg>{s.label}
+      </ExtLink>
+    </li>
+  ))}
+</ul>
+
+<script>
+  import { shareHref } from '../lib/share.js';
+  for (const ul of document.querySelectorAll('ul.share')) {
+    const url = location.origin + (ul.dataset.shareLink === 'top' ? '/' : location.pathname);
+    const text = ul.dataset.shareText || '';
+    for (const a of ul.querySelectorAll('a[data-sns]')) a.href = shareHref(a.dataset.sns, { text, url });
+  }
+</script>
+
+<style>
+  .share { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 6px; }
+  .share :global(.share-btn) { gap: 5px; min-height: 40px; padding: 4px 10px; font-size: 0.8125rem; box-shadow: 2px 2px 0 var(--shadow); }
+  .share :global(.share-btn .ext) { margin-left: 0; }
+  .sns-logo { flex: none; fill: currentColor; }
+</style>

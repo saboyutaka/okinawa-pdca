@@ -2,10 +2,10 @@
 // 意見を伝えたい人へ。県民意見募集（パブリックコメント）の受付の状態、いつでも使える県の窓口、X で #okinawa_pdca を付けて話す方法
 import Base from '../layouts/Base.astro';
 import ExtLink from '../components/ExtLink.astro';
-import XPost from '../components/XPost.astro';
+import Share from '../components/Share.astro';
 import { yearLong } from '../lib/data.js';
 import { LINKS, PROJECT } from '../lib/links.js';
-import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, X_SEARCH, boshuState, dayText, periodText } from '../lib/iken.js';
+import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, TAG_PAGES, boshuState, dayText, periodText } from '../lib/iken.js';
 
 // 受付中かどうかはビルドした日で決まる（lib/iken.js）。箱の中は募集の告知として書き、終わったら上に「終了しました」の張り紙を貼る
 const state = boshuState();
@@ -13,11 +13,11 @@ const STATE_LABEL = { before: '受付前', open: '受付中' };
 const [ey, em, ed] = BOSHU.end.split('-').map(Number);
 const endText = `${ey}年${em}月${ed}日`;
 ---
-<Base title="意見を伝えたい人へ" description="沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、X で #okinawa_pdca を付けて話す方法">
+<Base title="意見を伝えたい人へ" description="沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、SNS で #okinawa_pdca を付けて話す方法">
   <nav class="breadcrumb"><a href="/">トップ</a> › 意見を伝えたい人へ</nav>
   <h1>意見を伝えたい人へ</h1>
   <p class="lead">
-    県の施策や主な取組について、思うことや気づいたことがあるときに使える方法をまとめました。県に届く方法（県民意見募集・県民ご意見箱）と、X で <strong>#okinawa_pdca</strong> を付けて話す方法があります。
+    県の施策や主な取組について、思うことや気づいたことがあるときに使える方法をまとめました。県に届く方法（県民意見募集・県民ご意見箱）と、SNS で <strong>#okinawa_pdca</strong> を付けて話す方法があります。
   </p>
 
   <section aria-labelledby="boshu-h">
@@ -75,15 +75,18 @@ const endText = `${ey}年${em}月${ed}日`;
   </ul>
   <p class="small secondary">このサイトは県のものではないので、このサイトから県へ意見を送ることはできません。</p>
 
-  <h2>X で話す <span class="tag-word">#okinawa_pdca</span></h2>
+  <h2 id="sns">SNS で話す <span class="tag-word">#okinawa_pdca</span></h2>
   <p>
-    このサイトを見て思ったこと・気づいたことを、X にハッシュタグ <strong>#okinawa_pdca</strong> を付けて書いてみませんか。同じタグで、ほかの人の声も読めます。施策・主な取組・基本施策のページの下にある「X に書く」からは、そのページへのリンクを付けて書けます。
+    このサイトを見て思ったこと・気づいたことは、ハッシュタグ <strong>#okinawa_pdca</strong> を付けて SNS に投稿してください。同じタグで、ほかの人の声も読めます。
   </p>
-  <div class="x-row">
-    <XPost />
-    <ExtLink href={X_SEARCH}>#okinawa_pdca のポストを見る</ExtLink>
+  <div class="share-row">
+    <Share link="top" label="このサイトを SNS でシェア" />
   </div>
-  <p class="x-note small">X に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
+  <p class="small secondary">
+    X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#okinawa_pdca を書き足してください。LINE は知り合いに送る画面です。施策・主な取組・基本施策のページの下からは、そのページへのリンクを付けて投稿できます。
+  </p>
+  <p class="small">#okinawa_pdca の投稿を見る: {TAG_PAGES.map((t, i) => <>{i > 0 && '・'}<ExtLink href={t.href}>{t.label}</ExtLink></>)}</p>
+  <p class="x-note small">SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
 
   <h2>このサイトへの意見</h2>
   <p>
@@ -129,6 +132,6 @@ const endText = `${ey}年${em}月${ed}日`;
   .ways { max-width: 46em; padding-left: 1.2em; }
   .ways li + li { margin-top: 8px; }
   .tag-word { font-family: var(--font); font-size: 1rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
-  .x-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin: 12px 0; }
+  .share-row { margin: 12px 0; }
   .x-note { max-width: 46em; background: var(--paper); border: 2px solid var(--hair); border-radius: 14px; padding: 10px 16px; }
 </style>
