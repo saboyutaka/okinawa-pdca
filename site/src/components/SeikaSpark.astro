@@ -1,0 +1,64 @@
+---
+// 成果指標の一覧の行に添える、ゴールまでの道のりの小さな図（施策ページの図 SeikaChart の縮小版）。
+// 横は報告年度 R4〜R9 の6枠で、どの行も同じ位置にそろえる（地の色の左半分が前期、右半分が中期）。点線が計画の道すじ（スタートの基準値 → 各年度の計画値。最後の○がゴールの目標値）、
+// 青い点が実績値で、最新を大きくする。最新の報告の計画期間でない方の道すじは灰色の点線だけにする。
+// 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
+// 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
+import { YEARS } from '../lib/data.js';
+
+interface Props { row: any }
+const { row } = Astro.props;
+const W = 120;
+const H = 40;
+const PAD = 5; // 上下の余白（点がはみ出ないように）
+const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
+const sw = W / SLOTS.length;
+const num = (v) => v != null && Number.isFinite(v);
+const years = YEARS.map((y) => row.years[y]).filter(Boolean);
+const last = years[years.length - 1];
+const act = years.filter((r) => num(r.actual));
+const drawable = act.length > 0 && years.some((r) => num(r.target));
+
+let band = null;
+let plans = [];
+let dots = [];
+let actPath = null;
+if (drawable) {
+  // 計画期間ごとの最後の報告（基準値・計画値・目標値はこれを使う）
+  const periods = [SLOTS.slice(0, 3), SLOTS.slice(3)]
+    .map((ys) => ({ ys, r: years.filter((r) => ys.includes(r.year)).pop(), cur: ys.includes(last.year) }))
+    .filter((p) => p.r);
+  const vals = [...act.map((r) => r.actual), ...periods.flatMap(({ r }) => [r.base, r.target, ...(r.plan || [])])].filter(num);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const f = (n) => Math.round(n * 10) / 10;
+  const x = (y) => f((SLOTS.indexOf(y) + 0.5) * sw);
+  const y = (v) => f(hi === lo ? H / 2 : PAD + (1 - (v - lo) / (hi - lo)) * (H - PAD * 2));
+  const d = (pts) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join('');
+  band = W / 2;
+  plans = periods.map(({ ys, r, cur }) => {
+    const start = num(r.base) ? [f(SLOTS.indexOf(ys[0]) * sw + 2), y(r.base)] : null;
+    const rings = (r.plan || []).map((v, i) => num(v) && [x(ys[i]), y(v)]).filter(Boolean);
+    const pts = [...(start ? [start] : []), ...rings];
+    return { cur, start, rings, path: pts.length > 1 ? d(pts) : null };
+  });
+  dots = act.map((r) => [x(r.year), y(r.actual)]);
+  actPath = dots.length > 1 ? d(dots) : null;
+}
+---
+{drawable && (
+  <svg class="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+    <rect class="sp-band" width={band} height={H} rx="4" />
+    {plans.map((p) => (
+      <g class={p.cur ? 'sp-plan' : 'sp-plan sp-off'}>
+        {p.path && <path d={p.path} />}
+        {p.cur && p.start && <circle class="sp-start" cx={p.start[0]} cy={p.start[1]} r="1.8" />}
+        {p.cur && p.rings.map(([cx, cy]) => <circle cx={cx} cy={cy} r="2.4" />)}
+      </g>
+    ))}
+    <g class="sp-act">
+      {actPath && <path d={actPath} />}
+      {dots.map(([cx, cy], i) => <circle cx={cx} cy={cy} r={i === dots.length - 1 ? 4 : 2.6} />)}
+    </g>
+  </svg>
+)}

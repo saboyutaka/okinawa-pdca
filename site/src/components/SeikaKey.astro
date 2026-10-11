@@ -1,0 +1,12 @@
+---
+// 成果指標のゴールまでの道のりの図の凡例。施策ページの図（SeikaChart）の節の頭と、一覧の行の小さな図（SeikaSpark）の上に、1回だけ出す。
+// 一覧（mini）では、横が報告年度 R4〜R9 で地の色が前期だと添える。図は読み上げない（数字は文と「表で見る」にある）ので、凡例も読み上げない
+interface Props { mini?: boolean }
+const { mini = false } = Astro.props;
+---
+<ul class="chart-key seika-key" aria-hidden="true">
+  {mini && <li>右の小さな図（横は報告年度 R4〜R9）:</li>}
+  {mini && <li><span class="k-band"></span>前期（R4〜R6）</li>}
+  <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴールの目標値）</li>
+  <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+</ul>

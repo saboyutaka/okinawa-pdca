@@ -84,6 +84,9 @@ export function rateBin(s) {
   if (s.rate > 0) return '0%超60%未満';
   return '0%以下';
 }
+// 一覧の行の達成率の札（施策・成果指標の一覧）。文字は数字だけで（「達成」「未達成」とだけ書かれた指標はその言葉）、色と形は RATE_BINS の区分
+export const rateText = (s) => (s.rate != null ? `${s.rate}%` : s.rate_raw === '達成' || s.rate_raw === '未達成' ? s.rate_raw : 'なし');
+export const rateTone = (s) => RATE_BINS.find((b) => b.key === rateBin(s))?.tone;
 
 // 成果指標の「達成状況」欄（目標の見通し）
 export const JUDGEMENTS = [
@@ -218,10 +221,10 @@ export function seikaAnchor(shisakuId, key) {
   return seikaIndex.get(shisakuId).get(key) || 'seika';
 }
 export const seikaHref = (shisakuId, key) => `/shisaku/${shisakuId}/#${seikaAnchor(shisakuId, key)}`;
-// 成果指標1件（seika.json の行）から、年度をまたいだまとまりの key を求める
-export function seikaKeyOf(row) {
+// 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
+export function seikaGroupOf(row) {
   const s = getShisaku(row.shisaku_id);
-  return s ? seikaRows(s).find((r) => r.years[row.year] === row)?.key : undefined;
+  return s ? seikaRows(s).find((r) => r.years[row.year] === row) : undefined;
 }
 
 // ---------------------------------------------------------------- 年度をまたいだ取組・成果指標

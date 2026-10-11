@@ -477,4 +477,15 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .k-line { width: 16px; height: 3px; background: var(--k); }
 /* 成果指標の計画の道すじ（charts.js の drawSeika の点線） */
 .k-path { width: 18px; height: 0; border-top: 2px dashed var(--ink-2); }
+.k-band { width: 16px; height: 11px; border-radius: 3px; background: var(--bg); border: 1px solid var(--hair); }
 .chart .here { fill: var(--ink); }
+/* 成果指標の一覧の行の小さな道のりの図（components/SeikaSpark.astro）。行が多いので、色と太さは要素に書かずここで付ける */
+.spark { display: block; overflow: visible; }
+.sp-band { fill: var(--bg); }
+.sp-plan path { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 3 2.5; stroke-linejoin: round; }
+.sp-plan circle { fill: var(--paper); stroke: var(--ink-2); stroke-width: 1.5; }
+.sp-plan .sp-start { fill: var(--ink-2); stroke: none; }
+.sp-off path { stroke: var(--none); stroke-width: 1.2; }
+.sp-act path { fill: none; stroke: var(--pop); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.sp-act circle { fill: var(--pop); stroke: var(--line); stroke-width: 1; }
+.sp-act circle:last-child { stroke-width: 1.5; }
