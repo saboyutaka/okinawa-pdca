@@ -122,7 +122,15 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
-    <p class="small secondary lead">スタートの旗が<Term word="基準値" />、ゴールの旗が<Term word="目標値" />です。</p>
+    <p class="small secondary lead">スタートからゴールまで、点線の計画どおりに進んでいるかを青い点の実績値で見ます。</p>
+    {sRows.length > 0 && (
+      <ul class="chart-key seika-key" aria-hidden="true">
+        <li><span class="k-flag"></span>スタート（基準値）</li>
+        <li><span class="k-path"></span><span class="k-ring"></span>計画値</li>
+        <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+        <li><span class="k-flag goal"></span>ゴール（目標値）</li>
+      </ul>
+    )}
     {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
     {seikaPast.length > 0 && (
       <details class="past">
