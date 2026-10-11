@@ -2,7 +2,7 @@
 // 見つからないページ。Cloudflare Pages は 404.html が無いと、存在しない URL にもトップページを返す（単一ページアプリとみなす）
 import Base from '../layouts/Base.astro';
 ---
-<Base title="ページが見つかりません">
+<Base title="ページが見つかりません" canonical={false}>
   <h1>ページが見つかりません</h1>
   <p>お探しのページは、移動したか、URL が間違っている可能性があります。</p>
   <form class="filters" action="/torikumi/" method="get" role="search" aria-label="取組をさがす">
