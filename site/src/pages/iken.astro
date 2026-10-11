@@ -7,9 +7,11 @@ import { yearLong } from '../lib/data.js';
 import { LINKS, PROJECT } from '../lib/links.js';
 import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, X_SEARCH, boshuState, dayText, periodText } from '../lib/iken.js';
 
-// 受付中かどうかはビルドした日で決まる（lib/iken.js）
+// 受付中かどうかはビルドした日で決まる（lib/iken.js）。箱の中は募集の告知として書き、終わったら上に「終了しました」の張り紙を貼る
 const state = boshuState();
-const STATE_LABEL = { before: '受付前', open: '受付中', closed: '受付終了' };
+const STATE_LABEL = { before: '受付前', open: '受付中' };
+const [ey, em, ed] = BOSHU.end.split('-').map(Number);
+const endText = `${ey}年${em}月${ed}日`;
 ---
 <Base title="意見を伝えたい人へ" description="沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、X で #okinawa_pdca を付けて話す方法">
   <nav class="breadcrumb"><a href="/">トップ</a> › 意見を伝えたい人へ</nav>
@@ -22,15 +24,23 @@ const STATE_LABEL = { before: '受付前', open: '受付中', closed: '受付終
     <h2 id="boshu-h">パブリックコメント（県民意見募集）</h2>
     <div class="sticker boshu">
       <div class="boshu-top">
-        <span class:list={['state', `state-${state}`]}>{STATE_LABEL[state]}</span>
+        {STATE_LABEL[state] && <span class:list={['state', `state-${state}`]}>{STATE_LABEL[state]}</span>}
         <span class="boshu-name">{yearLong(BOSHU.year)}の沖縄県PDCA実施結果への県民意見募集</span>
       </div>
-      {state === 'closed' && <p class="big-msg">この募集は終了しました。</p>}
-      {state === 'open' && <p class="big-msg">{dayText(BOSHU.end, false)}まで受け付けています。</p>}
-      {state === 'before' && <p class="big-msg">{dayText(BOSHU.start)}から受け付けます。</p>}
+      <div class="call-wrap">
+        {state === 'closed' && (
+          <div class="harigami">
+            <p class="hg-title">この募集は終了しました</p>
+            <p class="hg-sub">{endText}で受付を終えました</p>
+          </div>
+        )}
+        <p class="call">県民のみなさんの意見を募集{state === 'before' ? 'します' : 'しています'}。</p>
+      </div>
+      {state === 'open' && <p class="call-sub">{dayText(BOSHU.end, false)}まで受け付けています。</p>}
+      {state === 'before' && <p class="call-sub">{dayText(BOSHU.start)}から受け付けます。</p>}
       <dl class="facts">
         <div><dt>募集期間</dt><dd>{periodText(BOSHU)}</dd></div>
-        <div><dt>募集したところ</dt><dd>沖縄県 企画部 企画調整課</dd></div>
+        <div><dt>募集しているところ</dt><dd>沖縄県 企画部 企画調整課</dd></div>
         <div><dt>出し方</dt><dd>県の「意見提出用紙」で、郵送・FAX・電子メール・電子申請</dd></div>
         <div><dt>意見のゆくえ</dt><dd>企画調整課がとりまとめて、その施策や取組を担当する部局へ送ります。意見の概要と県の考え方は、後日、県のホームページで公表するとしています。</dd></div>
       </dl>
@@ -90,10 +100,29 @@ const STATE_LABEL = { before: '受付前', open: '受付中', closed: '受付終
     border: 2px solid var(--line); border-radius: 8px; padding: 1px 12px; background: var(--paper); color: var(--ink);
   }
   .state-open { background: var(--pop); color: var(--pop-ink); }
-  .state-closed { background: var(--ink); color: var(--bg); }
-  .big-msg { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin: 0.4em 0; }
+  /* 募集の告知の一文。終わったら、その上に張り紙（.harigami）を重ねる（同じマスに置き、告知は下から少しのぞく） */
+  .call-wrap { display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; margin: 12px 0 8px; }
+  .call-wrap > * { grid-area: 1 / 1; }
+  .call { margin: 0; padding: 12px 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1.5; text-align: center; }
+  .call-sub { margin: 0 0 12px; text-align: center; font-weight: 700; }
+  /* 「終了しました」の張り紙。角の小さい紙を少し傾け、両肩をマスキングテープで留める（読み上げでは告知より先に読む） */
+  .harigami {
+    position: relative; z-index: 1; width: max-content; max-width: 88%; padding: 14px 24px 12px; text-align: center;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 3px; box-shadow: 2px 2px 0 var(--shadow); transform: rotate(-4deg);
+  }
+  .harigami p { margin: 0; }
+  .harigami p { word-break: auto-phrase; }
+  .hg-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.35rem); line-height: 1.45; }
+  .hg-sub { margin-top: 2px; font-size: 0.875rem; color: var(--ink-2); }
+  /* マスキングテープ。半分すけて紙のふちが見え、両端はちぎったようにギザギザにする */
+  .harigami::before, .harigami::after {
+    content: ""; position: absolute; top: -8px; width: 64px; height: 22px; background: color-mix(in oklab, var(--pop) 30%, transparent);
+    clip-path: polygon(4% 0, 96% 0, 100% 17%, 96% 33%, 100% 50%, 96% 67%, 100% 83%, 96% 100%, 4% 100%, 0 83%, 4% 67%, 0 50%, 4% 33%, 0 17%);
+  }
+  .harigami::before { left: -18px; transform: rotate(-35deg); }
+  .harigami::after { right: -18px; transform: rotate(35deg); }
   .facts { display: grid; gap: 8px; margin: 8px 0 12px; }
-  .facts > div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 2px 16px; }
+  .facts > div { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 2px 16px; }
   .facts dt { font-family: var(--font-display); font-weight: 700; }
   .facts dd { margin: 0; }
   @media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; } }
