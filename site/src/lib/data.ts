@@ -618,16 +618,31 @@ export function seikaGroupsOf(shisakuId: string) {
   return seikaGroupsByShisaku.get(shisakuId) || [];
 }
 
+// a の字が b に同じ順で出てくるか（間に別の字があってもよい）
+function inOrder(a: string, b: string) {
+  const xs = [...a];
+  let i = 0;
+  for (const c of b) if (c === xs[i]) i++;
+  return i === xs.length;
+}
+// 名前の末尾の括弧（「（小学校）」「（さとうきび）」のような内訳の名前）
+const NAME_TAIL = /[（(][^（()）]*[)）]\s*$/;
 // 部局票の「対応する成果指標」（名前）が成果指標の名前に当たるか。名前の空白・記号の違いは無視する。
-// 部局票の名前が複数の指標をまとめた名前（「〜及び〜」）のこともあるので、どちらかがもう一方を含めば当たりとする
+// 部局票の名前は、内訳のある指標をまとめた名前（「健康寿命」→「健康寿命（男性）」）のことも、複数の指標をまとめた名前
+// （「交通事故重傷者数及び死者数」→「交通事故死者数」、「〜（①相談支援センター、②ピアサポート）に対する認知度」、「〜と考えている児童生徒の割合」→「〜児童の割合（小学校）」）のこともある。
+// そのため、どちらかがもう一方を含むか、指標の名前の字が部局票の名前に同じ順で出てくれば当たりとする（指標の名前の末尾の内訳の括弧は、外しても比べる）
 export function seikaNameMatches(seikaName: string | null | undefined, name: string) {
   const a = nameKey(seikaName || '');
   const b = nameKey(name);
-  return Boolean(a && b) && (a === b || a.includes(b) || b.includes(a));
+  if (!a || !b) return false;
+  const head = nameKey(name.replace(NAME_TAIL, ''));
+  return a.includes(b) || b.includes(a) || inOrder(b, a) || (Boolean(head) && inOrder(head, a));
 }
-// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（最新の報告の名前で比べる）
+// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（最新の報告の名前で比べ、同じ名前の指標があればそれを先に）
 export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
-  return seikaGroupsOf(shisakuId).find((r) => seikaNameMatches(name, r.latest.name))?.href ?? null;
+  const list = seikaGroupsOf(shisakuId);
+  const k = nameKey(name || '');
+  return (list.find((r) => nameKey(r.latest.name) === k) ?? list.find((r) => seikaNameMatches(name, r.latest.name)))?.href ?? null;
 }
 // 主な取組と成果指標の結び付き。ある年度の部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。
 // 当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）

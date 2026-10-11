@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, getSeikaGroups, seikaOfTorikumi, torikumiOfSeika,
+  amountEntries, budgetGroups, judgeByGrid, getSeikaGroups, seikaOfTorikumi, torikumiOfSeika, budgetOf, type SeikaGroupOfShisaku,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -61,6 +61,14 @@ test('成果指標のページの URL が重複せず、どの成果指標（各
   assert.equal(new Set(groups.map((g) => g.href)).size, groups.length);
   const inGroups = new Set(groups.flatMap((g) => Object.values(g.years)));
   none(load('seika').filter((x) => !inGroups.has(x)), (x) => `${x.year} ${x.shisaku_id} ${x.name}`);
+});
+
+test('成果指標のページには、かかわる主な取組が1件以上ある（その年度の施策の取組に部局票が1件も無いものを除く）', () => {
+  // 部局票が複数の指標をまとめた名前（「〜及び〜」「児童生徒」など）で書いていても、内訳の指標に結び付くこと（seikaNameMatches）
+  const torikumi = getTorikumiGroups();
+  const covered = (x: SeikaGroupOfShisaku) =>
+    torikumi.some((g) => g.shisaku.id === x.shisaku.id && Object.keys(x.years).some((y) => g.years[+y] && budgetOf(+y, g.shisaku.id, g.key)));
+  none(getSeikaGroups().filter((x) => !torikumiOfSeika(x).length && covered(x)), (x) => `${x.href} ${x.latest.name}`);
 });
 
 test('取組のページの「対応する成果指標」の成果指標のページには、「かかわる主な取組」にその取組が出る', () => {

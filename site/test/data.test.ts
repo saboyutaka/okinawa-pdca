@@ -216,12 +216,24 @@ test('取組・成果指標のページの URL は、名前の key の SHA-1 の
   assert.equal(seikaHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
 });
 
-test('seikaNameMatches: 部局票の「対応する成果指標」は、空白・記号の違いを無視し、どちらかがもう一方を含めば当たり', () => {
+test('seikaNameMatches: 部局票の「対応する成果指標」は、空白・記号の違いを無視し、含む・含まれるか、指標の名前の字が同じ順で出てくれば当たり', () => {
   assert.ok(seikaNameMatches('入域観光客数', '入域観光客数'));
   assert.ok(seikaNameMatches('入域 観光客数（人）', '入域観光客数(人)'));
-  // 複数の指標をまとめた名前
-  assert.ok(seikaNameMatches('観光収入及び入域観光客数', '入域観光客数'));
+  // 内訳のある指標をまとめた名前
+  assert.ok(seikaNameMatches('健康寿命', '健康寿命（男性）'));
+  // 複数の指標をまとめた名前。後ろの指標は含まれ、前の指標は間に別の字が入る
+  assert.ok(seikaNameMatches('交通事故重傷者数及び死者数', '交通事故重傷者数'));
+  assert.ok(seikaNameMatches('交通事故重傷者数及び死者数', '交通事故死者数'));
+  assert.ok(seikaNameMatches('一般廃棄物及び産業廃棄物のリサイクル率', '一般廃棄物のリサイクル率'));
+  assert.ok(seikaNameMatches('野菜・果樹・花き類の生産量（園芸品目）', '果樹の生産量'));
+  assert.ok(seikaNameMatches('がん診療拠点病院等のがん相談支援体制（①相談支援センター、②ピアサポート）に対する認知度', 'がん診療拠点病院等のがん相談支援体制（②ピアサポート）に対する認知度'));
+  // 指標の名前の末尾の内訳の括弧は、部局票に無くてもよい
+  assert.ok(seikaNameMatches('「授業の内容は分かりやすい」と考えている児童生徒の割合', '「授業の内容は分かりやすい」と考えている生徒の割合（中学校）'));
+  assert.ok(seikaNameMatches('農業保険（農業共済及び収入保険）・漁業共済加入率', '農業保険（農業共済及び収入保険）（水稲）'));
+  // 当たらないもの
   assert.ok(!seikaNameMatches('観光収入', '入域観光客数'));
+  assert.ok(!seikaNameMatches('交通事故死者数', '交通事故重傷者数'));
+  assert.ok(!seikaNameMatches('野菜・果樹の生産量', '花き類の生産量'));
   assert.ok(!seikaNameMatches('', '入域観光客数'));
   assert.ok(!seikaNameMatches(null, '入域観光客数'));
 });
