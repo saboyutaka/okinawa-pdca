@@ -45,7 +45,7 @@ const next = all[i + 1];
     <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
-  {t.shisaku.map((s) => {
+  {t.shisaku.map((s, si) => {
     const active = s.torikumi.filter((g) => g.years[RM_LATEST]);
     const ended = s.torikumi.filter((g) => !g.years[RM_LATEST]);
     const seika = s.seika.filter((g) => g.years[RM_LATEST]);
@@ -69,6 +69,12 @@ const next = all[i + 1];
         )}
 
         <h3><Term word="成果指標" />（{fmt(seika.length)}）</h3>
+        {si === 0 && seika.length > 0 && (
+          <ul class="chart-key" aria-hidden="true">
+            <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴールの目標値）</li>
+            <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+          </ul>
+        )}
         <div class="seika">{seika.map((g) => <RmSeika g={g} id={kankoSeikaAnchor(s.id, g.key)} />)}</div>
 
         <h3><Term word="主な取組" />（{yearLabel(RM_LATEST)}: {fmt(active.length)}件）</h3>
