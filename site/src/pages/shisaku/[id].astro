@@ -74,7 +74,7 @@ const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} share={{ text: shareText('施策', s.name), label: 'この施策を SNS でシェア' }} />
+  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} share={{ text: shareText('施策', s.name), label: 'この施策を SNS でシェア' }} />
 
   <header class="sticker lift head">
     <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>

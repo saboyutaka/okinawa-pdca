@@ -10,7 +10,6 @@ const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
-  <nav class="breadcrumb"><a href="/">トップ</a> › 取組をさがす</nav>
   <h1>取組をさがす</h1>
   <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
 

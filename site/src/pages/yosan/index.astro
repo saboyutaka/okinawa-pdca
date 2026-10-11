@@ -3,7 +3,6 @@
 // 一括交付金（ソフト）は事業ごとの事後評価があるので節を分け、事業をさがすページ（/yosan/ikkatsu/）へつなぐ。
 // 合計の数え方・合計から除いた金額・部局票がある範囲は、最後の「データの注意」に畳む（#suspect・#coverage は他のページからの行き先）
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import AmountChart from '../../components/AmountChart.astro';
 import BarList from '../../components/BarList.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -103,7 +102,6 @@ const coverageLatest = coverageAll[coverageAll.length - 1];
 const suspects = getSuspects();
 ---
 <Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移と、一括交付金（ソフト）の事業の事後評価です。">
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '予算と財源' }]} />
 
   <header class="sticker lift head">
     <h1>予算と財源</h1>

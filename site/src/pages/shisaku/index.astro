@@ -30,7 +30,6 @@ const trends = ([
 const headTrends = trends.filter((t) => t.key !== 'streak');
 ---
 <Base title="施策をさがす" description="沖縄県PDCAの339施策を、将来像・判定・くらしのテーマ・担当部局・キーワードで絞り込んで探せます。">
-  <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
   <h1>施策をさがす</h1>
   <p class="secondary lead"><ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>の339施策です。行の判定・取組・成果指標は{yearLong(LATEST)}のものです。</p>
   <p class="small trends"><span class="secondary">判定の移り変わり:</span>{headTrends.map((t) => <a href={`?trend=${t.key}`} data-trend={t.key} title={t.label}>{t.short} {t.n}施策</a>)}</p>
