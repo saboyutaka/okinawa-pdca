@@ -1,7 +1,10 @@
 ---
-// 観光ロードマップの成果指標の一覧の1行（lib/plans.ts の kankoSeikaList の行）。基準値と比べた判定の印・名前・基準値から最新の実績値。
+// 観光ロードマップの成果指標の一覧の1行（lib/plans.ts の kankoSeikaList の行。親は ul.row-list）。
+// 沖縄県PDCAの成果指標の行（SeikaRow）と同じ形で、左に名前と施策の2行、右に基準値と比べた県の判定の印とゴールまでの道のりの小さな図（RmSeikaSpark）。
+// 図の凡例は一覧の上に1回だけ書く（SeikaKey）。基準値・実績値・目標値は図に任せて読み上げ用の文にだけ残し、数字は施策展開のページの札で見る。
 // 名前は施策展開のページのその指標の札へのリンク
 import Chip from './Chip.astro';
+import RmSeikaSpark from './RmSeikaSpark.astro';
 import { withUnit, refText } from '../lib/data.ts';
 import { rmJudgementOf, type KankoSeikaListRow } from '../lib/plans.ts';
 
@@ -10,23 +13,28 @@ const { r } = Astro.props;
 const x = r.x;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
 const j = rmJudgementOf(r.judgement);
+const ref = refText(r.latestRef);
+const srText = `基準値と比べた判定 ${r.judgement}。基準値 ${withUnit(x.base_raw, u)}、実績値 ${withUnit(r.latestRaw, u)}${ref ? `（${ref}）` : ''}、目標値 ${withUnit(x.target_raw, u)}（R6）`;
 ---
-<li class="rm-srow">
-  <div class="srow-head">
+<li class="m-row">
+  <div class="m-head"><a class="name-link" href={r.href}>{x.name}</a>{u && <small class="secondary">（{u}）</small>}</div>
+  <div class="sub small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>
+  <div class="m-viz" aria-hidden="true">
     <Chip tone={j.tone} shape={j.shape} text={r.judgement} title={j.note} />
-    <a class="name-link" href={r.href}>{x.name}</a>
+    <RmSeikaSpark x={x} />
   </div>
-  <div class="vals small">
-    <span>基準値 {withUnit(x.base_raw, u)}</span>
-    <span>→ 実績値 <strong>{withUnit(r.latestRaw, u)}</strong>{refText(r.latestRef) && <span class="secondary">（{refText(r.latestRef)}）</span>}</span>
-    <span>→ 目標値 {withUnit(x.target_raw, u)}（R6）</span>
-  </div>
-  <div class="small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>
+  <span class="sr-only">{srText}</span>
 </li>
 
 <style>
-  .rm-srow { display: grid; gap: 2px; min-width: 0; }
-  .srow-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-  .srow-head :global(.chip) { flex: none; }
-  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
+  /* 並びと幅は沖縄県PDCAの成果指標の行（components/SeikaRow.astro）と同じ */
+  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
+  .m-head { grid-area: head; min-width: 0; }
+  .sub { grid-area: sub; }
+  .m-viz { grid-area: viz; display: grid; grid-template-columns: 6.5em 120px; gap: 12px; align-items: center; }
+  .m-viz :global(.spark) { width: 100%; height: auto; }
+  @media (max-width: 640px) {
+    .m-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 2px 12px; align-items: start; }
+    .m-viz { grid-template-columns: 1fr; gap: 4px; }
+  }
 </style>
