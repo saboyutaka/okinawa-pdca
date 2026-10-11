@@ -1,0 +1,178 @@
+---
+// 計画の階層（将来像 → 基本施策 → 施策 → 主な取組）と、それぞれの成果をはかる指標、くらしのテーマ（このサイト独自の分類）のつながりの図（このサイトについてのページ）。
+// 文字のまま読めるように SVG にせず、箱と線を CSS の grid で並べる。PC は「指標 ─ 計画の階層 ┄ くらしのテーマ」の3列、スマホは階層の幹の下に指標をぶら下げる1列。
+// 方眼ノートに手で描いたような見た目にする。揺らすのは枠と線（疑似要素と空の span）だけで、文字には SVG のフィルターをかけない（読みにくくなるため）。
+// くらしのテーマは県の計画の分類ではないので、テープで貼った付箋にして、点線の枠と点線のつなぎで分ける。数は最新の年度で、親1つあたりの子の数は幅（最小〜最大）で出す
+import Sz from './Sz.astro';
+import Term from './Term.astro';
+import ThemeTags from './ThemeTags.astro';
+import { LATEST, yearLong, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouByYear } from '../lib/data.ts';
+import { getThemes } from '../lib/themes.ts';
+import { fmt } from '../lib/format.ts';
+
+const shouraizou = getShouraizou();
+const kihon = getKihonList();
+const shisaku = getShisakuList();
+const torikumi = getTorikumi(LATEST);
+const seika = getSeika(LATEST);
+const shuyou = getShuyouByYear(LATEST);
+const themes = getThemes();
+// 親1つあたりの子の数の幅（「4〜13」）
+function range<T>(rows: T[], parent: (r: T) => string | number) {
+  const n = new Map<string | number, number>();
+  for (const r of rows) n.set(parent(r), (n.get(parent(r)) || 0) + 1);
+  const v = [...n.values()];
+  return `${Math.min(...v)}〜${Math.max(...v)}`;
+}
+const tenkai = new Map<string, Set<string>>();
+for (const s of shisaku) tenkai.set(s.kihon_id, (tenkai.get(s.kihon_id) || new Set()).add(s.tenkai_id));
+const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜${Math.max(...[...tenkai.values()].map((t) => t.size))}`;
+---
+<figure class="pmap sticker">
+  <svg class="pm-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <!-- 手描きの揺れ。線は細いので、フィルターの範囲を広く取る（狭いと揺れた所が切れる） -->
+    <filter id="pm-rough-line" x="-100%" y="-100%" width="300%" height="300%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" />
+      <feDisplacementMap in="SourceGraphic" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="pm-rough-box" x="-4%" y="-12%" width="108%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="11" />
+      <feDisplacementMap in="SourceGraphic" scale="5" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+  <div class="pm">
+    <div class="pm-p p1">
+      <p class="pm-h"><a class="name-link" href="/future/">将来像</a><span class="pm-n">{shouraizou.length}</span></p>
+      <p class="pm-d">計画がめざす沖縄の姿</p>
+      <p class="pm-sz">{shouraizou.map((s) => <a href={`/future/${s.id}/`} title={s.name}><Sz id={s.id} /></a>)}</p>
+    </div>
+    <p class="pm-c c1">1つの将来像に <span class="nw">基本施策 {range(kihon, (k) => k.shouraizou)}</span></p>
+    <div class="pm-p p2">
+      <p class="pm-h"><a class="name-link" href="/future/">基本施策</a><span class="pm-n">{kihon.length}</span></p>
+      <p class="pm-d">将来像を実現するための大きな柱</p>
+    </div>
+    <div class="pm-i i2">
+      <p class="pm-h"><span class="pm-name">主要指標</span><span class="pm-n">{shuyou.length}</span></p>
+      <p class="pm-d">基本施策の最終的な成果をはかる（1つの基本施策に {range(shuyou, (s) => s.kihon_id)}）</p>
+    </div>
+    <p class="pm-c c2">1つの基本施策に <span class="nw">施策展開 {tenkaiRange}、</span><span class="nw">施策 {range(shisaku, (s) => s.kihon_id)}</span></p>
+    <div class="pm-p p3">
+      <p class="pm-h"><a class="name-link" href="/shisaku/">施策</a><span class="pm-n">{shisaku.length}</span></p>
+      <p class="pm-d">分野ごとの取り組みのまとまり。県が毎年付ける<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />で決まる</p>
+    </div>
+    <div class="pm-i i3">
+      <p class="pm-h"><a class="name-link" href="/shihyou/">成果指標</a><span class="pm-n">{fmt(seika.length)}</span></p>
+      <p class="pm-d">施策の成果（くらしや地域の変化）をはかる（1つの施策に {range(seika, (s) => s.shisaku_id)}）</p>
+    </div>
+    <p class="pm-c c3">1つの施策に <span class="nw">主な取組 {range(torikumi, (t) => t.shisaku_id)}</span></p>
+    <div class="pm-p p4">
+      <p class="pm-h"><a class="name-link" href="/torikumi/">主な取組</a><span class="pm-n">{fmt(torikumi.length)}</span></p>
+      <p class="pm-d">施策を進める手段として県が選んだ事業</p>
+    </div>
+    <div class="pm-i i4">
+      <p class="pm-h"><span class="pm-name">活動指標</span></p>
+      <p class="pm-d">取組の活動の量（回数・件数など）をはかる。計画に対する実績が<Term word="進捗状況" />になる</p>
+    </div>
+    <div class="pm-t">
+      <span class="pm-tape" aria-hidden="true"></span>
+      <p class="pm-h"><a class="name-link" href="/#themes">くらしのテーマ</a><span class="pm-n">{themes.length}</span><span class="own">このサイト独自の分類</span></p>
+      <p class="pm-d">施策を、名前に含まれる言葉で分野ごとに集めたもの。その施策の主な取組・成果指標も入る（<a href="#theme">決め方</a>）</p>
+      <p class="pm-tags"><ThemeTags ids={themes.slice(0, 4).map((t) => t.id)} label={false} /> など</p>
+    </div>
+    <span class="pm-l l2" aria-hidden="true"></span>
+    <span class="pm-l l3" aria-hidden="true"></span>
+    <span class="pm-l l4" aria-hidden="true"></span>
+    <span class="pm-b b3" aria-hidden="true"></span>
+    <span class="pm-b bv" aria-hidden="true"></span>
+    <span class="pm-b b4" aria-hidden="true"></span>
+  </div>
+  <figcaption class="pm-cap small secondary">数は{yearLong(LATEST)}。主な取組は延べ件数です（いくつかの施策に載る取組は、それぞれ1件と数えます）。</figcaption>
+</figure>
+
+<style>
+  .pmap { margin: 16px 0 20px; }
+  .pm-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+  .pm p { margin: 0; }
+  /* PC: 左に指標、真ん中に計画の階層（幹）、右にくらしのテーマ。指標と階層は実線、テーマは点線でつなぐ。地は方眼ノート */
+  .pm {
+    display: grid; grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1.2fr) 32px minmax(0, 0.95fr);
+    grid-template-areas:
+      ".  .  p1 .  ."
+      ".  .  c1 .  ."
+      "i2 l2 p2 .  ."
+      ".  .  c2 .  ."
+      "i3 l3 p3 b3 t"
+      ".  .  c3 bv t"
+      "i4 l4 p4 b4 t";
+    padding: 14px; margin: -4px; border-radius: 10px;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 22px 22px; background-position: -1px -1px;
+  }
+  .p1 { grid-area: p1; } .p2 { grid-area: p2; } .p3 { grid-area: p3; } .p4 { grid-area: p4; }
+  .c1 { grid-area: c1; } .c2 { grid-area: c2; } .c3 { grid-area: c3; }
+  .i2 { grid-area: i2; } .i3 { grid-area: i3; } .i4 { grid-area: i4; }
+  .l2 { grid-area: l2; } .l3 { grid-area: l3; } .l4 { grid-area: l4; }
+  .b3 { grid-area: b3; } .bv { grid-area: bv; } .b4 { grid-area: b4; }
+  .pm-t { grid-area: t; }
+
+  /* 箱。地と枠は後ろの疑似要素に描いて揺らし、文字は揺らさない。角の丸みを不ぞろいにして、少し傾ける。
+     計画の階層は色を塗り、指標は白、くらしのテーマはピンクの付箋 */
+  .pm-p, .pm-i, .pm-t { position: relative; isolation: isolate; padding: 12px 16px; min-width: 0; }
+  .pm-p::before, .pm-i::before, .pm-t::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 16px 9px 14px 8px / 8px 14px 9px 16px; filter: url(#pm-rough-box);
+  }
+  .pm-p::before { background: var(--sky); }
+  .p1, .p3, .i3 { transform: rotate(-0.5deg); }
+  .p2, .p4, .i2, .i4 { transform: rotate(0.4deg); }
+  .p2::before, .p4::before, .i3::before { border-radius: 9px 16px 8px 14px / 14px 8px 16px 9px; }
+  .pm-t { align-self: center; transform: rotate(1.5deg); }
+  .pm-t::before { background: var(--pink); border-style: dashed; border-radius: 4px 6px 5px 3px; }
+  /* 付箋をとめるテープ */
+  .pm-tape {
+    position: absolute; top: -11px; left: 50%; width: 72px; height: 20px; transform: translateX(-50%) rotate(-5deg);
+    background: color-mix(in oklab, var(--sky) 75%, transparent); border-left: 2px dotted var(--hair); border-right: 2px dotted var(--hair);
+  }
+  .pm-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .pm-h .name-link, .pm-name { font-size: 1.05rem; font-weight: 700; }
+  .pm-n { font-family: var(--font-num); font-size: 1.5rem; font-weight: 600; line-height: 1.1; }
+  .pm .pm-d { margin-top: 2px; font-size: 0.875rem; color: var(--ink-2); }
+  .pm .pm-sz { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pm-sz a { display: inline-flex; text-decoration: none; }
+  .pm-sz :global(.badge-sz) { width: 1.9em; height: 1.9em; font-size: 0.95rem; }
+  .pm .pm-tags { margin-top: 6px; font-size: 0.875rem; color: var(--ink-2); }
+
+  /* 階層の幹。親から子へ下向きの矢印を引き、横に「1つの〜に〜」を書き込む */
+  .pm-c { position: relative; padding: 10px 0 12px 42px; min-height: 40px; font-family: var(--font-display); font-size: 0.8125rem; color: var(--ink-2); }
+  .nw { white-space: nowrap; }
+  .pm-c::before, .pm-c::after { content: ''; position: absolute; filter: url(#pm-rough-line); }
+  .pm-c::before { left: 21px; top: 0; bottom: 1px; border-left: 2px solid var(--line); }
+  .pm-c::after { left: 17px; bottom: 2px; width: 8px; height: 8px; border-right: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: rotate(45deg); }
+  /* 指標と階層をつなぐ横の線 */
+  .pm-l { align-self: center; border-top: 2px solid var(--line); filter: url(#pm-rough-line); }
+  /* 施策・主な取組からくらしのテーマへの点線のかっこ */
+  .pm-b { position: relative; filter: url(#pm-rough-line); }
+  .pm-b::before { content: ''; position: absolute; left: 0; right: 50%; border: 0 dashed var(--line); }
+  .b3::before { top: 50%; bottom: 0; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 10px; }
+  .bv::before { top: 0; bottom: 0; border-right-width: 2px; }
+  .b4::before { top: 0; bottom: 50%; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 10px; }
+  .pm-t::after { content: ''; position: absolute; right: 100%; top: 50%; width: 18px; border-top: 2px dashed var(--line); filter: url(#pm-rough-line); }
+  .pm-cap { margin-top: 12px; }
+
+  /* スマホ: 階層の幹を左に通し、指標はそれぞれの階層の下にぶら下げる（├ と └ は .pm-l で描く）。くらしのテーマは最後に置く */
+  @media (max-width: 759px) {
+    .pm {
+      grid-template-columns: 42px minmax(0, 1fr);
+      grid-template-areas: "p1 p1" "c1 c1" "p2 p2" "l2 i2" "c2 c2" "p3 p3" "l3 i3" "c3 c3" "p4 p4" "l4 i4" "t t";
+      padding: 10px;
+    }
+    .pm-b, .pm-t::after { display: none; }
+    .pm-i { margin-top: 10px; }
+    .pm-l { align-self: stretch; position: relative; border-top: 0; }
+    .pm-l::before, .pm-l::after { content: ''; position: absolute; left: 21px; }
+    .pm-l::before { top: 0; bottom: 0; border-left: 2px solid var(--line); }
+    .pm-l::after { right: 0; top: calc(50% + 5px); border-top: 2px solid var(--line); }
+    .l4::before { bottom: calc(50% - 5px); }
+    .pm-t { margin-top: 26px; transform: rotate(1deg); }
+  }
+</style>

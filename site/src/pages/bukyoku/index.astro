@@ -36,7 +36,7 @@ const rows = [...depts].sort((a, b) => b.latestCount - a.latestCount).map((d) =>
   <h1>部局</h1>
   <p class="secondary">
     主な取組を所管する部局ごとの進み具合です。部局は最新の報告での所管部局で、過去の年度の取組もその部局に寄せて数えています。
-    令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/">データについて</a>）。
+    令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。
   </p>
 
   <StatusChart title={`部局別 主な取組の進捗状況（${yearLong(LATEST)}）`} categories={STATUSES} rows={rows} />
