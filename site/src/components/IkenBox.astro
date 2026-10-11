@@ -1,8 +1,8 @@
 ---
 // 施策・基本施策・主な取組のページの終わり（出典の前）に置く、意見を書くための枠。
-// SNS に、そのページの名前と URL（と #okinawa_pdca）を入れて投稿できる。県に届ける方法は /iken/ に案内する
+// SNS に、そのページの名前と URL（と #okinawa_miraima。lib/iken.ts の HASHTAG）を入れて投稿できる。県に届ける方法は /iken/ に案内する
 import Share from './Share.astro';
-import { shortName } from '../lib/iken.ts';
+import { HASHTAG, shortName } from '../lib/iken.ts';
 
 interface Props { kind: string; name: string }
 const { kind, name } = Astro.props;
@@ -10,7 +10,7 @@ const { kind, name } = Astro.props;
 <section aria-labelledby="iken">
   <h2 id="iken" class="anchor">この{kind}について、思うことは？</h2>
   <div class="sticker iken-box">
-    <p class="small"><strong>#okinawa_pdca</strong> を付けて、このページへのリンクと一緒に SNS に投稿できます。SNS に書いても県には届きません（県に伝える方法は「<a href="/iken/">意見を伝えたい人へ</a>」）。</p>
+    <p class="small"><strong>#{HASHTAG}</strong> を付けて、このページへのリンクと一緒に SNS に投稿できます。SNS に書いても県には届きません（県に伝える方法は「<a href="/iken/">意見を伝えたい人へ</a>」）。</p>
     <Share text={`${kind}「${shortName(name)}」について`} label={`この${kind}を SNS でシェア`} />
   </div>
 </section>

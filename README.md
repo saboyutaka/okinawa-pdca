@@ -2,6 +2,8 @@
 
 [沖縄県PDCA](https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html)（[新・沖縄21世紀ビジョン実施計画](https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014230/index.html)などの「主な取組」の進捗評価）を構造化し、分野・部局・進捗で絞り込めるようにするシビックテックプロジェクト。
 
+サイトの名前は「おきなわ、みらい、いま」（縮めて「みらいま」、SNS のハッシュタグは `#okinawa_miraima`）。2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ「[沖縄未来提案プロジェクト](https://thinkokinawa.studio.site)」の続きとして、その計画のいまを振り返るために作っている。
+
 [Code for Okinawa](https://code4okinawa.org/) のプロジェクトとして、[saboyutaka](https://x.com/saboyutaka) が管理している。沖縄県の公式のものではない。
 
 ### 関連する県のページ

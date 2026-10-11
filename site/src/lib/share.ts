@@ -1,5 +1,5 @@
 // SNS のシェアボタン（components/Share.astro）が開く投稿画面・共有画面の URL。並びは Facebook・LINE・X・Threads・Bluesky。
-// 公開の場の SNS（X・Threads・Bluesky）には #okinawa_pdca を付ける。渡せる引数は各社の資料で 2026-10-11 に確かめた
+// 公開の場の SNS（X・Threads・Bluesky）には #okinawa_miraima（lib/iken.ts の HASHTAG）を付ける。渡せる引数は各社の資料で 2026-10-11 に確かめた
 import { HASHTAG } from './iken.ts';
 
 const enc = encodeURIComponent;

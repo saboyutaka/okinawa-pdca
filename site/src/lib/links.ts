@@ -14,6 +14,14 @@ export const LINKS = {
   hyoka: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html', // 新・沖縄21世紀ビジョン基本計画 評価検証報告書
 };
 
+// このサイトの名前。計画が描いた沖縄のみらいが、いまどこまで来たかを見る。口で言うときは縮めて「みらいま」（SNS のハッシュタグは lib/iken.ts の HASHTAG）。
+// 「沖縄県PDCA」で探す人に見つけてもらうため、トップのページの題名には tagline も付ける
+export const SITE = {
+  name: 'おきなわ、みらい、いま',
+  short: 'みらいま',
+  tagline: '沖縄県PDCAを読みとく非公式サイト',
+};
+
 // このサイトを作っている団体と管理者
 export const PROJECT = {
   org: 'Code for Okinawa',
@@ -23,4 +31,5 @@ export const PROJECT = {
   maintainerName: '立花 豊',
   maintainer: 'saboyutaka',
   maintainerX: 'https://x.com/saboyutaka',
+  miraiTeian: 'https://thinkokinawa.studio.site', // 沖縄未来提案プロジェクト（2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ会。このサイトのなりたち）
 };
