@@ -6,7 +6,8 @@ import Chip from './Chip.astro';
 import { fmt, pct } from '../lib/format.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
-interface Row { label: string; sub?: string; href?: string; counts: Record<string, number> }
+// id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）
+interface Row { label: string; sub?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
   caption?: string;
@@ -32,7 +33,7 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
   <div class="rows">
     {rows.map((r) => (
       <div class="row">
-        <div class="row-label">
+        <div class:list={['row-label', r.id && 'anchor']} id={r.id}>
           {r.href ? <a class="name-link" href={r.href}>{r.label}</a> : r.label}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
@@ -73,6 +74,8 @@ const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0)
   .row { display: contents; }
   .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
   .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+  /* ほかのページから飛んできた行（部局のページの課）は、地の色で示す */
+  .row-label:target { background: var(--sky); box-shadow: 0 0 0 4px var(--sky); border-radius: 4px; }
   .row-total { font-size: 0.875rem; color: var(--ink-2); min-width: 4.5em; text-align: right; }
   .table-view { margin-top: 14px; }
   @media (max-width: 560px) {

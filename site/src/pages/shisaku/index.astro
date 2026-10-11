@@ -5,7 +5,7 @@ import Icon from '../../components/Icon.astro';
 import Sz from '../../components/Sz.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
-import { LATEST, yearLabel, yearLong, JUDGES, getShisakuList, getShouraizou, getKihonList, type JudgeTrend } from '../../lib/data.ts';
+import { LATEST, yearLabel, yearLong, JUDGES, DEPTS, getShisakuList, getShouraizou, getKihonList, shisakuDepts, type JudgeTrend } from '../../lib/data.ts';
 import { getThemes } from '../../lib/themes.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -15,7 +15,9 @@ const shisaku = getShisakuList();
 const shouraizou = getShouraizou();
 const kihon = getKihonList();
 const themes = getThemes();
-const depts = [...new Set(shisaku.flatMap((s) => s.depts))].sort((a, b) => a.localeCompare(b, 'ja'));
+// 部局は、関係部等にある部局と、その施策に主な取組がある部局（部局のページの施策と同じ数え方。lib/data.ts の shisakuDepts）。並びは県の部局の一覧の順
+const deptsOf = new Map(shisaku.map((s) => [s.id, shisakuDepts(s).map((d) => d.dept)]));
+const depts = DEPTS.map((d) => d.name).filter((name) => [...deptsOf.values()].some((ds) => ds.includes(name)));
 const groups = kihon.map((k) => ({ kihon: k, items: shisaku.filter((s) => s.kihon_id === k.id) }));
 const themeIdsOf = (id: string) => themes.filter((t) => t.ids.includes(id)).map((t) => t.id).join('|');
 // 判定の移り変わり（数え方は lib/data.ts の JUDGE_TRENDS。施策の trends に入っている）。short は頭のリンクの短い言い方（左から続けて読む）
@@ -94,7 +96,7 @@ const trends = ([
                 'data-s': String(s.shouraizou),
                 'data-judge': s.judges[LATEST] ?? '',
                 'data-trend': s.trends.join('|'),
-                'data-dept': s.depts.join('|'),
+                'data-dept': deptsOf.get(s.id)!.join('|'),
                 'data-theme': themeIdsOf(s.id),
                 'data-text': `${s.code} ${s.name} ${s.tenkai_name} ${k.name} ${s.kankei} ${s.torikumi.filter((t) => t.year === LATEST).map((t) => t.name).join(' ')}`,
               }}

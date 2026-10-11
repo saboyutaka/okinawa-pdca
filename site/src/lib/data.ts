@@ -629,6 +629,66 @@ export function deptHref(nameOrSection: string) {
   const d = DEPTS.find((x) => x.name === name);
   return d ? `/bukyoku/${d.slug}/` : null;
 }
+// 所管部課の課の名前（「こども未来部子育て支援課」→「子育て支援課」）。部局の名前だけなら空
+export const sectionName = (section: string) => {
+  const d = deptOf(section);
+  return d && section.startsWith(d) ? section.slice(d.length) : section;
+};
+// 部局のページの課ごとの図の行の id
+export const sectionAnchor = (section: string) => `ka-${sectionName(section)}`;
+// 所管部課・担当部課のリンク先。最新の報告に取組がある課なら部局のページのその課の行、無ければ部局のページ（部局のページも無ければ null）。
+// 担当部課に課がいくつか書かれているときは最初の課
+let latestSections: Set<string> | undefined;
+export function sectionHref(section: string | null | undefined) {
+  const first = (section || '').split(/[、,，]/)[0].trim();
+  const href = deptHref(first);
+  if (!href) return null;
+  latestSections ??= new Set(getTorikumi(LATEST).map((t) => t.section));
+  return latestSections.has(first) && sectionName(first) ? `${href}#${sectionAnchor(first)}` : href;
+}
+
+// 施策と部局のかかわり方。施策総括表の「関係部等」に名前がある（kankei）か、関係部等には無いが、その部局が所管する主な取組がある（torikumi）か。
+// 関係部等の順に並べ、その後ろに取組だけある部局を toriDepts の順で置く
+export type DeptRole = 'kankei' | 'torikumi';
+export function deptRoles(kankei: string[], toriDepts: Iterable<string>) {
+  const out: { dept: string; role: DeptRole }[] = [];
+  for (const dept of kankei) if (!out.some((d) => d.dept === dept)) out.push({ dept, role: 'kankei' });
+  for (const dept of toriDepts) if (dept && !out.some((d) => d.dept === dept)) out.push({ dept, role: 'torikumi' });
+  return out;
+}
+// 施策にかかわる部局。部局のページ・部局の一覧・施策をさがすの部局の絞り込みは、どれもこれで数える（数とリンク先の件数がずれないように）。
+// 取組の部局は、年度をまたいだ取組のまとまりの最新の所管部局（docs/data.md 7.2）。取組だけある部局は DEPTS の順
+let toriDeptsOf: Map<string, Set<string>> | undefined;
+export function shisakuDepts(s: Shisaku) {
+  if (!toriDeptsOf) {
+    toriDeptsOf = new Map();
+    for (const g of getTorikumiGroups()) {
+      if (!toriDeptsOf.has(g.shisaku.id)) toriDeptsOf.set(g.shisaku.id, new Set());
+      toriDeptsOf.get(g.shisaku.id)!.add(g.dept);
+    }
+  }
+  const order = (name: string) => DEPTS.findIndex((d) => d.name === name);
+  return deptRoles(s.depts, [...(toriDeptsOf.get(s.id) || [])].sort((a, b) => order(a) - order(b)));
+}
+
+// 部局の検証票の県のページ。その部局の取組（最新の所管部局で数える）が載っている部局票と、取得元がその部局の部局票のページを、
+// ページごとに年度と、載っているその部局の取組の数（n。年度の合計）をまとめて返す。年度の順、同じ年度は取組の多い順。
+// 再編した部局の R4 は、再編前の部の票のページになる。ほかの部局の票に載った年度がある取組もあるので、1つの年度に何ページか出ることがある。
+// 取組を読み取れなかった部局票（病院事業局）は、取得元（fetch_pdca.py の部局の名前。DEPTS の slug と同じ）で結び付ける
+export function deptSourcePages(deptName: string) {
+  const slug = DEPTS.find((d) => d.name === deptName)?.slug;
+  const pages = new Map<string, { href: string; title: string; years: number[]; n: number }>();
+  const add = (f: BukyokuFileRow | undefined, n: number) => {
+    if (!f?.page_url) return;
+    const p = pages.get(f.page_url) || { href: f.page_url, title: f.page_title, years: [], n: 0 };
+    if (!p.years.includes(f.year)) p.years.push(f.year);
+    p.n += n;
+    pages.set(f.page_url, p);
+  };
+  for (const b of getBudgetRecords()) if (currentDeptOf(b.year, b.shisaku_id, b.key) === deptName) add(bukyokuFile(b.source), 1);
+  for (const f of load('bukyoku/files')) if (f.source === slug) add(f, 0);
+  return [...pages.values()].map((p) => ({ ...p, years: p.years.sort() })).sort((a, b) => a.years[0] - b.years[0] || b.n - a.n);
+}
 
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
 let currentDept: Map<string, string> | undefined;
@@ -689,12 +749,15 @@ export function sourceOf(id: string) {
 }
 
 let bukyokuFiles: Map<string, BukyokuFileRow> | undefined;
+// 部局票（data/raw/<部局>/...）の PDF の情報。URL と、その PDF を載せている県のページは bukyoku/files.json にある
+function bukyokuFile(id: string) {
+  bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
+  return bukyokuFiles.get(id);
+}
 // 県のPDFへのリンク。zip の中のPDFはページ指定できないので zip へのリンクにする
 export function sourceLink(id: string, page: number): { href: string; label: string } | null {
-  // 部局票（data/raw/<部局>/...）は bukyoku/files.json に URL がある
   if (!id.startsWith('soukatsu/')) {
-    bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
-    const f = bukyokuFiles.get(id);
+    const f = bukyokuFile(id);
     if (!f?.file_url) return null;
     const text = (f.link_text || '').replace(/\s*（\s*(PDF|zip|Excel)[^）]*）\s*$/i, '');
     return { href: `${f.file_url}#page=${page}`, label: `${text} ${page}ページ` };

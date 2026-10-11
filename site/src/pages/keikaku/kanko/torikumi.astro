@@ -6,7 +6,7 @@ import Crumbs from '../../../components/Crumbs.astro';
 import FilterMore from '../../../components/FilterMore.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
-import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, deptHref, deptOf, DEPTS } from '../../../lib/data.ts';
+import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, sectionHref, deptOf, DEPTS } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, kankoYears, kankoKihon, kankoTorikumiRows, kankoShisakuHref, type KankoTorikumiGroup } from '../../../lib/plans.ts';
 import { fmt } from '../../../lib/format.ts';
 
@@ -76,7 +76,7 @@ const stOf = (g: KankoTorikumiGroup) => {
           <ul class="row-list">
             {items.map((g) => {
               const t = g.latest;
-              const sec = deptHref(t.section);
+              const sec = sectionHref(t.section);
               const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
               return (
                 <li
