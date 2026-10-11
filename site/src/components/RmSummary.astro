@@ -1,0 +1,58 @@
+---
+// くらしのテーマのページに出す、県の分野別の計画（個別計画）の要約の枠。いまは観光ロードマップ（テーマ「観光」）だけ。
+// テーマ（このサイト独自の分類）とは別の県の計画なので、淡い紫の札で分け、テーマの数字には混ぜない。
+// 観光ロードマップならではの情報は観光の計画にしか無い成果指標なので、基準値より後退・横ばいの指標を悪い順に数件出す
+import StatusBar from './StatusBar.astro';
+import RmSeikaRow from './RmSeikaRow.astro';
+import Term from './Term.astro';
+import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.js';
+import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, kankoSeikaList, isBehind } from '../lib/plans.js';
+import { fmt } from '../lib/format.js';
+
+const SHOW = 5;
+const tori = kankoTorikumi(RM_LATEST);
+const toriCounts = countBy(tori, statusOf, STATUSES.map((s) => s.key));
+const seika = kankoSeika(RM_LATEST);
+const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
+const behind = kankoSeikaList().filter(isBehind);
+---
+<section class="sticker plan-sum" aria-labelledby="plan-sum-h">
+  <div><span class="plan-tag">個別計画</span></div>
+  <h2 id="plan-sum-h">県の観光の計画でも評価しています</h2>
+  <p class="small">「<a href={KANKO.href}>{KANKO.name}</a>」（{KANKO.basis}の実施計画）は、このテーマとは別の、県の<Term word="観光ロードマップ" label="計画" />です。</p>
+  <div class="ps-nums">
+    <div class="inset">
+      <div class="tile-label">主な取組（{yearLabel(RM_LATEST)}）</div>
+      <div><b class="big">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}</b> 件が順調</div>
+      <StatusBar categories={STATUSES} counts={toriCounts} context={`観光ロードマップの${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
+    </div>
+    <div class="inset">
+      <div class="tile-label">成果指標（{yearLabel(RM_LATEST)}）</div>
+      <div><b class="big">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}</b> が基準値より前進</div>
+      <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`観光ロードマップの${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
+    </div>
+  </div>
+  {behind.length > 0 && (
+    <>
+      <h3>基準値より後退・横ばいの指標（{yearLabel(RM_LATEST)}・{fmt(behind.length)}）</h3>
+      <ul class="ps-list">{behind.slice(0, SHOW).map((r) => <RmSeikaRow r={r} compact />)}</ul>
+    </>
+  )}
+  <p class="small ps-links">
+    {behind.length > SHOW && <><a href={`${KANKO.href}#seika-list`}>後退・横ばいの指標をすべて見る（{fmt(behind.length)}）</a>・</>}
+    <a href={KANKO.href}>観光ロードマップを見る</a>・<a href={KANKO_TORIKUMI_HREF}>観光ロードマップの取組をさがす</a>
+  </p>
+</section>
+
+<style>
+  .plan-sum { margin-top: 18px; display: grid; gap: 8px; }
+  .plan-sum h2 { margin: 0; font-size: 1.15rem; }
+  .plan-sum h3 { margin: 6px 0 0; font-size: 1rem; }
+  .plan-sum p { margin: 0; }
+  .ps-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .ps-nums > div { display: grid; gap: 4px; padding: 10px 12px; }
+  .ps-nums .big { font-size: 1.3rem; }
+  .ps-list { list-style: none; padding: 0; margin: 0; display: grid; }
+  .ps-list > :global(li) { padding: 8px 0; border-top: 1.5px solid var(--grid); }
+  .ps-list > :global(li:last-child) { border-bottom: 1.5px solid var(--grid); }
+</style>

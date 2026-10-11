@@ -1,0 +1,143 @@
+---
+// 観光ロードマップの施策展開1つ。施策ごとに、成果指標・主な取組・県の分析（Check）と推進戦略案（Action）
+import Base from '../../../layouts/Base.astro';
+import Crumbs from '../../../components/Crumbs.astro';
+import StatusBar from '../../../components/StatusBar.astro';
+import Term from '../../../components/Term.astro';
+import ExtLink from '../../../components/ExtLink.astro';
+import Prose from '../../../components/Prose.astro';
+import RmSeika from '../../../components/RmSeika.astro';
+import RmTorikumi from '../../../components/RmTorikumi.astro';
+import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.js';
+import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkai, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.js';
+import { joinLines, firstSentence } from '../../../lib/text.js';
+import { fmt } from '../../../lib/format.js';
+
+export function getStaticPaths() {
+  return kankoTenkaiList().map((t) => ({ params: { tenkai: t.id } }));
+}
+
+const t = kankoTenkai(Astro.params.tenkai);
+const kihon = kankoKihon().find((k) => k.id === t.kihon_id);
+const statusKeys = STATUSES.map((s) => s.key);
+// 進捗状況のスタンプは本編を読めた年度だけ（R4 は読めない）
+const years = kankoYears().filter((y) => y.readable).map((y) => y.year);
+const all = kankoTenkaiList();
+const i = all.findIndex((x) => x.id === t.id);
+const prev = all[i - 1];
+const next = all[i + 1];
+---
+<Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
+
+  <header class="sticker lift head">
+    <span class="code-no code-corner" title="観光ロードマップの報告書での番号">施策展開 {t.code}</span>
+    <div class="tags"><span class="plan-tag">{KANKO.short}</span><span class="small secondary">の施策展開</span></div>
+    <h1>{t.name}</h1>
+    <p class="small secondary meta">基本施策「{kihon?.name}」</p>
+    <p class="small secondary meta">これは<Term word="観光ロードマップ" />の施策展開です。施策の番号は沖縄県PDCAの施策とは別です。</p>
+  </header>
+
+  <nav class="toc" aria-label="このページの施策">
+    <div class="toc-links" data-scroll-hint>
+      {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
+    </div>
+    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
+  </nav>
+
+  {t.shisaku.map((s, si) => {
+    const active = s.torikumi.filter((g) => g.years[RM_LATEST]);
+    const ended = s.torikumi.filter((g) => !g.years[RM_LATEST]);
+    const seika = s.seika.filter((g) => g.years[RM_LATEST]);
+    const counts = countBy(active.map((g) => g.years[RM_LATEST]), statusOf, statusKeys);
+    // 観光ロードマップの関係部等は「、」区切り（沖縄県PDCA は区切り無しでつながっている）
+    const depts = (s.kankei || '').split(/[、,，]/).flatMap(splitDepts);
+    const past = Object.values(s.years).filter((r) => r.year !== s.year && (r.check || r.action)).sort((a, b) => b.year - a.year);
+    return (
+      <section class="rm-shisaku" aria-labelledby={`rm-${s.id}`}>
+        <div class="name-row"><h2 id={`rm-${s.id}`} class="anchor">{s.name}</h2><span class="code-no" title="観光ロードマップの報告書での番号">施策 {s.code}</span></div>
+        <p class="small secondary meta">関係部等: {depts.length ? depts.map((d, k) => <>{k > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</p>
+        {s.houkou && (
+          <div class="inset houkou">
+            <div class="small secondary label">施策の方向</div>
+            <p class="first">{firstSentence(s.houkou.replace(/^[〇○]\s*/, ''))}</p>
+            <details>
+              <summary>施策の方向をすべて読む</summary>
+              <p class="prose small">{joinLines(s.houkou)}</p>
+            </details>
+          </div>
+        )}
+
+        <h3><Term word="成果指標" />（{fmt(seika.length)}）</h3>
+        {si === 0 && seika.length > 0 && (
+          <ul class="chart-key" aria-hidden="true">
+            <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴールの目標値）</li>
+            <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
+          </ul>
+        )}
+        <div class="seika">{seika.map((g) => <RmSeika g={g} id={kankoSeikaAnchor(s.id, g.key)} />)}</div>
+
+        <h3><Term word="主な取組" />（{yearLabel(RM_LATEST)}: {fmt(active.length)}件）</h3>
+        {active.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} ${yearLabel(RM_LATEST)}の主な取組 `} />}
+        <div class="tcards">{active.map((g) => <RmTorikumi g={g} years={years} id={kankoTorikumiAnchor(s.id, g.key)} />)}</div>
+        {ended.length > 0 && (
+          <details class="past">
+            <summary>{yearLabel(RM_LATEST)}の報告に無い取組（{ended.length}件）</summary>
+            <div class="tcards">{ended.map((g) => <RmTorikumi g={g} years={years} id={kankoTorikumiAnchor(s.id, g.key)} />)}</div>
+          </details>
+        )}
+
+        {(s.check || s.action) && (
+          <details class="sticker cad">
+            <summary>県の分析と、これから（{yearLong(s.year)}）</summary>
+            {s.check && <><h4>施策の推進状況の分析（Check）</h4><Prose text={s.check} level="h5" /></>}
+            {s.action && <><h4>施策の推進戦略案（Action）</h4><Prose text={s.action} level="h5" /></>}
+          </details>
+        )}
+        {past.map((r) => (
+          <details class="sticker cad">
+            <summary>{yearLong(r.year)}の県の分析と、これから</summary>
+            {r.check && <><h4>施策の推進状況の分析（Check）</h4><Prose text={r.check} level="h5" /></>}
+            {r.action && <><h4>施策の推進戦略案（Action）</h4><Prose text={r.action} level="h5" /></>}
+          </details>
+        ))}
+        <p class="small src">
+          出典（観光ロードマップの報告書での番号は<span class="report-no">施策 {s.code}</span>）: {Object.values(s.years).sort((a, b) => b.year - a.year).map((r, k) => {
+            const a = planSourceLink('kanko', r.source, r.page);
+            return <>{k > 0 && '、'}{a ? <ExtLink href={a.href}>{yearLabel(r.year)} 実施報告書 {r.page}ページ</ExtLink> : yearLabel(r.year)}</>;
+          })}
+        </p>
+      </section>
+    );
+  })}
+
+  <nav class="pager" aria-label="ほかの施策展開">
+    {prev ? <a class="button" href={kankoTenkaiHref(prev.id)}>← {prev.name}</a> : <span />}
+    <span class="pager-mid"><a href={KANKO.href}>観光ロードマップの一覧</a>・<a href={KANKO_TORIKUMI_HREF}>取組をさがす</a></span>
+    {next ? <a class="button" href={kankoTenkaiHref(next.id)}>{next.name} →</a> : <span />}
+  </nav>
+</Base>
+
+<style>
+  .head { position: relative; display: grid; gap: 6px; margin-top: 12px; padding-top: 30px; }
+  .head h1 { margin: 0; }
+  .tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .meta { margin: 0; }
+  .rm-shisaku { margin-top: 36px; padding-top: 4px; border-top: 2.5px solid var(--line); }
+  .rm-shisaku > .name-row { margin-top: 18px; }
+  .rm-shisaku h2 { margin: 0 0 6px; }
+  .report-no { white-space: nowrap; }
+  .rm-shisaku h3 { margin: 1.4em 0 0.5em; }
+  .houkou { margin-top: 10px; padding: 10px 14px; }
+  .houkou .label { font-weight: 700; }
+  .houkou .first { margin: 2px 0 0; font-weight: 700; }
+  .seika { display: grid; gap: 12px; }
+  .tcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px; }
+  .past { margin-top: 14px; }
+  .cad { margin-top: 16px; }
+  .cad > summary { font-family: var(--font-display); color: var(--ink); font-size: 1rem; }
+  .cad h4 { font-size: 0.98rem; margin: 1em 0 0.3em; }
+  .src { margin-top: 12px; color: var(--ink-2); }
+  .pager { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 40px; }
+  .pager .button { max-width: 100%; white-space: normal; text-align: left; }
+</style>

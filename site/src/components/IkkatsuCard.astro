@@ -1,0 +1,96 @@
+---
+// 一括交付金（ソフト）の事業1つ（施策ページ）。年度ごとの評価（◎○△未）のスタンプ、最新年度の成果目標と予算の執行、県の今後の方針
+import Stamps from './Stamps.astro';
+import Chip from './Chip.astro';
+import ExtLink from './ExtLink.astro';
+import { yearLabel } from '../lib/data.js';
+import { IKKATSU_YEARS, gradeOf, planSourceLink } from '../lib/plans.js';
+import { yen } from '../lib/format.js';
+
+interface Props { g: any }
+const { g } = Astro.props;
+const j = g.latest;
+const gr = gradeOf(j.grade_label);
+const stamps = IKKATSU_YEARS.map((y) => {
+  const r = g.years[y];
+  const x = r && gradeOf(r.grade_label);
+  return x ? { year: y, tone: x.tone, shape: x.shape, text: `${x.mark} ${x.key}` } : { year: y, tone: null, text: r ? '評価なし' : '—' };
+});
+// R4 の総括表は「目標値を含む文」と「実績の文」の2列（目標の列が無い）
+const sentence = j.targets.length > 0 && j.targets.every((x) => !x.target);
+const b = j.budget || {};
+const past = Object.values(g.years).filter((r: any) => r.year !== j.year).sort((a: any, c: any) => c.year - a.year);
+const src = planSourceLink('ikkatsu', j.source, j.page);
+const sheet = j.sheet_source && planSourceLink('ikkatsu', j.sheet_source, j.sheet_page);
+---
+<article class="sticker ik">
+  <div class="th">
+    <h3>{j.name}</h3>
+    <div class="small secondary">{j.dept || '担当部課の記載なし'}　計画期間 {j.period || '—'}</div>
+  </div>
+  <Stamps items={stamps} label="年度ごとの事後評価" size="small" />
+  <div class="now">
+    {gr ? <Chip tone={gr.tone} shape={gr.shape} text={`${yearLabel(j.year)}の評価 ${gr.mark} ${gr.key}`} title={gr.note} /> : <Chip text={`${yearLabel(j.year)}の評価なし`} />}
+    <span class="small">成果目標の達成率 {j.rate_raw || '—'}</span>
+  </div>
+  {j.targets.length > 0 && (
+    <div class="table-wrap">
+      <table>
+        <caption>{yearLabel(j.year)}の成果目標</caption>
+        <thead><tr>{sentence ? <><th>成果目標（目標値を含む）</th><th>実績</th></> : <><th>成果目標</th><th>目標</th><th>実績</th></>}</tr></thead>
+        <tbody>
+          {j.targets.map((x) => (
+            <tr>
+              <td>{x.part && <span class="secondary">{x.part}: </span>}{x.name}</td>
+              {!sentence && <td class:list={[(x.target || '').length <= 8 && 'nw']}>{x.target || '—'}</td>}
+              <td class:list={[(x.actual || '').length <= 8 && 'nw']}>{x.actual || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  {b.total != null ? (
+    <p class="small money">
+      {yearLabel(j.year)}の予算額 <b>{yen(b.total)}</b>、執行済額 <b>{yen(b.spent)}</b>{b.rate != null && <>（執行率 {b.rate}%）</>}、うち交付金 {yen(b.kofukin)}
+    </p>
+  ) : <p class="small secondary money">予算の記載を読み取れませんでした（検証シートが画像のPDF）。</p>}
+  {(j.overview || j.policy) && (
+    <details>
+      <summary>事業の内容と今後の方針</summary>
+      {j.overview && <p class="small"><strong>事業概要:</strong> {j.overview}</p>}
+      {j.policy && <p class="small prose"><strong>今後の取り組み方針:</strong> {j.policy}</p>}
+    </details>
+  )}
+  {past.length > 0 && (
+    <details>
+      <summary>前の年度の評価（{past.map((r: any) => yearLabel(r.year)).join('・')}）</summary>
+      <ul class="small">
+        {past.map((r: any) => (
+          <li>{yearLabel(r.year)}: {r.grade_label || '評価なし'}（達成率 {r.rate_raw || '—'}）、予算額 {yen(r.budget?.total)}・執行済額 {yen(r.budget?.spent)}
+            {r.targets.length > 0 && <>。成果目標: {r.targets.map((x) => `${x.name}${x.target ? ` 目標${x.target}` : ''}${x.actual ? ` 実績${x.actual}` : ''}`).join(' ／ ')}</>}</li>
+        ))}
+      </ul>
+    </details>
+  )}
+  <p class="small src">
+    出典: {src ? <ExtLink href={src.href}>総括表 {j.page}ページ</ExtLink> : '—'}{sheet && <>、<ExtLink href={sheet.href}>検証シート（{sheet.label}）</ExtLink></>}
+    {j.shisaku_from && <span class="secondary">（{yearLabel(j.year)}の検証シートが読めないため、施策は{yearLabel(j.shisaku_from)}の記載によります）</span>}
+  </p>
+</article>
+
+<style>
+  .ik { display: grid; gap: 10px; align-content: start; padding: 16px; min-width: 0; }
+  .th { display: grid; gap: 2px; }
+  h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
+  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+  table { font-size: 0.8125rem; }
+  th, td { padding: 4px 6px; }
+  caption { padding-top: 0; }
+  .nw { white-space: nowrap; }
+  .money { margin: 0; }
+  .money b { font-variant-numeric: tabular-nums; }
+  details > summary { font-size: 0.875rem; }
+  details ul { margin: 4px 0 0; padding-left: 1.2em; }
+  .src { margin: 0; color: var(--ink-2); }
+</style>

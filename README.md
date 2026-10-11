@@ -37,6 +37,9 @@ python3 scripts/fetch_pdca.py --source kikaku  # 取得元を絞る（--list-sou
 | keisatsu | 警察本部 | [police.pref.okinawa.jp /category/bunya/shokai/pdca/](https://www.police.pref.okinawa.jp/category/bunya/shokai/pdca/) |
 | kigyo | 企業局 | [eb.pref.okinawa.jp /torikumi/115/137](https://www.eb.pref.okinawa.jp/torikumi/115/137) |
 | byoin | 病院事業局 | [byoinjigyokyoku.pref.okinawa.jp /data/pdca/](https://byoinjigyokyoku.pref.okinawa.jp/data/pdca/) |
+| kanko-rm | 沖縄観光推進ロードマップPDCA（個別計画。R4〜） | [pref.okinawa.jp …/1011741/1011810.html](https://www.pref.okinawa.jp/shigoto/kankotokusan/1011671/1011741/1011810.html) から年度別のページ |
+| ikkatsu | 沖縄振興特別推進交付金（ソフトの一括交付金）の事後評価（R4〜） | [pref.okinawa.jp …/1015205/1015216/](https://www.pref.okinawa.jp/kensei/yosan/1015205/1015216/index.html) |
+| hyoka | 新・沖縄21世紀ビジョン基本計画 評価検証報告書（R4〜R6） | [pref.okinawa.jp …/1014223/1039989.html](https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html) |
 
 - 県企業局のサイトは robots.txt で自動取得が禁止されているため、PDF はブラウザで手動ダウンロードし、`python3 scripts/import_manual.py <フォルダ> --source kigyo --since 2022` で取り込む（台帳に `fetched_by: manual` と記録される）。
 - 知事部局は一覧ページから自動検出する。保存名は県のページIDで固定しているため、部局名が変わってもフォルダは分かれない（環境部は新旧2ページとも kankyo）。未登録のIDは `dept-<ID>` で保存し警告を出す。
@@ -91,7 +94,7 @@ make check     # 突き合わせだけ（ホストの python3）
 
 > **いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/layouts/Base.astro` の `NOINDEX`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。検索に載せてよくなったら両方を外す。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。
 
-[Astro](https://astro.build/) で全ページを静的HTMLとして書き出す（トップ、くらしのテーマの一覧とテーマ17、施策一覧と施策339、将来像の一覧と将来像5（`/future/`。基本施策ごとの進み・主要指標・判定・推移）、基本施策36、取組の検索と取組1,727（4年分の進捗・予算・活動内容・県の検証と改善案）、成果指標の検索、部局一覧と部局15、予算と財源、予算の財源のしくみ、データについて、404）。パンくずは計画の体系（将来像 › 施策 › 取組）でたどる。前の基本施策の一覧（`/kihon/`）は `/future/` へ転送する（`astro.config.mjs` の redirects）。部局と成果指標は各ページから相互にリンクしている（成果指標の行き先は施策ページ内の `#seika-番号`）。はじめは端末の設定に関係なくライトで表示し、ヘッダーのボタンでダークに切り替えられる（選んだ配色はブラウザに記憶）。取組の検索だけは、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。ブラウザでデータベースは動かさず、ビルド時に `data/extracted` を読んでページにする。
+[Astro](https://astro.build/) で全ページを静的HTMLとして書き出す（トップ、くらしのテーマの一覧とテーマ17、施策一覧と施策339、将来像の一覧と将来像5（`/future/`。基本施策ごとの進み・主要指標・判定・推移）、基本施策36、取組の検索と取組1,727（4年分の進捗・予算・活動内容・県の検証と改善案）、成果指標の検索、部局一覧と部局15、予算と財源、予算の財源のしくみ、個別計画（観光ロードマップと施策展開30・観光ロードマップの取組の検索）、データについて、404）。パンくずは計画の体系（将来像 › 施策 › 取組）でたどる。前の基本施策の一覧（`/kihon/`）は `/future/` へ転送する（`astro.config.mjs` の redirects）。部局と成果指標は各ページから相互にリンクしている（成果指標の行き先は施策ページ内の `#seika-番号`）。はじめは端末の設定に関係なくライトで表示し、ヘッダーのボタンでダークに切り替えられる（選んだ配色はブラウザに記憶）。取組の検索だけは、ビルド時に書き出した `/torikumi/data.json` をブラウザで読む。ブラウザでデータベースは動かさず、ビルド時に `data/extracted` を読んでページにする。
 
 - **見た目**: 太い線と硬い影の「ステッカー」を並べるポップなデザイン（`site/src/styles/global.css` のトークン）。状態（順調〜大幅遅れ、判定A〜G）は青信号系の色に加えて形（● ◆ ▲ ■、取組の遅れは ▼ と斜線）と文字で区別する。日本語のウェブフォントは読み込まず、数字だけ丸い英字フォント Fredoka（数字と記号だけの部分集合、約4KB、`site/public/fonts/`、SIL Open Font License）を使う。
 - **くらしのテーマ**（17）はこのサイト独自の分類で、県の計画の分類ではない（画面にもそう出す）。施策名・施策展開・基本施策の名前に当たる言葉と、人が直すための追加・除外は [data/reference/themes.json](data/reference/themes.json)。どの施策もいずれかのテーマに入るようにしていて、入らない施策があるとビルドで警告する。主な取組・成果指標は、施策のテーマに加えて名前に当たるテーマにも入れる。施策・取組・成果指標・部局のページでテーマで絞り込める。

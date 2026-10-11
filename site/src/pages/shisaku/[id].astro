@@ -20,6 +20,8 @@ import { themesOf } from '../../lib/themes.js';
 import { joinLines, firstSentence } from '../../lib/text.js';
 import { fmt } from '../../lib/format.js';
 import ExtLink from '../../components/ExtLink.astro';
+import IkkatsuCard from '../../components/IkkatsuCard.astro';
+import { KANKO, IKKATSU_YEARS, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.js';
 
 export function getStaticPaths() {
   return getShisakuList().map((s) => ({ params: { id: s.id } }));
@@ -57,6 +59,13 @@ const latest = s.years[LATEST];
 const pastYears = yearsDesc.filter((y) => y !== LATEST && s.years[y] && (s.years[y].check || s.years[y].action));
 const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
+// 一括交付金（ソフト）の事業（事後評価の検証シートにこの施策のコードがあるもの）と、観光ロードマップでも評価されている取組の施策
+const ikkatsu = ikkatsuOf(s.id);
+const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
+const ikLatest = ikkatsu.filter((g) => g.latest.year === ikYear);
+const ikPast = ikkatsu.filter((g) => g.latest.year !== ikYear);
+const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 'なし', GRADES.map((x) => x.key));
+const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（施策）`} description={`沖縄県PDCA: 施策「${s.name}」の成果指標と主な取組の進み具合（令和4〜7年度）`}>
   <Crumbs items={[{ href: '/', label: 'トップ' }, { href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} />
@@ -114,6 +123,7 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
     <div class="toc-links" data-scroll-hint>
       <a href="#seika">成果指標</a>
       <a href="#torikumi">主な取組</a>
+      {ikkatsu.length > 0 && <a href="#ikkatsu">一括交付金</a>}
       <a href="#check">県のふりかえり</a>
       <a href="#source">出典</a>
     </div>
@@ -154,7 +164,34 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
         </div>
       </details>
     )}
+    {rmShisaku.length > 0 && (
+      <p class="small rm-note">
+        <span class="plan-tag">{KANKO.short}</span> この施策の主な取組の一部は、県の観光の<a href="/keikaku/">個別計画</a>でも評価されています:
+        {rmShisaku.map((r, i) => <>{i > 0 && '、'}<a href={kankoShisakuHref(r)}>{r.name}</a> <span class="code-no">施策 {r.code}</span></>)}
+      </p>
+    )}
   </section>
+
+  {ikkatsu.length > 0 && (
+    <section aria-labelledby="ikkatsu">
+      <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業</h2>
+      <p class="small secondary lead">この施策に当たる、一括交付金（ソフト）を使った県の事業ごとの<Term word="一括交付金の事後評価" label="事後評価" />（◎達成・○概ね達成・△一部達成・未達成）です。</p>
+      {ikLatest.length > 0 && (
+        <div class="ik-sum">
+          <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
+          {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} />)}
+        </div>
+      )}
+      <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
+      {ikPast.length > 0 && (
+        <details class="past">
+          <summary>{yearLabel(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
+          <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
+        </details>
+      )}
+      <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
+    </section>
+  )}
 
   <section aria-labelledby="check">
     <h2 id="check" class="anchor">県のふりかえりと、これから</h2>
@@ -245,6 +282,9 @@ const toriEnded = tRows.filter((r) => !r.years[LATEST]);
   .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .tcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; margin-top: 18px; }
   .past { margin-top: 18px; }
+  .rm-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 16px 0 0; }
+  .ikcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 18px; margin-top: 14px; }
+  .ik-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 8px; }
   .voice { margin-top: 16px; }
   .voice h3 { margin: 0 0 4px; font-size: 1.02rem; }
   .cad { margin-top: 14px; }

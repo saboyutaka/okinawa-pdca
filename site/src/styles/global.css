@@ -286,6 +286,13 @@ details[open] > summary { margin-bottom: 8px; }
   background: var(--pink); border: 1.5px solid var(--line); border-radius: 8px; padding: 0 8px; line-height: 1.7; text-decoration: none; white-space: nowrap;
 }
 a.ttag:hover { background: var(--sky); }
+/* 個別計画（観光ロードマップなど）の札。沖縄県PDCA の施策・取組と見分けるため淡い紫にする（将来像・状態・くらしのテーマの色と混ぜない） */
+.plan-tag {
+  display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);
+  background: var(--lilac); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 8px; line-height: 1.7; white-space: nowrap; text-decoration: none;
+}
+a.plan-tag:hover { background: var(--sky); }
+.t-main > .plan-tag { justify-self: start; }
 /* 年度ごとのスタンプ */
 .stamps { display: flex; flex-wrap: wrap; gap: 8px; }
 /* 年度・丸・言葉の3段は上に詰める（ある年度の言葉だけ2行になると、ほかの年度の丸が下がって線の高さがずれるため） */
