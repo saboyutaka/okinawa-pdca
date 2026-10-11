@@ -14,7 +14,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <p class="secondary lead">令和4〜7年度の報告書に出てくる主な取組 {fmt(groups.length)}件を、4年分の進捗状況つきでさがせます。</p>
 
   <form class="filters sticker" id="tf" role="search" aria-label="取組の絞り込み">
-    <label class="q" data-label="キーワード">キーワード（取組の名前・所管課・施策・活動指標）
+    <label class="q" data-label="キーワード">キーワード（取組の名前・所管課・施策・活動指標・やったこと）
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
     <FilterMore id="tori-more">
@@ -70,7 +70,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   <ul class="row-list" id="results"></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <p class="small secondary">
-    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（R7の中期実施計画で名前が変わった取組などは別の行）。部局は最新の報告での所管部局です。
+    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（「子ども」「こども」のような書き方の違いは同じ名前とみなします。R7の中期実施計画で名前が変わった取組などは別の行）。キーワードは「子ども」「子供」「こども」・「障害」「障がい」のどの書き方でも同じように探せます。部局は最新の報告での所管部局です。
     絞り込みの「遅れ」は「やや遅れ」「大幅遅れ」「未着手」で、「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。進捗状況の理由は、取組のページの「年度ごとの活動と検証」にあります。
     観光ロードマップにしか無い取組は、<a href={KANKO_TORIKUMI_HREF}>{KANKO.short}の取組をさがす</a>で見られます。
   </p>
@@ -79,6 +79,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 
 <script>
   import { iconSvg } from '../../lib/icons.ts';
+  import { matchesAll, searchText, searchWords, type SearchWord } from '../../lib/search.ts';
   import type { SearchData as Data } from './data.json.ts';
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
@@ -86,11 +87,13 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
   const list = document.getElementById('results')!;
   const count = document.getElementById('count')!;
   const more = document.getElementById('more') as HTMLButtonElement;
-  const norm = (s: string) => s.normalize('NFKC').toLowerCase();
   let data: Data | undefined;
   const unit = document.getElementById('unit')!;
-  let hits: Data['rows'] = [];
+  let hits: number[] = []; // 当たった行の番号（data.rows の）
   let shown = 0;
+  let words: SearchWord[] = [];
+  // 行ごとの検索される文字（名前など一覧の行に見えるもの・やったこと）。初めて探すときに作って使い回す
+  let texts: [shown: string, summary: string][] = [];
 
   function el(tag: string, cls?: string, text?: string) {
     const e = document.createElement(tag);
@@ -99,7 +102,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     return e;
   }
 
-  function render(row: Data['rows'][number]) {
+  function render(row: Data['rows'][number], i: number) {
     const [sid, name, section, dept, sts, indicator, target, actual, latestYear, href] = row;
     const [code, sname] = data!.shisaku[sid];
     const li = el('li', 't-row');
@@ -122,6 +125,8 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
     if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
+    // キーワードが行に見える文字に無く、やったことにだけあるときは、やったことを出す（なぜ出たかが分かるように）
+    if (words.length && !matchesAll(texts[i][0], words)) main.append(el('div', 'small secondary', `R${latestYear - 2018}にやったこと: ${row[13]}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
     li.append(main, stamps(sts));
     return li;
@@ -151,7 +156,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
 
   function showMore() {
     const frag = document.createDocumentFragment();
-    for (const row of hits.slice(shown, shown + PAGE)) frag.append(render(row));
+    for (const i of hits.slice(shown, shown + PAGE)) frag.append(render(data!.rows[i], i));
     list.append(frag);
     shown = Math.min(hits.length, shown + PAGE);
     more.hidden = shown >= hits.length;
@@ -162,7 +167,7 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     // 検索用のデータを読み込む前の入力は、読み込み後にまとめて反映する
     if (!data) return;
     const f = new FormData(form);
-    const q = norm(String(f.get('q') || '')).split(/\s+/).filter(Boolean);
+    words = searchWords(String(f.get('q') || ''));
     const s = String(f.get('s') || '');
     const dept = String(f.get('dept') || '');
     const st = String(f.get('st') || '');
@@ -171,8 +176,14 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
     const plan = String(f.get('plan') || '');
     const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
-    hits = data.rows.filter((r) => {
-      const [sid, name, section, d, sts, indicator] = r;
+    if (words.length && !texts.length) {
+      texts = data.rows.map(([sid, name, section, , , indicator, , , , , , , , summary]) => {
+        const sh = data!.shisaku[sid];
+        return [searchText(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`), searchText(summary)];
+      });
+    }
+    const ok = (r: Data['rows'][number], i: number) => {
+      const [sid, , , d, sts] = r;
       const sh = data!.shisaku[sid];
       if (s && String(sh[2]) !== s) return false;
       if (dept && d !== dept) return false;
@@ -181,12 +192,11 @@ const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
-      if (q.length) {
-        const text = norm(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`);
-        if (!q.every((w) => text.includes(w))) return false;
-      }
+      // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
+      if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;
-    });
+    };
+    hits = data.rows.flatMap((r, i) => (ok(r, i) ? [i] : []));
     count.textContent = hits.length.toLocaleString('ja-JP');
     unit.hidden = false;
     list.replaceChildren();
