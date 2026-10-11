@@ -7,7 +7,7 @@
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, rateBin, countBy, getKihonList, RATE_BINS } from '../lib/data.js';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone } from '../lib/data.js';
 import { JUDGE_UI } from '../lib/icons.js';
 
 interface Props { s: any; attrs?: Record<string, string>; kihon?: boolean }
@@ -20,8 +20,6 @@ const seika = s.seika.filter((x) => x.year === LATEST);
 const j = judgeOf(s.judges[LATEST]);
 const ui = j && JUDGE_UI[j.key];
 const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : '判定なし'}`;
-const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : 'なし');
-const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 ---
 <li class="s-item" {...attrs}>
   <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
@@ -37,7 +35,7 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
       {latestTori.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} size="mini" />}
     </span>
     <span class="seika">
-      成果指標{seika.length ? seika.map((x) => <Chip tone={toneOfBin(x)} text={rateText(x)} />) : ' —'}
+      成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}
       <span class="sr-only">（達成率）</span>
     </span>
   </div>

@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
@@ -49,7 +50,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
         {RATE_BINS.map((b) => <option value={b.key}>{b.key}</option>)}
       </select>
     </label>
-    <label data-label="見通し">見通し
+    <label data-label="県の見通し">県の見通し（目標値に届くか）
       <select name="judge">
         <option value="">すべて</option>
         {JUDGEMENTS.map((j) => <option value={j.key}>{j.key}</option>)}
@@ -73,9 +74,10 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">{latestCount}</span>指標を表示</p>
   <p class="small secondary">
-    <Term word="達成率" />はその年度の計画値に対する割合、見通しは目標値に届くかの県の見立てです。
-    目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
+    右の札は{yearLabel(LATEST)}の<Term word="達成率" />（R6 までの指標は R6）です。
+    ゴールの目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
   </p>
+  <SeikaKey mini />
 
   <div id="seika-list">
     {kihon.map((k) => {
@@ -90,6 +92,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
               return (
                 <SeikaRow
                   x={x}
+                  row={r}
                   shisaku={r.shisaku}
                   href={seikaHref(r.shisaku.id, r.key)}
                   attrs={{

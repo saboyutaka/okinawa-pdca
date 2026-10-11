@@ -10,6 +10,7 @@ import Term from '../../../components/Term.astro';
 import Sz from '../../../components/Sz.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
+import IkenBox from '../../../components/IkenBox.astro';
 import { themeIdsOfItem } from '../../../lib/themes.js';
 import { JUDGE_UI } from '../../../lib/icons.js';
 import {
@@ -450,6 +451,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       </ul>
     </section>
   )}
+
+  <IkenBox kind="主な取組" name={t.name} />
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>

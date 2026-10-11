@@ -1,40 +1,44 @@
 ---
 // 成果指標の一覧の1行（成果指標をさがす・部局のページ。親は ul.row-list）。
-// 1行目に名前と達成率・見通し、2行目に基準値→実績値→目標値、3行目に施策。担当・くらしのテーマは絞り込みと施策のページに任せる
+// 左に名前と施策の2行、右に達成率の札とゴールまでの道のりの小さな図（SeikaSpark）。札は施策の一覧の行の成果指標の札と同じ形（数字だけ）で、
+// 「達成率」「何年度か」と図の凡例は一覧の上に1回だけ書く（SeikaKey）。
+// 見通し（県の見立て）は達成率の区分とほぼ重なるので行に出さず、絞り込みと施策のページに任せる。基準値・実績値・目標値は図に任せ、読み上げ用の文にだけ残す。
+// 担当・くらしのテーマも絞り込みと施策のページに任せる
 import Chip from './Chip.astro';
-import { LATEST, yearLabel, RATE_BINS, rateBin, toneOfJudgement, withUnit, refText } from '../lib/data.js';
+import SeikaSpark from './SeikaSpark.astro';
+import { LATEST, yearLabel, withUnit, refText, rateText, rateTone } from '../lib/data.js';
 
-interface Props { x: any; shisaku: any; href: string; attrs?: Record<string, string> }
-const { x, shisaku: s, href, attrs = {} } = Astro.props;
-const bin = rateBin(x);
-const binTone = RATE_BINS.find((b) => b.key === bin)?.tone;
-const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
+interface Props { x: any; row: any; shisaku: any; href: string; attrs?: Record<string, string> }
+const { x, row, shisaku: s, href, attrs = {} } = Astro.props;
 const past = x.year !== LATEST;
+const rateLabel = `${yearLabel(x.year)}の達成率`;
+const ref = refText(x.actual_ref_year);
+const srText = `${rateLabel} ${rateText(x)}。基準値 ${withUnit(x.base_raw, x.unit)}、実績値 ${withUnit(x.actual_raw, x.unit)}${ref ? `（${ref}）` : ''}、目標値 ${withUnit(x.target_raw, x.unit)}（${x.target_year}）`;
 ---
 <li class="m-row" {...attrs}>
   <div class="m-head">
-    <span class="ind-name">
-      <a class="name-link" href={href}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
-      {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
-    </span>
-    <span class="tags">
-      <Chip tone={binTone} text={`${rateText}（${yearLabel(x.year)}）`} />
-      {x.judgement && <Chip tone={toneOfJudgement(x.judgement)} text={`見通し: ${x.judgement}`} />}
-    </span>
+    <a class="name-link" href={href}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
+    {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
   </div>
-  <div class="vals small">
-    <span>基準値 {withUnit(x.base_raw, x.unit)}</span>
-    <span>→ 実績値 <strong>{withUnit(x.actual_raw, x.unit)}</strong>{refText(x.actual_ref_year) && <span class="secondary">（{refText(x.actual_ref_year)}）</span>}</span>
-    <span>→ 目標値 {withUnit(x.target_raw, x.unit)}（{x.target_year}）</span>
+  {s && <div class="sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  <div class="m-viz" aria-hidden="true">
+    <Chip tone={rateTone(x)} text={rateText(x)} title={rateLabel} />
+    <SeikaSpark row={row} />
   </div>
-  {s && <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  <span class="sr-only">{srText}</span>
 </li>
 
 <style>
-  .m-row { display: grid; gap: 2px; }
-  .m-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
-  .ind-name { min-width: 0; }
+  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
+  .m-head { grid-area: head; min-width: 0; }
+  .sub { grid-area: sub; }
+  /* 達成率の札と図。札と図の列の幅はどの行も同じにして、印と図の位置をそろえる（文字の値で図の無い行も） */
+  .m-viz { grid-area: viz; display: grid; grid-template-columns: 6.5em 120px; gap: 12px; align-items: center; }
+  .m-viz :global(.spark) { width: 100%; height: auto; }
   .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
-  .vals { display: flex; flex-wrap: wrap; gap: 0 10px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  /* スマホでは右の列を細くし、札の下に図を置く */
+  @media (max-width: 640px) {
+    .m-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 2px 12px; align-items: start; }
+    .m-viz { grid-template-columns: 1fr; gap: 4px; }
+  }
 </style>

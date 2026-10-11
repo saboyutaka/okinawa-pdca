@@ -1,0 +1,51 @@
+---
+// SNS のシェアパネル。「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky のアイコンだけのボタンを1つの枠にまとめる。
+// X・Threads・Bluesky は #okinawa_pdca を付けた投稿画面を開く（lib/share.js）。
+// アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.js）で出す。
+// 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
+// link="page" は見ているページ、link="top" はサイトのトップの URL を入れる。本番のドメインはビルド時に決まっていないので、URL はブラウザで入れる
+// （スクリプトが動かないときは URL なしで開く）
+import { SNS, shareHref } from '../lib/share.js';
+import { SHARE_ICONS } from '../lib/share-icons.js';
+
+interface Props { text?: string; link?: 'page' | 'top'; label?: string }
+const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
+---
+<div class="share-panel" role="group" aria-label={label} data-share-text={text} data-share-link={link}>
+  <span class="share-label" aria-hidden="true">シェア</span>
+  <ul class="share-list">
+    {SNS.map((s) => (
+      <li>
+        <a class="share-ic" href={shareHref(s.id, { text })} target="_blank" rel="noopener" data-sns={s.id} data-tip-value={`${s.label} でシェア`} data-tip-label="別のタブで開きます">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d={SHARE_ICONS[s.id]} /></svg>
+          <span class="sr-only">{s.label} でシェア（別のタブで開きます）</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<script>
+  import { shareHref } from '../lib/share.js';
+  for (const panel of document.querySelectorAll('.share-panel')) {
+    const url = location.origin + (panel.dataset.shareLink === 'top' ? '/' : location.pathname);
+    const text = panel.dataset.shareText || '';
+    for (const a of panel.querySelectorAll('a[data-sns]')) a.href = shareHref(a.dataset.sns, { text, url });
+  }
+</script>
+
+<style>
+  /* 白い枠に「シェア」と丸いアイコンを並べる。狭い画面では「シェア」の下にアイコンの列を折り返す */
+  .share-panel {
+    display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; max-width: 100%;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 26px; padding: 4px 5px 4px 16px;
+  }
+  .share-label { font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; color: var(--ink-2); }
+  .share-list { list-style: none; padding: 0; margin: 0; display: flex; gap: 4px; }
+  .share-ic { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: var(--ink); background: var(--bg); }
+  .share-ic:hover { background: var(--sky); }
+  .share-ic:active { transform: translate(1px, 1px); }
+  .share-ic svg { fill: currentColor; }
+  /* 320px 前後の狭い画面では、折り返したアイコンの列が枠に収まるように丸を小さくする */
+  @media (max-width: 360px) { .share-ic { width: 38px; height: 38px; } }
+</style>
