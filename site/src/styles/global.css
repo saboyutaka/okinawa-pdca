@@ -193,6 +193,8 @@ small, .small { font-size: 0.875rem; }
 .card + .card { margin-top: 18px; }
 .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .cards > .card { margin-top: 0; }
+/* ドーナツのカード（components/DonutCard.astro）を並べる箱 */
+.donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
 figure { margin: 0; }
 .notice {
   background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);

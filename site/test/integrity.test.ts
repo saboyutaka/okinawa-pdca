@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
-  getTorikumi, getSeika, seikaDept, deptHref, sourceLink, amountEntries, budgetGroups,
+  getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
+  amountEntries, budgetGroups,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import {
@@ -73,6 +74,20 @@ test('最新の年度の取組・成果指標の部局には、どれも部局�
   none([...depts].filter((d) => !deptHref(d)), (d) => d || '（空）');
 });
 
+test('最新の年度の取組の所管部課は、部局のページの課ごとの図に行がある', () => {
+  // 取組のページの「所管」のリンクは、部局のページのその課の行へ飛ぶ。部局のページの課の行は、最新の年度の取組の所管部課で作る
+  none(getTorikumi(LATEST).filter((t) => !sectionHref(t.section)?.includes('#') || deptHref(t.section) !== deptHref(t.dept)), (t) => `${t.shisaku_id} ${t.name}: ${t.section}（${t.dept}）`);
+});
+
+test('施策にかかわる部局（関係部等と取組の部局）には、どれも部局のページがある', () => {
+  // 部局のページの施策の一覧と、施策をさがすの部局の絞り込みは、shisakuDepts で同じように数える
+  none(getShisakuList().flatMap((s) => shisakuDepts(s).filter((d) => !deptHref(d.dept)).map((d) => `${s.id}: ${d.dept}`)), (x) => x);
+});
+
+test('どの部局のページにも、出典の検証票のページがある', () => {
+  none(DEPTS.filter((d) => !deptSourcePages(d.name).length), (d) => d.name);
+});
+
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {
   for (const k of getKihonList()) {
     const used = shuyouRows(k.id).flatMap((g) => Object.values(g.years));
@@ -86,6 +101,21 @@ test('取組の4年間の進捗状況は、報告の年度の順に並ぶ', () =
     assert.equal(g.statuses.length, YEARS.length);
     assert.deepEqual(g.statuses.map(Boolean), YEARS.map((y) => Boolean(g.years[y])), g.href);
   }
+});
+
+test('取組の活動指標のまとまりは、報告の年度を1回ずつ含み、この先の年度の計画は最新の報告にある取組のいまの活動指標にだけ付く', () => {
+  const bad: string[] = [];
+  for (const g of getTorikumiGroups()) {
+    const runs = activityRuns(g);
+    // 新しい活動指標が先なので、まとまりを古い順に並べ直すと報告の年度の順になる
+    const reported = [...runs].reverse().flatMap((r) => r.years.filter((y) => !y.future).map((y) => y.y));
+    if (reported.join() !== YEARS.filter((y) => g.years[y]).join()) bad.push(`${g.href} 年度 ${reported.join()}`);
+    const future = runs.flatMap((r, i) => r.years.filter((y) => y.future).map((y) => ({ i, y: y.y })));
+    if (future.some((f) => f.i > 0 || f.y <= LATEST || g.latest.year !== LATEST)) bad.push(`${g.href} この先の年度 ${future.map((f) => f.y).join()}`);
+    // 図に置く値は、まとまりの単位でそろっている（単位の違う値は null）
+    if (runs.some((r) => r.chart !== r.years.some((y) => y.actual != null))) bad.push(`${g.href} 図の有無`);
+  }
+  none(bad, (x) => x);
 });
 
 test('観光ロードマップの成果指標は、後退・横ばいを先に並べる', () => {

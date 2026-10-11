@@ -1,0 +1,22 @@
+---
+// 割合ひとつのドーナツと、その説明のカード（将来像・部局のページの頭の下に2枚並べる。並べる箱は .donuts）。
+// 見出しは中身（Term を入れられる）、説明は sub のスロット
+import Donut from './Donut.astro';
+
+interface Props { frac: number; label: string }
+const { frac, label } = Astro.props;
+---
+<div class="sticker donut-card">
+  <Donut frac={frac} label={label} />
+  <div>
+    <div class="dc-title"><slot /></div>
+    <div class="dc-sub"><slot name="sub" /></div>
+  </div>
+</div>
+
+<style>
+  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
+  .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
+  .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
+  @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
+</style>

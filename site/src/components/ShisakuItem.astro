@@ -3,7 +3,8 @@
 // 1行目に判定の小さなハンコと名前、2行目に取組の進みと成果指標の達成率を並べる。
 // 判定はハンコだけで出し、言い方（A〜G の意味）は一覧の上の凡例（JudgeLegend）に1回だけ書く。前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
 // 一覧は将来像・基本施策ごとに見出しを立てているので、見出しと同じこと（将来像・基本施策）は行に書かない。
-// 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）
+// 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）。
+// sub のスロットを渡すと、基本施策の名前の代わりにそれを出す（部局のページの「関係部等: 環境部」など）
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
@@ -29,7 +30,7 @@ const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : 
   </div>
   <div class="facts small">
     <span class="sr-only">{judgeText}</span>
-    {kihon && <span class="kihon">基本施策 {kihon.name}</span>}
+    {Astro.slots.has('sub') ? <span class="kihon"><slot name="sub" /></span> : kihon && <span class="kihon">基本施策 {kihon.name}</span>}
     <span class="tori">
       取組 <b>{ok}/{latestTori.length}</b>順調
       {latestTori.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} size="mini" />}
