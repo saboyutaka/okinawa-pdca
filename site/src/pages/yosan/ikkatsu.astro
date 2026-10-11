@@ -1,0 +1,181 @@
+---
+// 一括交付金の事業をさがす。一括交付金（ソフト）の事後評価（R4〜R6）の事業を、評価・移り変わり・将来像・部局・くらしのテーマで絞り込む。
+// 事業には自分のページが無いので、名前は施策のページの事業のカードへのリンクにする（scripts/list-filter.ts で絞り込む）。
+// 並びは施策をさがすと同じく基本施策ごと（1つの事業に施策が複数あるときは最初の施策）
+import Base from '../../layouts/Base.astro';
+import Crumbs from '../../components/Crumbs.astro';
+import FilterMore from '../../components/FilterMore.astro';
+import IkkatsuRow from '../../components/IkkatsuRow.astro';
+import Chip from '../../components/Chip.astro';
+import Icon from '../../components/Icon.astro';
+import Sz from '../../components/Sz.astro';
+import Term from '../../components/Term.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import { yearLabel, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuDept, isShort, ikkatsuRows, planSourceLink } from '../../lib/plans.ts';
+import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { LINKS } from '../../lib/links.ts';
+import { fmt } from '../../lib/format.ts';
+import type { IkkatsuJigyoRow } from '../../lib/types.ts';
+
+const prev = IKKATSU_LATEST - 1;
+const rank = (label: string | undefined) => GRADES.findIndex((x) => x.key === label);
+// 年度の移り変わり（施策の判定の移り変わりと同じく、前の年度と比べて上がった・下がった）
+const TRENDS = [
+  { key: 'down', label: `${yearLabel(prev)}→${yearLabel(IKKATSU_LATEST)}で評価が下がった` },
+  { key: 'up', label: `${yearLabel(prev)}→${yearLabel(IKKATSU_LATEST)}で評価が上がった` },
+  { key: 'short2', label: '3年のうち2年以上、目標に届かなかった（△・未）' },
+  { key: 'all', label: '3年とも◎達成' },
+];
+function trendsOf(g: YearGroup<IkkatsuJigyoRow>) {
+  const out: string[] = [];
+  const [a, b] = [rank(g.years[prev]?.grade_label), rank(g.years[IKKATSU_LATEST]?.grade_label)];
+  if (a >= 0 && b >= 0 && b > a) out.push('down');
+  if (a >= 0 && b >= 0 && b < a) out.push('up');
+  const labels = IKKATSU_YEARS.map((y) => g.years[y]?.grade_label);
+  if (labels.filter((l) => l && isShort(l)).length >= 2) out.push('short2');
+  if (labels.every((l) => l === '達成')) out.push('all');
+  return out;
+}
+
+const shisakuOrder = new Map(getShisakuList().map((s, i) => [s.id, i]));
+const rows = ikkatsuGroups()
+  .map((g) => {
+    const sids = ikkatsuShisakuIds(g);
+    const s = sids.map(getShisaku).find((x) => x);
+    const r = g.years[IKKATSU_LATEST];
+    return {
+      g, s,
+      attrs: {
+        'data-item': '',
+        'data-gr': r ? (r.grade_label || 'none') : 'none',
+        'data-tr': trendsOf(g).join('|'),
+        'data-s': s ? String(s.shouraizou) : '',
+        'data-dept': ikkatsuDept(g.latest.dept),
+        'data-theme': [...new Set(sids.flatMap((id) => themeIdsOfItem(id, g.latest.name)))].join('|'),
+        'data-text': `${g.latest.name} ${g.latest.dept} ${g.latest.overview} ${sids.map((id) => { const x = getShisaku(id); return x ? `${x.code} ${x.name}` : ''; }).join(' ')}`,
+      },
+    };
+  })
+  .sort((a, b) => (shisakuOrder.get(a.s?.id ?? '') ?? 1e9) - (shisakuOrder.get(b.s?.id ?? '') ?? 1e9) || a.g.latest.no - b.g.latest.no);
+const groups = [
+  ...getKihonList().map((k) => ({ kihon: k, items: rows.filter((r) => r.s?.kihon_id === k.id) })),
+  { kihon: undefined, items: rows.filter((r) => !r.s) },
+].filter((x) => x.items.length);
+
+const latest = rows.filter((r) => r.g.years[IKKATSU_LATEST]);
+const counts = countBy(latest, (r) => r.g.years[IKKATSU_LATEST].grade_label || 'なし', GRADES.map((x) => x.key));
+const depts = DEPTS.filter((d) => rows.some((r) => r.attrs['data-dept'] === d.name));
+// 年度ごとの総括表（評価の一覧。事業の行の出典）
+const sources = IKKATSU_YEARS.flatMap((y) => {
+  const id = ikkatsuRows(y)[0]?.source;
+  const link = id && planSourceLink('ikkatsu', id);
+  return link ? [{ href: link.href, year: y }] : [];
+});
+---
+<Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${IKKATSU_YEARS.map(yearLabel).join('・')}）の評価・将来像・部局でさがせます。`}>
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { href: '/yosan/', label: '予算と財源' }, { label: '一括交付金の事業をさがす' }]} />
+  <h1>一括交付金の事業をさがす</h1>
+  <p class="lead">
+    一括交付金（ソフト）を使った県の事業 {fmt(rows.length)}件を、{IKKATSU_YEARS.map(yearLabel).join('・')}の<Term word="一括交付金の事後評価" label="事後評価" />つきでさがせます。
+    名前を押すと、施策のページで成果目標・予算の執行・今後の方針を見られます。
+  </p>
+
+  <form class="filters sticker search-form" role="search" aria-label="一括交付金の事業の絞り込み" data-filter="#ik-list" data-count="#count" data-empty="#empty" data-summary="#active">
+    <label class="q" data-label="キーワード">キーワード（事業・担当課・施策の名前、事業の内容）
+      <input type="search" name="q" placeholder="例: 離島、観光、人材育成" />
+    </label>
+    <FilterMore id="ik-more">
+    <fieldset class="fgroup" data-label="評価">
+      <legend class="fgroup-label">{yearLabel(IKKATSU_LATEST)}の評価・いくつでも選べます</legend>
+      <div class="fchips">
+        {GRADES.map((x) => (
+          <label class="fchip" title={x.note}>
+            <input type="checkbox" name="gr" value={x.key} data-text={`${x.mark} ${x.key}`} />
+            <span><Icon tone={x.tone} shape={x.shape} />{x.mark} {x.key}</span>
+          </label>
+        ))}
+        <label class="fchip"><input type="checkbox" name="gr" value="none" data-text={`${yearLabel(IKKATSU_LATEST)}の評価なし`} /><span><Icon tone="blank" shape="ring" />{yearLabel(IKKATSU_LATEST)}の評価なし</span></label>
+      </div>
+    </fieldset>
+    <label data-label="評価の移り変わり">評価の移り変わり
+      <select name="tr">
+        <option value="">すべて</option>
+        {TRENDS.map((t) => <option value={t.key}>{t.label}</option>)}
+      </select>
+    </label>
+    <label data-label="部局">担当部局
+      <select name="dept">
+        <option value="">すべて</option>
+        {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+      </select>
+    </label>
+    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
+      <select name="theme">
+        <option value="">すべて</option>
+        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+      </select>
+    </label>
+    <fieldset class="fgroup" data-label="将来像">
+      <legend class="fgroup-label">将来像</legend>
+      <div class="fchips">
+        <label class="fchip"><input type="radio" name="s" value="" checked /><span>すべて</span></label>
+        {getShouraizou().map((s) => <label class="fchip" title={s.name}><input type="radio" name="s" value={String(s.id)} data-text={`将来像${s.id}`} /><span><Sz id={s.id} sr={false} />将来像{s.id}</span></label>)}
+      </div>
+    </fieldset>
+    </FilterMore>
+  </form>
+  <div class="active-filters" id="active" hidden></div>
+  <p class="result-count" aria-live="polite"><span id="count">{fmt(rows.length)}</span>件を表示</p>
+  <div class="glegend small">
+    <span class="gl-head">スタンプは年度ごとの事後評価（{yearLabel(IKKATSU_LATEST)}は{fmt(latest.length)}事業）:</span>
+    <ul aria-label="事後評価の凡例">
+      {GRADES.map((x) => <li><Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(counts[x.key] || 0)}`} title={x.note} /></li>)}
+    </ul>
+  </div>
+
+  <div id="ik-list">
+    {groups.map(({ kihon: k, items }) => (
+      <section class="group" data-group>
+        <h2 class="group-title">
+          {k ? (
+            <>
+              <Sz id={k.shouraizou} />
+              <span class="gt-name"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></span>
+            </>
+          ) : <span class="gt-name">施策の記載が読み取れない事業</span>}
+        </h2>
+        <ul class="row-list">
+          {items.map((r) => <IkkatsuRow g={r.g} attrs={r.attrs} />)}
+        </ul>
+      </section>
+    ))}
+  </div>
+  <p id="empty" class="secondary" hidden>条件に合う事業はありません。条件を1つずつ外してみてください。</p>
+
+  <div class="small secondary note">
+    <p>
+      評価は、事業ごとの成果目標の達成率で決まります（◎達成は100%、○概ね達成は70%以上、△一部達成は70%未満で一部の目標を達成、未達成は70%未満でどの目標も未達成）。
+      予算額は前の年度からの繰越を含む事業費で、国が8割・県が2割を負担します。
+    </p>
+    <p>
+      施策は事業ごとの検証シートに書かれた施策のコードで結び付けています。主な取組の予算事業と同じ名前の事業は、<a href="/yosan/#jigyo">予算と財源</a>と取組のページからもたどれます。
+      出典: 沖縄県「<ExtLink href={LINKS.ikkatsu}>{IKKATSU.name}</ExtLink>」（{sources.map((s, i) => <>{i > 0 && '・'}<ExtLink href={s.href}>{yearLabel(s.year)}の総括表</ExtLink></>)}）。
+    </p>
+  </div>
+</Base>
+
+<script src="../../scripts/list-filter.ts"></script>
+
+<style>
+  .search-form { margin-top: 16px; }
+  .search-form .q input { font-size: 1rem; min-height: 44px; }
+  .filters label .own { margin-left: 4px; }
+  .glegend { margin: 8px 0 12px; color: var(--ink-2); line-height: 1.7; }
+  .gl-head { margin-right: 10px; }
+  .glegend ul { display: inline; list-style: none; padding: 0; margin: 0; color: var(--ink); }
+  .glegend li { display: inline-block; margin-right: 12px; }
+  .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.08rem; margin: 2em 0 0.6em; }
+  .gt-name { flex: 1 1 12em; min-width: 0; }
+  .note { margin-top: 1.5em; }
+</style>

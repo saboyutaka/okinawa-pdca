@@ -25,7 +25,7 @@ import { joinLines, firstSentence } from '../../lib/text.ts';
 import { fmt } from '../../lib/format.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
-import { KANKO, IKKATSU_YEARS, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
+import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
 
 export function getStaticPaths() {
   return getShisakuList().map((s) => ({ params: { id: s.id }, props: { s } }));
@@ -191,7 +191,8 @@ const rmShisaku = kankoOfPdcaShisaku(s);
           <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
         </details>
       )}
-      <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
+      <p class="small"><a href={`${IKKATSU_HREF}?s=${s.shouraizou}`}>将来像{s.shouraizou}の一括交付金の事業をさがす</a>・<a href={IKKATSU_HREF}>すべての事業をさがす</a></p>
+      <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません（取組の予算事業と名前が同じ事業は、取組のページの予算から行き来できます）。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
     </section>
   )}
 

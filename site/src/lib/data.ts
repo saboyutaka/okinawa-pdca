@@ -871,6 +871,40 @@ export function amountEntries(report: number, kind: AmountKind) {
   return out;
 }
 
+// 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
+// funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）
+export interface BudgetGroup {
+  key: string;
+  name: string;
+  estimate: number;
+  settled: number | undefined;
+  initial: number | undefined;
+  funds: Map<string, number>;
+  related: BudgetLine[];
+}
+export function budgetGroups(report: number): BudgetGroup[] {
+  const sumByName = (kind: AmountKind) => {
+    const m = new Map<string, number>();
+    for (const e of amountEntries(report, kind)) m.set(budgetKey(e.budgetName), (m.get(budgetKey(e.budgetName)) || 0) + e.amount);
+    return m;
+  };
+  const settled = sumByName('settled');
+  const initial = sumByName('initial');
+  const lines = getBudgetLines().filter((l) => l.report === report);
+  const m = new Map<string, BudgetGroup>();
+  for (const e of amountEntries(report, 'estimate')) {
+    const k = budgetKey(e.budgetName);
+    if (!m.has(k)) {
+      const related = [...new Map(lines.filter((l) => budgetKey(l.name) === k).map((l) => [`${l.shisaku_id}|${l.key}`, l])).values()];
+      m.set(k, { key: k, name: e.budgetName, estimate: 0, settled: settled.get(k), initial: initial.get(k), funds: new Map(), related });
+    }
+    const g = m.get(k)!;
+    g.estimate += e.amount;
+    g.funds.set(e.fund, (g.funds.get(e.fund) || 0) + e.amount);
+  }
+  return [...m.values()].sort((a, b) => b.estimate - a.estimate);
+}
+
 export function getSuspects() {
   return getBudgetLines().flatMap((l) => l.suspect.map((kind) => ({ ...l, kind, amount: l[kind] })));
 }

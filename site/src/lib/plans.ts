@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
-// 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページに、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, type Shisaku, type YearGroup } from './data.ts';
+// 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
+import { load, getShisaku, getTorikumiGroups, torikumiPage, torikumiSlug, seikaHrefByName, nameKey, deptOf, type Shisaku, type YearGroup } from './data.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { HyokaKihonRow, IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
@@ -226,6 +226,15 @@ export const GRADES: { key: string; mark: string; tone: Tone; shape: Shape; note
   { key: '未達成', mark: '未', tone: 'critical', shape: 'square', note: '達成率70%未満で、どの目標値も未達成' },
 ];
 export const gradeOf = (label: string) => GRADES.find((g) => g.key === label);
+// 目標に届かなかった評価（△一部達成・未達成）
+export const isShort = (label: string) => label === '一部達成' || label === '未達成';
+// 年度ごとの評価のスタンプ（components/Stamps.astro に渡す形）
+export const ikkatsuStamps = (g: YearGroup<IkkatsuJigyoRow>) =>
+  IKKATSU_YEARS.map((y) => {
+    const r = g.years[y];
+    const x = r && gradeOf(r.grade_label);
+    return x ? { year: y, tone: x.tone, shape: x.shape, text: `${x.mark} ${x.key}` } : { year: y, tone: null, text: r ? '評価なし' : '—' };
+  });
 
 let ikkatsuIndex: Map<string, YearGroup<IkkatsuJigyoRow>[]> | undefined;
 // 施策ごとの事業（年度をまたいで同じ名前の事業を1行に）。1つの事業が複数の施策コードを持つときは、それぞれの施策に出す
@@ -243,6 +252,32 @@ export function ikkatsuOf(shisakuId: string) {
   return ikkatsuIndex.get(shisakuId) || [];
 }
 export const ikkatsuRows = (year: number) => load('ikkatsu/jigyo').filter((j) => j.year === year);
+
+// 一括交付金の事業をさがす（/yosan/ikkatsu/）。事業には自分のページが無いので、施策のページの事業のカードを行き先にする
+export const IKKATSU_HREF = '/yosan/ikkatsu/';
+export const IKKATSU_LATEST = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
+let ikkatsuAll: YearGroup<IkkatsuJigyoRow>[] | undefined;
+// すべての事業（年度をまたいで同じ名前の事業を1行に）
+export const ikkatsuGroups = () => (ikkatsuAll ??= groupByKey(load('ikkatsu/jigyo')));
+// 事業の施策（新しい年度の検証シートの施策コードを先に。R5 には施策コードの無い事業が1つある）
+export const ikkatsuShisakuIds = (g: YearGroup<IkkatsuJigyoRow>) =>
+  [...new Set(Object.values(g.years).sort((a, b) => b.year - a.year).flatMap((r) => r.shisaku_ids))];
+// 施策のページの事業のカード（IkkatsuCard）の id と、そこへの URL（最初の施策のページ）
+export const ikkatsuAnchor = (key: string) => `ik-${torikumiSlug(key)}`;
+export function ikkatsuHref(g: YearGroup<IkkatsuJigyoRow>) {
+  const sid = ikkatsuShisakuIds(g)[0];
+  return sid ? `/shisaku/${sid}/#${ikkatsuAnchor(g.key)}` : null;
+}
+// 担当部課の部局。教育委員会の課は、沖縄県PDCA の部局（教育庁）にそろえる
+export const ikkatsuDept = (dept: string | null | undefined) => (/^教育委員会/.test(dept || '') ? '教育庁' : deptOf(dept));
+
+// 予算事業（部局の検証票）と同じ名前の事業。予算事業の単位で事後評価されているので、財源が一括交付金（ソフト）の予算事業だけ結び付ける
+let ikkatsuByName: Map<string, YearGroup<IkkatsuJigyoRow>> | undefined;
+export function ikkatsuOfBudget(name: string | null | undefined, fund: string) {
+  if (fund !== '一括交付金（ソフト）' || !name) return undefined;
+  ikkatsuByName ??= new Map(ikkatsuGroups().map((g) => [g.key, g]));
+  return ikkatsuByName.get(nameKey(name));
+}
 
 // ---------------------------------------------------------------- 評価検証報告書
 

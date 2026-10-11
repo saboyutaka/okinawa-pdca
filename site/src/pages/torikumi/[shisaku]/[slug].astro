@@ -20,7 +20,7 @@ import {
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
 import ExtLink from '../../../components/ExtLink.astro';
-import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
+import { KANKO, IKKATSU_LATEST, kankoOfPdca, kankoShisakuHref, ikkatsuOfBudget, ikkatsuHref, gradeOf } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
 import type { AmountKind, BudgetAmountRow, BukyokuTorikumiRow } from '../../../lib/types.ts';
 
@@ -109,6 +109,20 @@ const budgetMax = Math.max(1, ...budgetSeries.map((x) => x.amount));
 const latestBudget = byFy.get(t.year);
 const latestEstimate = latestBudget?.kind === 'estimate' ? latestBudget.amount : null;
 const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).map((b) => b.name)).filter(Boolean))];
+// 予算事業のうち、財源が一括交付金（ソフト）で、同じ名前の事業が事後評価されているもの（施策のページの事業のカードへ）
+const ikMatched = new Map<string, NonNullable<ReturnType<typeof ikkatsuOfBudget>>>();
+for (const y of present) {
+  for (const b of recs[y]?.budgets || []) {
+    if (!b.rows.some((r) => fundOf(r.source || r.source_next) === '一括交付金（ソフト）')) continue;
+    const ik = ikkatsuOfBudget(b.name, '一括交付金（ソフト）');
+    if (ik) ikMatched.set(ik.key, ik);
+  }
+}
+const ikMatches = [...ikMatched.values()].flatMap((ik) => {
+  const row = ik.years[IKKATSU_LATEST] ?? ik.latest;
+  const href = ikkatsuHref(ik);
+  return href ? [{ name: ik.latest.name, year: row.year, grade: gradeOf(row.grade_label), href }] : [];
+});
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 ---
 <Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
@@ -317,6 +331,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
         <p class="small secondary bud-key"><span class="k k-settled"></span>決算額 <span class="k k-estimate"></span>決算見込額 <span class="k k-initial"></span>当初予算額{budgetNames.length > 1 && `　／　${budgetNames.length}つの予算事業の合計`}</p>
       </div>
     ) : <p class="secondary">部局の検証票に、この取組の金額の記載がありません。</p>}
+    {ikMatches.map((x) => (
+      <p class="small ik-match">
+        予算事業「{x.name}」は、一括交付金（ソフト）の事業として<Term word="一括交付金の事後評価" label="事後評価" />されています:
+        {x.grade ? <Chip tone={x.grade.tone} shape={x.grade.shape} text={`${yearLabel(x.year)} ${x.grade.mark} ${x.grade.key}`} title={x.grade.note} /> : <Chip text={`${yearLabel(x.year)} 評価なし`} />}
+        <a href={x.href}>成果目標と評価を見る</a>
+      </p>
+    ))}
     <p class="small secondary">1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。</p>
     <details>
       <summary>報告ごとの予算事業と金額を表で見る</summary>
@@ -562,6 +583,8 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .initial .bud-bar { background: var(--paper); background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pop) 45%, var(--paper)) 0 2px, transparent 2px 6px); }
   .bud-v { white-space: nowrap; font-size: 1rem; }
   .bud-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 12px 0 0; }
+  .ik-match { margin: 12px 0 0; }
+  .ik-match :global(.chip) { margin: 0 8px 0 4px; vertical-align: -0.15em; }
   .k { display: inline-block; width: 16px; height: 12px; border: 1.5px solid var(--line); border-radius: 3px; }
   .k-settled { background: var(--pop); }
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); margin-left: 6px; }

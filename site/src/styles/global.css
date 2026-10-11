@@ -231,7 +231,8 @@ a.tag:hover { background: var(--sky); }
 h1 .own, h2 .own { margin-left: 10px; }
 
 /* 表 */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* 横にすべらせる表の箱。position を付けて、表の中の読み上げ用の文字（.sr-only は position: absolute）が箱の外にはみ出してページの幅を広げないようにする */
+.table-wrap { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1.5px solid var(--grid); vertical-align: top; }
 th { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
