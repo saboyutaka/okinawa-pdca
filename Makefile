@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck down
+.PHONY: help fetch extract cross-read check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -23,7 +23,8 @@ export SITE_PORT
 help:
 	@echo "make fetch         県サイトから報告書を取得（ホストの python3、標準ライブラリのみ）"
 	@echo "make extract       総括報告書・部局別の検証票・個別計画などから抽出して公表値と突き合わせ"
-	@echo "make check         抽出結果を公表値と突き合わせるだけ"
+	@echo "make cross-read    総括報告書の成果指標・主な取組を別の読み方（PyMuPDF）で読み直して抽出と突き合わせる"
+	@echo "make check         抽出結果を公表値と突き合わせ、紛らわしい文字（康熙部首など）を探すだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make test          テスト（抽出スクリプトの test-py とサイトの test-site の両方）"
 	@echo "make site-install  サイトの依存パッケージを入れる"
@@ -46,8 +47,14 @@ extract:
 	$(COMPOSE) run --rm tools python scripts/extract_kanko.py
 	$(COMPOSE) run --rm tools python scripts/extract_ikkatsu.py
 	$(COMPOSE) run --rm tools python scripts/extract_hyoka.py
+	$(COMPOSE) run --rm tools python scripts/cross_read.py
 	python3 scripts/check_extracted.py
 	python3 scripts/report_issues.py
+
+# 総括報告書の成果指標と主な取組を、抽出（pdfplumber）とは別の読み方（PyMuPDF の表検出）で読み直して欄ごとに比べる。
+# 食い違いがあれば失敗する（読み直し側の既知の癖は scripts/cross_read.py の KNOWN）。PDF を読むので data/raw と data/interim が要る
+cross-read:
+	$(COMPOSE) run --rm tools python scripts/cross_read.py
 
 check:
 	python3 scripts/check_extracted.py

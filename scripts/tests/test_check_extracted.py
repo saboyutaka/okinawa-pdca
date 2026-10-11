@@ -1,7 +1,13 @@
-"""成果指標の計画値・達成率を、概要版の式で計算し直す（check_extracted.py）。"""
+"""成果指標の計画値・達成率を概要版の式で計算し直すことと、紛らわしい文字の検査（check_extracted.py）。"""
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from check_extracted import expected_plans, expected_rate, plan_index, plan_matches, rate_matches
+from check_extracted import (
+    check_chars, expected_plans, expected_rate, plan_index, plan_matches, rate_matches, record_label, suspicious_char,
+    suspicious_in, walk_strings,
+)
 
 
 def seika(year, base, target, plan=None, actual=None, rate=None):
@@ -50,6 +56,48 @@ class RateTest(unittest.TestCase):
         self.assertTrue(rate_matches({**s, "rate": 75.1}))
         self.assertFalse(rate_matches({**s, "rate": 75.2}))
         self.assertIsNone(rate_matches({**s, "rate": None}))
+
+
+class SuspiciousCharTest(unittest.TestCase):
+    def test_kinds(self):
+        """康熙部首・CJK部首補助・私用領域・置換文字・制御文字を見分ける。"""
+        self.assertEqual(suspicious_char("\u2f40"), "康熙部首")  # ⽀（「支」に見える）
+        self.assertEqual(suspicious_char("\u2e9f"), "CJK部首補助")  # ⺟
+        self.assertEqual(suspicious_char("\ue000"), "私用領域")
+        self.assertEqual(suspicious_char("\ufffd"), "置換文字")
+        self.assertEqual(suspicious_char("\x0c"), "制御文字")
+        self.assertEqual(suspicious_char("\r"), "制御文字")
+
+    def test_normal(self):
+        """普通の漢字・かな・全角記号と、改行・タブは対象外。"""
+        for ch in "支大沖縄（）①％\n\t ":
+            self.assertIsNone(suspicious_char(ch), repr(ch))
+
+    def test_suspicious_in(self):
+        """同じ文字は1回だけ出す。「(cid:」も対象。"""
+        self.assertEqual(suspicious_in("\u2f40援と\u2f40援"), ["U+2F40 \u2f40（康熙部首）"])
+        self.assertEqual(suspicious_in("取組(cid:10)"), ["「(cid:」（読めなかった字の名残）"])
+        self.assertEqual(suspicious_in("改行\nとタブ\tは良い"), [])
+
+    def test_walk_strings(self):
+        rec = {"name": "a", "lines": [{"target": "b"}], "budget": 10, "rows": [["c"]]}
+        self.assertEqual(list(walk_strings(rec)), [("name", "a"), ("lines[0].target", "b"), ("rows[0][0]", "c")])
+
+    def test_record_label(self):
+        self.assertEqual(record_label({"year": 2022, "id": "3-11-c-1", "name": "若年者の就業・定着の促進", "no": None}),
+                         "year=2022 id=3-11-c-1 若年者の就業・定着の促進")
+
+    def test_check_chars(self):
+        """data/extracted の下のすべての JSON を読み、ファイル・レコード・欄・文字を出す。"""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "soukatsu").mkdir()
+            rows = [{"year": 2022, "id": "1-1-a-1", "action": "就労\u2f40援"}, {"year": 2022, "id": "1-1-a-2", "action": "支援"}]
+            (Path(d) / "soukatsu" / "shisaku.json").write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+            (Path(d) / "years.json").write_text(json.dumps({"note": "\ufffd"}), encoding="utf-8")
+            self.assertEqual(check_chars(Path(d)), [
+                ("soukatsu/shisaku.json", "[0] year=2022 id=1-1-a-1", "action", "U+2F40 \u2f40（康熙部首）"),
+                ("years.json", "[0]", "note", "U+FFFD \ufffd（置換文字）"),
+            ])
 
 
 if __name__ == "__main__":
