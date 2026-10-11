@@ -17,6 +17,12 @@ tmp/
 
 # Cloudflare のツールが作るキャッシュ（アカウント情報を含む）
 .cloudflare/
+.wrangler/
+
+# 秘密の値を置くファイル（いまは使っていないが、置いたときにコミットしないように）
+.env
+.env.*
+.dev.vars*
 
 # Claude Code の作業用 worktree（別のチェックアウトなのでコミットしない）
 .claude/worktrees/
