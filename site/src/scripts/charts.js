@@ -106,9 +106,9 @@ function drawTrend(wrap, W, { points }) {
 }
 
 // 成果指標の「ゴールまでの道のり」。横は報告年度で、計画期間（前期 R4〜R6・中期 R7〜R9）ごとに、
-// スタートの旗（基準値）から点線の計画の道すじ（その年度の計画値）をたどってゴールの旗（目標値）へ。青い点が実績値で、最新に「いまここ」。
-// 前期と中期で基準値・目標値が変わるので、最新の報告の計画期間でない方は地の色の帯に灰色の点線だけで描く（旗は立てない）。
-// 数字はカードの「スタート → いま → ゴール」に出しているので、図の中の文字は旗と「いまここ」だけにし、ほかの印と重ならない場所に置く
+// スタート（基準値の小さな点）から点線の計画の道すじ（その年度の計画値）をたどってゴール（目標値。最後の計画値と同じ）へ。青い点が実績値で、最新に「いまここ」。
+// 前期と中期で基準値・目標値が変わるので、最新の報告の計画期間でない方は地の色の帯に灰色の点線で描く。
+// 数字はカードの「スタート → いま → ゴール」に出しているので、図の中の文字は「スタート」「ゴール」「いまここ」だけにし、ほかの印と重ならない場所に置く
 function drawSeika(wrap, W, { unit, years, latest }) {
   const num = (v) => v != null && Number.isFinite(v);
   const last = years[years.length - 1];
@@ -150,7 +150,7 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   const left = (p) => x(p.ys[0]) - sw / 2;
   const line = (pts) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
 
-  // 置く印の範囲 [x1, y1, x2, y2]。旗の向きと文字の場所は、これと重ならないように選ぶ
+  // 置く印の範囲 [x1, y1, x2, y2]。文字の場所は、これと重ならないように選ぶ
   const boxes = [];
   const mark = (cx, cy, r) => boxes.push([cx - r, cy - r, cx + r, cy + r]);
   const markPath = (pts) => pts.slice(1).forEach(([bx, by], i) => {
@@ -178,6 +178,7 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     const circles = r.plan.map((v, i) => num(v) && [x(p.ys[i]), y(v)]).filter(Boolean);
     pts.push(...circles);
     markPath(pts);
+    if (num(r.base)) mark(sx, y(r.base), 4);
     circles.forEach(([cx, cy]) => mark(cx, cy, 6));
     return { p, sx, pts, circles };
   });
@@ -186,24 +187,17 @@ function drawSeika(wrap, W, { unit, years, latest }) {
   const now = act[act.length - 1];
   act.forEach((a) => mark(a.cx, a.cy, a === now ? 9 : 6.5));
 
-  // 旗は、竿の根元が値の位置。上と下のうち、図に収まってほかの印と重ならない方に立てる（はじめは道すじの外側）
-  const flags = [];
-  const flagBox = (fx, fy, up) => (up ? [fx - 2, fy - 25, fx + 17, fy - 7] : [fx - 2, fy + 7, fx + 17, fy + 25]);
-  const flagCost = (b) => overlap(b) + (fits(b) ? 0 : 1e6);
-  const addFlag = (name, fx, fy, preferUp, goal) => {
-    const up = flagCost(flagBox(fx, fy, !preferUp)) < flagCost(flagBox(fx, fy, preferUp)) ? !preferUp : preferUp;
-    boxes.push(flagBox(fx, fy, up));
-    flags.push({ name, fx, fy, up, goal });
-  };
+  // 「スタート」「ゴール」の文字を添える点（最新の報告の計画期間だけ）。道すじの外側を先に探す
+  const ends = [];
   for (const { p, sx } of plans) {
     const { r } = p;
     if (!p.cur) continue;
     const rising = !num(r.base) || !num(r.target) || r.target >= r.base;
-    if (num(r.base)) addFlag('スタート', sx, y(r.base), !rising, false);
-    if (num(r.target)) addFlag('ゴール', x(p.ys[2]), y(r.target), rising, true);
+    if (num(r.base)) ends.push({ name: 'スタート', ex: sx, ey: y(r.base), start: true, rising });
+    if (num(r.target)) ends.push({ name: 'ゴール', ex: x(p.ys[2]), ey: y(r.target), start: false, rising });
   }
 
-  // ここから描く（帯 → 目盛り → 道すじ → 旗 → 実績値 → 文字）
+  // ここから描く（帯 → 目盛り → 道すじ → 実績値 → 文字）
   for (const p of periods) {
     if (!p.cur) svg.append(sv('rect', { x: left(p), y: 0, width: sw * 3, height: m.t + ih + 4, rx: 10, fill: 'var(--bg)' }));
     svg.append(sv('text', { class: p.cur ? 'lbl' : 'lbl2', x: left(p) + 8, y: 17 }, p.ys[0] <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）'));
@@ -220,17 +214,12 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     if (p.cur && num(p.r.base)) svg.append(sv('line', { x1: sx, x2: left(p) + sw * 3 - 4, y1: y(p.r.base), y2: y(p.r.base), stroke: 'var(--hair)', 'stroke-width': 1.5, 'stroke-dasharray': '2 3' }));
     if (pts.length > 1) svg.append(sv('path', { d: line(pts), fill: 'none', stroke: ink, 'stroke-width': 2, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' }));
     circles.forEach(([cx, cy]) => svg.append(sv('circle', { cx, cy, r: 5, fill: 'var(--paper)', stroke: ink, 'stroke-width': 2.5 })));
-  }
-  for (const { fx, fy, up, goal } of flags) {
-    const tip = up ? fy - 24 : fy + 24;
-    svg.append(sv('line', { x1: fx, x2: fx, y1: fy, y2: tip, stroke: 'var(--line)', 'stroke-width': 2.5 }));
-    svg.append(sv('rect', { x: fx + 1, y: up ? tip : tip - 11, width: 15, height: 11, rx: 2, fill: goal ? 'var(--pink)' : 'var(--paper)', stroke: 'var(--line)', 'stroke-width': 2 }));
-    svg.append(sv('circle', { cx: fx, cy: fy, r: 3.5, fill: 'var(--line)' }));
+    if (num(p.r.base)) svg.append(sv('circle', { cx: sx, cy: y(p.r.base), r: 3.5, fill: ink }));
   }
   if (act.length > 1) svg.append(sv('path', { d: line(act.map((a) => [a.cx, a.cy])), fill: 'none', stroke: 'var(--pop)', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
   act.forEach((a) => svg.append(sv('circle', { cx: a.cx, cy: a.cy, r: a === now ? 8 : 5.5, fill: 'var(--pop)', stroke: 'var(--line)', 'stroke-width': a === now ? 2.5 : 2 })));
 
-  // 「いまここ」の札（最新の報告で使われなくなった指標は「最後の報告」）と旗の名前
+  // 「いまここ」の札（最新の報告で使われなくなった指標は「最後の報告」）と、スタート・ゴールの文字
   if (now) {
     const text = latest ? 'いまここ' : '最後の報告';
     const w = textW(text, 'lbl2') + 18;
@@ -239,11 +228,15 @@ function drawSeika(wrap, W, { unit, years, latest }) {
     svg.append(sv('rect', { x: bx, y: by, width: w, height: h, rx: h / 2, fill: 'var(--paper)', stroke: 'var(--line)', 'stroke-width': 2 }));
     svg.append(sv('text', { class: 'lbl2 here', x: bx + w / 2, y: by + 15.5, 'text-anchor': 'middle' }, text));
   }
-  for (const { name, fx, fy, up } of flags) {
+  for (const { name, ex, ey, start, rising } of ends) {
     const w = textW(name, 'lbl2');
     const h = 14;
-    const ty = up ? fy - 25 : fy + 11;
-    const [bx, by] = place(w, h, [[fx + 20, ty], [fx - w - 5, ty], [fx - w / 2 + 8, up ? fy - 42 : fy + 28], [fx + 8, up ? fy + 6 : fy - 20]]);
+    // 道すじの外側（上がる指標ならスタートの下・ゴールの上。下がる指標は逆）を先に試す
+    const up = start ? [[ex + 6, ey - 19], [ex + 18, ey - 20]] : [[ex - w / 2, ey - 22], [ex - w - 8, ey - 20]];
+    const down = start ? [[ex + 6, ey + 5], [ex + 18, ey + 6]] : [[ex - w / 2, ey + 9], [ex - w - 8, ey + 6]];
+    const [bx, by] = place(w, h, (start !== rising ? [...up, ...down] : [...down, ...up]).concat(start ? [[ex + 8, ey - 7]] : []));
+    // 文字の後ろに地の色を敷き、下を通る薄い線を隠す
+    svg.append(sv('rect', { x: bx - 2, y: by - 1, width: w + 4, height: h + 2, rx: 3, fill: 'var(--paper)' }));
     svg.append(sv('text', { class: 'lbl2', x: bx, y: by + 11 }, name));
   }
 
