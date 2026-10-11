@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
 import Chunk from '../../components/Chunk.astro';
 import Sz from '../../components/Sz.astro';
@@ -67,6 +68,7 @@ const listHref = (k) => `/shisaku/?theme=${t.id}&judge=${k}`;
   <section aria-labelledby="list-h">
     <h2 id="list-h">施策（{fmt(items.length)}）</h2>
     <p class="small"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
+    <JudgeLegend />
     {visions.map((v) => (
       <>
         <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a>（{v.items.length}）</h3>

@@ -3,8 +3,8 @@ import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import Icon from '../../components/Icon.astro';
 import Sz from '../../components/Sz.astro';
-import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import JudgeLegend from '../../components/JudgeLegend.astro';
 import { LATEST, yearLabel, yearLong, JUDGES, getShisakuList, getShouraizou, getKihonList } from '../../lib/data.js';
 import { getThemes } from '../../lib/themes.js';
 import { JUDGE_UI } from '../../lib/icons.js';
@@ -18,11 +18,18 @@ const themes = getThemes();
 const depts = [...new Set(shisaku.flatMap((s) => s.depts))].sort((a, b) => a.localeCompare(b, 'ja'));
 const groups = kihon.map((k) => ({ kihon: k, items: shisaku.filter((s) => s.kihon_id === k.id) }));
 const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t.id).join('|');
+// 判定の移り変わり（数え方は lib/data.js の JUDGE_TRENDS。施策の trends に入っている）。short は頭のリンクの短い言い方（左から続けて読む）
+const trends = [
+  { key: 'down', label: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で下がった`, short: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で下がった` },
+  { key: 'up', label: `${yearLabel(LATEST - 1)}→${yearLabel(LATEST)}で上がった`, short: '上がった' },
+  { key: 'streak', label: `${yearLabel(LATEST)}まで3年続けて遅れ（C〜G）`, short: '3年続けて遅れ' },
+].map((t) => ({ ...t, n: shisaku.filter((s) => s.trends.includes(t.key)).length }));
 ---
 <Base title="施策をさがす" description="沖縄県PDCAの339施策を、将来像・判定・くらしのテーマ・担当部局・キーワードで絞り込んで探せます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 施策をさがす</nav>
   <h1>施策をさがす</h1>
-  <p class="secondary lead"><ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>の339施策です。<Term word="推進状況" label="判定" />と棒（主な取組の進捗状況）は{yearLong(LATEST)}のものです。</p>
+  <p class="secondary lead"><ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>の339施策です。行の判定・取組・成果指標は{yearLong(LATEST)}のものです。</p>
+  <p class="small trends"><span class="secondary">判定の移り変わり:</span>{trends.map((t) => <a href={`?trend=${t.key}`} data-trend={t.key} title={t.label}>{t.short} {t.n}施策</a>)}</p>
 
   <form class="filters sticker" role="search" aria-label="施策の絞り込み" data-filter="#shisaku-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（施策・取組・部局の名前）
@@ -39,6 +46,12 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
       <select name="dept">
         <option value="">すべて</option>
         {depts.map((d) => <option value={d}>{d}</option>)}
+      </select>
+    </label>
+    <label data-label="判定の移り変わり">判定の移り変わり
+      <select name="trend">
+        <option value="">すべて</option>
+        {trends.map((t) => <option value={t.key}>{t.label}</option>)}
       </select>
     </label>
     <fieldset class="fgroup" data-label="将来像">
@@ -63,6 +76,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
   </form>
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite"><span id="count">{shisaku.length}</span>施策を表示</p>
+  <JudgeLegend />
 
   <div id="shisaku-list">
     {groups.map(({ kihon: k, items }) => (
@@ -79,6 +93,7 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
                 'data-item': '',
                 'data-s': String(s.shouraizou),
                 'data-judge': s.judges[LATEST] ?? '',
+                'data-trend': s.trends.join('|'),
                 'data-dept': s.depts.join('|'),
                 'data-theme': themeIdsOf(s.id),
                 'data-text': `${s.code} ${s.name} ${s.tenkai_name} ${k.name} ${s.kankei} ${s.torikumi.filter((t) => t.year === LATEST).map((t) => t.name).join(' ')}`,
@@ -90,12 +105,29 @@ const themeIdsOf = (id) => themes.filter((t) => t.ids.includes(id)).map((t) => t
     ))}
   </div>
   <p id="empty" class="secondary" hidden>条件に合う施策はありません。条件を1つずつ外してみてください。</p>
+  <p class="small secondary note">
+    判定の移り変わりの「上がった」「下がった」は、判定を A 順調 → B 概ね順調 → C〜F（取組か成果が遅れている）→ G 大幅遅れ の順に並べて前の年度と比べています（C〜F の中での入れ替わりは数えません）。施策の判定は令和5年度から公表されています。年度ごとの判定は、各施策のページの「4年間の判定」にあります。
+  </p>
 </Base>
 
 <script src="../../scripts/list-filter.js"></script>
+<script>
+  // 頭の「判定の移り変わり」のリンクは、ページを開き直さずに絞り込みの「判定の移り変わり」だけを変える（キーワードなど、いま入っている条件は残す）
+  const trend = document.querySelector<HTMLSelectElement>('form[data-filter] select[name="trend"]');
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('.trends [data-trend]')) {
+    a.addEventListener('click', (e) => {
+      if (!trend) return;
+      e.preventDefault();
+      trend.value = a.dataset.trend!;
+      trend.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+</script>
 
 <style>
+  .trends { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
   .filters { margin-top: 16px; }
+  .note { margin-top: 1.5em; }
   .filters label .own { margin-left: 4px; }
   .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.08rem; margin: 2em 0 0.6em; }
   .gt-name { flex: 1 1 12em; min-width: 0; }

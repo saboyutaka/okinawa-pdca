@@ -4,6 +4,7 @@ import StatusChart from '../../components/StatusChart.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import JudgeLegend from '../../components/JudgeLegend.astro';
 import Chip from '../../components/Chip.astro';
 import Stamps from '../../components/Stamps.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -127,6 +128,7 @@ const progressRows = YEARS.map((y) => ({
 
   <section aria-labelledby="list">
     <h2 id="list">施策（{shisaku.length}）</h2>
+    <JudgeLegend />
     {tenkai.map(([tid, tname]) => (
       <>
         <h3>{tname}</h3>
