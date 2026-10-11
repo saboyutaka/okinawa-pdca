@@ -10,8 +10,9 @@ import ExtLink from './ExtLink.astro';
 import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, type Cell, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
 import { oneLine } from '../lib/text.ts';
 
-interface Props { row: ShuyouGroup }
-const { row } = Astro.props;
+// id は主要指標の一覧の行から飛ぶ先（lib/data.ts の shuyouAnchor）
+interface Props { row: ShuyouGroup; id: string }
+const { row, id } = Astro.props;
 const x = row.latest;
 const yl = yearLabel(x.year);
 const yearsDesc = [...YEARS].reverse();
@@ -29,7 +30,7 @@ const pieces = (c: Cell, p: ShuyouPart) => {
   return !c.unit && p.scale === 1 && p.unit ? [...out, { t: p.unit, n: false }] : out;
 };
 ---
-<article class="sticker scard">
+<article class="sticker scard" id={id}>
   <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
 

@@ -3,25 +3,27 @@
 // 横は報告年度 R4〜R9 の6枠で、どの行も同じ位置にそろえる（地の色の左半分が前期、右半分が中期）。点線が計画の道すじ（スタートの基準値 → 各年度の計画値。最後の○がゴールの目標値）、
 // 青い点が実績値で、最新を大きくする。最新の報告の計画期間でない方の道すじは灰色の点線だけにする。
 // 目標値が文の指標（「跡地における〜を目指す」など）は、施策ページの図と同じく基準値・実績値を読み（textGoalChartRow）、スタートと実績値だけを描く。
+// 主要指標の一覧（part）では、主要指標に年度ごとの計画値がないので、基本施策ページの図と同じく計画の道すじを引かず、ゴールの丸だけを置く。
 // 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
-import { YEARS, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
-import type { SeikaRow } from '../lib/types.ts';
+import { YEARS, textGoalChartRow, type ChartRow, type ChartYear, type SeikaGroup, type ShuyouPart } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup }
+// row は成果指標、part は主要指標の部分（男性・女性など。分けない指標は1つ）
+type Props = { row: SeikaGroup; part?: never } | { part: ShuyouPart; row?: never };
 type Pt = [x: number, y: number];
-const { row } = Astro.props;
+const { row, part } = Astro.props;
 const W = 120;
 const H = 40;
 const PAD = 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
 const sw = W / SLOTS.length;
 const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
-const textGoal = textGoalChartRow(row);
-const years = YEARS.map((y) => (textGoal || row).years[y]).filter(Boolean);
+const textGoal = row ? textGoalChartRow(row) : null;
+const chart: ChartRow = part ?? textGoal ?? row!;
+const years = YEARS.map((y) => chart.years[y]).filter(Boolean);
 const last = years[years.length - 1];
-const act = years.filter((r): r is SeikaRow & { actual: number } => num(r.actual));
-const drawable = act.length > 0 && (!!textGoal || years.some((r) => num(r.target)));
+const act = years.filter((r): r is ChartYear & { actual: number } => num(r.actual));
+const drawable = act.length > 0 && (part ? part.drawable : !!textGoal || years.some((r) => num(r.target)));
 
 let band: number | null = null;
 let plans: { cur: boolean; start: Pt | null; rings: Pt[]; path: string | null }[] = [];
@@ -43,6 +45,8 @@ if (drawable) {
   band = W / 2;
   plans = periods.map(({ ys, r, cur }) => {
     const start: Pt | null = num(r.base) ? [f(SLOTS.indexOf(ys[0]) * sw + 2), y(r.base)] : null;
+    // 主要指標は、計画期間の最後の枠にゴールの目標値の丸だけを置く（道すじは引かない）
+    if (part) return { cur, start, rings: num(r.target) ? [[x(ys[ys.length - 1]), y(r.target)] as Pt] : [], path: null };
     const rings = (r.plan || []).flatMap((v, i): Pt[] => (num(v) ? [[x(ys[i]), y(v)]] : []));
     const pts = [...(start ? [start] : []), ...rings];
     return { cur, start, rings, path: pts.length > 1 ? d(pts) : null };

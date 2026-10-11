@@ -24,7 +24,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
 ---
 <Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・くらしのテーマ・将来像・達成率・見通し・担当部局でさがせます。">
   <h1>成果指標をさがす</h1>
-  <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。</p>
+  <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。基本施策ごとの大きな数字（平均寿命・観光収入など）は、<a href="/shihyou/shuyou/">主要指標の一覧</a>で見られます。</p>
 
   <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）

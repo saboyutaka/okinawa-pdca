@@ -364,6 +364,8 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
   for (const r of [...rows].sort((a, b) => b.year - a.year)) if (!used.has(r)) out.push(group(r, false));
   return out;
 }
+// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。主要指標の一覧の行から飛ぶ
+export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
 
 // ---------------------------------------------------------------- 施策
 

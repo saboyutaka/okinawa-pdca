@@ -1,0 +1,48 @@
+---
+// 主要指標の一覧（/shihyou/shuyou/）の1行。親は ul.row-list。成果指標の一覧の行（SeikaRow）と同じ形で、
+// 左に名前と基本施策の2行、右に県の見通しの札とゴールまでの道のりの小さな図（SeikaSpark）。主要指標には達成率がないので、札は県の見通し
+// （基本施策ページの主要指標のカード ShuyouCard の頭の1行と同じ）。男性・女性のように分けた部分は1行ずつにする（分け方は lib/data.ts の shuyouRows）。
+// 分けられず見通しが2つ以上ある指標は、札を部分の名前つきで縦に並べる。基準値・実績値・目標値は図に任せ、読み上げ用の文にだけ残す
+import Chip from './Chip.astro';
+import SeikaSpark from './SeikaSpark.astro';
+import { judgesOf, refText, toneOfJudgement, type ShuyouPart } from '../lib/data.ts';
+import { oneLine } from '../lib/text.ts';
+
+interface Props { part: ShuyouPart; kihon: { id: string; name: string; code: string }; href: string }
+const { part: p, kihon: k, href } = Astro.props;
+const now = p.latest;
+const judges = judgesOf(now.judgement);
+const ref = refText(now.a.note);
+const srText = `県の見通し ${oneLine(now.judgement || 'なし')}。基準値 ${oneLine(now.b.text)}、実績値 ${oneLine(now.a.text)}${ref ? `（${ref}）` : ''}、目標値 ${oneLine(now.t.text)}（${now.target_year}）`;
+---
+<li class="m-row">
+  <div class="m-head">
+    <a class="name-link" href={href}>{p.name}</a>{p.unit && <small class="secondary">（{p.unit}）</small>}
+  </div>
+  <div class="sub small secondary">基本施策 <a class="sub-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
+  <div class="m-viz" aria-hidden="true">
+    <div class="judges">
+      {judges
+        ? judges.map((j) => <Chip tone={toneOfJudgement(j.key)} text={j.label ? `${j.label} ${j.key}` : j.key} title="県の見通し" />)
+        : <span class="small secondary">{now.judgement ? '部分ごとの見通しは基本施策のページに' : '見通しなし'}</span>}
+    </div>
+    <SeikaSpark part={p} />
+  </div>
+  <span class="sr-only">{srText}</span>
+</li>
+
+<style>
+  /* 並びは成果指標の一覧の行（SeikaRow）と同じ。見通しの言葉は達成率の数字より長いので、札の列を広くする */
+  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
+  .m-head { grid-area: head; min-width: 0; }
+  .sub { grid-area: sub; }
+  .m-viz { grid-area: viz; display: grid; grid-template-columns: 10.5em 120px; gap: 12px; align-items: center; }
+  .m-viz :global(.spark) { width: 100%; height: auto; }
+  .judges { display: grid; gap: 2px; justify-items: start; }
+  /* スマホでは右の列を細くし、札の下に図を置く（札の言葉は折り返す） */
+  @media (max-width: 640px) {
+    .m-row { grid-template-columns: minmax(0, 1fr) 104px; gap: 2px 12px; align-items: start; }
+    .m-viz { grid-template-columns: 1fr; gap: 4px; }
+    .judges :global(.chip) { font-size: 0.8125rem; align-items: flex-start; }
+  }
+</style>

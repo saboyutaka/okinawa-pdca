@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
+  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid,
 } from '../src/lib/data.ts';
@@ -137,6 +137,16 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   const s = getSeikaGroups().find((x) => x.shisaku.id === '2-1-a-1' && x.latest.name === 'こどもの貧困対策支援員による支援人数');
   assert.ok(s);
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
+});
+
+test('主要指標の一覧の行の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
+  for (const k of getKihonList()) {
+    const groups = shuyouRows(k.id);
+    const ids = groups.map((g) => shuyouAnchor(groups, g));
+    assert.equal(new Set(ids).size, ids.length, k.id);
+    const latest = groups.map((g) => g.latest.year === LATEST);
+    assert.deepEqual(latest, [...latest].sort((a, b) => Number(b) - Number(a)), `${k.id}: 最新の報告の指標が先にない`);
+  }
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {
