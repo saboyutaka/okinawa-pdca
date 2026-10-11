@@ -171,6 +171,7 @@ small, .small { font-size: 0.875rem; }
 }
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
+.site-footer .foot-links { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 
 /* ステッカー（カード）。.card は以前の名前。
    目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
@@ -200,6 +201,9 @@ figure { margin: 0; }
   background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
 }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.875rem; color: var(--ink-2); margin-top: 18px; }
+/* パンくずの無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーをパンくずのあるページと同じくらい下げる */
+#main > h1:first-child { margin-top: 28px; }
+#main > .sticker.lift:first-child { margin-top: 24px; }
 .breadcrumb a { color: var(--ink); text-decoration: none; padding: 0 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
 .breadcrumb a:hover { background: var(--sky); }
 

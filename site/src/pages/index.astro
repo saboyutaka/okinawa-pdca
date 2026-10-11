@@ -11,19 +11,19 @@ import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DELAYS, statusOf, rateBin, countBy,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, type Pattern, type TorikumiGroup,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
-import { BOSHU, boshuState, dayText } from '../lib/iken.ts';
+import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
-// 年度をまたいでまとめた取組（取組をさがすと同じ数え方。ヒーローの数とリンク先の件数をそろえる）
+// 年度をまたいでまとめた取組（取組をさがすと同じ数え方）
 const groups = getTorikumiGroups();
 const L = YEARS.length - 1;
 const latestGroups = groups.filter((g) => g.statuses[L]);
@@ -33,7 +33,6 @@ const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
 const byId = new Map(shisaku.map((s) => [s.id, s]));
 const judgeCounts = countBy(shisaku, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
-const nCD = (judgeCounts.C || 0) + (judgeCounts.D || 0);
 
 // くらしのテーマ（このサイト独自の分類）
 const groupKeys = JUDGE_GROUPS.map((g) => g.key);
@@ -41,13 +40,6 @@ const themes = getThemes().map((t) => ({
   ...t,
   counts: countBy(t.ids.map((id) => byId.get(id)!), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
 }));
-
-// ヒーローの「まだ進んでいないところ」（取組の遅れ・成果の遅れ・取組は順調でも成果が遅れている施策）
-const has = (pat: Pattern) => (g: TorikumiGroup) => g.patterns.includes(pat);
-const toriDelay = latestGroups.filter((g) => DELAYS.has(g.statuses[L])).length;
-// 今も遅れていて、3年以上続けて遅れている取組（R5・R6・R7と続けて遅れ）。遅れている取組の内訳になる
-const streak = groups.filter(has('streak')).length;
-const seikaHard = latestSeika.filter((s) => s.judgement === '達成は困難').length;
 
 // 将来像ごと
 const visions = getShouraizou().map((v) => {
@@ -81,7 +73,7 @@ const boshu = boshuState();
         <div>
           <div class="dc-title">県の主な取組のうち「順調」</div>
           <div class="dc-sub">{fmt(latestGroups.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
-          <a class="dc-more" href="/torikumi/?st=0">順調の取組を見る<span aria-hidden="true"> →</span></a>
+          <a class="dc-more" href="/torikumi/">取組をさがす<span aria-hidden="true"> →</span></a>
         </div>
       </div>
       <div class="donut-card">
@@ -89,13 +81,9 @@ const boshu = boshuState();
         <div>
           <div class="dc-title"><Term word="成果指標" />のうち<Term word="計画値" />に到達</div>
           <div class="dc-sub">{fmt(latestSeika.length)}指標のうち{fmt(seikaOk)}指標。くらしや地域は、計画どおりに変わった？</div>
-          <a class="dc-more" href={`/shihyou/?bin=${encodeURIComponent('100%以上')}`}>到達した指標を見る<span aria-hidden="true"> →</span></a>
+          <a class="dc-more" href="/shihyou/">成果指標をさがす<span aria-hidden="true"> →</span></a>
         </div>
       </div>
-    </div>
-    <div class="story">
-      <p class="st-lead">でも、まだ進んでいないところもあります。</p>
-      <p class="st-body">遅れている取組が<span class="nw"><a href="/torikumi/?st=delay" aria-label={`遅れている取組 ${fmt(toriDelay)}件の一覧`}><span class="big">{fmt(toriDelay)}</span>件</a>で、</span>そのうち3年以上遅れた状態が続いている取組が<span class="nw"><a href="/torikumi/?pat=streak" aria-label={`3年以上遅れた状態が続いている取組 ${fmt(streak)}件の一覧`}><span class="big">{fmt(streak)}</span>件</a>あります。</span>県自身が「目標の達成は困難」と見ている成果指標が<span class="nw"><a href={`/shihyou/?judge=${encodeURIComponent('達成は困難')}`} aria-label={`「目標の達成は困難」と見られている成果指標 ${fmt(seikaHard)}の一覧`}><span class="big">{fmt(seikaHard)}</span></a>、</span>取組は順調・概ね順調なのに成果が追いついていない施策が<span class="nw"><a href="/shisaku/?judge=C|D" aria-label={`取組は順調・概ね順調なのに成果が追いついていない施策 ${fmt(nCD)}の一覧`}><span class="big">{fmt(nCD)}</span></a>あります。</span></p>
     </div>
   </section>
 
@@ -119,7 +107,7 @@ const boshu = boshuState();
         <li>
           <a class="theme" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
-            <span class="nm">{t.label}</span>
+            <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
             <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
             <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
           </a>
@@ -196,7 +184,7 @@ const boshu = boshuState();
         {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
         {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
         {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-        県にいつでも意見を送れる窓口や、SNS で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
+        県にいつでも意見を送れる窓口や、SNS で <strong>#{HASHTAG}</strong> を付けて話す方法もまとめています。
       </p>
       <div class="iken-actions">
         <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
@@ -221,21 +209,12 @@ const boshu = boshuState();
   .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--paper); border-radius: 16px; padding: 14px 16px; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
-  /* 円グラフの札は全体を押すと一覧を開く（中の用語の説明のボタンは上に出して押せるまま） */
+  /* 円グラフの札は全体を押すと一覧を開く（良いものだけに絞らず、絞り込む前の一覧。中の用語の説明のボタンは上に出して押せるまま） */
   .donut-card { position: relative; }
   .donut-card:has(.dc-more:hover) { background: color-mix(in oklab, var(--sky) 45%, var(--paper)); }
   .dc-more { display: inline-block; margin-top: 6px; font-size: 0.875rem; font-weight: 700; }
   .dc-more::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
   .donut-card :global(.term) { position: relative; z-index: 1; }
-  /* まだ進んでいないところ。説明のあとに大きな数字を置いた文章（警告の色や印は使わない）。数字を押すとその一覧を開く */
-  .story { margin-top: 22px; background: var(--paper); border-radius: 16px; padding: 16px 20px; }
-  .st-lead { margin: 0 0 4px; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
-  .st-body { margin: 0; font-family: var(--font-display); font-size: 1.15rem; line-height: 2.1; }
-  .st-body a { color: var(--ink); font-weight: 700; margin-inline: 3px; text-decoration: underline 3px var(--pop); text-underline-offset: 0.18em; }
-  /* 数字とその後ろの短い言葉（「件で、」「あります。」）は離さない */
-  .st-body .nw { white-space: nowrap; }
-  .st-body a:hover { text-decoration-color: var(--ink); }
-  .st-body .big { font-size: 2.1rem; line-height: 1; margin-right: 1px; }
   @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
 
   .search { margin-top: 24px; display: grid; gap: 8px; }
@@ -256,6 +235,7 @@ const boshu = boshuState();
   .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
   .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す（「くらしの安 / 全」にしない） */
   .theme :global(.sbar) { grid-area: bar; }
   .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
   @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }

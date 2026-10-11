@@ -1,5 +1,5 @@
 ---
-// 部局の一覧。ひとめで（部局別の取組の進捗の図）→ 部局ごとの行（取組・成果指標・遅れ・予算）→ 4年間の表は畳む。並びは県の部局の一覧の順
+// 部局の一覧。ひとめで（部局別の取組の進捗の図）→ 部局ごとの行（取組・成果指標・予算）→ 4年間の表は畳む。並びは県の部局の一覧の順
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Term from '../../components/Term.astro';
@@ -22,7 +22,6 @@ const depts = DEPTS.map((d) => {
   const s = seika.filter((x) => seikaDept(x) === d.name);
   return {
     ...d,
-    q: encodeURIComponent(d.name),
     latest,
     ok: latest.filter((g) => g.statuses[last] === '順調').length,
     counts: countBy(latest, (g) => g.statuses[last]!, statusKeys),
@@ -31,7 +30,6 @@ const depts = DEPTS.map((d) => {
       const inYear = mine.filter((g) => g.statuses[i]);
       return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
     }),
-    delay3: mine.filter((g) => g.patterns.includes('delay3')).length,
     seika: s.length,
     seikaOk: s.filter((x) => rateBin(x) === '100%以上').length,
     // かかわる施策（関係部等にある施策と、この部局の取組がある施策。lib/data.ts の shisakuDepts）
@@ -43,7 +41,6 @@ const depts = DEPTS.map((d) => {
 const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, counts: d.counts }));
 ---
 <Base title="部局" description="沖縄県PDCAの主な取組・成果指標・施策・予算を、県の部局ごとに見られます。">
-  <nav class="breadcrumb"><a href="/">トップ</a> › 部局</nav>
   <h1>部局</h1>
   <p class="secondary lead">主な取組を所管する県の部局ごとの進み具合です。部局は最新の報告での所管部局で、過去の年度の取組もその部局に寄せて数えています。</p>
 
@@ -62,7 +59,6 @@ const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, cou
           <dl class="d-facts">
             <div><dt>取組の「順調」</dt><dd><b class="big">{pct(d.ok, d.latest.length)}</b><small>{fmt(d.ok)}/{fmt(d.latest.length)}件</small></dd></div>
             <div><dt>成果指標の到達</dt><dd>{d.seika ? <><b class="big">{pct(d.seikaOk, d.seika)}</b><small>{fmt(d.seikaOk)}/{fmt(d.seika)}</small></> : <small>指標なし</small>}</dd></div>
-            <div><dt>3年以上遅れ</dt><dd>{d.delay3 ? <a href={`/torikumi/?dept=${d.q}&pat=delay3`}><b class="big">{fmt(d.delay3)}</b>件</a> : <span><b class="big">0</b>件</span>}</dd></div>
             <div><dt>予算</dt><dd>{d.budget ? <b class="big">{yen(d.budget)}</b> : <small>検証票なし</small>}</dd></div>
           </dl>
         </li>
@@ -90,7 +86,7 @@ const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, cou
       </div>
     </details>
     <p class="small secondary">
-      「順調」の割合は、その年度の報告にある取組のうち進捗状況が「順調」のもの。「施策」は、施策の「関係部等」にその部局が書かれている施策と、その部局の主な取組がある施策の数。「3年以上遅れ」は、4年のうち3年以上遅れた取組の数です。
+      「順調」の割合は、その年度の報告にある取組のうち進捗状況が「順調」のもの。「施策」は、施策の「関係部等」にその部局が書かれている施策と、その部局の主な取組がある施策の数です。
       令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。
     </p>
   </section>
@@ -99,7 +95,7 @@ const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, cou
 <style>
   .d-row { display: grid; grid-template-columns: minmax(10em, 1fr) minmax(0, 2.6fr); gap: 6px 20px; align-items: center; }
   .d-name { display: grid; gap: 0; }
-  .d-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; margin: 0; }
+  .d-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 16px; margin: 0; }
   .d-facts > div { display: grid; gap: 0; min-width: 0; }
   dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
@@ -107,7 +103,7 @@ const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, cou
   dd small { font-size: 0.8125rem; color: var(--ink-2); }
   @media (max-width: 720px) {
     .d-row { grid-template-columns: 1fr; }
-    .d-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .d-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   .table-view { margin-top: 16px; }
 </style>

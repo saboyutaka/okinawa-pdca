@@ -47,7 +47,7 @@ export function dayText(iso: string, withYear = true) {
 export const periodText = (b: Period) => `${dayText(b.start)}〜${dayText(b.end, b.end.slice(0, 4) !== b.start.slice(0, 4))}`;
 
 // SNS で話すときのハッシュタグ（# なし）と、そのタグの投稿を見るページ。投稿画面を開くリンクは lib/share.ts
-export const HASHTAG = 'okinawa_pdca';
+export const HASHTAG = 'okinawa_miraima';
 export const TAG_PAGES = [
   { label: 'X', href: `https://x.com/search?q=${encodeURIComponent(`#${HASHTAG}`)}&f=live` },
   { label: 'Bluesky', href: `https://bsky.app/hashtag/${HASHTAG}` },
@@ -55,3 +55,6 @@ export const TAG_PAGES = [
 
 // 投稿の本文に入れる名前。X は日本語を1字で2字分に数えて140字までなので、長い名前は途中で切る
 export const shortName = (s: string, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
+
+// シェアの投稿の本文（施策「〇〇」について）。上と下のシェアパネル（Crumbs の share・components/ShareBox.astro）で同じものを使う
+export const shareText = (kind: string, name: string) => `${kind}「${shortName(name)}」について`;

@@ -1,17 +1,18 @@
 ---
 // SNS のシェアパネル。「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky のアイコンだけのボタンを1つの枠にまとめる。
-// X・Threads・Bluesky は #okinawa_pdca を付けた投稿画面を開く（lib/share.ts）。
+// X・Threads・Bluesky は #okinawa_miraima（lib/iken.ts の HASHTAG）を付けた投稿画面を開く（lib/share.ts）。
 // アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
 // 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
+// size="small" はページの上のほう（パンくずの行。Crumbs の share）に置く小さめのもの。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を入れる。本番のドメインはビルド時に決まっていないので、URL はブラウザで入れる
 // （スクリプトが動かないときは URL なしで開く）
 import { SNS, shareHref } from '../lib/share.ts';
 import { SHARE_ICONS } from '../lib/share-icons.ts';
 
-interface Props { text?: string; link?: 'page' | 'top'; label?: string }
-const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
+interface Props { text?: string; link?: 'page' | 'top'; label?: string; size?: 'small' }
+const { text = '', link = 'page', label = 'SNS でシェア', size } = Astro.props;
 ---
-<div class="share-panel" role="group" aria-label={label} data-share-text={text} data-share-link={link}>
+<div class:list={['share-panel', size]} role="group" aria-label={label} data-share-text={text} data-share-link={link}>
   <span class="share-label" aria-hidden="true">シェア</span>
   <ul class="share-list">
     {SNS.map((s) => (
@@ -46,6 +47,10 @@ const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
   .share-ic:hover { background: var(--sky); }
   .share-ic:active { transform: translate(1px, 1px); }
   .share-ic svg { fill: currentColor; }
+  .small { gap: 2px 8px; padding: 2px 3px 2px 12px; }
+  .small .share-label { font-size: 0.8125rem; }
+  .small .share-ic { width: 36px; height: 36px; }
+  .small .share-ic svg { width: 18px; height: 18px; }
   /* 320px 前後の狭い画面では、折り返したアイコンの列が枠に収まるように丸を小さくする */
   @media (max-width: 360px) { .share-ic { width: 38px; height: 38px; } }
 </style>

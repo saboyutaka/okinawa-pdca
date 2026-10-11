@@ -15,7 +15,7 @@ const b = budgetOf(t.year, t.shisaku_id, t.key);
 const seikaHref = b?.seika_name ? seikaHrefByName(shisakuId, b.seika_name) : null;
 const href = torikumiHref(shisakuId, row.key);
 const stamps = YEARS.map((y) => (row.years[y] ? { year: y, tone: toneOfStatus(statusOf(row.years[y])), text: statusOf(row.years[y]) } : { year: y, tone: null, text: '報告なし' }));
-// 「目標 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
+// 「計画 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
 const qty = (raw: string) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
 // 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、行ごとに並べて棒は出さない（1つの割合にまとめられないため）
 const tq = t.lines ? null : qty(t.target);
@@ -37,11 +37,11 @@ const ratioTone = ratio >= 0.9 ? 'good' : ratio >= 0.75 ? 'warning' : ratio >= 0
       <div class="act-l"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
       <div class="act-name">{t.indicator}</div>
       {t.lines ? (
-        <ul class="act-lines">{t.lines.map((l) => <li>目標 {l.target || '—'} → 実績 {l.actual || '—'}</li>)}</ul>
+        <ul class="act-lines">{t.lines.map((l) => <li>計画 {l.target || '—'} → 実績 {l.actual || '—'}</li>)}</ul>
       ) : (
-        <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　目標クリア</strong>}</div>
+        <div>計画 {t.target || '—'} → 実績 {t.actual || '—'}{comparable && ratio >= 1 && <strong>　計画クリア</strong>}</div>
       )}
-      {comparable && <Chunk frac={ratio} tone={ratioTone} label={`活動指標 目標 ${t.target}、実績 ${t.actual}（目標の${Math.round(ratio * 100)}%）`} thin />}
+      {comparable && <Chunk frac={ratio} tone={ratioTone} label={`活動指標 計画 ${t.target}、実績 ${t.actual}（計画の${Math.round(ratio * 100)}%）`} thin />}
     </div>
   ) : <div />}
   {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a class="sub-link" href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}

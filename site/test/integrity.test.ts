@@ -8,8 +8,9 @@ import {
   amountEntries, budgetGroups, judgeByGrid,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
+import { themeIconSvg } from '../src/lib/icons.ts';
 import {
-  planSourceLink, kankoSeikaList, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
+  planSourceLink, kankoSeikaList, kankoShisakuList, RM_JUDGEMENTS, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
 } from '../src/lib/plans.ts';
 
 // 当てはまらなかったものを、先頭の数件だけメッセージに出す
@@ -64,6 +65,16 @@ test('くらしのテーマの include・exclude の施策 ID が実在する', 
   const themes = getThemes();
   assert.equal(new Set(themes.map((t) => t.id)).size, themes.length, 'テーマの id が重複している');
   none(themes.flatMap((t) => [...t.include, ...t.exclude].filter((id) => !ids.has(id)).map((id) => `${t.id}: ${id}`)), (x) => x);
+});
+
+test('くらしのテーマの決め方の言葉に、正規表現の記号が残らない', () => {
+  // テーマのページに「〇〇」「〇〇」のどれかを含む施策、と出す
+  none(getThemes().flatMap((t) => t.words.filter((w) => !w || /[()[\]?*+.\\^$]/.test(w)).map((w) => `${t.id}: ${w}`)), (x) => x);
+});
+
+test('どのくらしのテーマにもアイコンがある', () => {
+  // アイコンは lib/icons.ts の THEME_ICONS。テーマを足したらここにも足す
+  none(getThemes().filter((t) => !/<(path|circle|rect)/.test(themeIconSvg(t.id))), (t) => `${t.id} ${t.label}`);
 });
 
 test('沖縄県PDCA の抽出結果は、どの行も出典（県の PDF のページ）にたどれる', () => {
@@ -134,10 +145,11 @@ test('取組の活動指標のまとまりは、報告の年度を1回ずつ含�
   none(bad, (x) => x);
 });
 
-test('観光ロードマップの成果指標は、後退・横ばいを先に並べる', () => {
-  const order = ['後退', '横ばい', 'その他', '前進'];
-  const ranks = kankoSeikaList().map((r) => order.indexOf(r.judgement));
-  assert.ok(!ranks.includes(-1), '知らない達成状況がある');
+test('観光ロードマップの成果指標の一覧は、良い・悪いで並べ替えず報告書の順（施策の順）に並べる', () => {
+  const order = kankoShisakuList().map((s) => s.id);
+  const rows = kankoSeikaList();
+  none(rows.filter((r) => !RM_JUDGEMENTS.some((j) => j.key === r.judgement)), (r) => `${r.x.name}: 知らない達成状況 ${r.judgement}`);
+  const ranks = rows.map((r) => order.indexOf(r.rm.id));
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
 });
 

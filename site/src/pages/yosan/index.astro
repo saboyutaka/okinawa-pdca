@@ -3,12 +3,10 @@
 // 一括交付金（ソフト）は事業ごとの事後評価があるので節を分け、事業をさがすページ（/yosan/ikkatsu/）へつなぐ。
 // 合計の数え方・合計から除いた金額・部局票がある範囲は、最後の「データの注意」に畳む（#suspect・#coverage は他のページからの行き先）
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import AmountChart from '../../components/AmountChart.astro';
 import BarList from '../../components/BarList.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
-import IkkatsuRow from '../../components/IkkatsuRow.astro';
 import BudgetItem from '../../components/BudgetItem.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -17,7 +15,7 @@ import {
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
   currentDeptOf, torikumiPage, type AmountEntry,
 } from '../../lib/data.ts';
-import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, isShort } from '../../lib/plans.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds } from '../../lib/plans.ts';
 import { fmt, yen, pct } from '../../lib/format.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
@@ -63,9 +61,6 @@ const ikSzRows = getShouraizou().map((s) => ({
   href: `${IKKATSU_HREF}?s=${s.id}`,
   counts: countBy(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label || 'なし', gradeKeys),
 }));
-const ikShort = ikLatest
-  .filter((g) => isShort(g.years[IKKATSU_LATEST].grade_label))
-  .sort((a, b) => gradeKeys.indexOf(b.latest.grade_label) - gradeKeys.indexOf(a.latest.grade_label) || (a.latest.rate ?? 0) - (b.latest.rate ?? 0));
 
 // 部局別・将来像別（最新の報告での所管部局）
 const toriByKey = new Map(getTorikumi(LATEST).map((t) => [`${t.shisaku_id}|${t.key}`, t]));
@@ -107,7 +102,6 @@ const coverageLatest = coverageAll[coverageAll.length - 1];
 const suspects = getSuspects();
 ---
 <Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移と、一括交付金（ソフト）の事業の事後評価です。">
-  <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '予算と財源' }]} />
 
   <header class="sticker lift head">
     <h1>予算と財源</h1>
@@ -181,13 +175,8 @@ const suspects = getSuspects();
     <p class="small secondary lead">主な取組の評価とは別に、一括交付金（ソフト）を使った事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています。</p>
     <StatusChart title="事後評価の結果" caption="成果目標の達成率による県の評価。" categories={GRADES} rows={ikYearRows} unit="事業" />
     <StatusChart title={`将来像ごとの事業（${yearLabel(IKKATSU_LATEST)}）`} caption="事業の施策で分けています。押すと、その将来像の事業をさがせます。" categories={GRADES} rows={ikSzRows} unit="事業" legend={false} />
-    <h3>{yearLabel(IKKATSU_LATEST)}に目標に届かなかった事業（{fmt(ikShort.length)}）</h3>
-    <p class="small secondary">△一部達成・未達成の事業です。名前を押すと、施策のページで成果目標と県の今後の方針を見られます。</p>
-    <ul class="row-list">
-      {ikShort.map((g) => <IkkatsuRow g={g} />)}
-    </ul>
-    <p class="more-link"><a class="button" href={IKKATSU_HREF}>一括交付金の事業をすべてさがす（{fmt(ikGroups.length)}件）</a></p>
-    <p class="small secondary">事業の金額は事後評価の予算額（前の年度からの繰越を含む事業費）で、下の予算事業の決算見込額とは年度と数え方が違います。</p>
+    <p class="more-link"><a class="button" href={IKKATSU_HREF}>一括交付金の事業をさがす（{fmt(ikGroups.length)}件）</a></p>
+    <p class="small secondary">一括交付金の事業をさがすの事業の金額は事後評価の予算額（前の年度からの繰越を含む事業費）で、下の予算事業の決算見込額とは年度と数え方が違います。</p>
   </section>
 
   <section aria-labelledby="bunya">
