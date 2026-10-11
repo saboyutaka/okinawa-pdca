@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
-  splitDepts, deptOf, deptHref, fundOf, budgetKey,
-  PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow,
+  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
+  PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -109,6 +109,23 @@ test('部局: 所管部課から部局を取り出し、部局のページの UR
   assert.equal(deptHref('子ども生活福祉部'), null);
 });
 
+test('課: 所管部課から部局の名前を除き、部局のページの課の行の id にする', () => {
+  assert.equal(sectionName('こども未来部子育て支援課'), '子育て支援課');
+  assert.equal(sectionName('知事公室防災危機管理課'), '防災危機管理課');
+  assert.equal(sectionName('知事公室'), '');
+  assert.equal(sectionAnchor('商工労働部産業政策課'), 'ka-産業政策課');
+});
+
+test('deptRoles: 関係部等の部局を先に、取組だけある部局を後ろに、重ねずに並べる', () => {
+  assert.deepEqual(deptRoles(['環境部'], ['企画部', '環境部']), [
+    { dept: '環境部', role: 'kankei' },
+    { dept: '企画部', role: 'torikumi' },
+  ]);
+  // 関係部等に同じ部局が2回書かれていても1つ。取組の部局の空は数えない
+  assert.deepEqual(deptRoles(['企画部', '企画部'], ['', '企画部']), [{ dept: '企画部', role: 'kankei' }]);
+  assert.deepEqual(deptRoles([], ['教育庁']), [{ dept: '教育庁', role: 'torikumi' }]);
+});
+
 test('fundOf: 財源の欄を6つの区分に寄せる', () => {
   assert.equal(fundOf('県単等'), '県単等');
   assert.equal(fundOf('県 単 等'), '県単等');
@@ -175,6 +192,20 @@ test('JUDGE_TRENDS: 最新の年度まで3年続けて C〜G', () => {
 test('取組のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
   assert.equal(torikumiSlug('abc'), 'a9993e36');
   assert.equal(torikumiHref('1-1-a-1', 'abc'), '/torikumi/1-1-a-1/a9993e36/');
+});
+
+test('activityQty: 活動指標の計画・実績は、かっこの前のその年度の数と単位を読む', () => {
+  assert.deepEqual(activityQty('10件（20件）'), { v: 10, u: '件' });
+  assert.deepEqual(activityQty('１,０７０人'), { v: 1070, u: '人' });
+  assert.deepEqual(activityQty('5.0％'), { v: 5, u: '%' });
+  assert.deepEqual(activityQty('２地区（新規１地区、継続１地区、累計２地区）'), { v: 2, u: '地区' });
+  // △ と - は減らす量。単位は NFKC で比べるので、₂ や ㎥ の中の数字も単位に入れる
+  assert.deepEqual(activityQty('△0.0015t-CO₂/千㎥（0.2978t-CO₂/千㎥）'), { v: -0.0015, u: 't-CO2/千m3' });
+  assert.deepEqual(activityQty('-0.006t-CO₂/千㎥'), { v: -0.006, u: 't-CO2/千m3' });
+  assert.equal(activityQty('方針検討'), null);
+  assert.equal(activityQty('－'), null);
+  assert.equal(activityQty('-％'), null);
+  assert.equal(activityQty(''), null);
 });
 
 // 目標値が文の成果指標の R7 の行

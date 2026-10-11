@@ -145,7 +145,8 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
     const params = new URLSearchParams();
     for (const [k, values] of conds) for (const v of values) params.append(k, v);
     const qs = params.toString();
-    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+    // # の行き先（部局のページの課の行など）は残す（消すと、開いたときにその場所へ移らない）
+    history.replaceState(null, '', `${qs ? `?${qs}` : location.pathname}${location.hash}`);
   };
 
   // URL の条件を入力に戻す。チェックボックス・ラジオは「C|D」のような書き方も1つずつ選ぶ

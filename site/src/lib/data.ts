@@ -629,6 +629,66 @@ export function deptHref(nameOrSection: string) {
   const d = DEPTS.find((x) => x.name === name);
   return d ? `/bukyoku/${d.slug}/` : null;
 }
+// 所管部課の課の名前（「こども未来部子育て支援課」→「子育て支援課」）。部局の名前だけなら空
+export const sectionName = (section: string) => {
+  const d = deptOf(section);
+  return d && section.startsWith(d) ? section.slice(d.length) : section;
+};
+// 部局のページの課ごとの図の行の id
+export const sectionAnchor = (section: string) => `ka-${sectionName(section)}`;
+// 所管部課・担当部課のリンク先。最新の報告に取組がある課なら部局のページのその課の行、無ければ部局のページ（部局のページも無ければ null）。
+// 担当部課に課がいくつか書かれているときは最初の課
+let latestSections: Set<string> | undefined;
+export function sectionHref(section: string | null | undefined) {
+  const first = (section || '').split(/[、,，]/)[0].trim();
+  const href = deptHref(first);
+  if (!href) return null;
+  latestSections ??= new Set(getTorikumi(LATEST).map((t) => t.section));
+  return latestSections.has(first) && sectionName(first) ? `${href}#${sectionAnchor(first)}` : href;
+}
+
+// 施策と部局のかかわり方。施策総括表の「関係部等」に名前がある（kankei）か、関係部等には無いが、その部局が所管する主な取組がある（torikumi）か。
+// 関係部等の順に並べ、その後ろに取組だけある部局を toriDepts の順で置く
+export type DeptRole = 'kankei' | 'torikumi';
+export function deptRoles(kankei: string[], toriDepts: Iterable<string>) {
+  const out: { dept: string; role: DeptRole }[] = [];
+  for (const dept of kankei) if (!out.some((d) => d.dept === dept)) out.push({ dept, role: 'kankei' });
+  for (const dept of toriDepts) if (dept && !out.some((d) => d.dept === dept)) out.push({ dept, role: 'torikumi' });
+  return out;
+}
+// 施策にかかわる部局。部局のページ・部局の一覧・施策をさがすの部局の絞り込みは、どれもこれで数える（数とリンク先の件数がずれないように）。
+// 取組の部局は、年度をまたいだ取組のまとまりの最新の所管部局（docs/data.md 7.2）。取組だけある部局は DEPTS の順
+let toriDeptsOf: Map<string, Set<string>> | undefined;
+export function shisakuDepts(s: Shisaku) {
+  if (!toriDeptsOf) {
+    toriDeptsOf = new Map();
+    for (const g of getTorikumiGroups()) {
+      if (!toriDeptsOf.has(g.shisaku.id)) toriDeptsOf.set(g.shisaku.id, new Set());
+      toriDeptsOf.get(g.shisaku.id)!.add(g.dept);
+    }
+  }
+  const order = (name: string) => DEPTS.findIndex((d) => d.name === name);
+  return deptRoles(s.depts, [...(toriDeptsOf.get(s.id) || [])].sort((a, b) => order(a) - order(b)));
+}
+
+// 部局の検証票の県のページ。その部局の取組（最新の所管部局で数える）が載っている部局票と、取得元がその部局の部局票のページを、
+// ページごとに年度と、載っているその部局の取組の数（n。年度の合計）をまとめて返す。年度の順、同じ年度は取組の多い順。
+// 再編した部局の R4 は、再編前の部の票のページになる。ほかの部局の票に載った年度がある取組もあるので、1つの年度に何ページか出ることがある。
+// 取組を読み取れなかった部局票（病院事業局）は、取得元（fetch_pdca.py の部局の名前。DEPTS の slug と同じ）で結び付ける
+export function deptSourcePages(deptName: string) {
+  const slug = DEPTS.find((d) => d.name === deptName)?.slug;
+  const pages = new Map<string, { href: string; title: string; years: number[]; n: number }>();
+  const add = (f: BukyokuFileRow | undefined, n: number) => {
+    if (!f?.page_url) return;
+    const p = pages.get(f.page_url) || { href: f.page_url, title: f.page_title, years: [], n: 0 };
+    if (!p.years.includes(f.year)) p.years.push(f.year);
+    p.n += n;
+    pages.set(f.page_url, p);
+  };
+  for (const b of getBudgetRecords()) if (currentDeptOf(b.year, b.shisaku_id, b.key) === deptName) add(bukyokuFile(b.source), 1);
+  for (const f of load('bukyoku/files')) if (f.source === slug) add(f, 0);
+  return [...pages.values()].map((p) => ({ ...p, years: p.years.sort() })).sort((a, b) => a.years[0] - b.years[0] || b.n - a.n);
+}
 
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
 let currentDept: Map<string, string> | undefined;
@@ -689,12 +749,15 @@ export function sourceOf(id: string) {
 }
 
 let bukyokuFiles: Map<string, BukyokuFileRow> | undefined;
+// 部局票（data/raw/<部局>/...）の PDF の情報。URL と、その PDF を載せている県のページは bukyoku/files.json にある
+function bukyokuFile(id: string) {
+  bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
+  return bukyokuFiles.get(id);
+}
 // 県のPDFへのリンク。zip の中のPDFはページ指定できないので zip へのリンクにする
 export function sourceLink(id: string, page: number): { href: string; label: string } | null {
-  // 部局票（data/raw/<部局>/...）は bukyoku/files.json に URL がある
   if (!id.startsWith('soukatsu/')) {
-    bukyokuFiles ??= new Map(load('bukyoku/files').map((x) => [x.id, x]));
-    const f = bukyokuFiles.get(id);
+    const f = bukyokuFile(id);
     if (!f?.file_url) return null;
     const text = (f.link_text || '').replace(/\s*（\s*(PDF|zip|Excel)[^）]*）\s*$/i, '');
     return { href: `${f.file_url}#page=${page}`, label: `${text} ${page}ページ` };
@@ -804,6 +867,96 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
   return named ? { ...named, matchedByName: true } : undefined;
 }
 
+// 活動指標の計画・実績の「10件」「10件（20件）」の先頭の数と単位（かっこの中は累計や内訳）。「△0.0015t-CO₂/千㎥」の △ は減らす量。数で始まらなければ null
+// 単位は NFKC で比べる（「t-CO₂」の ₂ も 2 になるので、単位の中の数字も単位に入れる）
+export function activityQty(raw: string | null | undefined) {
+  const m = (raw || '').normalize('NFKC').match(/^([-−△▲]?)\s*([\d,.]+)\s*([^\s（(→]*)/);
+  const v = m ? Number(m[2].replace(/,/g, '')) * (m[1] ? -1 : 1) : NaN;
+  return m && Number.isFinite(v) ? { v, u: m[3] } : null;
+}
+// 画面に出す単位は報告書の文字のまま（₂ や ㎥ を崩さない）
+const activityUnitText = (raw: string) => raw.match(/^[-−△▲－]?\s*[\d０-９,，.．]+\s*([^\s（(→]*)/)?.[1] ?? '';
+// 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「計画 10件 → 実績 54件」のように同じ単位の数から計算する
+export function activityAchievement(g: TorikumiGroup, y: number) {
+  const raw = budgetOf(y, g.shisaku.id, g.key)?.achievement ?? '';
+  const m = raw.normalize('NFKC').match(/(-?[\d,.]+)\s*%/);
+  if (m) return { pct: Number(m[1].replace(/,/g, '')), text: raw };
+  const r = g.years[y];
+  const a = activityQty(r?.actual);
+  const b = activityQty(r?.target);
+  return a && b && b.v > 0 && a.u === b.u ? { pct: (a.v / b.v) * 100, text: `${Math.round((a.v / b.v) * 100)}%（計算）` } : null;
+}
+
+// 活動指標の1年分。future は部局票の年度別計画にだけある、この先の年度（実績はまだ無い）
+export interface ActivityYear {
+  y: number;
+  plan_raw: string; // 計画（総括報告書の「目標」。future は年度別計画）
+  actual_raw: string;
+  plan: number | null; // 図に置く、かっこの前のその年度の数（単位がそろわない値は null）
+  actual: number | null;
+  status: string; // 進捗状況（future は ''）
+  ach: string; // 達成割合（無ければ ''）
+  future: boolean;
+}
+export interface ActivityRun {
+  indicator: string;
+  unit: string;
+  years: ActivityYear[];
+  chart: boolean; // 図に置ける実績があるか
+  skipped: boolean; // 書いてあるのに数で読めず、図に入れなかった値があるか
+  cumulative: boolean; // かっこの中に累計や内訳が書いてある値があるか
+  planFrom: string; // future の出どころ（無ければ ''）
+}
+const blankCell = (s: string) => !/[^\s\-－―—‐]/.test(s);
+// 取組の活動指標を、同じ活動指標が続く年度ごとにまとめる（新しい活動指標が先。R7の中期実施計画で入れ替わったものが多い）。
+// 最新の報告にある取組には、部局票の年度別計画から、この先の年度（R8・R9）の計画も足す
+export function activityRuns(g: TorikumiGroup): ActivityRun[] {
+  const runs: { indicator: string; years: Omit<ActivityYear, 'plan' | 'actual'>[] }[] = [];
+  for (const y of YEARS) {
+    const r = g.years[y];
+    if (!r) continue;
+    const indicator = r.indicator || budgetOf(y, g.shisaku.id, g.key)?.indicator_name || '';
+    const row = { y, plan_raw: r.target, actual_raw: r.actual, status: statusOf(r), ach: activityAchievement(g, y)?.text ?? '', future: false };
+    const last = runs.at(-1);
+    if (last && nameKey(last.indicator) === nameKey(indicator)) last.years.push(row);
+    else runs.push({ indicator, years: [row] });
+  }
+  // 年度別計画の行は、活動指標の名前が同じもの。名前が違っても、行が1つで最新の年度の値が総括報告書の計画と同じなら使う
+  let planFrom = '';
+  const cur = runs.at(-1);
+  const rec = g.latest.year === LATEST ? budgetOf(LATEST, g.shisaku.id, g.key) : undefined;
+  if (cur && rec?.plan.length) {
+    const ys = rec.plan_years.map((l) => Number(l.normalize('NFKC').replace(/\D/g, '')) + 2018);
+    const i = ys.indexOf(LATEST);
+    const p = rec.plan.find((x) => nameKey(x.indicator) === nameKey(cur.indicator))
+      ?? (rec.plan.length === 1 && i >= 0 && nameKey(rec.plan[0].values[i] ?? '') === nameKey(g.latest.target) ? rec.plan[0] : undefined);
+    ys.forEach((y, k) => {
+      const v = p?.values[k] ?? '';
+      if (y > LATEST && !blankCell(v)) cur.years.push({ y, plan_raw: v, actual_raw: '', status: '', ach: '', future: true });
+    });
+    if (cur.years.some((r) => r.future)) planFrom = `${yearLabel(LATEST)}の部局の検証票の「年度別計画」`;
+  }
+  return runs.reverse().map((run, k) => {
+    // 単位は、数で読めた値でいちばん多いもの
+    const count = new Map<string, number>();
+    for (const r of run.years) for (const q of [activityQty(r.plan_raw), activityQty(r.actual_raw)]) if (q) count.set(q.u, (count.get(q.u) ?? 0) + 1);
+    const unit = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+    const val = (raw: string) => { const q = activityQty(raw); return q && q.u === unit ? q.v : null; };
+    const years = run.years.map((r) => ({ ...r, plan: val(r.plan_raw), actual: val(r.actual_raw) }));
+    const chart = years.some((r) => r.actual != null);
+    const unitRaw = years.flatMap((r) => [r.actual_raw, r.plan_raw]).find((raw) => val(raw) != null);
+    return {
+      indicator: run.indicator,
+      unit: unitRaw ? activityUnitText(unitRaw) : unit,
+      years,
+      chart,
+      skipped: chart && years.some((r) => (!blankCell(r.plan_raw) && r.plan == null) || (!blankCell(r.actual_raw) && r.actual == null)),
+      cumulative: chart && years.some((r) => /[（(]/.test(r.plan_raw + r.actual_raw)),
+      planFrom: k === 0 ? planFrom : '',
+    };
+  });
+}
+
 // 予算事業の金額を1行ずつに平らにしたもの
 export interface BudgetLine {
   report: number; // 報告年度
@@ -869,6 +1022,40 @@ export function amountEntries(report: number, kind: AmountKind) {
     out.push({ ...l, budgetName: name, fund: fundOf(source), amount: v, year: report + AMOUNT_KINDS[kind].offset });
   }
   return out;
+}
+
+// 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
+// funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）
+export interface BudgetGroup {
+  key: string;
+  name: string;
+  estimate: number;
+  settled: number | undefined;
+  initial: number | undefined;
+  funds: Map<string, number>;
+  related: BudgetLine[];
+}
+export function budgetGroups(report: number): BudgetGroup[] {
+  const sumByName = (kind: AmountKind) => {
+    const m = new Map<string, number>();
+    for (const e of amountEntries(report, kind)) m.set(budgetKey(e.budgetName), (m.get(budgetKey(e.budgetName)) || 0) + e.amount);
+    return m;
+  };
+  const settled = sumByName('settled');
+  const initial = sumByName('initial');
+  const lines = getBudgetLines().filter((l) => l.report === report);
+  const m = new Map<string, BudgetGroup>();
+  for (const e of amountEntries(report, 'estimate')) {
+    const k = budgetKey(e.budgetName);
+    if (!m.has(k)) {
+      const related = [...new Map(lines.filter((l) => budgetKey(l.name) === k).map((l) => [`${l.shisaku_id}|${l.key}`, l])).values()];
+      m.set(k, { key: k, name: e.budgetName, estimate: 0, settled: settled.get(k), initial: initial.get(k), funds: new Map(), related });
+    }
+    const g = m.get(k)!;
+    g.estimate += e.amount;
+    g.funds.set(e.fund, (g.funds.get(e.fund) || 0) + e.amount);
+  }
+  return [...m.values()].sort((a, b) => b.estimate - a.estimate);
 }
 
 export function getSuspects() {

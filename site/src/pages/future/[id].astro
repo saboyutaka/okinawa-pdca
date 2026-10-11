@@ -4,10 +4,11 @@ import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
-import Donut from '../../components/Donut.astro';
+import DonutCard from '../../components/DonutCard.astro';
+import HeadStats from '../../components/HeadStats.astro';
+import Moves from '../../components/Moves.astro';
 import Chunk from '../../components/Chunk.astro';
 import Chip from '../../components/Chip.astro';
-import Icon from '../../components/Icon.astro';
 import Term from '../../components/Term.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -99,30 +100,24 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <div>
       <div class="v-kicker"><Term word="将来像" />{v.id}</div>
       <h1>{v.name}</h1>
-      <div class="v-stats">
-        <a href={`#kihon`}>基本施策 <b class="big">{fmt(kihon.length)}</b></a>
-        <a href={`/shisaku/?s=${v.id}`}>施策 <b class="big">{fmt(shisaku.length)}</b></a>
-        <a href={`/torikumi/?s=${v.id}`}>主な取組 <b class="big">{fmt(tori.length)}</b><small>（{yearLabel(LATEST)}）</small></a>
-        <a href={`/shihyou/?s=${v.id}`}>成果指標 <b class="big">{fmt(seika.length)}</b><small>（{yearLabel(LATEST)}）</small></a>
-      </div>
+      <HeadStats items={[
+        { label: '基本施策', n: kihon.length, href: '#kihon' },
+        { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
+        { label: '主な取組', n: tori.length, href: `/torikumi/?s=${v.id}`, note: yearLabel(LATEST) },
+        { label: '成果指標', n: seika.length, href: `/shihyou/?s=${v.id}`, note: yearLabel(LATEST) },
+      ]} />
     </div>
   </header>
 
   <div class="donuts">
-    <div class="sticker donut-card">
-      <Donut frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`} />
-      <div>
-        <div class="dc-title">主な取組のうち「順調」</div>
-        <div class="dc-sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件（{yearLong(LATEST)}）。県全体は{allToriRate}。</div>
-      </div>
-    </div>
-    <div class="sticker donut-card">
-      <Donut frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`} />
-      <div>
-        <div class="dc-title"><Term word="成果指標" />のうち<Term word="計画値" />に到達</div>
-        <div class="dc-sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標（{yearLong(LATEST)}）。県全体は{allSeikaRate}。</div>
-      </div>
-    </div>
+    <DonutCard frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`}>
+      主な取組のうち「順調」
+      <Fragment slot="sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件（{yearLong(LATEST)}）。県全体は{allToriRate}。</Fragment>
+    </DonutCard>
+    <DonutCard frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`}>
+      <Term word="成果指標" />のうち<Term word="計画値" />に到達
+      <Fragment slot="sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標（{yearLong(LATEST)}）。県全体は{allSeikaRate}。</Fragment>
+    </DonutCard>
   </div>
 
   <section aria-labelledby="judge-h">
@@ -200,15 +195,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="moves-h">
     <h2 id="moves-h">今年のできごと</h2>
     <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告で、同じ名前の主な取組の進捗状況を比べました。遅れ＝やや遅れ・大幅遅れ・未着手。</p>
-    <div class="moves">
-      {moves.map((m) => (
-        <a class="sticker move" href={m.href}>
-          <span class="m-head"><Icon tone={m.tone} size={16} />{m.title}</span>
-          <span class="big m-n">{fmt(m.n)}<small>件</small></span>
-          <span class="m-link">一覧を見る</span>
-        </a>
-      ))}
-    </div>
+    <Moves items={moves} />
   </section>
 
   <section aria-labelledby="theme-h">
@@ -235,17 +222,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .v-hero :global(.hero-badge) { width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
   .v-kicker { font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .v-hero h1 { margin: 2px 0 8px; }
-  .v-stats { display: flex; flex-wrap: wrap; gap: 6px 10px; }
-  .v-stats a { display: inline-flex; align-items: baseline; gap: 6px; color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 2px 14px; font-size: 0.9375rem; }
-  .v-stats a:hover { background: var(--sky); }
-  .v-stats b { font-size: 1.15rem; }
-  .v-stats small { font-size: 0.8125rem; color: var(--ink-2); }
   @media (max-width: 520px) { .v-hero { grid-template-columns: 1fr; } .v-hero :global(.hero-badge) { width: 56px; height: 56px; font-size: 1.6rem; } }
-  .donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
-  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
-  .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
-  .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
-  @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
   .kcards { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .kcard { display: grid; gap: 8px; align-content: start; }
   .k-name { line-height: 1.5; }
@@ -257,13 +234,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
-  .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .move { display: grid; gap: 4px; color: var(--ink); text-decoration: none; }
-  .move:hover { background: var(--sky); }
-  .m-head { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; }
-  .m-n { font-size: 2.2rem; line-height: 1.1; }
-  .m-n small { font-family: var(--font); font-size: 1rem; font-weight: 700; margin-left: 4px; }
-  .m-link { color: var(--link); font-weight: 700; font-size: 0.9375rem; text-decoration: underline; }
   .tlist { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .t-big { font-size: 0.9375rem; padding: 4px 12px; gap: 8px; }
   .t-big b { font-family: var(--font-num); font-weight: 600; }

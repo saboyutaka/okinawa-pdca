@@ -1,68 +1,113 @@
 ---
+// 部局の一覧。ひとめで（部局別の取組の進捗の図）→ 部局ごとの行（取組・成果指標・遅れ・予算）→ 4年間の表は畳む。並びは県の部局の一覧の順
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, getTorikumiGroups, getShisakuList } from '../../lib/data.ts';
-import { fmt, pct } from '../../lib/format.ts';
+import Term from '../../components/Term.astro';
+import {
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, rateBin,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept, shisakuDepts, amountEntries, currentDeptOf,
+} from '../../lib/data.ts';
+import { fmt, pct, yen } from '../../lib/format.ts';
 
 const groups = getTorikumiGroups();
 const shisaku = getShisakuList();
 const statusKeys = STATUSES.map((s) => s.key);
 const last = YEARS.length - 1;
+const seika = getSeika(LATEST);
+const estimate = amountEntries(LATEST, 'estimate');
 
 const depts = DEPTS.map((d) => {
   const mine = groups.filter((g) => g.dept === d.name);
   const latest = mine.filter((g) => g.statuses[last]);
+  const s = seika.filter((x) => seikaDept(x) === d.name);
   return {
     ...d,
-    latestCount: latest.length,
+    q: encodeURIComponent(d.name),
+    latest,
+    ok: latest.filter((g) => g.statuses[last] === '順調').length,
     counts: countBy(latest, (g) => g.statuses[last]!, statusKeys),
+    sections: new Set(latest.map((g) => g.section)).size,
     okRates: YEARS.map((_, i) => {
       const inYear = mine.filter((g) => g.statuses[i]);
       return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
     }),
     delay3: mine.filter((g) => g.patterns.includes('delay3')).length,
-    shisakuCount: shisaku.filter((s) => s.depts.includes(d.name)).length,
+    seika: s.length,
+    seikaOk: s.filter((x) => rateBin(x) === '100%以上').length,
+    // かかわる施策（関係部等にある施策と、この部局の取組がある施策。lib/data.ts の shisakuDepts）
+    shisaku: shisaku.filter((x) => shisakuDepts(x).some((r) => r.dept === d.name)).length,
+    budget: estimate.filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === d.name).reduce((sum, e) => sum + e.amount, 0),
   };
-}).filter((d) => d.latestCount > 0 || d.okRates.some(([, n]) => n > 0));
+}).filter((d) => d.latest.length > 0 || d.okRates.some(([, n]) => n > 0));
 
-const rows = [...depts].sort((a, b) => b.latestCount - a.latestCount).map((d) => ({
-  label: d.name,
-  href: `/bukyoku/${d.slug}/`,
-  counts: d.counts,
-}));
+const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, counts: d.counts }));
 ---
-<Base title="部局" description="沖縄県PDCAの主な取組の進み具合を、県の部局ごとに見られます。">
+<Base title="部局" description="沖縄県PDCAの主な取組・成果指標・施策・予算を、県の部局ごとに見られます。">
   <nav class="breadcrumb"><a href="/">トップ</a> › 部局</nav>
   <h1>部局</h1>
-  <p class="secondary">
-    主な取組を所管する部局ごとの進み具合です。部局は最新の報告での所管部局で、過去の年度の取組もその部局に寄せて数えています。
-    令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。
-  </p>
+  <p class="secondary lead">主な取組を所管する県の部局ごとの進み具合です。部局は最新の報告での所管部局で、過去の年度の取組もその部局に寄せて数えています。</p>
 
   <StatusChart title={`部局別 主な取組の進捗状況（${yearLong(LATEST)}）`} categories={STATUSES} rows={rows} />
 
-  <h2>部局ごとの4年間</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>部局</th>
-          {YEARS.map((y) => <th class="num">{yearLabel(y)}の順調</th>)}
-          <th class="num">3年以上遅れ</th>
-          <th class="num">関係する施策</th>
-        </tr>
-      </thead>
-      <tbody>
-        {depts.map((d) => (
-          <tr>
-            <th><a href={`/bukyoku/${d.slug}/`}>{d.name}</a></th>
-            {d.okRates.map(([ok, n]) => <td class="num">{n ? pct(ok, n) : '—'}<br /><small class="secondary">{fmt(ok)}/{fmt(n)}</small></td>)}
-            <td class="num">{d.delay3 ? <a href={`/bukyoku/${d.slug}/#okure`}>{fmt(d.delay3)}件</a> : '0件'}</td>
-            <td class="num">{fmt(d.shisakuCount)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <p class="small secondary">「順調」の割合は、その年度の報告にある取組のうち進捗状況が「順調」のもの。「関係する施策」は施策の「関係部等」にその部局が書かれている施策の数です。</p>
+  <section aria-labelledby="list-h">
+    <h2 id="list-h">部局ごとのようす</h2>
+    <p class="small secondary lead">主な取組・<Term word="成果指標" />・予算は{yearLong(LATEST)}のものです。予算は取組に書かれた予算事業の決算見込額です。</p>
+    <ul class="row-list">
+      {depts.map((d) => (
+        <li class="d-row">
+          <div class="d-name">
+            <a class="name-link" href={`/bukyoku/${d.slug}/`}>{d.name}</a>
+            <span class="small secondary">課 {fmt(d.sections)}・施策 {fmt(d.shisaku)}</span>
+          </div>
+          <dl class="d-facts">
+            <div><dt>取組の「順調」</dt><dd><b class="big">{pct(d.ok, d.latest.length)}</b><small>{fmt(d.ok)}/{fmt(d.latest.length)}件</small></dd></div>
+            <div><dt>成果指標の到達</dt><dd>{d.seika ? <><b class="big">{pct(d.seikaOk, d.seika)}</b><small>{fmt(d.seikaOk)}/{fmt(d.seika)}</small></> : <small>指標なし</small>}</dd></div>
+            <div><dt>3年以上遅れ</dt><dd>{d.delay3 ? <a href={`/torikumi/?dept=${d.q}&pat=delay3`}><b class="big">{fmt(d.delay3)}</b>件</a> : <span><b class="big">0</b>件</span>}</dd></div>
+            <div><dt>予算</dt><dd>{d.budget ? <b class="big">{yen(d.budget)}</b> : <small>検証票なし</small>}</dd></div>
+          </dl>
+        </li>
+      ))}
+    </ul>
+    <details class="table-view">
+      <summary>4年間の「順調」の割合を表で見る</summary>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>部局</th>
+              {YEARS.map((y) => <th class="num">{yearLabel(y)}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {depts.map((d) => (
+              <tr>
+                <th><a href={`/bukyoku/${d.slug}/`}>{d.name}</a></th>
+                {d.okRates.map(([ok, n]) => <td class="num">{n ? pct(ok, n) : '—'}<br /><small class="secondary">{fmt(ok)}/{fmt(n)}</small></td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    <p class="small secondary">
+      「順調」の割合は、その年度の報告にある取組のうち進捗状況が「順調」のもの。「施策」は、施策の「関係部等」にその部局が書かれている施策と、その部局の主な取組がある施策の数。「3年以上遅れ」は、4年のうち3年以上遅れた取組の数です。
+      令和5年度に組織再編があり、子ども生活福祉部と保健医療部の取組は、こども未来部・生活福祉部・保健医療介護部・知事公室に移っています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。
+    </p>
+  </section>
 </Base>
+
+<style>
+  .d-row { display: grid; grid-template-columns: minmax(10em, 1fr) minmax(0, 2.6fr); gap: 6px 20px; align-items: center; }
+  .d-name { display: grid; gap: 0; }
+  .d-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 16px; margin: 0; }
+  .d-facts > div { display: grid; gap: 0; min-width: 0; }
+  dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
+  dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+  dd .big { font-size: 1.15rem; }
+  dd small { font-size: 0.8125rem; color: var(--ink-2); }
+  @media (max-width: 720px) {
+    .d-row { grid-template-columns: 1fr; }
+    .d-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .table-view { margin-top: 16px; }
+</style>

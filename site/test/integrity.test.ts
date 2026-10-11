@@ -4,10 +4,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
-  getTorikumi, getSeika, seikaDept, deptHref, sourceLink,
+  getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
+  amountEntries, budgetGroups,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
-import { planSourceLink, kankoSeikaList } from '../src/lib/plans.ts';
+import {
+  planSourceLink, kankoSeikaList, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
+} from '../src/lib/plans.ts';
 
 // 当てはまらなかったものを、先頭の数件だけメッセージに出す
 const none = <T>(bad: T[], show: (x: T) => string) => assert.deepEqual(bad.slice(0, 5).map(show), [], `${bad.length} 件`);
@@ -71,6 +74,20 @@ test('最新の年度の取組・成果指標の部局には、どれも部局�
   none([...depts].filter((d) => !deptHref(d)), (d) => d || '（空）');
 });
 
+test('最新の年度の取組の所管部課は、部局のページの課ごとの図に行がある', () => {
+  // 取組のページの「所管」のリンクは、部局のページのその課の行へ飛ぶ。部局のページの課の行は、最新の年度の取組の所管部課で作る
+  none(getTorikumi(LATEST).filter((t) => !sectionHref(t.section)?.includes('#') || deptHref(t.section) !== deptHref(t.dept)), (t) => `${t.shisaku_id} ${t.name}: ${t.section}（${t.dept}）`);
+});
+
+test('施策にかかわる部局（関係部等と取組の部局）には、どれも部局のページがある', () => {
+  // 部局のページの施策の一覧と、施策をさがすの部局の絞り込みは、shisakuDepts で同じように数える
+  none(getShisakuList().flatMap((s) => shisakuDepts(s).filter((d) => !deptHref(d.dept)).map((d) => `${s.id}: ${d.dept}`)), (x) => x);
+});
+
+test('どの部局のページにも、出典の検証票のページがある', () => {
+  none(DEPTS.filter((d) => !deptSourcePages(d.name).length), (d) => d.name);
+});
+
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {
   for (const k of getKihonList()) {
     const used = shuyouRows(k.id).flatMap((g) => Object.values(g.years));
@@ -86,9 +103,52 @@ test('取組の4年間の進捗状況は、報告の年度の順に並ぶ', () =
   }
 });
 
+test('取組の活動指標のまとまりは、報告の年度を1回ずつ含み、この先の年度の計画は最新の報告にある取組のいまの活動指標にだけ付く', () => {
+  const bad: string[] = [];
+  for (const g of getTorikumiGroups()) {
+    const runs = activityRuns(g);
+    // 新しい活動指標が先なので、まとまりを古い順に並べ直すと報告の年度の順になる
+    const reported = [...runs].reverse().flatMap((r) => r.years.filter((y) => !y.future).map((y) => y.y));
+    if (reported.join() !== YEARS.filter((y) => g.years[y]).join()) bad.push(`${g.href} 年度 ${reported.join()}`);
+    const future = runs.flatMap((r, i) => r.years.filter((y) => y.future).map((y) => ({ i, y: y.y })));
+    if (future.some((f) => f.i > 0 || f.y <= LATEST || g.latest.year !== LATEST)) bad.push(`${g.href} この先の年度 ${future.map((f) => f.y).join()}`);
+    // 図に置く値は、まとまりの単位でそろっている（単位の違う値は null）
+    if (runs.some((r) => r.chart !== r.years.some((y) => y.actual != null))) bad.push(`${g.href} 図の有無`);
+  }
+  none(bad, (x) => x);
+});
+
 test('観光ロードマップの成果指標は、後退・横ばいを先に並べる', () => {
   const order = ['後退', '横ばい', 'その他', '前進'];
   const ranks = kankoSeikaList().map((r) => order.indexOf(r.judgement));
   assert.ok(!ranks.includes(-1), '知らない達成状況がある');
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b));
+});
+
+test('予算事業ごとにまとめても、決算見込額の合計は変わらない', () => {
+  const total = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0));
+  const groups = budgetGroups(LATEST);
+  assert.equal(total(groups.map((g) => g.estimate)), total(amountEntries(LATEST, 'estimate').map((e) => e.amount)));
+  assert.equal(new Set(groups.map((g) => g.key)).size, groups.length, '同じ予算事業が2行ある');
+  none(groups.filter((g) => !g.related.length), (g) => `${g.name}: 書かれている取組が無い`);
+});
+
+test('一括交付金の事業は、どれも施策のページの事業のカードにたどれる', () => {
+  const groups = ikkatsuGroups();
+  const anchors = groups.map((g) => ikkatsuAnchor(g.key));
+  assert.equal(new Set(anchors).size, anchors.length, '事業のカードの id が重複している');
+  // 施策のコードが決まらない事業（R5 の1件）だけは行き先が無い
+  const bad = groups.filter((g) => {
+    const href = ikkatsuHref(g);
+    if (!href) return Object.values(g.years).some((r) => r.shisaku_ids.length);
+    const sid = href.match(/^\/shisaku\/([^/]+)\//)![1];
+    return !ikkatsuOf(sid).some((x) => x.key === g.key);
+  });
+  none(bad, (g) => g.latest.name);
+});
+
+test('最新の年度の一括交付金の事業の担当部局には、どれも部局のページがある', () => {
+  // R4 で終わった事業には、R5 の再編の前の部局（保健医療部など）のものがある
+  const latest = ikkatsuGroups().filter((g) => g.years[IKKATSU_LATEST]);
+  none(latest.filter((g) => g.latest.dept && !deptHref(ikkatsuDept(g.latest.dept))), (g) => `${g.latest.name}: ${g.latest.dept}`);
 });
