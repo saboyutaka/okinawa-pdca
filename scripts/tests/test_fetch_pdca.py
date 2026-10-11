@@ -1,7 +1,9 @@
-"""県サイトの取得で使う、年度の判定と URL の正規化（fetch_pdca.py）。"""
+"""県サイトの取得で使う、年度の判定と URL の正規化・保存先の名前・リダイレクト（fetch_pdca.py）。"""
 import unittest
+import urllib.error
+import urllib.request
 
-from fetch_pdca import clean_url, fy_label, infer_fy, is_attachment, is_page
+from fetch_pdca import PrefRedirect, clean_url, file_name, fy_label, infer_fy, is_attachment, is_page, is_pref_host
 
 
 class InferFyTest(unittest.TestCase):
@@ -51,6 +53,41 @@ class UrlTest(unittest.TestCase):
         self.assertTrue(is_page("https://www.pref.okinawa.jp/a/"))
         self.assertTrue(is_page("https://www.pref.okinawa.jp/a/b.html"))
         self.assertFalse(is_page("https://www.pref.okinawa.jp/a/b.pdf"))
+
+
+class SafetyTest(unittest.TestCase):
+    def test_file_name(self):
+        """保存するファイル名は URL の最後の部分（%xx は戻す）。"""
+        self.assertEqual(file_name("https://www.pref.okinawa.jp/a/%E7%B7%8F%E6%8B%AC.pdf"), "総括.pdf")
+        self.assertEqual(file_name("https://www.pref.okinawa.jp/a/b.pdf?x=1"), "b.pdf")
+
+    def test_file_name_outside(self):
+        """%2F・%5C を戻すと ../ になる名前や、. で始まる名前は data/raw の外や隠しファイルになるので断る。"""
+        for url in (
+            "https://www.pref.okinawa.jp/a/..%2F..%2F..%2F..%2Fevil.pdf",
+            "https://www.pref.okinawa.jp/a/..%5C..%5Cevil.pdf",
+            "https://www.pref.okinawa.jp/a/%2E%2E",
+            "https://www.pref.okinawa.jp/a/.hidden.pdf",
+            "https://www.pref.okinawa.jp/a/b%00.pdf",
+            "https://www.pref.okinawa.jp/a/",
+        ):
+            with self.assertRaises(ValueError, msg=url):
+                file_name(url)
+
+    def test_pref_host(self):
+        for host in ("www.pref.okinawa.jp", "www.pref.okinawa.lg.jp", "pref.okinawa.jp",
+                     "www.police.pref.okinawa.jp", "byoinjigyokyoku.pref.okinawa.jp", "WWW.EB.PREF.OKINAWA.JP"):
+            self.assertTrue(is_pref_host(host), host)
+        for host in ("example.jp", "pref.okinawa.jp.example.com", "evilpref.okinawa.jp", "", None):
+            self.assertFalse(is_pref_host(host), host)
+
+    def test_redirect(self):
+        """県のドメインの中へのリダイレクトにはついていき、外へは行かない。"""
+        req = urllib.request.Request("https://www.pref.okinawa.lg.jp/a/b.pdf")
+        new = PrefRedirect().redirect_request(req, None, 301, "Moved", {}, "https://www.pref.okinawa.jp/a/b.pdf")
+        self.assertEqual(new.full_url, "https://www.pref.okinawa.jp/a/b.pdf")
+        with self.assertRaises(urllib.error.HTTPError):
+            PrefRedirect().redirect_request(req, None, 302, "Found", {}, "https://example.com/b.pdf")
 
 
 if __name__ == "__main__":

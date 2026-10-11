@@ -29,6 +29,9 @@
   - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（すべて開く・# の行き先の details を開く）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
+- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプト・`<style>` だけ。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
+  - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
+  - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
 ## 4. ページ
 
@@ -37,3 +40,19 @@
 ## 5. くらしのテーマの定義
 
 施策名・施策展開・基本施策の名前に当たる言葉と、人が直すための追加・除外は [data/reference/themes.json](../data/reference/themes.json)。基本施策の名前は広いので、短い言葉だと関係のない施策まで入る（「働きやすい環境づくり」の「環境」、「亜熱帯海洋性気候」の「海洋」など）。言葉は長めにし、先読み・後読み（`海洋(?!性気候)`）や exclude で外す。入らない施策があるとビルドで警告し、`make test` で落ちる。
+
+## 6. 検索エンジンと SNS 向け
+
+本番のドメインは `lib/links.ts` の `SITE.url`（https://okinawa-miraima.com/）に1か所で決め、`astro.config.ts` の `site` もこれを使う。URL・sitemap・robots.txt・構造化データを作る関数は `lib/seo.ts`。
+
+- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
+- `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
+- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
+- SNS のシェアの URL も、ビルド時に本番のドメインで入れる（`components/Share.astro`）。
+
+## 7. 表示の速さ
+
+- 一覧の行（`.row-list > li`）は `content-visibility: auto` で、画面の外の行を描かない（`styles/global.css`）。成果指標・施策・一括交付金などの一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重いため（スマホ幅でレイアウトのやり直しが 200ms 台から 10〜30ms に減った）。行の中身は行の外へはみ出せないので、吹き出しなどは body に付ける。`make shot` は画面の外まで撮るので、これを外して撮る。
+- ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
+- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの `data.json` の preload）。
+- 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは [deploy.md](deploy.md) の 5章。

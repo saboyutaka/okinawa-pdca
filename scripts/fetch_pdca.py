@@ -51,6 +51,8 @@ HOST_ALIASES = {
     "pref.okinawa.jp": "www.pref.okinawa.jp",
 }
 HTTPS_HOSTS = {"www.pref.okinawa.jp"}
+# 取得元はどれも県のドメイン（知事部局・教育庁・警察本部・企業局・病院事業局）。リダイレクトでこの外へは行かない
+PREF_DOMAINS = ("pref.okinawa.jp", "pref.okinawa.lg.jp")
 
 # ---------------------------------------------------------------- 取得元
 CHIJI_ROOT = "https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html"
@@ -185,6 +187,20 @@ def is_page(url: str) -> bool:
     return ext in ("", ".html", ".htm")
 
 
+def is_pref_host(host: str | None) -> bool:
+    host = (host or "").lower()
+    return any(host == d or host.endswith("." + d) for d in PREF_DOMAINS)
+
+
+def file_name(url: str) -> str:
+    """保存するファイル名（URL の最後の部分）。%2F（/）や %5C（\\）を戻すと ../ が作れて data/raw の外に書けてしまうので、
+    区切りの文字を含む名前と、. で始まる名前（.. や隠しファイル）は断る。"""
+    name = urllib.parse.unquote(os.path.basename(urllib.parse.urlsplit(url).path))
+    if not name or name.startswith(".") or any(c in name for c in "/\\\0"):
+        raise ValueError(f"保存できないファイル名: {name!r}（{url}）")
+    return name
+
+
 def nfkc(s: str) -> str:
     return unicodedata.normalize("NFKC", s or "")
 
@@ -216,10 +232,20 @@ def fy_label(fy: int | None) -> str:
 
 
 # ---------------------------------------------------------------- HTTP
+class PrefRedirect(urllib.request.HTTPRedirectHandler):
+    """県のドメインの外へのリダイレクトにはついていかない（巡回するリンクを取得元のホストに絞っているのと同じ）。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not is_pref_host(urllib.parse.urlsplit(newurl).hostname):
+            raise urllib.error.HTTPError(req.full_url, code, f"県のドメインの外へのリダイレクト: {newurl}", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 class Http:
     def __init__(self) -> None:
         self.last = 0.0
         self.robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+        self.opener = urllib.request.build_opener(PrefRedirect())
 
     def get(self, url: str, headers: dict | None = None, retries: int = 3):
         """(status, headers, body) を返す。304 は body=None。"""
@@ -230,7 +256,7 @@ class Http:
                 time.sleep(wait)
             self.last = time.monotonic()
             try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=90) as r:
+                with self.opener.open(urllib.request.Request(url, headers=h), timeout=90) as r:
                     return r.status, r.headers, r.read()
             except urllib.error.HTTPError as e:
                 if e.code == 304:
@@ -470,8 +496,11 @@ class Fetcher:
     def dest_for(self, src: Source, furl: str, fy: int | None) -> Path:
         prev = self.manifest.get(furl)
         if prev:
-            return self.raw / prev["local_path"]
-        name = urllib.parse.unquote(os.path.basename(urllib.parse.urlsplit(furl).path))
+            rel = Path(prev["local_path"])
+            if rel.is_absolute() or ".." in rel.parts:
+                raise ValueError(f"台帳の local_path が data/raw の外を指している: {rel}")
+            return self.raw / rel
+        name = file_name(furl)
         rel = f"{src.slug}/{fy_label(fy)}/{name}"
         if rel in self.claimed and self.claimed[rel] != furl:  # 同名の別ファイル
             stem, ext = os.path.splitext(name)
@@ -485,7 +514,12 @@ class Fetcher:
         if fy is not None and ((since and fy < since) or (a.until and fy > a.until)):
             self.stats["filtered"] += 1
             return
-        dest = self.dest_for(src, furl, fy)
+        try:
+            dest = self.dest_for(src, furl, fy)
+        except ValueError as e:
+            print(f"    ! {e}")
+            self.stats["errors"] += 1
+            return
         rel = dest.relative_to(self.raw).as_posix()
         prev = self.manifest.get(furl)
         rec = dict(prev) if prev else {}

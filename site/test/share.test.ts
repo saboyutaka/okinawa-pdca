@@ -31,7 +31,7 @@ test('Bluesky は本文・URL・ハッシュタグを改行で区切って本文
   assert.equal(params('bluesky', { text: opts.text }).get('text'), `${opts.text}\n#${HASHTAG}`);
 });
 
-test('空の引数は URL に入れない（ページの URL はブラウザで入れる）', () => {
+test('空の引数は URL に入れない', () => {
   assert.deepEqual([...params('x', { text: opts.text })], [['text', opts.text], ['hashtags', HASHTAG]]);
   assert.deepEqual([...params('facebook', {})], []);
 });

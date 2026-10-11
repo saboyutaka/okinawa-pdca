@@ -154,6 +154,13 @@ try {
       const url = `${base}/${pagePath.replace(/^\/+/, '')}`;
       const res = await page.goto(url, { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready.then(() => true));
+      // 一覧の行は画面の外を描かない（styles/global.css の content-visibility）。画面の外まで撮ると行が空に写るので、外して撮る。
+      // <style> を足すとページの CSP に止められるので、当たっている要素の style をスクリプトから直接変える
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll<HTMLElement>('*')) {
+          if (getComputedStyle(el).getPropertyValue('content-visibility') === 'auto') el.style.setProperty('content-visibility', 'visible');
+        }
+      });
       const name =
         slug(pagePath) + (opts.selector ? `@${slug(opts.selector)}` : '') + `-${width}${opts.dark ? '-dark' : ''}.png`;
       const path = join(opts.out, name);

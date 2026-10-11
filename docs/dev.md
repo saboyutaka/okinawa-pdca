@@ -6,6 +6,8 @@
 
 ホストに node や Python のライブラリは入れず、`compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine、`shot` = Playwright と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントする）。開発サーバーは http://localhost:4321/（`SITE_PORT=4400 make dev` で変えられる）。
 
+依存パッケージのインストール時のスクリプト（postinstall など）は動かさない（`site/.npmrc`・`scripts/shot/.npmrc` の `ignore-scripts=true`）。コンテナはリポジトリ全体（main では `.git` も）を書き込める形でマウントしているので、悪意のあるパッケージが入っても `.git/hooks` などを書き換えさせないため。いまの依存はスクリプトが無くても動く。スクリプトが要るパッケージを足すときは、要る理由を確かめてから `npm rebuild <名前> --ignore-scripts=false` でそのパッケージだけ動かす。
+
 ## 2. テスト
 
 `make test` で `make test-py`（`scripts/tests/`。抽出の関数を作った値で確かめる。PDF は読まない）と `make test-site`（`site/test/`。lib の関数）の両方。
@@ -25,6 +27,7 @@ make shot PAGES="/shisaku/1-1-a-1/ --selector '#seika-1'"  # 最初に当たる�
 ```
 
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。
+- 一覧の行は画面の外を描かない（`content-visibility`。[site.md](site.md) の 7章）ので、撮るときはそれを外している。画面の外の行が空に写ることはないが、スクロールしたときの見え方はこの画像では確かめられない。
 - 中身は `scripts/shot/shot.ts`。Node が型を取り除いて動かすので `erasableSyntaxOnly` の書き方に限り、変えたら `make shot-typecheck`。TypeScript と `@types/node` の版はサイトにそろえ、Playwright の版は `docker/shot/Dockerfile` の FROM と `package.json` をそろえる。
 
 ## 4. git worktree での開発
