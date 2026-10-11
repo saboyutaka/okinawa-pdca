@@ -8,6 +8,7 @@ import {
   amountEntries, budgetGroups,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
+import { themeIconSvg } from '../src/lib/icons.ts';
 import {
   planSourceLink, kankoSeikaList, kankoShisakuList, RM_JUDGEMENTS, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
 } from '../src/lib/plans.ts';
@@ -48,6 +49,16 @@ test('くらしのテーマの include・exclude の施策 ID が実在する', 
   const themes = getThemes();
   assert.equal(new Set(themes.map((t) => t.id)).size, themes.length, 'テーマの id が重複している');
   none(themes.flatMap((t) => [...t.include, ...t.exclude].filter((id) => !ids.has(id)).map((id) => `${t.id}: ${id}`)), (x) => x);
+});
+
+test('くらしのテーマの決め方の言葉に、正規表現の記号が残らない', () => {
+  // テーマのページに「〇〇」「〇〇」のどれかを含む施策、と出す
+  none(getThemes().flatMap((t) => t.words.filter((w) => !w || /[()[\]?*+.\\^$]/.test(w)).map((w) => `${t.id}: ${w}`)), (x) => x);
+});
+
+test('どのくらしのテーマにもアイコンがある', () => {
+  // アイコンは lib/icons.ts の THEME_ICONS。テーマを足したらここにも足す
+  none(getThemes().filter((t) => !/<(path|circle|rect)/.test(themeIconSvg(t.id))), (t) => `${t.id} ${t.label}`);
 });
 
 test('沖縄県PDCA の抽出結果は、どの行も出典（県の PDF のページ）にたどれる', () => {
