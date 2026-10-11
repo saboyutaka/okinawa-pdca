@@ -2,10 +2,12 @@
    色はすべて役割名のトークンで参照する。暗い配色は同じ系統から選び直した値（自動反転ではない）。はじめはライトで表示する。
    状態の色（青信号系）は装飾の色（青・紫・ピンク）と混ぜない。状態は必ず形と文字と一緒に出す */
 
-/* 数字だけの丸い英字フォント（Fredoka。数字と記号だけに絞った約4KB。日本語のウェブフォントは読み込まない） */
+/* 数字だけの丸い英字フォント（Fredoka。数字と記号だけに絞った約4KB。日本語のウェブフォントは読み込まない）。
+   相対パスで書くと、ビルドで /_astro/ にハッシュ付きの名前で書き出され、ずっとキャッシュされる（CSS には埋め込まない。astro.config.ts の assetsInlineLimit）。
+   ライセンスは public/fonts/Fredoka-OFL.txt（このサイトについてのページからリンク） */
 @font-face {
   font-family: "Fredoka Num";
-  src: url("/fonts/fredoka-num.woff2") format("woff2");
+  src: url("../fonts/fredoka-num.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
   unicode-range: U+25, U+2B-39, U+3F, U+41-47, U+52, U+2212;
@@ -442,6 +444,15 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
    名前は .row-list（図の部品 StatusChart・AmountChart が中で .rows を使っているので、それと分ける） */
 .row-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
 .row-list > li { background: var(--paper); padding: 12px 16px; min-width: 0; }
+/* 画面の外の行は描かない（content-visibility）。成果指標・施策の一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重い。
+   描く前の行の高さは目安（行の種類と画面の幅ごとのおおよその中央値）。一度描いた行は実際の高さを覚える（auto）。
+   中身は行の外へはみ出せなくなるので、行の中に吹き出しなどをはみ出させて置かない（ツールチップと用語の説明は body に付けている） */
+.row-list > li { content-visibility: auto; contain-intrinsic-block-size: auto 80px; }
+.row-list > li.t-row { contain-intrinsic-block-size: auto 125px; }
+@media (max-width: 640px) {
+  .row-list > li { contain-intrinsic-block-size: auto 140px; }
+  .row-list > li.t-row { contain-intrinsic-block-size: auto 270px; }
+}
 /* 取組の一覧の1行（取組をさがす・部局のページ）。左に名前・所管と施策・活動指標、右に4年のスタンプ */
 .t-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
 .t-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }

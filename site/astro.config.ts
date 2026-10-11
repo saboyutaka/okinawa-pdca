@@ -35,4 +35,7 @@ export default defineConfig({
   },
   // コードの色付け（Shiki）は使わない。style 属性で色を付けるので CSP と合わない（使っていなくても CSP の警告が出る）
   markdown: { syntaxHighlight: false },
+  // 数字のフォント（約4KB）は小さいので、そのままだと Vite が CSS に data: で埋め込み、CSP の default-src 'self' に止められる。
+  // フォントだけは埋め込まず、/_astro/ にハッシュ付きの名前で書き出す（ずっとキャッシュされる。layouts/Base.astro で preload）
+  vite: { build: { assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined) } },
 });
