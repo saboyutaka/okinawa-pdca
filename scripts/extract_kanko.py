@@ -32,7 +32,7 @@ import pdfplumber
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from extract_soukatsu import (  # noqa: E402
-    KANA, STATUSES, clean, dept_of, load_manifest, name_key, parse_num, split_section, uncid, write_json,
+    KANA, STATUSES, clean, dept_of, load_manifest, name_key, parse_num, uncid, write_json,
 )
 
 SOURCE = "kanko-rm"
@@ -74,6 +74,101 @@ def rm_code(c: dict) -> str:
 def compact(row: list) -> list[str]:
     """表の行から結合セルの None を除く（年度で列の数が違っても同じように読めるように）。"""
     return [c for c in row if c is not None]
+
+
+def fix_radicals(s: str) -> str:
+    """康熙部首（U+2F00〜）・CJK部首補助（U+2E80〜）の字を普通の漢字にする。見た目は同じでも別の文字で、検索や照合で合わない。"""
+    return "".join(unicodedata.normalize("NFKC", c) if 0x2E80 <= ord(c) <= 0x2FDF else c for c in s)
+
+
+def fix_radicals_all(obj):
+    """出力のすべての文字列に fix_radicals をかける。"""
+    if isinstance(obj, str):
+        return fix_radicals(obj)
+    if isinstance(obj, list):
+        return [fix_radicals_all(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: fix_radicals_all(v) for k, v in obj.items()}
+    return obj
+
+
+def paren_depth(s: str) -> int:
+    return len(re.findall(r"[(（]", s)) - len(re.findall(r"[)）]", s))
+
+
+def cell_lines(s: str | None) -> str:
+    """セルの文字の改行を整える。PDF の折り返しは詰め、別の値が改行で並んでいるときだけ "\\n" を残す。
+    別の値とみなすのは、括弧の外で次の行が数字・丸数字で始まるとき（「10件(20件)⏎45件(90件)」「316,411⏎113,189」）、
+    閉じ括弧で終わった次の行が括弧で始まらないとき（「北部15項目⏎(30項目)⏎西表11項目⏎(22項目)」）、
+    「名前:値」が並ぶとき（「北部:B⏎西表島:B」）、「・」の箇条が並ぶとき。
+    括弧だけの行（「(20件)」「（補助事業）」「(R5年度)」）は前の行に付ける。前の行が「、」「・」「:」で終わるときは折り返し。"""
+    lines = [x for x in (re.sub(r"\s+", "", ln) for ln in uncid(s).split("\n")) if x]
+    if not lines:
+        return ""
+    bullets = lines[0].startswith("・")
+    out, depth = lines[0], paren_depth(lines[0])
+    for prev, x in zip(lines, lines[1:]):
+        brk = depth == 0 and not re.match(r"^[(（]", x) and not re.search(r"[、，,・:：]$", prev) and bool(
+            re.match(r"^[0-9０-９①-⑳]", x)
+            or re.search(r"[)）]$", prev)
+            or (re.match(r"^[^:：\d０-９]{1,6}[:：]", x) and re.search(r"[:：]", prev))
+            or (bullets and x.startswith("・")))
+        out += ("\n" if brk else "") + x
+        depth += paren_depth(x)
+    return out
+
+
+def num_of(s: str) -> float | None:
+    """値の数。後ろのかっこ書き（「3,681(177,191)」の収容人員、「―(R8導入)」）は除く。"""
+    head = re.split(r"[(（]", s, maxsplit=1)[0] if not re.match(r"^[(（]", s) else s
+    return parse_num(head) if head not in NONE_VALUES else None
+
+
+def budget_of(raw: str) -> float | None:
+    """決算見込額（千円）。値が1つのときだけ数にする。改行で2つ以上の値が並ぶとき（「316,411⏎113,189」
+    「0（補助事業）⏎1,925（単独事業）」）は、どう合わせるか報告書に書かれていないので None。
+    ただし「①29,429⏎②20,066⏎③31,900⏎81,395」のように丸数字の内訳の後に合計が続き、内訳の和が合計と一致するときは合計。"""
+    lines = raw.split("\n")
+    if len(lines) == 1:
+        return parse_num(raw)
+    *items, last = lines
+    if all(re.match(r"^[①-⑳]", x) for x in items) and not re.match(r"^[①-⑳]", last):
+        vals = [parse_num(x[1:]) for x in items]
+        total = parse_num(last)
+        if total is not None and None not in vals and abs(sum(vals) - total) < 0.5:
+            return total
+    return None
+
+
+def top_level_groups(t: str) -> list[tuple[int, int]]:
+    """いちばん外側の括弧のまとまり（開き・閉じの位置）。全角・半角の括弧を同じに扱う。"""
+    out, depth, start = [], 0, None
+    for i, ch in enumerate(t):
+        if ch in "(（":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch in ")）" and depth > 0:
+            depth -= 1
+            if depth == 0:
+                out.append((start, i))
+    return out
+
+
+DEPT_HINT = re.compile(r"(部|課|局|庁|室|委員会)")
+
+
+def split_name_section(raw: str) -> tuple[str, str, str]:
+    """主な取組の欄の「取組名（所管部課）」を、名前・所管部課・後ろの注記に分ける。
+    所管部課の括弧は入れ子のことがある（「クルーズ船の受入体制の構築（土木建築部港湾課（那覇港管理組合））」）。
+    所管部課の後ろに小事業の一覧が続くことがある（R5 3-d-2「MICE施設の管理・運営（文化観光スポーツ部MICE推進課）①OCC保全修繕②…」）。"""
+    t = clean(raw)
+    for start, end in reversed(top_level_groups(t)):
+        inner, rest = t[start + 1:end], t[end + 1:]
+        if start > 0 and (not rest or (re.match(r"^[①-⑳]", rest) and DEPT_HINT.search(inner))):
+            return t[:start], inner, re.sub(r"(?<=.)(?=[①-⑳])", "\n", rest)
+        break
+    return t, "", ""
 
 
 def is_unreadable(pdf) -> bool:
@@ -170,7 +265,8 @@ class Parser:
             self.group = c0[1:]
             return
         if re.fullmatch(r"\d+", c0) and len(cells) >= 4:
-            name, section = split_section(clean(cells[1]))
+            name, section, note = split_name_section(cells[1])
+            budget_raw = cell_lines(cells[2])
             self.pending = {
                 "year": self.year,
                 "shisaku_id": cur["id"],
@@ -180,9 +276,12 @@ class Parser:
                 "section": section,
                 "dept": dept_of(section),
                 "group": self.group,
-                "budget_raw": clean(cells[2]),
-                "budget": parse_num(clean(cells[2])),
-                "indicator": clean(cells[3]),
+                # 改行で2つ以上の値が並ぶときは "\n" でつなぐ（budget は None。budget_of）
+                "budget_raw": budget_raw,
+                "budget": budget_of(budget_raw),
+                "indicator": cell_lines(cells[3]),
+                # 所管部課の後ろの小事業の一覧（R5 3-d-2 No.2 だけ）
+                **({"name_note": note} if note else {}),
                 "summary": re.sub(r"\s*\n\s*", "", uncid(cells[4])).strip() if len(cells) > 4 else "",
                 **self.ref(page_no),
             }
@@ -190,8 +289,8 @@ class Parser:
         # 取組の次の行に目標・実績・進捗状況がある
         p = self.pending
         if p and len(cells) in (3, 4) and not c0.startswith(("令和", "主な取組")):
-            vals = [clean(x) for x in cells]
-            status = vals[2]
+            vals = [cell_lines(x) for x in cells]
+            status = clean(cells[2])
             p.update(target=vals[0], actual=vals[1], status=status if status in STATUSES else "", status_raw=status)
             self.torikumi.append(p)
             self.pending = None
@@ -224,7 +323,8 @@ class Parser:
 
     def read_seika_row(self, row: list, page_no: int) -> None:
         c = self.seika_cols
-        cells = [clean(x) if x is not None else None for x in row]
+        # 2つの値が改行で並ぶセル（「北部:B⏎西表島:B」）は "\n" を残す（cell_lines）
+        cells = [cell_lines(x) if x is not None else None for x in row]
         act = c["act"]
         if act is None:
             return
@@ -266,16 +366,22 @@ class Parser:
             s["_plan_next"] = False
         elif "計画値" in vals[0]:
             s["_plan_next"] = True
-        elif any(re.match(r"^\(?(R|H)\d+年", nfkc(v)) for v in vals):
-            s["ref_years"] = [nfkc(v).strip("()（）") for v in vals]
+        elif not s["plan_raw"] and any(vals):
+            # 実績値の下の行: 参照年（「(R5年度)」）か、実績値の続きのかっこ書き（R6 の「(177,191)」「(R8導入)」）
+            for j, v in enumerate(vals):
+                if re.match(r"^\(?(R|H)\d+年", nfkc(v)):
+                    s["ref_years"][j] = nfkc(v).strip("()（）")
+                elif re.fullmatch(r"[(（].+[)）]", v) and s["actual_raw"][j]:
+                    s["actual_raw"][j] += v
         self.fill_merged(cells)
 
     def fill_merged(self, cells: list) -> None:
         c, s = self.seika_cols, self.seika[-1]
+        # 目標値・達成率は複数の行にまたがる結合セルで、文字が行ごとに分かれて出てくる（「年間入域観」「光客数33万人以内」）ので、つなぐ
         for k, col in (("target_raw", "target"), ("rate_raw", "rate")):
             i = c[col]
-            if i is not None and i < len(cells) and cells[i] and not s[k] and cells[i] not in ("計画値",):
-                s[k] = cells[i]
+            if i is not None and i < len(cells) and cells[i] and cells[i] not in ("計画値",):
+                s[k] += cells[i]
         i = c["judge"]
         if i is not None and i < len(cells) and cells[i] in JUDGEMENTS and not s["judgement"]:
             s["judgement"] = cells[i]
@@ -316,10 +422,11 @@ class Parser:
                     s["ref_years"][j] = s["ref_years"][j] or m.group(2)
             s.setdefault("dept", "")
             s.setdefault("explanation", "")
-            s["actual"] = [parse_num(x) if x not in NONE_VALUES else None for x in s["actual_raw"]]
-            s["plan"] = [parse_num(x) if x not in NONE_VALUES else None for x in s["plan_raw"]]
-            s["base"] = parse_num(s["base_raw"])
-            s["target"] = parse_num(s["target_raw"])
+            # 数はかっこ書きの前の値（「3,681(177,191)」→ 3681）
+            s["actual"] = [num_of(x) for x in s["actual_raw"]]
+            s["plan"] = [num_of(x) for x in s["plan_raw"]]
+            s["base"] = num_of(s["base_raw"])
+            s["target"] = num_of(s["target_raw"])
             s["rate"] = parse_num(s["rate_raw"]) if s["rate_raw"].endswith("%") else None
 
 
@@ -433,10 +540,10 @@ def main() -> int:
     shisaku.sort(key=lambda s: (s["year"], order(s["id"])))
     torikumi.sort(key=lambda t: (t["year"], order(t["shisaku_id"]), t["no"]))
     seika.sort(key=lambda s: (s["year"], order(s["shisaku_id"])))
-    write_json(out / "kihon.json", [kihon[k] for k in sorted(kihon)])
-    write_json(out / "shisaku.json", shisaku)
-    write_json(out / "torikumi.json", torikumi)
-    write_json(out / "seika.json", seika)
+    write_json(out / "kihon.json", fix_radicals_all([kihon[k] for k in sorted(kihon)]))
+    write_json(out / "shisaku.json", fix_radicals_all(shisaku))
+    write_json(out / "torikumi.json", fix_radicals_all(torikumi))
+    write_json(out / "seika.json", fix_radicals_all(seika))
     write_json(out / "years.json", years)
     write_json(out / "sources.json", sources)
     for y in sorted({t["year"] for t in torikumi}):
