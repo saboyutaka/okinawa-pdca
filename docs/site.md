@@ -11,6 +11,7 @@
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
   - `JUDGE_CELLS`: 判定の区分表（[data.md](data.md) の 6.3）。判定のマス目（`components/JudgeMatrix.astro`）と、印字された判定が区分表どおりかを確かめるテストが使う。
   - `shisakuDepts`: 部局がかかわる施策（関係部等に名前がある施策と、その部局の取組がある施策）。
+  - `seikaOfTorikumi`・`torikumiOfSeika`: 主な取組と成果指標の結び付き（部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。`seikaNameMatches`）。部局票は複数の指標をまとめた名前（「交通事故重傷者数及び死者数」「〜と考えている児童生徒の割合」など）で書くことがあるので、空白・記号の違いを無視して、含む・含まれるか、指標の名前の字が部局票の名前に同じ順で出てくれば当たりとする（指標の名前の末尾の「（小学校）」のような内訳の括弧は外しても比べる）。取組のページ・施策ページの取組のカードの「対応する成果指標」は、部局票がある最新の年度のもの。県は「対応する成果指標」に施策の成果指標をまとめて書いていて（R4〜R7 のどの部局票も、その施策のその年度の成果指標すべてに当たる。`test/integrity.test.ts`）、取組ごとには分かれていないので、成果指標のページの取組（`torikumiOfSeika`）は名前で結ばず、指標の最新の報告と同じ年度の施策の取組をまとめて出す。
 
 ## 2. TypeScript
 
@@ -35,7 +36,7 @@
 
 ## 4. ページ
 
-トップ、`/theme/<id>/`（くらしのテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。
+トップ、`/theme/<id>/`（くらしのテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。
 
 ## 5. くらしのテーマの定義
 

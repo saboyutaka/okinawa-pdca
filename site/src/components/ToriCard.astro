@@ -4,15 +4,16 @@ import Stamps from './Stamps.astro';
 import Chunk from './Chunk.astro';
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
-import { YEARS, yearLabel, statusOf, toneOfStatus, budgetOf, sectionHref, seikaHrefByName, torikumiHref, type YearGroup } from '../lib/data.ts';
+import { YEARS, yearLabel, statusOf, toneOfStatus, sectionHref, seikaOfTorikumi, torikumiHref, type YearGroup } from '../lib/data.ts';
 import { themeIdsOfItem } from '../lib/themes.ts';
 import type { TorikumiRow } from '../lib/types.ts';
 
 interface Props { row: YearGroup<TorikumiRow>; shisakuId: string }
 const { row, shisakuId } = Astro.props;
 const t = row.latest;
-const b = budgetOf(t.year, t.shisaku_id, t.key);
-const seikaHref = b?.seika_name ? seikaHrefByName(shisakuId, b.seika_name) : null;
+// 対応する成果指標（部局票の名前）。当たる指標が複数あるときは、名前のリンクは最初の指標へ（取組のページではすべて出す）
+const seika = seikaOfTorikumi(shisakuId, row);
+const seikaHref = seika.groups[0]?.href;
 const href = torikumiHref(shisakuId, row.key);
 const stamps = YEARS.map((y) => (row.years[y] ? { year: y, tone: toneOfStatus(statusOf(row.years[y])), text: statusOf(row.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 // 「計画 10件 → 実績 54件」のように同じ単位の数のときだけ棒にする
@@ -44,7 +45,7 @@ const ratioTone = ratio >= 0.9 ? 'good' : ratio >= 0.75 ? 'warning' : ratio >= 0
       {comparable && <Chunk frac={ratio} tone={ratioTone} label={`活動指標 計画 ${t.target}、実績 ${t.actual}（計画の${Math.round(ratio * 100)}%）`} thin />}
     </div>
   ) : <div />}
-  {b?.seika_name ? <div class="small">対応する成果指標: {seikaHref ? <a class="sub-link" href={seikaHref}>{b.seika_name}</a> : b.seika_name}</div> : <div />}
+  {seika.name ? <div class="small">対応する成果指標: {seikaHref ? <a class="sub-link" href={seikaHref}>{seika.name}</a> : seika.name}</div> : <div />}
   {t.summary ? (
     <div class="did">
       <div class="did-l">{yearLabel(t.year)}にやったこと</div>

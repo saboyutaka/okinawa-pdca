@@ -4,7 +4,7 @@
 //   make shot                                    # トップを PC 幅（1280px）とスマホ幅（390px）で
 //   make shot PAGES="/ /shisaku/1-1-a-1/"        # ページを並べる
 //   make shot PAGES="/torikumi/ --dark --top"    # ダーク・最初の画面だけ
-//   make shot PAGES="/shisaku/1-1-a-1/ --selector '#seika-1'"    # 最初に当たる要素だけ
+//   make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"       # 最初に当たる要素だけ
 //
 // PAGES はシェルにそのまま渡るので、# や & を含むもの（セレクタ・クエリ）は ' で囲む。
 //

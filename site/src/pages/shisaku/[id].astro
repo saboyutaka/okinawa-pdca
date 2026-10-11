@@ -16,7 +16,7 @@ import ThemeTags from '../../components/ThemeTags.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getKihonList, torikumiRows, seikaRows, sourceLink, deptHref, seikaAnchor,
+  getShisakuList, getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref,
 } from '../../lib/data.ts';
 import type { SeikaRow } from '../../lib/types.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -35,7 +35,7 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { s } = Astro.props;
 const kihon = getKihonList().find((k) => k.id === s.kihon_id)!;
 const tRows = torikumiRows(s);
-const sRows = seikaRows(s);
+const sRows = seikaGroupsOf(s.id);
 const statusKeys = STATUSES.map((x) => x.key);
 const yearsDesc = [...YEARS].reverse();
 const themes = themesOf(s.id);
@@ -141,11 +141,11 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     {sRows.length > 0 && (
       <SeikaKey plan={sRows.some((r) => Object.values(r.years).some((y) => y.target != null))} />
     )}
-    {seikaLatest.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
+    {seikaLatest.map((row) => <SeikaCard row={row} />)}
     {seikaPast.length > 0 && (
       <details class="past">
         <summary>R6まで使われていた成果指標（{seikaPast.length}）</summary>
-        {seikaPast.map((row) => <SeikaCard row={row} id={seikaAnchor(s.id, row.key)} />)}
+        {seikaPast.map((row) => <SeikaCard row={row} />)}
       </details>
     )}
   </section>
