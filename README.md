@@ -106,6 +106,8 @@ make site-install  # 初回のみ
 make dev           # http://localhost:4321/（SITE_PORT=4400 make dev でポートを変えられる）
 make build         # 型を確かめて（astro check）から site/dist に書き出し
 make site-check    # 型を確かめるだけ
+make shot          # site/dist を PC 幅とスマホ幅で撮って tmp/shots に（PAGES="/ /shisaku/ --dark"）
+make shot-typecheck  # scripts/shot/shot.ts（TypeScript）の型を確かめる
 ```
 
 git worktree（`.claude/worktrees/<名前>`）の中で同じコマンドを使うと、`compose.worktree.yaml` を重ねて、コンテナと node_modules を worktree ごとに分け、開発サーバーを worktree の名前から決めたポート（4322〜4921、`make help` に出る）で立てる。main と並べて動かせる。node_modules は初めて動かすときに自動で入る。worktree を消す前に `make down` でコンテナと node_modules のボリュームを片付ける。

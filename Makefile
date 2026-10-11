@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract check issues site-install site-check dev build preview down
+.PHONY: help fetch extract check issues site-install site-check dev build preview shot shot-typecheck down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -30,6 +30,8 @@ help:
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
 	@echo "make build         サイトの型を確かめてから site/dist に書き出す"
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
+	@echo "make shot          書き出したサイトを PC 幅とスマホ幅で撮って tmp/shots に（PAGES=\"/ /shisaku/ --dark\"）"
+	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
 
@@ -68,6 +70,14 @@ build:
 # --ignore-lock は dev と同じ理由（compose.yaml の site を参照）
 preview:
 	$(COMPOSE) run --rm --service-ports site npm run preview -- --host 0.0.0.0 --port $(SITE_PORT) --ignore-lock
+
+# 書き出したサイトのスクリーンショット（PAGES にページのパスと scripts/shot/shot.ts のオプションを並べる。初めはトップ）
+shot:
+	$(COMPOSE) run --rm shot node scripts/shot/shot.ts $(PAGES)
+
+# scripts/shot の TypeScript の型を確かめる（node は型を取り除いて動かすだけで、型の誤りでは止まらないため）
+shot-typecheck:
+	$(COMPOSE) run --rm shot npm --prefix scripts/shot run typecheck
 
 # worktree を片付ける前に使う。main では node_modules のボリュームは残す
 down:

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## コマンド
 
-ホストに node や Python のライブラリは入れない。PDF の解析と Astro は `compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine。どちらもリポジトリを `/work` にマウントする）。
+ホストに node や Python のライブラリは入れない。PDF の解析と Astro と画面の確認は `compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine、`shot` = Playwright の Node.js 版（Node 24）と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントする）。
 
 | コマンド | 内容 |
 |---|---|
@@ -18,12 +18,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `make issues` | 取れていないデータ・誤りの疑いの一覧（`docs/issues.md`）を作り直す |
 | `make site-install` / `make dev` / `make build` / `make preview` | サイトの依存の導入・開発サーバー（http://localhost:4321/。`SITE_PORT=4400 make dev` で変えられる）・`site/dist` への書き出し（先に型を確かめる）・書き出したものの確認 |
 | `make site-check` | サイトの型を確かめるだけ（`astro check`。`make build` でも書き出しの前に行う） |
+| `make shot` | 書き出した `site/dist` を PC 幅（1280px）とスマホ幅（390px）で撮って `tmp/shots` に（`PAGES="/ /shisaku/1-1-a-1/ --dark"` でページとオプション。`--top` で最初の画面だけ、`--selector '#seika-1'` で要素だけ。読み込みの失敗とブラウザのスクリプトのエラーは `NG`） |
+| `make shot-typecheck` | `scripts/shot`（TypeScript）の型を `tsc` で確かめる |
 | `make down` | コンテナを止めて消す（worktree ではその worktree の node_modules のボリュームも消す） |
 
 - 一部だけ読み直す: `docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025`、部局票は `scripts/extract_bukyoku.py --source kigyo --year 2025` のように絞る（出力の他の年度・取得元の行は残る）。
+- `make shot` の中身は `scripts/shot/shot.ts`（TypeScript。依存は同じフォルダの `package.json` で、node_modules は名前付きボリュームに置き、無いときや `package-lock.json` を変えたあとは自動で `npm ci` する）。Node が型を取り除いてそのまま動かすので、取り除くだけで動く書き方に限り（`tsconfig.json` の `erasableSyntaxOnly`。enum などは使えない）、型の誤りは `make shot-typecheck` で見つける。TypeScript と `@types/node` の版はサイト（`site/package.json`）にそろえる。Playwright の版を上げるときは `docker/shot/Dockerfile` の FROM と `package.json` の `playwright` をそろえる。
 - 県企業局は robots.txt で自動取得できないので、ブラウザでダウンロードして `python3 scripts/import_manual.py <フォルダ> --source kigyo --since 2022` で取り込む。
 - git worktree（`.claude/worktrees/<名前>`）の中では、Makefile が `compose.worktree.yaml` を重ねて、コンテナと node_modules のボリュームを worktree ごとに分け（`okinawa-pdca-<名前>`）、開発サーバーのポートを名前から決める（4322〜4921。番号は `make help` に出る）。コマンドは main と同じで、node_modules は初めて動かすときに自動で入る。片付ける前に `make down`。PDF（`data/raw`・`data/interim`）は git に入れていないので worktree には無く、`make extract` は main で行う。
-- テストはない。データを変えたら `make check`、サイトを変えたら `make build`（型の確かめを含む）を通す。見た目の変更は、書き出した `site/dist` をローカルで配信して PC 幅とスマホ幅（390px）で確かめる。
+- テストはない。データを変えたら `make check`、サイトを変えたら `make build`（型の確かめを含む）を通す。見た目の変更は、書き出した `site/dist` を PC 幅とスマホ幅（390px）で確かめる（`make shot` で撮った画像を見る。`scripts/shot` を変えたら `make shot-typecheck` も通す。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。開発サーバーは Vite がコンテナ間のホスト名を断るので撮れない）。
 
 ## データの流れ
 
