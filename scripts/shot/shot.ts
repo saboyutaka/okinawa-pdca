@@ -154,6 +154,8 @@ try {
       const url = `${base}/${pagePath.replace(/^\/+/, '')}`;
       const res = await page.goto(url, { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready.then(() => true));
+      // 一覧の行は画面の外を描かない（styles/global.css の content-visibility）。画面の外まで撮ると行が空に写るので、外して撮る
+      await page.addStyleTag({ content: '* { content-visibility: visible !important; }' });
       const name =
         slug(pagePath) + (opts.selector ? `@${slug(opts.selector)}` : '') + `-${width}${opts.dark ? '-dark' : ''}.png`;
       const path = join(opts.out, name);
