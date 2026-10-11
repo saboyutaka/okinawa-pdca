@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
-import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
 
 interface Props { title?: string; description?: string }
@@ -72,10 +71,12 @@ const inItem = (n: (typeof NAV)[number]) => (n.href === '/' ? path === '/' : [n.
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>出典: 沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度対象）をもとに、PDFから読み取って再構成しています。県の公式サイトではありません。数値は必ず元の報告書で確認してください（各ページに元のPDFへのリンクがあります）。</p>
-        <p><a href="/keikaku/">個別計画（観光ロードマップ）</a>のページは「<ExtLink href={LINKS.kankoRm}>沖縄観光推進ロードマップPDCA</ExtLink>」、施策のページと<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>の事後評価は「<ExtLink href={LINKS.ikkatsu}>沖縄振興特別推進交付金の事後評価</ExtLink>」、基本施策のページの県の総括は「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」から読み取っています。</p>
-        <p>「<a href="/#themes">くらしのテーマ</a>」は、このサイトが独自にまとめた分類です。県の計画の分類ではありません（<a href="/about/#theme">決め方</a>）。</p>
-        <p>県の施策や取組に意見があるときは、<a href="/iken/">意見を伝えたい人へ</a>（県民意見募集・県民ご意見箱・SNS の #{HASHTAG}）。</p>
+        <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
+        <ul class="foot-links">
+          <li><a href="/iken/">意見を伝えたい人へ</a></li>
+          <li><a href="/#themes">くらしのテーマ</a>（このサイト独自の分類）</li>
+          <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
+        </ul>
         <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</p>
       </div>
     </footer>
