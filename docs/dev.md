@@ -27,6 +27,7 @@ make shot PAGES="/shisaku/1-1-a-1/ --selector '#seika-1'"  # 最初に当たる�
 ```
 
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。
+- 一覧の行は画面の外を描かない（`content-visibility`。[site.md](site.md) の 7章）ので、撮るときはそれを外している。画面の外の行が空に写ることはないが、スクロールしたときの見え方はこの画像では確かめられない。
 - 中身は `scripts/shot/shot.ts`。Node が型を取り除いて動かすので `erasableSyntaxOnly` の書き方に限り、変えたら `make shot-typecheck`。TypeScript と `@types/node` の版はサイトにそろえ、Playwright の版は `docker/shot/Dockerfile` の FROM と `package.json` をそろえる。
 
 ## 4. git worktree での開発
