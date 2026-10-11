@@ -22,7 +22,7 @@ export SITE_PORT
 
 help:
 	@echo "make fetch         県サイトから報告書を取得（ホストの python3、標準ライブラリのみ）"
-	@echo "make extract       総括報告書と部局別の検証票から抽出して公表値と突き合わせ"
+	@echo "make extract       総括報告書・部局別の検証票・個別計画などから抽出して公表値と突き合わせ"
 	@echo "make check         抽出結果を公表値と突き合わせるだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make site-install  サイトの依存パッケージを入れる"
@@ -39,6 +39,9 @@ extract:
 	$(COMPOSE) run --rm tools python scripts/expand_zips.py --source soukatsu
 	$(COMPOSE) run --rm tools python scripts/extract_soukatsu.py
 	$(COMPOSE) run --rm tools python scripts/extract_bukyoku.py
+	$(COMPOSE) run --rm tools python scripts/extract_kanko.py
+	$(COMPOSE) run --rm tools python scripts/extract_ikkatsu.py
+	$(COMPOSE) run --rm tools python scripts/extract_hyoka.py
 	python3 scripts/check_extracted.py
 	python3 scripts/report_issues.py
 

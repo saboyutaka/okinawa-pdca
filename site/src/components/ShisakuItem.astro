@@ -1,12 +1,13 @@
 ---
 // 施策の一覧の1行（施策をさがす・くらしのテーマ。親は ul.row-list）。
-// 1行目に判定の小さなハンコと名前、2行目に判定の言い方・前の年度の判定・取組の進み・成果指標の達成率を並べる。
+// 1行目に判定の小さなハンコと名前、2行目に取組の進みと成果指標の達成率を並べる。
+// 判定はハンコだけで出し、言い方（A〜G の意味）は一覧の上の凡例（JudgeLegend）に1回だけ書く。前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
 // 一覧は将来像・基本施策ごとに見出しを立てているので、見出しと同じこと（将来像・基本施策）は行に書かない。
 // 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { YEARS, LATEST, yearLabel, STATUSES, judgeOf, statusOf, rateBin, countBy, getKihonList, RATE_BINS } from '../lib/data.js';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, rateBin, countBy, getKihonList, RATE_BINS } from '../lib/data.js';
 import { JUDGE_UI } from '../lib/icons.js';
 
 interface Props { s: any; attrs?: Record<string, string>; kihon?: boolean }
@@ -18,25 +19,19 @@ const ok = counts['順調'] || 0;
 const seika = s.seika.filter((x) => x.year === LATEST);
 const j = judgeOf(s.judges[LATEST]);
 const ui = j && JUDGE_UI[j.key];
-const judgeYears = YEARS.filter((y) => y !== LATEST && y !== YEARS[0]);
+const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : '判定なし'}`;
 const rateText = (x) => (x.rate != null ? `${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : 'なし');
 const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 ---
 <li class="s-item" {...attrs}>
-  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} aria-hidden="true">{j ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
+  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
   <div class="name-row">
     <a class="item-name name-link" href={`/shisaku/${s.id}/`}>{s.name}</a>
     <span class="code-no">{s.code}</span>
   </div>
   <div class="facts small">
+    <span class="sr-only">{judgeText}</span>
     {kihon && <span class="kihon">基本施策 {kihon.name}</span>}
-    <span class="judge">
-      <b>{j ? `${j.key} ${j.label}` : '判定なし'}</b>
-      {judgeYears.map((y) => {
-        const pj = judgeOf(s.judges[y]);
-        return <span class="past" title={pj ? `${yearLabel(y)}: ${pj.label}` : `${yearLabel(y)}: 判定なし`}>{yearLabel(y)} <Icon tone={pj?.tone || 'blank'} shape={pj ? JUDGE_UI[pj.key].shape : 'ring'} />{pj?.key ?? '—'}</span>;
-      })}
-    </span>
     <span class="tori">
       取組 <b>{ok}/{latestTori.length}</b>順調
       {latestTori.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} size="mini" />}
@@ -50,14 +45,12 @@ const toneOfBin = (x) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 
 <style>
   .s-item { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 2px 12px; align-items: start; }
-  .jstamp { grid-row: span 2; margin-top: 2px; }
+  .jstamp { grid-row: span 2; margin-top: 2px; cursor: help; }
   .item-name { font-size: 1rem; line-height: 1.5; }
   .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px; color: var(--ink-2); line-height: 1.6; }
   .facts b { color: var(--ink); }
   .kihon { flex-basis: 100%; }
-  .judge, .past, .tori, .seika { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
-  .judge { gap: 2px 10px; }
-  .past { gap: 3px; font-variant-numeric: tabular-nums; }
+  .tori, .seika { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
   .tori :global(.sbar) { width: 88px; }
   .seika :global(.chip) { gap: 4px; }
 </style>

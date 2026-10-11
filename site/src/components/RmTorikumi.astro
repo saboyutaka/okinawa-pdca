@@ -1,0 +1,50 @@
+---
+// 観光ロードマップの主な取組1つ。R5・R6の進捗状況のスタンプ、活動指標、決算見込額、沖縄県PDCAの同じ取組へのリンク
+import Stamps from './Stamps.astro';
+import { yearLabel, statusOf, toneOfStatus, deptHref } from '../lib/data.js';
+import { RM_LATEST } from '../lib/plans.js';
+import { yen } from '../lib/format.js';
+
+interface Props { g: any; years: number[]; id?: string }
+const { g, years, id } = Astro.props;
+const t = g.latest;
+const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[years.length - 1])}` : yearLabel(years[0]);
+---
+<article class="sticker rm-tori anchor" id={id}>
+  <div class="th">
+    <h4>{t.name}</h4>
+    <div class="sec">{deptHref(t.section) ? <a class="sub-link" href={deptHref(t.section)}>{t.section}</a> : t.section}</div>
+  </div>
+  <Stamps items={stamps} label={`${span}の進捗状況`} size="small" />
+  {t.indicator ? (
+    <div class="inset act">
+      <div class="act-l">活動指標（{yearLabel(t.year)}）</div>
+      <div class="act-name">{t.indicator}</div>
+      <div>目標 {t.target || '—'} → 実績 {t.actual || '—'}</div>
+    </div>
+  ) : <div />}
+  <div class="small">決算見込額（{yearLabel(t.year)}）: {t.budget != null ? yen(t.budget) : (t.budget_raw || '—')}</div>
+  {g.pdca.length > 0 ? (
+    <div class="small pdca">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a> <span class="code-no">施策 {p.shisaku.code}</span></>)}</div>
+  ) : <div class="small secondary">沖縄県PDCAの主な取組には、同じ名前の取組がありません。</div>}
+  {t.year !== RM_LATEST && <div class="small secondary">{yearLabel(t.year + 1)}の報告には、この名前の取組はありません。</div>}
+  {t.summary && t.summary !== '―' && (
+    <details>
+      <summary>{yearLabel(t.year)}の活動概要</summary>
+      <p class="small">{t.summary}</p>
+    </details>
+  )}
+</article>
+
+<style>
+  .rm-tori { display: grid; gap: 8px; align-content: start; padding: 14px 16px; }
+  .th { display: grid; gap: 2px; }
+  h4 { font-size: 0.98rem; margin: 0; line-height: 1.5; }
+  .sec { font-size: 0.875rem; color: var(--ink-2); }
+  .act { padding: 8px 12px; font-size: 0.875rem; display: grid; gap: 2px; }
+  .act-l { color: var(--ink-2); font-weight: 700; }
+  .act-name { font-weight: 700; }
+  details > summary { font-size: 0.875rem; }
+  details p { margin: 0; }
+</style>

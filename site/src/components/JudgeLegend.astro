@@ -1,0 +1,22 @@
+---
+// 施策の一覧の凡例。行の丸いハンコ（components/ShisakuItem.astro）が何年度の判定で、形と文字が何を表すかを、一覧の上に1回だけ出す。
+// C・D と E・F はまとめて出す（細かい違いは「県の判定」の用語の説明と施策のページに任せる）
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import { LATEST, yearLabel } from '../lib/data.js';
+import { JUDGE_GROUPS } from '../lib/icons.js';
+---
+<div class="jlegend small">
+  <span class="jl-head">ハンコは{yearLabel(LATEST)}の<Term word="推進状況" label="県の判定" />:</span>
+  <ul aria-label="県の判定の凡例">
+    {JUDGE_GROUPS.map((g) => <li><Chip tone={g.tone} shape={g.shape} text={g.label} /></li>)}
+  </ul>
+</div>
+
+<style>
+  /* 見出しと札を1つの文のように折り返す（見出しだけで1行を使わないように） */
+  .jlegend { margin: 8px 0 12px; color: var(--ink-2); line-height: 1.7; }
+  .jl-head { margin-right: 10px; }
+  ul { display: inline; list-style: none; padding: 0; margin: 0; color: var(--ink); }
+  li { display: inline-block; margin-right: 12px; }
+</style>

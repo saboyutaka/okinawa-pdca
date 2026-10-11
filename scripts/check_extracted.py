@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """抽出結果（data/extracted/soukatsu）を、県が概要版で公表した集計値と突き合わせる。
+観光ロードマップPDCA（kanko）・一括交付金の事後評価（ikkatsu）・評価検証報告書（hyoka）の件数も確かめる。
 
 使い方:
   python3 scripts/check_extracted.py
@@ -81,6 +82,59 @@ def verify_formulas(seika: list[dict]) -> tuple[Counter, Counter]:
     return Counter(label[plan_matches(s)] for s in seika), Counter(label[rate_matches(s)] for s in seika)
 
 
+# 一括交付金（ソフト）の事後評価: 総括表の「評価対象事業数」と評価の内訳（R6 は達成と概ね達成の合計だけが文章にある）
+IKKATSU_EXPECTED = {
+    2022: {"jigyo": 181, "達成": 100, "概ね達成": 50, "一部達成": 11, "未達成": 20},
+    2023: {"jigyo": 179, "達成": 102, "概ね達成": 55, "一部達成": 9, "未達成": 13},
+    2024: {"jigyo": 176, "達成+概ね達成": 161, "一部達成": 10, "未達成": 5},
+}
+
+
+def check_related(extracted: Path) -> bool:
+    """沖縄県PDCA 以外の評価の抽出結果を公表値と比べる。件数が違えば False。"""
+    ok_all = True
+    kanko = extracted / "kanko"
+    if (kanko / "years.json").exists():
+        print("== 観光ロードマップPDCA（概要版の件数）")
+        tori = json.loads((kanko / "torikumi.json").read_text(encoding="utf-8"))
+        seika = json.loads((kanko / "seika.json").read_text(encoding="utf-8"))
+        for y in json.loads((kanko / "years.json").read_text(encoding="utf-8")):
+            year = y["year"]
+            if not y["readable"]:
+                print(f"  -- R{year - 2018}: 本編を読めない（{y.get('reason', '')}）。公表値だけ使う")
+                continue
+            ts = [t for t in tori if t["year"] == year]
+            ss = [s for s in seika if s["year"] == year]
+            status = Counter(t["status_raw"] for t in ts)
+            got = {k: status[k] for k in y["status"]}
+            zen = sum(1 for s in ss if s["judgement"] == "前進")
+            for label, g, e in (("取組", len(ts), y["torikumi"]), ("成果指標", len(ss), y["seika"]), ("前進", zen, y["zenshin"])):
+                ok = g == e
+                ok_all &= ok
+                print(f"  {'OK ' if ok else 'NG '} R{year - 2018} {label} {g}（公表 {e}）")
+            print(f"  {'OK ' if got == y['status'] else '警告'} R{year - 2018} 進捗内訳 {got}（公表 {y['status']}）")
+    ikkatsu = extracted / "ikkatsu" / "jigyo.json"
+    if ikkatsu.exists():
+        print("== 一括交付金（ソフト）の事後評価（総括表の件数）")
+        rows = json.loads(ikkatsu.read_text(encoding="utf-8"))
+        for year, exp in IKKATSU_EXPECTED.items():
+            js = [j for j in rows if j["year"] == year]
+            g = Counter(j["grade_label"] for j in js)
+            g["達成+概ね達成"] = g["達成"] + g["概ね達成"]
+            got = {"jigyo": len(js), **{k: g[k] for k in exp if k != "jigyo"}}
+            ok = got == exp
+            ok_all &= ok
+            nos = sum(1 for j in js if not j["shisaku_ids"])
+            print(f"  {'OK ' if ok else 'NG '} R{year - 2018} {got}（公表 {exp}）" + (f" 施策が決まらない事業 {nos}" if nos else ""))
+    hyoka = extracted / "hyoka" / "kihon.json"
+    if hyoka.exists():
+        rows = json.loads(hyoka.read_text(encoding="utf-8"))
+        ok = len(rows) == 36 and all(k["results"] and k["issues"] for k in rows)
+        ok_all &= ok
+        print(f"== 評価検証報告書\n  {'OK ' if ok else 'NG '} 基本施策 {len(rows)}（36）、成果と課題の両方があるもの {sum(1 for k in rows if k['results'] and k['issues'])}")
+    return ok_all
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dir", default="data/extracted/soukatsu")
@@ -125,6 +179,7 @@ def main() -> int:
             orphan = len(found - keys)
             print(f"  R{year - 2018}: 総括の取組 {len(keys)} のうち部局票あり {len(keys & found)}"
                   + (f"、総括に無い取組 {orphan}" if orphan else ""))
+    failed |= not check_related(d.parent)
     return 1 if failed else 0
 
 

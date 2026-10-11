@@ -1,0 +1,69 @@
+---
+// 個別計画の入口。沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別に、県が分野ごとの計画について公表している評価をまとめる。
+// 一括交付金の事後評価・評価検証報告書は個別計画ではないので、ここには置かない（施策・基本施策のページと「データについて」）
+import Base from '../../layouts/Base.astro';
+import Crumbs from '../../components/Crumbs.astro';
+import StatusBar from '../../components/StatusBar.astro';
+import Term from '../../components/Term.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.js';
+import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.js';
+import { LINKS } from '../../lib/links.js';
+import { fmt } from '../../lib/format.js';
+
+const statusKeys = STATUSES.map((s) => s.key);
+const tori = kankoTorikumi(RM_LATEST);
+const toriCounts = countBy(tori, statusOf, statusKeys);
+const seika = kankoSeika(RM_LATEST);
+const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
+const overlap = tori.filter((t) => t.pdca.length).length;
+const tenkai = kankoTenkaiList();
+---
+<Base title="個別計画" description="沖縄県PDCAとは別に、県が分野ごとの計画（個別計画）について公表している評価をまとめています。いまは観光ロードマップPDCAを載せています。">
+  <Crumbs items={[{ href: '/', label: 'トップ' }, { label: '個別計画' }]} />
+  <h1>個別計画</h1>
+  <p class="lead">
+    県には、<ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>のほかに、観光・離島・教育など分野ごとの<Term word="個別計画" />があり、計画ごとに評価を公表しているものがあります。このサイトでは、観光の計画の評価を載せています。
+  </p>
+
+  <article class="sticker plan">
+    <div class="plan-head">
+      <span class="plan-tag">個別計画</span>
+      <h2><a class="name-link" href={KANKO.href}>{KANKO.name}</a></h2>
+      <p class="small secondary">{KANKO.basis}の実施計画・{KANKO.period}　所管: {KANKO.dept}</p>
+    </div>
+    <p>観光の6つの基本施策・30の施策展開・85の施策ごとに、成果指標と主な取組を毎年評価しています（観光ロードマップPDCA）。判定の区分は沖縄県PDCAと同じです。</p>
+    <div class="facts">
+      <div class="fact">
+        <div class="tile-label"><Term word="主な取組" />（{yearLabel(RM_LATEST)}）</div>
+        <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}<small>件が順調</small></div>
+        <StatusBar categories={STATUSES} counts={toriCounts} context={`観光ロードマップの${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
+      </div>
+      <div class="fact">
+        <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
+        <div class="tile-value">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}<small>が前進</small></div>
+        <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`観光ロードマップの${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
+      </div>
+      <div class="fact">
+        <div class="tile-label">沖縄県PDCAと同じ取組（{yearLabel(RM_LATEST)}）</div>
+        <div class="tile-value">{fmt(overlap)}/{fmt(tori.length)}<small>件</small></div>
+        <div class="tile-sub">同じ年度に同じ名前の主な取組が沖縄県PDCAにもあるもの。取組のページからたどれます。</div>
+      </div>
+    </div>
+    <div class="btns">
+      <a class="button" href={KANKO.href}>観光ロードマップを見る（{fmt(tenkai.length)}の施策展開）</a>
+      <a class="button" href={KANKO_TORIKUMI_HREF}>取組をさがす</a>
+    </div>
+  </article>
+
+</Base>
+
+<style>
+  .plan { display: grid; gap: 10px; margin-top: 18px; }
+  .plan-head h2 { margin: 6px 0 2px; font-size: 1.3rem; }
+  .plan-head p { margin: 0; }
+  .plan > p { margin: 0; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 20px; }
+  .fact { display: grid; gap: 4px; align-content: start; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+</style>

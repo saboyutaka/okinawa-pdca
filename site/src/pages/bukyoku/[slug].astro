@@ -7,6 +7,7 @@ import Stamps from '../../components/Stamps.astro';
 import Sz from '../../components/Sz.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import JudgeLegend from '../../components/JudgeLegend.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.js';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, toneOfStatus,
@@ -186,6 +187,7 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
     <div class="anchor" id="shisaku" data-group>
       <h3>関係する施策（<span data-group-count>{fmt(shisaku.length)}</span>）</h3>
       <p class="small secondary">施策の「関係部等」にこの部局が書かれている施策です。</p>
+      {shisaku.length > 0 && <JudgeLegend />}
       <ul class="row-list">
         {shisaku.map((s) => (
           <ShisakuItem s={s} kihon attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name}` }} />

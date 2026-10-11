@@ -1,0 +1,142 @@
+---
+// 観光ロードマップの成果指標1つ（施策展開のページ）。施策ページの成果指標のカード（SeikaCard）と同じ並び:
+// ①基準値と比べてどうか（1行） ②スタート → いま → ゴールの数字（時間の順。数字はここに1回だけ） ③道のりの図 ④年度ごとの表と県の説明（畳む）。
+// 観光ロードマップの判定は「前進・横ばい・後退」（基準値との比較）なので、①はそれを印にする。
+// R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.js（drawSeika）で描く
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import { yearLabel, withUnit, refText, deptHref } from '../lib/data.js';
+import { RM_LATEST, rmJudgementOf } from '../lib/plans.js';
+import { joinLines } from '../lib/text.js';
+
+interface Props { g: any; id?: string }
+const { g, id } = Astro.props;
+const x = g.latest;
+const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
+const yl = yearLabel(x.year);
+const NO_VALUE = /^[\s\-－―—‐ー]*$/;
+const has = (raw) => !NO_VALUE.test(raw || '');
+// 最新の実績値は、実績値の欄（R4・R5・R6）のうち最後に値があるもの
+const i = x.actual_raw.map((v, k) => (has(v) ? k : -1)).filter((k) => k >= 0).pop();
+const latestRaw = i != null ? x.actual_raw[i] : '';
+const latestYear = i != null ? x.years[i] : '';
+const ref = i != null ? refText(x.ref_years[i]) : '';
+const planRaw = i != null && has(x.plan_raw?.[i]) ? x.plan_raw[i] : null;
+const nums = [x.base, i != null ? x.actual[i] : null, x.target].every((v) => v != null && Number.isFinite(v)) && x.target !== x.base;
+const progress = nums ? (x.actual[i] - x.base) / (x.target - x.base) : null;
+const down = nums && x.target < x.base;
+
+// ① 基準値と比べてどうか。印は県の判定（前進・横ばい・後退）、文は判定と R6 の目標値に届いたかで言い切る
+const j = rmJudgementOf(x.judgement || 'その他');
+const reached = x.rate_raw === '達成' || (x.rate != null && x.rate >= 100) || (progress != null && progress >= 1);
+const verdict = {
+  前進: reached ? 'スタートの基準値より良くなり、R6の目標値に届いています' : 'スタートの基準値より良くなっていますが、R6の目標値にはまだ届いていません',
+  横ばい: 'スタートの基準値から変わっていません',
+  後退: 'スタートの基準値より悪くなっています',
+  その他: '目標値の設定が難しいなどで、基準値と比べられません',
+}[x.judgement || 'その他'];
+const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '';
+
+// ② 数字。単位は小さく添えて、数字を折り返さない。文の値が長いときは縦に並べる
+const isNum = (raw) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
+const parts = (raw) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
+const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
+const note = ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yl}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
+
+// ③ 道のりの図のデータ（components/SeikaChart.astro と同じ形）。年度ごとに、その年度の実績値と、計画期間の計画値の並び
+const years = x.years.map((yy, k) => ({
+  y: 2018 + Number(yy.replace(/^R/, '')),
+  actual: x.actual[k], actual_raw: x.actual_raw[k], ref: refText(x.ref_years[k]),
+  plan: x.plan || [], plan_raw: x.plan_raw || [], target: x.target, target_raw: x.target_raw, target_year: 'R6', base: x.base, base_raw: x.base_raw,
+})).filter((r) => r.y <= RM_LATEST);
+const drawable = years.some((r) => r.actual != null) && x.target != null;
+const data = JSON.stringify({ unit: u, years, latest: x.year === RM_LATEST }).replace(/</g, '\\u003c');
+const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.base_raw, u)} から目標値 ${withUnit(x.target_raw, u)}（R6）まで。${years.map((r, k) => `${yearLabel(r.y)} 実績値 ${withUnit(r.actual_raw, u)}${r.ref ? `（${r.ref}）` : ''}、計画値 ${withUnit(x.plan_raw?.[k], u)}`).join('。')}。左右の矢印キーで年度を移れます`;
+---
+<article class="sticker scard rm-seika anchor" id={id}>
+  <h4>{x.name}{u && <span class="secondary small">（{u}）</span>}</h4>
+  {x.dept && <p class="small secondary meta">担当: {deptHref(x.dept) ? <a class="sub-link" href={deptHref(x.dept)}>{x.dept}</a> : x.dept}</p>}
+  <p class="verdict"><Chip tone={j.tone} shape={j.shape} text={x.judgement || 'その他'} title={j.note} /><span>{verdict}</span>{rateText && <small class="secondary">（{rateText}）</small>}</p>
+
+  <ol class:list={['steps', stack && 'stack']}>
+    <li>
+      <span class="step-l">スタート</span>
+      <span class="step-main"><span class="step-v">{parts(x.base_raw)[0]}<small>{parts(x.base_raw)[1]}</small></span><span class="step-s"><Term word="基準値" /></span></span>
+    </li>
+    <li class="now">
+      <span class="step-l">いま</span>
+      <span class="step-main"><span class="step-v">{parts(latestRaw)[0]}<small>{parts(latestRaw)[1]}</small></span><span class="step-s"><Term word="実績値" note={note} /></span></span>
+      {planRaw && <span class="step-s">{latestYear}の<Term word="計画値" /> <b class="num">{withUnit(planRaw, u)}</b></span>}
+    </li>
+    <li>
+      <span class="step-l">ゴール</span>
+      <span class="step-main"><span class="step-v">{parts(x.target_raw)[0]}<small>{parts(x.target_raw)[1]}</small></span><span class="step-s"><Term word="目標値" />（R6）{down && '・下げる目標'}</span></span>
+    </li>
+  </ol>
+
+  {drawable && (
+    <div class="chart seika-chart" data-chart="seika" tabindex="0" role="img" aria-label={aria}>
+      <script type="application/json" is:inline set:html={data}></script>
+    </div>
+  )}
+  {g.pdca.length > 0 && (
+    <p class="small note">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, k) => <>{k > 0 && '、'}施策 <a class="sub-link" href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
+  )}
+  <details>
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">{x.name}の年度別の値（{yl}の報告）</caption>
+        <thead><tr><th>年度</th><th class="num">実績値</th><th class="num">計画値</th></tr></thead>
+        <tbody>
+          {x.years.map((yy, k) => (
+            <tr>
+              <th>{yy}</th>
+              <td class="num">{withUnit(x.actual_raw[k], u) || '—'}{refText(x.ref_years[k]) && <><br /><small class="secondary">{refText(x.ref_years[k])}</small></>}</td>
+              <td class="num">{withUnit(x.plan_raw?.[k], u) || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="small secondary">基準値 {withUnit(x.base_raw, u)}、目標値（R6） {withUnit(x.target_raw, u)}、達成率 {x.rate_raw || '—'}（{yl}の報告）</p>
+  </details>
+  {x.explanation && (
+    <details>
+      <summary>県による説明（{yl}{x.dept && `・${x.dept}`}）</summary>
+      <p class="prose small">{joinLines(x.explanation)}</p>
+    </details>
+  )}
+</article>
+
+<style>
+  /* 並びと見た目は施策ページの成果指標のカード（components/SeikaCard.astro）と同じ */
+  .scard { margin: 0; }
+  .scard h4 { margin: 0; font-size: 1.02rem; line-height: 1.5; }
+  .meta { margin: 2px 0 4px; }
+  .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
+  .verdict small { font-weight: 400; }
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); background: var(--bg); border-radius: 12px; overflow: hidden; }
+  .steps > li { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); column-gap: 8px; align-content: start; min-width: 0; padding: 6px 12px; }
+  .steps > li + li { border-top: 2px solid var(--paper); }
+  .steps > li > * { grid-column: 2; }
+  .steps > li > .step-l { grid-column: 1; grid-row: 1 / span 2; padding-top: 4px; }
+  .steps > li.now { background: var(--sky); }
+  .step-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  @media (min-width: 640px) {
+    .steps:not(.stack) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .steps:not(.stack) > li { display: flex; flex-direction: column; padding: 8px 12px; }
+    .steps:not(.stack) > li + li { border-top: 0; border-left: 2px solid var(--paper); }
+    .steps:not(.stack) > li > .step-l { padding-top: 0; }
+  }
+  .step-l { font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; }
+  .step-v { font-family: var(--font-num); font-weight: 600; font-size: 1.25rem; line-height: 1.3; }
+  .step-v small { font-family: var(--font); font-size: 0.75rem; font-weight: 700; margin-left: 1px; }
+  .steps.stack .step-v { font-family: var(--font); font-size: 0.9375rem; font-weight: 700; }
+  .step-s { font-size: 0.8125rem; color: var(--ink-2); line-height: 1.5; }
+  .step-s .num { color: var(--ink); font-family: var(--font-num); font-weight: 600; }
+  .seika-chart { margin-top: 14px; }
+  .note { margin: 6px 0 0; }
+  table { min-width: 280px; }
+  details > summary { font-size: 0.875rem; }
+</style>

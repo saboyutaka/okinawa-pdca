@@ -6,8 +6,8 @@ import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
 const cache = new Map();
-// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi' のように指定する
-function load(name) {
+// name は soukatsu/ の下のファイル名。部局票の抽出結果は 'bukyoku/torikumi'、個別計画などは 'kanko/torikumi' のように指定する
+export function load(name) {
   const rel = name.includes('/') ? name : `soukatsu/${name}`;
   if (!cache.has(rel)) {
     cache.set(rel, JSON.parse(fs.readFileSync(path.join(ROOT, `${rel}.json`), 'utf-8')));
@@ -25,6 +25,12 @@ export const planLabel = (y) => (y <= 2024 ? '前期実施計画（R4〜R6）' :
 export const planIndex = (y) => (y <= 2024 ? y - 2022 : y - 2025);
 // 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
 export const withUnit = (raw, unit) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+// 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
+// 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
+export const refText = (raw) => {
+  const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
+  return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
+};
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES = [
@@ -49,6 +55,17 @@ export const JUDGES = [
   { key: 'G', label: '大幅遅れ', tone: 'critical' },
 ];
 export const judgeOf = (key) => JUDGES.find((j) => j.key === key);
+
+// 施策の判定の移り変わり（施策をさがすの「判定の移り変わり」）。数え方はここだけで決め、施策の trends に入れる。判定は R5 から（R4 は公表されていない）。
+// 上がった・下がったは、判定を A 順調 → B 概ね順調 → C〜F（取組か成果が遅れている）→ G 大幅遅れ の順に並べて前の年度と比べる（C〜F の中での入れ替わりは数えない）
+const JUDGE_RANK = { good: 0, warning: 1, serious: 2, critical: 3 };
+const judgeRank = (key) => JUDGE_RANK[judgeOf(key)?.tone] ?? null;
+const bothYears = (r) => r.at(-2) != null && r.at(-1) != null;
+export const JUDGE_TRENDS = {
+  down: (r) => bothYears(r) && r.at(-1) > r.at(-2), // 前の年度より下がった
+  up: (r) => bothYears(r) && r.at(-1) < r.at(-2), // 前の年度より上がった
+  streak: (r) => r.slice(-3).every((x) => x != null && x >= JUDGE_RANK.serious), // 最新の年度まで3年続けて C〜G
+};
 
 // 成果指標の計画値に対する達成率の区分（概要版と同じ区切り）
 export const RATE_BINS = [
@@ -136,10 +153,13 @@ function buildShisakuIndex() {
   const list = [];
   for (const [id, v] of byId) {
     const latest = v.years[LATEST];
+    const judges = Object.fromEntries(YEARS.map((y) => [y, v.years[y]?.judge ?? null]));
+    const ranks = YEARS.map((y) => judgeRank(judges[y]));
     list.push({
       ...latest,
       years: v.years,
-      judges: Object.fromEntries(YEARS.map((y) => [y, v.years[y]?.judge ?? null])),
+      judges,
+      trends: Object.keys(JUDGE_TRENDS).filter((k) => JUDGE_TRENDS[k](ranks)),
       depts: splitDepts(latest.kankei),
       torikumi: tori.get(id) || [],
       seika: seika.get(id) || [],
