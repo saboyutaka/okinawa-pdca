@@ -40,16 +40,36 @@ const SPECULATION = {
 };
 const SPECULATION_RULES = JSON.stringify(SPECULATION);
 // <script is:inline> の中身。CSP（astro.config.ts の security.csp）はハッシュが合うものしか動かさず、Astro は is:inline のハッシュを足さないので、中身を文字列にしてここで足す
-// 選んだ配色を最初に反映する（scripts/theme.ts が切り替えと記憶を受け持つ）
-const THEME_INIT = `try {
+// 選んだ配色を最初に反映する（scripts/theme.ts が切り替えと記憶を受け持つ）。
+// あわせて html に js を付ける。スクリプトでしか動かない配色のボタンを、最初の描画から出すため（あとから出すとヘッダーの高さが変わり、ページ全体がずれる。styles/global.css の .theme-toggle）
+const THEME_INIT = `document.documentElement.classList.add('js');
+try {
   const t = localStorage.getItem('theme');
   if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
 } catch {}`;
-// スマホでナビが横にはみ出すとき、いまいるページの項目が見えるようにナビだけを横にずらす（ページは動かさない）
+// スマホでナビが横にはみ出すとき、ナビだけを横にずらす（ページは動かさない）。
+// 前のページのナビの位置を引き継ぎ（sessionStorage）、ページを移るたびにナビが横に跳ばないようにする。いまいるページの項目が
+// 見えていないとき（本文のリンクから来たときなど）は、見えるところまでだけずらす（端のぼかしの幅を空ける。styles/global.css の scroll-padding-inline）。
+// 初めて開いたときは、その項目を真ん中に寄せる。端のぼかし（more-l・more-r。scripts/scroll-hint.ts と同じ決め方）もここで付け、最初の描画から出す
 const NAV_SCROLL = `(() => {
   const nav = document.currentScript.previousElementSibling;
-  const cur = nav && nav.querySelector('[aria-current="page"]');
-  if (cur && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = cur.offsetLeft - (nav.clientWidth - cur.offsetWidth) / 2;
+  const max = nav.scrollWidth - nav.clientWidth;
+  if (max <= 1) return;
+  let x = null;
+  try { x = sessionStorage.getItem('nav-x'); } catch {}
+  const cur = nav.querySelector('[aria-current="page"]');
+  if (x !== null) {
+    nav.scrollLeft = Number(x);
+    if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  } else if (cur) {
+    const n = nav.getBoundingClientRect(), c = cur.getBoundingClientRect();
+    nav.scrollLeft += c.left - n.left - (n.width - c.width) / 2;
+  }
+  nav.classList.toggle('more-l', nav.scrollLeft > 4);
+  nav.classList.toggle('more-r', nav.scrollLeft < max - 4);
+  const save = () => { try { sessionStorage.setItem('nav-x', String(nav.scrollLeft)); } catch {} };
+  save();
+  nav.addEventListener('scroll', save, { passive: true });
 })();`;
 for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
 ---
@@ -82,7 +102,10 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
       <div class="wrap">
         <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE.name}</span></a>
         <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
-        <button type="button" class="theme-toggle" id="theme-toggle" hidden>配色</button>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
+          <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>
+          <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
+        </button>
         <nav class="site-nav" aria-label="サイト内" data-scroll-hint>
           {NAV.map((n) => <a href={n.href} aria-current={inItem(n) ? 'page' : undefined}>{n.label}</a>)}
         </nav>

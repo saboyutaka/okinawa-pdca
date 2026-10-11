@@ -56,3 +56,6 @@
 - ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
 - ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの `data.json` の preload）。
 - 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは [deploy.md](deploy.md) の 5章。
+- ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
+  - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
+  - ナビの横の位置は、前のページの位置を引き継ぐ（`layouts/Base.astro` の `NAV_SCROLL`。sessionStorage の `nav-x`）。端のぼかしもそこで付ける。
