@@ -109,10 +109,10 @@ const boshu = boshuState();
     </div>
   </form>
 
-  <section aria-labelledby="themes-h">
+  <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
     <p class="small secondary lead">
-      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/theme/">テーマの決め方</a>
+      県の計画の分類ではなく、施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/about/#theme">テーマの決め方</a>
     </p>
     <ul class="themes">
       {themes.map((t) => (
