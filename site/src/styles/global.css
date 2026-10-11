@@ -2,10 +2,12 @@
    色はすべて役割名のトークンで参照する。暗い配色は同じ系統から選び直した値（自動反転ではない）。はじめはライトで表示する。
    状態の色（青信号系）は装飾の色（青・紫・ピンク）と混ぜない。状態は必ず形と文字と一緒に出す */
 
-/* 数字だけの丸い英字フォント（Fredoka。数字と記号だけに絞った約4KB。日本語のウェブフォントは読み込まない） */
+/* 数字だけの丸い英字フォント（Fredoka。数字と記号だけに絞った約4KB。日本語のウェブフォントは読み込まない）。
+   相対パスで書くと、ビルドで Vite がこの CSS に埋め込む（4KB 未満のため）。別のファイルとして取りに行かず、CSS と一緒にずっとキャッシュされる。
+   ライセンスは public/fonts/Fredoka-OFL.txt（このサイトについてのページからリンク） */
 @font-face {
   font-family: "Fredoka Num";
-  src: url("/fonts/fredoka-num.woff2") format("woff2");
+  src: url("../fonts/fredoka-num.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
   unicode-range: U+25, U+2B-39, U+3F, U+41-47, U+52, U+2212;

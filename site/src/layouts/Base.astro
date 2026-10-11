@@ -21,6 +21,15 @@ const NAV = [
   { href: '/about/', label: 'このサイトについて' },
 ];
 const inItem = (n: (typeof NAV)[number]) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || [])].some((h) => path.startsWith(h)));
+// ページの先読み（Speculation Rules）。サイトの中のリンクにマウスを乗せたとき・押し始めたときに、行き先の HTML を先に取っておく。
+// ブラウザが読むだけでスクリプトは要らない（いまは Chrome・Edge が読む。Safari・Firefox は読まず、これまでどおり押してから取る）。
+// 先読みしかしない（行き先のスクリプトまで動かす prerender はしない）。外のサイト（別のタブで開く）と同じページの # は除く
+const SPECULATION = {
+  prefetch: [{
+    where: { and: [{ href_matches: '/*' }, { not: { selector_matches: '[target="_blank"], [href^="#"]' } }] },
+    eagerness: 'moderate',
+  }],
+};
 ---
 <!doctype html>
 <html lang="ja">
@@ -44,7 +53,8 @@ const inItem = (n: (typeof NAV)[number]) => (n.href === '/' ? path === '/' : [n.
     <meta property="og:site_name" content={SITE.name} />
     <meta name="author" content={PROJECT.org} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preload" href="/fonts/fredoka-num.woff2" as="font" type="font/woff2" crossorigin />
+    <script type="speculationrules" is:inline set:html={JSON.stringify(SPECULATION)} />
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">本文へスキップ</a>

@@ -37,6 +37,9 @@
 ## 5. 表示の速さ
 
 - 一覧の行（`.row-list > li`）は `content-visibility: auto` で、画面の外の行を描かない（`styles/global.css`）。成果指標・施策・一括交付金などの一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重いため（スマホ幅でレイアウトのやり直しが 200ms 台から 10〜30ms に減った）。行の中身は行の外へはみ出せないので、吹き出しなどは body に付ける。`make shot` は画面の外まで撮るので、これを外して撮る。
+- ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。
+- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの `data.json` の preload）。
+- 数字のフォント（約4KB）は CSS に埋め込み、別のファイルとして取りに行かない。配信のキャッシュの決まりは [deploy.md](deploy.md) の 3章。
 
 ## 6. くらしのテーマの定義
 

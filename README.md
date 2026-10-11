@@ -50,7 +50,7 @@ make extract       # PDF を読んで data/extracted を作り直し、公表値
 | [docs/fetch.md](docs/fetch.md) | 報告書の取り方・取得元の一覧・`data/` のフォルダ |
 | [docs/data.md](docs/data.md) | 抽出の規則、年度による計り方・計算方法の違い、部局名の変更、公表値との突き合わせ |
 | [docs/issues.md](docs/issues.md) | 取れていないデータと誤りの疑いがあるデータの一覧（`make issues` で作り直す） |
-| [docs/site.md](docs/site.md) | サイトの作り（データの読み込みと数え方・型・lib・ブラウザのスクリプト・ページ） |
+| [docs/site.md](docs/site.md) | サイトの作り（データの読み込みと数え方・型・lib・ブラウザのスクリプト・ページ・表示の速さ） |
 | [docs/dev.md](docs/dev.md) | 開発の手順（コンテナ・テスト・画面の確認・worktree） |
 | [docs/design.md](docs/design.md) | サイトの見た目と見せ方の決まり |
 | [docs/deploy.md](docs/deploy.md) | Cloudflare での公開の設定 |
