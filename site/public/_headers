@@ -2,6 +2,13 @@
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
-# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったらこの3行と Base.astro の NOINDEX を外す
+# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったら X-Robots-Tag の行と Base.astro の NOINDEX を外す。
+# ほかは守りのヘッダー（docs/deploy.md の 3）。読み込んでよいもの（CSP）は各ページの <meta>（astro.config.ts の security.csp）で出し、
+# <meta> では効かない frame-ancestors（ほかのサイトの枠の中に表示させない）だけここで出す
 /*
   X-Robots-Tag: noindex, nofollow
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
