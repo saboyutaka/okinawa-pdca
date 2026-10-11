@@ -1,0 +1,137 @@
+---
+// 意見を伝えたい人へ。県民意見募集（パブリックコメント）の受付の状態、いつでも使える県の窓口、X で #okinawa_pdca を付けて話す方法
+import Base from '../layouts/Base.astro';
+import ExtLink from '../components/ExtLink.astro';
+import Share from '../components/Share.astro';
+import { yearLong } from '../lib/data.js';
+import { LINKS, PROJECT } from '../lib/links.js';
+import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, TAG_PAGES, boshuState, dayText, periodText } from '../lib/iken.js';
+
+// 受付中かどうかはビルドした日で決まる（lib/iken.js）。箱の中は募集の告知として書き、終わったら上に「終了しました」の張り紙を貼る
+const state = boshuState();
+const STATE_LABEL = { before: '受付前', open: '受付中' };
+const [ey, em, ed] = BOSHU.end.split('-').map(Number);
+const endText = `${ey}年${em}月${ed}日`;
+---
+<Base title="意見を伝えたい人へ" description="沖縄県PDCAの結果について、県に意見を伝える方法（県民意見募集・県民ご意見箱）と、SNS で #okinawa_pdca を付けて話す方法">
+  <nav class="breadcrumb"><a href="/">トップ</a> › 意見を伝えたい人へ</nav>
+  <h1>意見を伝えたい人へ</h1>
+  <p class="lead">
+    県の施策や主な取組について、思うことや気づいたことがあるときに使える方法をまとめました。県に届く方法（県民意見募集・県民ご意見箱）と、SNS で <strong>#okinawa_pdca</strong> を付けて話す方法があります。
+  </p>
+
+  <section aria-labelledby="boshu-h">
+    <h2 id="boshu-h">パブリックコメント（県民意見募集）</h2>
+    <div class="sticker boshu">
+      <div class="boshu-top">
+        {STATE_LABEL[state] && <span class:list={['state', `state-${state}`]}>{STATE_LABEL[state]}</span>}
+        <span class="boshu-name">{yearLong(BOSHU.year)}の沖縄県PDCA実施結果への県民意見募集</span>
+      </div>
+      <div class="call-wrap">
+        {state === 'closed' && (
+          <div class="harigami">
+            <p class="hg-title">この募集は終了しました</p>
+            <p class="hg-sub">{endText}で受付を終えました</p>
+          </div>
+        )}
+        <p class="call">県民のみなさんの意見を募集{state === 'before' ? 'します' : 'しています'}。</p>
+      </div>
+      {state === 'open' && <p class="call-sub">{dayText(BOSHU.end, false)}まで受け付けています。</p>}
+      {state === 'before' && <p class="call-sub">{dayText(BOSHU.start)}から受け付けます。</p>}
+      <dl class="facts">
+        <div><dt>募集期間</dt><dd>{periodText(BOSHU)}</dd></div>
+        <div><dt>募集しているところ</dt><dd>沖縄県 企画部 企画調整課</dd></div>
+        <div><dt>出し方</dt><dd>県の「意見提出用紙」で、郵送・FAX・電子メール・電子申請</dd></div>
+        <div><dt>意見のゆくえ</dt><dd>企画調整課がとりまとめて、その施策や取組を担当する部局へ送ります。意見の概要と県の考え方は、後日、県のホームページで公表するとしています。</dd></div>
+      </dl>
+      {state === 'open' && <p><ExtLink href={BOSHU.form}>県の電子申請で意見を送る</ExtLink>（意見提出用紙は県の募集のページにあります）</p>}
+      {state === 'closed' && <p>これまでは毎年、結果の公表のあとに募集が行われています（時期は年によって違います）。</p>}
+      <p class="small"><ExtLink href={BOSHU.page}>県の募集のページ（沖縄県PDCA実施結果 対象年度：{yearLong(BOSHU.year)}）</ExtLink>。期間・出し方・意見のゆくえは、そこにある県の「県民意見募集実施要項」によります。</p>
+      <details>
+        <summary>これまでの募集</summary>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>結果の対象年度</th><th>募集期間</th></tr></thead>
+            <tbody>
+              {[...BOSHU_PAST].reverse().map((b) => <tr><th>{yearLong(b.year)}</th><td>{periodText(b)}</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+        <p class="small secondary">
+          期間は各年度の結果のページの記載によります。結果のページに載っている「県民意見の概要と県の考え方」は、<ExtLink href={KANGAEKATA.href}>{KANGAEKATA.label}対象の分</ExtLink>がいちばん新しいものです（寄せられた意見は{KANGAEKATA.count}件。2026年10月10日に確認）。
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <h2>募集の期間でなくても、県に伝えるには</h2>
+  <ul class="ways">
+    <li>
+      <strong>県民ご意見箱</strong>（知事公室 広報課）: 県政への意見や提言を、いつでも受け付けています。県内20か所のご意見箱への投函のほか、郵送・FAX・電子メールでも送れます。<ExtLink href={GOIKENBAKO}>県民ご意見箱とは（県のページ）</ExtLink>
+    </li>
+    <li>
+      <strong>沖縄県PDCAの担当</strong>（企画部 企画調整課）: 報告書の内容についての問い合わせは、<ExtLink href={LINKS.kikakuChousei}>企画調整課の問い合わせフォーム</ExtLink>から送れます。
+    </li>
+  </ul>
+  <p class="small secondary">このサイトは県のものではないので、このサイトから県へ意見を送ることはできません。</p>
+
+  <h2 id="sns">SNS で話す <span class="tag-word">#okinawa_pdca</span></h2>
+  <p>
+    このサイトを見て思ったこと・気づいたことは、ハッシュタグ <strong>#okinawa_pdca</strong> を付けて SNS に投稿してください。同じタグで、ほかの人の声も読めます。
+  </p>
+  <div class="share-row">
+    <Share link="top" label="このサイトを SNS でシェア" />
+  </div>
+  <p class="small secondary">
+    X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#okinawa_pdca を書き足してください。LINE は知り合いに送る画面です。施策・主な取組・基本施策のページの下からは、そのページへのリンクを付けて投稿できます。
+  </p>
+  <p class="small">#okinawa_pdca の投稿を見る: {TAG_PAGES.map((t, i) => <>{i > 0 && '・'}<ExtLink href={t.href}>{t.label}</ExtLink></>)}</p>
+  <p class="x-note small">SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
+
+  <h2>このサイトへの意見</h2>
+  <p>
+    このサイトのまちがいや、わかりにくいところは、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください（<a href="/code-for-okinawa/">Code for Okinawa とは</a>）。このサイトの集計・表示について、沖縄県へは問い合わせないでください。
+  </p>
+</Base>
+
+<style>
+  .boshu { max-width: 46em; }
+  .boshu-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .boshu-name { font-family: var(--font-display); font-weight: 700; }
+  .state {
+    display: inline-flex; align-items: center; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.6;
+    border: 2px solid var(--line); border-radius: 8px; padding: 1px 12px; background: var(--paper); color: var(--ink);
+  }
+  .state-open { background: var(--pop); color: var(--pop-ink); }
+  /* 募集の告知の一文。終わったら、その上に張り紙（.harigami）を重ねる（同じマスに置き、告知は下から少しのぞく） */
+  .call-wrap { display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; margin: 12px 0 8px; }
+  .call-wrap > * { grid-area: 1 / 1; }
+  .call { margin: 0; padding: 12px 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1.5; text-align: center; }
+  .call-sub { margin: 0 0 12px; text-align: center; font-weight: 700; }
+  /* 「終了しました」の張り紙。角の小さい紙を少し傾け、両肩をマスキングテープで留める（読み上げでは告知より先に読む） */
+  .harigami {
+    position: relative; z-index: 1; width: max-content; max-width: 88%; padding: 14px 24px 12px; text-align: center;
+    background: var(--paper); border: 2px solid var(--line); border-radius: 3px; box-shadow: 2px 2px 0 var(--shadow); transform: rotate(-4deg);
+  }
+  .harigami p { margin: 0; }
+  .harigami p { word-break: auto-phrase; }
+  .hg-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.15rem, 5vw, 1.35rem); line-height: 1.45; }
+  .hg-sub { margin-top: 2px; font-size: 0.875rem; color: var(--ink-2); }
+  /* マスキングテープ。半分すけて紙のふちが見え、両端はちぎったようにギザギザにする */
+  .harigami::before, .harigami::after {
+    content: ""; position: absolute; top: -8px; width: 64px; height: 22px; background: color-mix(in oklab, var(--pop) 30%, transparent);
+    clip-path: polygon(4% 0, 96% 0, 100% 17%, 96% 33%, 100% 50%, 96% 67%, 100% 83%, 96% 100%, 4% 100%, 0 83%, 4% 67%, 0 50%, 4% 33%, 0 17%);
+  }
+  .harigami::before { left: -18px; transform: rotate(-35deg); }
+  .harigami::after { right: -18px; transform: rotate(35deg); }
+  .facts { display: grid; gap: 8px; margin: 8px 0 12px; }
+  .facts > div { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 2px 16px; }
+  .facts dt { font-family: var(--font-display); font-weight: 700; }
+  .facts dd { margin: 0; }
+  @media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; } }
+  .ways { max-width: 46em; padding-left: 1.2em; }
+  .ways li + li { margin-top: 8px; }
+  .tag-word { font-family: var(--font); font-size: 1rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+  .share-row { margin: 12px 0; }
+  .x-note { max-width: 46em; background: var(--paper); border: 2px solid var(--hair); border-radius: 14px; padding: 10px 16px; }
+</style>
