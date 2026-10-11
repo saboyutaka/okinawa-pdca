@@ -6,6 +6,7 @@ import { LINKS, PROJECT } from '../lib/links.ts';
 import { TERMS } from '../lib/terms.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import ExtLink from '../components/ExtLink.astro';
+import PlanMap from '../components/PlanMap.astro';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）
 const sources = load('sources');
@@ -20,17 +21,22 @@ const records = getBudgetRecords();
 const emptyFields = records.filter((b) => (['activity_done', 'basis', 'improvements', 'check', 'action'] as const).some((k) => !b[k]?.length)).length;
 const themes = getThemes();
 ---
-<Base title="データについて" description="このサイトのデータの出典・作り方・注意点">
-  <nav class="breadcrumb"><a href="/">トップ</a> › データについて</nav>
-  <h1>データについて</h1>
+<Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・注意点">
+  <nav class="breadcrumb"><a href="/">トップ</a> › このサイトについて</nav>
+  <h1>このサイトについて</h1>
+  <p class="lead">
+    沖縄県が公表している「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
+  </p>
 
   <h2>沖縄県PDCAとは</h2>
   <p>
     沖縄県は「<ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>」を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
     その検証結果が「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」で、毎年夏ごろに前年度分が公表されます（例: 令和7年度対象の結果は令和8年8月公表）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou}>沖縄県PDCAの概要</ExtLink>」で説明されています。
   </p>
+
+  <h3 id="kaisou">計画の階層と指標のつながり</h3>
+  <PlanMap />
   <ul>
-    <li><strong>将来像（5）</strong> → <strong>基本施策（36）</strong> → 施策展開 → <strong>施策（339）</strong> → <strong>主な取組（約1,500）</strong>の階層になっています。</li>
     <li id="torikumi">
       <strong>主な取組は、県の事業のすべてではありません。</strong>
       県が実施計画で、施策ごとに「課題の解決に向けた手段となる具体的な事業等」として選んだもので、PDCAはこの主な取組を対象にしています。
@@ -39,7 +45,6 @@ const themes = getThemes();
       主な取組に入っていない県の事業のほか、国・市町村・民間の取組もあり、成果指標の数字はそれらや社会情勢にも左右されます。
       「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
     </li>
-    <li><strong>主要指標</strong>は基本施策の最終的な成果、<strong>成果指標</strong>は施策の成果、<strong>活動指標</strong>は主な取組の活動量をはかる指標です。</li>
     <li>R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度R6）、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
 
@@ -90,7 +95,7 @@ const themes = getThemes();
     <li><strong>部局</strong>は、その取組の最新の報告での所管部局で数えています。令和5年度の組織再編より前（R4）の取組も、再編後の部局に寄せています。成果指標の担当部課のR4の旧部局名は、その課の取組がR5で最も多く移った先の課に読み替えています。</li>
   </ul>
 
-  <h2>注意点</h2>
+  <h2 id="chuui">注意点</h2>
   <ul>
     <li><strong>非公式のサイトです。</strong><a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。</li>
     <li><strong>主な取組の進捗の内訳が、概要版と数件ずれることがあります。</strong>報告書の進捗状況の欄が空欄や「-」の取組（{blanks.map(([y, n]) => `${yearLabel(y)}で${n}件`).join('、')}）は、このサイトでは「記載なし」としています。県の集計ではこれらも「順調」「未着手」などに数えられています。</li>
