@@ -50,6 +50,17 @@ export const JUDGES = [
 ];
 export const judgeOf = (key) => JUDGES.find((j) => j.key === key);
 
+// 施策の判定の移り変わり（施策をさがすの「判定の移り変わり」）。数え方はここだけで決め、施策の trends に入れる。判定は R5 から（R4 は公表されていない）。
+// 上がった・下がったは、判定を A 順調 → B 概ね順調 → C〜F（取組か成果が遅れている）→ G 大幅遅れ の順に並べて前の年度と比べる（C〜F の中での入れ替わりは数えない）
+const JUDGE_RANK = { good: 0, warning: 1, serious: 2, critical: 3 };
+const judgeRank = (key) => JUDGE_RANK[judgeOf(key)?.tone] ?? null;
+const bothYears = (r) => r.at(-2) != null && r.at(-1) != null;
+export const JUDGE_TRENDS = {
+  down: (r) => bothYears(r) && r.at(-1) > r.at(-2), // 前の年度より下がった
+  up: (r) => bothYears(r) && r.at(-1) < r.at(-2), // 前の年度より上がった
+  streak: (r) => r.slice(-3).every((x) => x != null && x >= JUDGE_RANK.serious), // 最新の年度まで3年続けて C〜G
+};
+
 // 成果指標の計画値に対する達成率の区分（概要版と同じ区切り）
 export const RATE_BINS = [
   { key: '100%以上', tone: 'good' },
@@ -136,10 +147,13 @@ function buildShisakuIndex() {
   const list = [];
   for (const [id, v] of byId) {
     const latest = v.years[LATEST];
+    const judges = Object.fromEntries(YEARS.map((y) => [y, v.years[y]?.judge ?? null]));
+    const ranks = YEARS.map((y) => judgeRank(judges[y]));
     list.push({
       ...latest,
       years: v.years,
-      judges: Object.fromEntries(YEARS.map((y) => [y, v.years[y]?.judge ?? null])),
+      judges,
+      trends: Object.keys(JUDGE_TRENDS).filter((k) => JUDGE_TRENDS[k](ranks)),
       depts: splitDepts(latest.kankei),
       torikumi: tori.get(id) || [],
       seika: seika.get(id) || [],
