@@ -1,0 +1,52 @@
+---
+// 観光ロードマップの成果指標の一覧の行に添える、ゴールまでの道のりの小さな図（施策展開のページの図 RmSeika の縮小版）。
+// 沖縄県PDCAの一覧の図（SeikaSpark）と同じ描き方で、横は観光ロードマップの報告年度 R4〜R6 の3枠（計画期間は1つなので地の色は敷かない）。
+// 点線が計画の道すじ（スタートの基準値 → 各年度の計画値。最後の○がゴールの目標値）、青い点が実績値で、最新を大きくする。
+// 実績値は施策展開のページの図と同じく報告の欄の年度に置く（前の年度の値が載っている年度は、行の読み上げ用の文と施策展開のページで分かる）。
+// 図の中に文字を入れないので、ビルド時に SVG にする。色と太さは styles/global.css の .spark で付ける
+import type { KankoSeikaRow } from '../lib/types.ts';
+
+interface Props { x: KankoSeikaRow }
+type Pt = [x: number, y: number];
+const { x: r } = Astro.props;
+const W = 120;
+const H = 40;
+const PAD = 5; // 上下の余白（点がはみ出ないように）
+const sw = W / r.years.length;
+const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
+const drawable = r.actual.some(num) && num(r.target);
+
+let start: Pt | null = null;
+let rings: Pt[] = [];
+let planPath: string | null = null;
+let dots: Pt[] = [];
+let actPath: string | null = null;
+if (drawable) {
+  const vals = [...r.actual, r.base, r.target, ...(r.plan || [])].filter(num);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const f = (n: number) => Math.round(n * 10) / 10;
+  const x = (i: number) => f((i + 0.5) * sw);
+  const y = (v: number) => f(hi === lo ? H / 2 : PAD + (1 - (v - lo) / (hi - lo)) * (H - PAD * 2));
+  const d = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px} ${py}`).join('');
+  start = num(r.base) ? [2, y(r.base)] : null;
+  rings = (r.plan || []).flatMap((v, i): Pt[] => (num(v) ? [[x(i), y(v)]] : []));
+  const pts = [...(start ? [start] : []), ...rings];
+  planPath = pts.length > 1 ? d(pts) : null;
+  dots = r.actual.flatMap((v, i): Pt[] => (num(v) ? [[x(i), y(v)]] : []));
+  actPath = dots.length > 1 ? d(dots) : null;
+}
+---
+{drawable && (
+  <svg class="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+    <g class="sp-plan">
+      {planPath && <path d={planPath} />}
+      {start && <circle class="sp-start" cx={start[0]} cy={start[1]} r="1.8" />}
+      {rings.map(([cx, cy]) => <circle cx={cx} cy={cy} r="2.4" />)}
+    </g>
+    <g class="sp-act">
+      {actPath && <path d={actPath} />}
+      {dots.map(([cx, cy], i) => <circle cx={cx} cy={cy} r={i === dots.length - 1 ? 4 : 2.6} />)}
+    </g>
+  </svg>
+)}
