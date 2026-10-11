@@ -3,9 +3,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  load, YEARS, LATEST, nameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, getTorikumiGroups,
+  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, getSeikaGroups, seikaOfTorikumi, torikumiOfSeika, budgetOf, type SeikaGroupOfShisaku,
+  amountEntries, budgetGroups, judgeByGrid, seikaOfTorikumi, torikumiOfSeika, type SeikaGroupOfShisaku,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -132,6 +132,40 @@ test('施策にかかわる部局（関係部等と取組の部局）には、�
 
 test('どの部局のページにも、出典の検証票のページがある', () => {
   none(DEPTS.filter((d) => !deptSourcePages(d.name).length), (d) => d.name);
+});
+
+test('書き方の違いだけで名前が変わった取組・成果指標（R7からの「こども」など）は、年度をまたいで1つにまとまる', () => {
+  // 同じ施策に、sameKey が同じ取組のまとまりが2つ以上ない
+  const seen = new Map<string, number>();
+  for (const g of getTorikumiGroups()) {
+    const k = `${g.shisaku.id}|${sameKey(g.key)}`;
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  none([...seen].filter(([, n]) => n > 1), ([k]) => k);
+  // 例: R4〜R6 は「沖縄子供の…」、R7 は「沖縄こどもの…」
+  const g = getTorikumiGroups().find((x) => x.shisaku.id === '2-1-a-1' && x.latest.name === '沖縄こどもの貧困緊急対策事業（支援コーディネーターの配置）');
+  assert.ok(g);
+  assert.deepEqual(g.statuses.map(Boolean), [true, true, true, true]);
+  assert.equal(g.years[2022].name, '沖縄子供の貧困緊急対策事業（支援コーディネーターの配置）');
+  // どの年度の名前から引いても、まとめたページと部局票の記載にたどれる
+  for (const y of YEARS) {
+    assert.equal(torikumiPage('2-1-a-1', g.years[y].key), g.href);
+    assert.ok(budgetOf(y, '2-1-a-1', g.key), `${y} の部局票`);
+  }
+  // 成果指標も、R6までの「子供の…」とR7の「こどもの…」が1つの行になる
+  const s = getSeikaGroups().find((x) => x.shisaku.id === '2-1-a-1' && x.latest.name === 'こどもの貧困対策支援員による支援人数');
+  assert.ok(s);
+  assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
+});
+
+test('主要指標の一覧の行の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
+  for (const k of getKihonList()) {
+    const groups = shuyouRows(k.id);
+    const ids = groups.map((g) => shuyouAnchor(groups, g));
+    assert.equal(new Set(ids).size, ids.length, k.id);
+    const latest = groups.map((g) => g.latest.year === LATEST);
+    assert.deepEqual(latest, [...latest].sort((a, b) => Number(b) - Number(a)), `${k.id}: 最新の報告の指標が先にない`);
+  }
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {

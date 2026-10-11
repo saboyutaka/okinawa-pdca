@@ -15,7 +15,7 @@ export interface SearchData {
   fields: string[];
   rows: [
     shisaku_id: string, name: string, section: string, dept: string, statuses: (number | null)[], indicator: string, target: string, actual: string,
-    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[],
+    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[], summary: string,
   ][];
 }
 
@@ -29,7 +29,7 @@ export function GET() {
     depts: Object.fromEntries(DEPTS.map((d) => [d.name, d.slug])), // 部局名 → 部局ページの slug
     shisaku: Object.fromEntries(getShisakuList().map((s) => [s.id, [s.code, s.name, s.shouraizou]])),
     themes: themes.map((t) => [t.id, t.label]), // くらしのテーマ（このサイト独自の分類）
-    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans'],
+    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans', 'summary'],
     rows: getTorikumiGroups().map((g) => [
       g.shisaku.id,
       g.latest.name,
@@ -45,6 +45,9 @@ export function GET() {
       themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
+      // 最新の報告の「やったこと」（総括報告書の取組の概要）。キーワードで探すだけで、一覧の行には、ここにだけ当たったときに出す
+      // （市町村の名前や「不登校」のような言葉は、取組の名前より、ここに書かれていることが多い）
+      g.latest.summary || '',
     ]),
   };
   return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });

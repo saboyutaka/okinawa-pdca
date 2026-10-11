@@ -3,13 +3,14 @@
 // 一覧の [data-item] 要素の data-<name> を比べる。
 //  - 入力の値も項目の値も「|」区切りで複数を表せる。どれか1つが同じなら一致（例: 判定「C|D」）
 //  - 同じ name のチェックボックスが複数選ばれているときも、どれか1つが同じなら一致（name が違う条件どうしは「かつ」）
-//  - name="q" は、項目の data-text に空白で区切ったすべての語が含まれれば一致
+//  - name="q" は、項目の data-text に空白で区切ったすべての語が含まれれば一致（全角・半角と「子ども・子供・こども」などの表記ゆれは lib/search.ts でそろえる）
 // [data-group] は中に表示中の項目が無ければ隠す。その中の [data-group-count] には表示中の件数を入れる。
 // いまの条件は data-summary の場所に「くらしのテーマ: 子ども・子育て ×」のように並べ、1つずつ外せる（条件の名前は入力を囲む [data-label]）。
 // 条件は URL のクエリに残すので、そのまま共有できる。
 // 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
 // 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
-const norm = (s: string) => s.normalize('NFKC').toLowerCase();
+import { matchesAll, searchText, searchWords } from '../lib/search.ts';
+
 // 絞り込みの入力（キーワード・チェックボックス・ラジオ・select）
 type Field = HTMLInputElement | HTMLSelectElement;
 type CheckInput = HTMLInputElement & { type: 'checkbox' | 'radio' };
@@ -120,8 +121,8 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
     for (const el of items) {
       const ok = [...conds].every(([name, values]) => {
         if (name === 'q') {
-          const text = norm(el.dataset.text || '');
-          return values.every((value) => norm(value).split(/\s+/).filter(Boolean).every((w) => text.includes(w)));
+          const text = searchText(el.dataset.text || '');
+          return values.every((value) => matchesAll(text, searchWords(value)));
         }
         const vs = values.filter(Boolean);
         if (!vs.length) return true; // 「すべて」

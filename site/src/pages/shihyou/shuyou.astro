@@ -1,0 +1,49 @@
+---
+// 主要指標の一覧。基本施策ごとの最終的な成果をはかる大きな数字（平均寿命・観光収入・現金給与総額など）を、基本施策のページをめぐらずにまとめて見る。
+// 並びは報告書の順（将来像 → 基本施策）で、良い・悪いで並べ替えない。最新の報告にある指標だけを出し、R6まで使われていた指標は基本施策のページに任せる。
+// 指標の数は少ない（40ほど）ので、絞り込みは置かない
+import Base from '../../layouts/Base.astro';
+import ShuyouRow from '../../components/ShuyouRow.astro';
+import SeikaKey from '../../components/SeikaKey.astro';
+import Term from '../../components/Term.astro';
+import Sz from '../../components/Sz.astro';
+import ExtLink from '../../components/ExtLink.astro';
+import { LATEST, yearLong, SHUYOU_COUNT, getKihonList, getShouraizou, shuyouRows, shuyouAnchor } from '../../lib/data.ts';
+import { fmt } from '../../lib/format.ts';
+import { LINKS } from '../../lib/links.ts';
+
+const kihon = getKihonList();
+// 将来像ごとに、基本施策の順で、最新の報告の指標の部分（男性・女性など）を1行ずつ
+const visions = getShouraizou().map((v) => ({
+  ...v,
+  rows: kihon.filter((k) => k.shouraizou === v.id).flatMap((k) => {
+    const groups = shuyouRows(k.id);
+    return groups.filter((g) => g.latest.year === LATEST).flatMap((g) => g.parts.map((p) => ({ k, p, href: `/kihon/${k.id}/#${shuyouAnchor(groups, g)}` })));
+  }),
+}));
+const n = visions.reduce((a, v) => a + v.rows.length, 0);
+---
+<Base title="主要指標の一覧" description="沖縄県PDCAの主要指標（基本施策ごとの最終的な成果をはかる指標）を、県の見通しとゴールまでの道のりの図つきで一覧できます。">
+  <h1>主要指標の一覧</h1>
+  <p class="secondary lead">基本施策ごとの最終的な成果をはかる<Term word="主要指標" />です。平均寿命や観光収入、現金給与総額のような、くらし全体の大きな数字を、{yearLong(LATEST)}の報告から集めました（男性・女性などに分けて{fmt(n)}行。県の数え方では{fmt(SHUYOU_COUNT[LATEST])}指標です）。</p>
+  <p class="small secondary">右の札は県の<Term word="見通し" />です。主要指標には年度ごとの計画値がないので、図には計画の道すじを引かず、ゴールの目標値（<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9）の丸だけを置いています。</p>
+  <SeikaKey mini plan={false} goal />
+
+  {visions.map((v) => v.rows.length > 0 && (
+    <section aria-labelledby={`v-${v.id}`}>
+      <h2 id={`v-${v.id}`} class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a></span></h2>
+      <ul class="row-list">
+        {v.rows.map(({ k, p, href }) => <ShuyouRow part={p} kihon={k} href={href} />)}
+      </ul>
+    </section>
+  ))}
+
+  <p class="small secondary">
+    値は報告書の文字のまま出しています。R6まで使われていた主要指標は、それぞれの基本施策のページの「R6まで使われていた主要指標」で見られます。
+    施策ごとの成果をはかる成果指標は、<a href="/shihyou/">成果指標をさがす</a>で見られます。
+  </p>
+</Base>
+
+<style>
+  .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
+</style>

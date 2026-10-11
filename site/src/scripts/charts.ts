@@ -427,3 +427,6 @@ window.addEventListener('resize', () => {
 });
 // <details> を開いたときは、その中の図だけを描く（閉じている間は幅が 0 なので描いていない）
 for (const d of document.querySelectorAll('details')) d.addEventListener('toggle', () => { if (d.open) for (const c of charts) if (d.contains(c.el)) c.render(); });
+// 印刷の前後には全部を描き直す（scripts/print.ts が畳んだ内容を開いてページを紙の幅にそろえたあと・元に戻したあと）
+window.addEventListener('beforeprint', renderAll);
+window.addEventListener('afterprint', renderAll);

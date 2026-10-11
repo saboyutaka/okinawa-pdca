@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Tone } from './icons.ts';
+import { foldVariants } from './search.ts';
 import type {
   AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, ShisakuRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
@@ -29,7 +30,7 @@ export interface Category {
   note?: string;
 }
 
-// 年度をまたいだ1つの取組・成果指標など（key が同じもの）。years は報告のある年度だけ持つ
+// 年度をまたいだ1つの取組・成果指標など（sameKey が同じもの）。key は最新の報告の名前の key。years は報告のある年度だけ持つ
 export interface YearGroup<T> {
   key: string;
   latest: T;
@@ -363,6 +364,8 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
   for (const r of [...rows].sort((a, b) => b.year - a.year)) if (!used.has(r)) out.push(group(r, false));
   return out;
 }
+// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。主要指標の一覧の行から飛ぶ
+export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
 
 // ---------------------------------------------------------------- 施策
 
@@ -422,13 +425,14 @@ export function getShisaku(id: string) {
   return getShisakuList().find((s) => s.id === id);
 }
 
-// 年度をまたいで同じ取組を1行にまとめる。名前（key）が同じものを同じ取組とみなす
+// 年度をまたいで同じ取組を1行にまとめる。名前（sameKey）が同じものを同じ取組とみなす
 export function torikumiRows(shisaku: Shisaku) {
   const rows = new Map<string, YearGroup<TorikumiRow>>();
   const sorted = [...shisaku.torikumi].sort((a, b) => b.year - a.year || a.no - b.no);
   for (const t of sorted) {
-    if (!rows.has(t.key)) rows.set(t.key, { key: t.key, latest: t, years: {} });
-    rows.get(t.key)!.years[t.year] = t;
+    const k = sameKey(t.key);
+    if (!rows.has(k)) rows.set(k, { key: t.key, latest: t, years: {} });
+    rows.get(k)!.years[t.year] = t;
   }
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year || a.latest.no - b.latest.no);
 }
@@ -436,13 +440,16 @@ export function torikumiRows(shisaku: Shisaku) {
 // 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）。
 // 名前の正規化は抽出側の取組の key と同じ規則（scripts/extract_soukatsu.py の name_key。同じになるかは test/integrity.test.ts で確かめる）。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
 export const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
+// 年度をまたいで同じ取組・成果指標かを比べる key。名前の key の表記ゆれ（R7からの「こども」の書き方など。lib/search.ts）をそろえたもの。
+// 同じ年度の中の照合（部局票との結び付けなど）も、年度をまたいだまとまりから引くときはこれで比べる
+export const sameKey = (key: string) => foldVariants(key);
 export type SeikaGroup = YearGroup<SeikaRow>;
 export function seikaRows(shisaku: Shisaku) {
   const rows = new Map<string, SeikaGroup>();
   const seen = new Map<string, number>();
   const sorted = [...shisaku.seika].sort((a, b) => b.year - a.year);
   for (const s of sorted) {
-    const base = nameKey(s.name);
+    const base = sameKey(nameKey(s.name));
     const n = (seen.get(`${s.year}|${base}`) || 0) + 1;
     seen.set(`${s.year}|${base}`, n);
     const k = `${base}#${n}`;
@@ -522,12 +529,12 @@ export const keySlug = (key: string) => crypto.createHash('sha1').update(key).di
 // 取組のページの URL: /torikumi/<施策ID>/<取組名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
 export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${keySlug(key)}/`;
 
-// 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）
-let groupHrefs: Set<string> | undefined;
+// 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）。
+// key はどの年度の名前でもよい（表記ゆれで名前が変わった取組も、まとめたページへ）
+let groupHrefs: Map<string, string> | undefined;
 export function torikumiPage(shisakuId: string, key: string) {
-  groupHrefs ??= new Set(getTorikumiGroups().map((g) => g.href));
-  const h = torikumiHref(shisakuId, key);
-  return groupHrefs.has(h) ? h : null;
+  groupHrefs ??= new Map(getTorikumiGroups().map((g) => [`${g.shisaku.id}|${sameKey(g.key)}`, g.href]));
+  return groupHrefs.get(`${shisakuId}|${sameKey(key)}`) ?? null;
 }
 
 // 同じ名前の取組が別の施策にも載っているもの（総括報告書の「再掲」）
@@ -536,11 +543,12 @@ export function repostsOf(g: TorikumiGroup) {
   if (!groupsByKey) {
     groupsByKey = new Map();
     for (const x of getTorikumiGroups()) {
-      if (!groupsByKey.has(x.key)) groupsByKey.set(x.key, []);
-      groupsByKey.get(x.key)!.push(x);
+      const k = sameKey(x.key);
+      if (!groupsByKey.has(k)) groupsByKey.set(k, []);
+      groupsByKey.get(k)!.push(x);
     }
   }
-  return groupsByKey.get(g.key)!.filter((x) => x.shisaku.id !== g.shisaku.id);
+  return groupsByKey.get(sameKey(g.key))!.filter((x) => x.shisaku.id !== g.shisaku.id);
 }
 
 // 名前が変わった（または分割・統合された）可能性のある取組。同じ施策で、この取組が最後に載った年度の翌年度から載り始めた取組（またはその逆）のうち、
@@ -627,22 +635,22 @@ function inOrder(a: string, b: string) {
 }
 // 名前の末尾の括弧（「（小学校）」「（さとうきび）」のような内訳の名前）
 const NAME_TAIL = /[（(][^（()）]*[)）]\s*$/;
-// 部局票の「対応する成果指標」（名前）が成果指標の名前に当たるか。名前の空白・記号の違いは無視する。
+// 部局票の「対応する成果指標」（名前）が成果指標の名前に当たるか。名前の空白・記号の違いと表記ゆれ（sameKey）は無視する。
 // 部局票の名前は、内訳のある指標をまとめた名前（「健康寿命」→「健康寿命（男性）」）のことも、複数の指標をまとめた名前
 // （「交通事故重傷者数及び死者数」→「交通事故死者数」、「〜（①相談支援センター、②ピアサポート）に対する認知度」、「〜と考えている児童生徒の割合」→「〜児童の割合（小学校）」）のこともある。
 // そのため、どちらかがもう一方を含むか、指標の名前の字が部局票の名前に同じ順で出てくれば当たりとする（指標の名前の末尾の内訳の括弧は、外しても比べる）
 export function seikaNameMatches(seikaName: string | null | undefined, name: string) {
-  const a = nameKey(seikaName || '');
-  const b = nameKey(name);
+  const a = sameKey(nameKey(seikaName || ''));
+  const b = sameKey(nameKey(name));
   if (!a || !b) return false;
-  const head = nameKey(name.replace(NAME_TAIL, ''));
+  const head = sameKey(nameKey(name.replace(NAME_TAIL, '')));
   return a.includes(b) || b.includes(a) || inOrder(b, a) || (Boolean(head) && inOrder(head, a));
 }
 // 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（最新の報告の名前で比べ、同じ名前の指標があればそれを先に）
 export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
   const list = seikaGroupsOf(shisakuId);
-  const k = nameKey(name || '');
-  return (list.find((r) => nameKey(r.latest.name) === k) ?? list.find((r) => seikaNameMatches(name, r.latest.name)))?.href ?? null;
+  const k = sameKey(nameKey(name || ''));
+  return (list.find((r) => sameKey(nameKey(r.latest.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.latest.name)))?.href ?? null;
 }
 // 主な取組と成果指標の結び付き。ある年度の部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。
 // 当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
@@ -771,19 +779,19 @@ export function deptSourcePages(deptName: string) {
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
 let currentDept: Map<string, string> | undefined;
 export function currentDeptOf(year: number, shisakuId: string, key: string) {
-  currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${g.key}`, g.dept])));
-  return currentDept.get(`${year}|${shisakuId}|${key}`) || '';
+  currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${sameKey(g.key)}`, g.dept])));
+  return currentDept.get(`${year}|${shisakuId}|${sameKey(key)}`) || '';
 }
 
 // R4の旧部局の課 → R5でその課の取組が最も多く移った先の課（成果指標の担当部課の読み替えに使う）
 let sectionMap: Map<string, string> | undefined;
 function formerSectionMap() {
   if (sectionMap) return sectionMap;
-  const r5 = new Map(load('torikumi').filter((t) => t.year === 2023).map((t) => [`${t.shisaku_id}|${t.key}`, t.section]));
+  const r5 = new Map(load('torikumi').filter((t) => t.year === 2023).map((t) => [`${t.shisaku_id}|${sameKey(t.key)}`, t.section]));
   const votes = new Map<string, Map<string, number>>();
   for (const t of load('torikumi')) {
     if (t.year !== 2022 || !FORMER_DEPTS.includes(t.dept)) continue;
-    const to = r5.get(`${t.shisaku_id}|${t.key}`);
+    const to = r5.get(`${t.shisaku_id}|${sameKey(t.key)}`);
     if (!to) continue;
     const v = votes.get(t.section) || new Map();
     v.set(to, (v.get(to) || 0) + 1);
@@ -925,7 +933,7 @@ export function getBudgetRecords() {
   }
   return budgetRecords;
 }
-// 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける。
+// 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける（名前は sameKey で比べるので、年度をまたいだまとまりの key で引いてもよい）。
 // 総括報告書で別の施策に再掲された取組は、部局票では元の施策にしか載っていないことがあるので、
 // 同じ年度に同じ名前の取組が部局票に1件だけなら名前で結び付ける（matchedByName）
 let budgetIndex: { exact: Map<string, BukyokuTorikumiRow>; byName: Map<string, BukyokuTorikumiRow | null> } | undefined;
@@ -934,15 +942,15 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
     const exact = new Map<string, BukyokuTorikumiRow>();
     const byName = new Map<string, BukyokuTorikumiRow | null>();
     for (const b of getBudgetRecords()) {
-      exact.set(`${b.year}|${b.shisaku_id}|${b.key}`, b);
-      const k = `${b.year}|${b.key}`;
+      exact.set(`${b.year}|${b.shisaku_id}|${sameKey(b.key)}`, b);
+      const k = `${b.year}|${sameKey(b.key)}`;
       byName.set(k, byName.has(k) ? null : b); // 2件以上あれば null（名前だけでは決められない）
     }
     budgetIndex = { exact, byName };
   }
-  const hit = budgetIndex.exact.get(`${year}|${shisakuId}|${key}`);
+  const hit = budgetIndex.exact.get(`${year}|${shisakuId}|${sameKey(key)}`);
   if (hit) return hit;
-  const named = budgetIndex.byName.get(`${year}|${key}`);
+  const named = budgetIndex.byName.get(`${year}|${sameKey(key)}`);
   return named ? { ...named, matchedByName: true } : undefined;
 }
 
