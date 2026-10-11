@@ -107,7 +107,7 @@ const boshu = boshuState();
         <li>
           <a class="theme" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
-            <span class="nm">{t.label}</span>
+            <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
             <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
             <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
           </a>
@@ -235,6 +235,7 @@ const boshu = boshuState();
   .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
   .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す（「くらしの安 / 全」にしない） */
   .theme :global(.sbar) { grid-area: bar; }
   .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
   @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }

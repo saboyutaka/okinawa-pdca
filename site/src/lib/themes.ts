@@ -26,14 +26,15 @@ export function getThemes(): Theme[] {
     const ids = list
       .filter((s) => (re.test(`${s.name} ${s.tenkai_name} ${kihonName.get(s.kihon_id)}`) || t.include.includes(s.id)) && !t.exclude.includes(s.id))
       .map((s) => s.id);
-    // 画面に出す「決め方」の言葉（先読みなどの正規表現の記号は除く）
-    const words = t.match.replace(/\(\?[!=][^)]*\)/g, '').split('|');
-    return { ...t, re, words, ids, idSet: new Set(ids) };
+    return { ...t, re, words: matchWords(t.match), ids, idSet: new Set(ids) };
   });
   const missing = unthemed();
   if (missing.length) console.warn(`[themes] どのテーマにも入らない施策が ${missing.length} あります: ${missing.map((s) => s.id).join(', ')}（data/reference/themes.json を直してください）`);
   return themes;
 }
+
+// 画面に出す「決め方」の言葉。match を | で分け、先読み・後読み（(?!…)・(?<!…) など）は除く
+export const matchWords = (match: string) => match.replace(/\(\?<?[!=][^)]*\)/g, '').split('|');
 
 export const getTheme = (id: string) => getThemes().find((t) => t.id === id);
 export const themesOf = (shisakuId: string) => getThemes().filter((t) => t.idSet.has(shisakuId));
