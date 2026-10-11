@@ -77,7 +77,7 @@ const themes = getThemes();
     言葉の一覧と、人が直すための追加・除外の指定は、リポジトリの <code>data/reference/themes.json</code> にあります。
   </p>
 
-  <h2>出典</h2>
+  <h2 id="shutten">出典</h2>
   <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
   <ul>
     {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink></li>)}

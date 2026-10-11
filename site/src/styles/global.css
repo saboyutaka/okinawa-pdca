@@ -171,6 +171,7 @@ small, .small { font-size: 0.875rem; }
 }
 .site-footer { margin-top: 64px; padding: 28px 0 44px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
+.site-footer .foot-links { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 
 /* ステッカー（カード）。.card は以前の名前。
    目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
