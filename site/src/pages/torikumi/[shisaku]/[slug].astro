@@ -1,6 +1,6 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
-// 頭は親の施策の札の下にぶら下げる。①いまの状態（進捗・活動指標・予算・対応する成果指標） ②年度ごとの進捗 ③年度別計画 ④予算の推移 ⑤年度ごとの PDCA。表と原文は畳む
+// 頭は親の施策の札の下にぶら下げる。①いまの状態（進捗・活動指標・予算・対応する成果指標） ②活動指標の計画と実績（図。年度別計画のこの先の年度も置く） ③予算の推移 ④年度ごとの PDCA。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
 import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
@@ -12,17 +12,19 @@ import Sz from '../../../components/Sz.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import IkenBox from '../../../components/IkenBox.astro';
+import KatsudouChart from '../../../components/KatsudouChart.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import { JUDGE_UI } from '../../../lib/icons.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, judgeOf, statusOf, toneOfStatus, getTorikumiGroups, torikumiSlug, budgetOf, fundOf,
-  deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, type TorikumiGroup,
+  deptHref, sourceLink, seikaHrefByName, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement,
+  type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
 import ExtLink from '../../../components/ExtLink.astro';
 import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
-import type { AmountKind, BudgetAmountRow, BukyokuTorikumiRow } from '../../../lib/types.ts';
+import type { AmountKind, BudgetAmountRow } from '../../../lib/types.ts';
 
 export function getStaticPaths() {
   return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: torikumiSlug(g.key) }, props: { g } }));
@@ -39,12 +41,6 @@ const first = firstYearOf(g);
 const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]));
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
-// 年度別計画は前期（R4〜R6）と中期（R7〜R9）で違う。計画期間ごとに最新の報告の記載を出す
-const plans = new Map<string, { years: string[]; rows: BukyokuTorikumiRow['plan']; report: number }>();
-for (const y of present) {
-  const b = recs[y];
-  if (b?.plan?.length && !plans.has(b.plan_years.join())) plans.set(b.plan_years.join(), { years: b.plan_years, rows: b.plan, report: y });
-}
 const seikaName = latestRec?.seika_name;
 const seikaHref = seikaName && seikaHrefByName(s.id, seikaName);
 // 対応する成果指標の最新の達成率（名前の空白・記号の違いは無視して施策の成果指標から探す）
@@ -72,19 +68,15 @@ const latestTone = toneOfStatus(latestStatus);
 // 親の施策の判定（施策の判定だけを丸いハンコで出し、取組の進捗状況は横長の札で出して見分ける）
 const pj = judgeOf(s.judges[LATEST]);
 
-// 活動指標の達成割合。部局票の「達成割合」を使い、無ければ「目標 10件 → 実績 54件」のように同じ単位の数から計算する
-const qty = (raw: string | null | undefined) => { const m = (raw || '').normalize('NFKC').match(/^([\d,.]+)\s*([^\d\s（(→]*)/); return m ? { v: Number(m[1].replace(/,/g, '')), u: m[2] } : null; };
-function achievementOf(y: number) {
-  const raw = recs[y]?.achievement;
-  const m = (raw || '').normalize('NFKC').match(/(-?[\d,.]+)\s*%/);
-  if (m) return { pct: Number(m[1].replace(/,/g, '')), text: raw };
-  const r = g.years[y];
-  const a = qty(r?.actual);
-  const b = qty(r?.target);
-  return a && b && b.v > 0 && a.u === b.u ? { pct: (a.v / b.v) * 100, text: `${Math.round((a.v / b.v) * 100)}%（計算）` } : null;
-}
 const toneOfPct = (p: number): Tone => (p >= 90 ? 'good' : p >= 75 ? 'warning' : p >= 60 ? 'serious' : 'critical');
-const latestAch = achievementOf(t.year);
+const latestAch = activityAchievement(g, t.year);
+// 活動指標の計画と実績。活動指標が途中で変わった取組は、活動指標ごとに図と表を分ける（新しい活動指標が先）
+const runs = activityRuns(g);
+const runSpan = (run: ActivityRun) => {
+  const ys = run.years.filter((r) => !r.future).map((r) => r.y);
+  return ys.length > 1 ? `${yearLabel(ys[0])}〜${yearLabel(ys[ys.length - 1])}` : yearLabel(ys[0]);
+};
+const futureText = (run: ActivityRun) => run.years.filter((r) => r.future).map((r) => yearLabel(r.y)).join('・');
 
 // 予算の推移。各報告に前年度の決算額・その年度の決算見込額・翌年度の当初予算額が載っているので、年度ごとに確定に近い金額（決算 → 決算見込 → 当初予算）を選ぶ。
 // 1つの取組に予算事業が複数あるときは合計する（桁の誤記の疑いがある金額は入れない）
@@ -158,13 +150,14 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <div class="sticker fact">
       <div class="tile-label"><Term word="活動指標" />（{yearLabel(t.year)}）</div>
       <div class="f-name">{t.indicator || tr?.indicator_name || '—'}</div>
-      <div class="f-vals">目標 <b>{t.target || '—'}</b> → 実績 <b>{t.actual || '—'}</b></div>
+      <div class="f-vals">計画 <b>{t.target || '—'}</b> → 実績 <b>{t.actual || '—'}</b></div>
       {latestAch && (
         <>
           <Chunk frac={latestAch.pct / 100} tone={toneOfPct(latestAch.pct)} label={`活動指標の達成割合 ${latestAch.text}`} />
-          <div class="tile-sub">達成割合 {latestAch.text}{latestAch.pct >= 100 && '　目標クリア'}</div>
+          <div class="tile-sub">達成割合 {latestAch.text}{latestAch.pct >= 100 && '　計画クリア'}</div>
         </>
       )}
+      <a class="small" href="#katsudou">計画と実績の推移を見る</a>
     </div>
     <div class="sticker fact">
       <div class="tile-label">予算（{yearLabel(t.year)}の決算見込額）</div>
@@ -186,8 +179,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
 
   <nav class="toc" aria-label="このページの内容">
     <div class="toc-links" data-scroll-hint>
-      <a href="#progress">年度ごとの進捗</a>
-      {plans.size > 0 && <a href="#plan">年度別計画</a>}
+      <a href="#katsudou">活動指標</a>
       <a href="#yosan">予算</a>
       <a href="#pdca">活動と検証</a>
       {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
@@ -222,84 +214,49 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     </div>
   )}
 
-  <section aria-labelledby="progress">
-    <h2 id="progress" class="anchor">年度ごとの進捗</h2>
-    <p class="small secondary lead">進捗状況は、活動指標の実績が、その年度の計画に対してどこまで進んだかの県の判定です（計画の90%以上が「順調」）。</p>
-    <ol class="ycards">
-      {YEARS.map((y, i) => {
-        const r = g.years[y];
-        if (!r) return <li class="ycard none"><div class="y-head"><span class="y">{yearLabel(y)}</span><Chip text="報告なし" /></div><p class="small secondary">この年度の報告に、この名前の取組はありません。</p></li>;
-        const st = statusOf(r);
-        const ach = achievementOf(y);
-        const prevInd = YEARS.slice(0, i).map((x) => g.years[x]).filter(Boolean).pop()?.indicator;
-        return (
-          <li class="sticker ycard">
-            <div class="y-head"><span class="y">{yearLabel(y)}</span><Chip tone={toneOfStatus(st)} text={st} /></div>
-            {(!prevInd || prevInd !== r.indicator) && r.indicator && <div class="y-ind">{r.indicator}</div>}
-            <dl class="y-vals">
-              <div class="inset"><dt>計画</dt><dd>{r.target || '—'}</dd></div>
-              <div class="inset"><dt>実績</dt><dd><b>{r.actual || '—'}</b></dd></div>
-            </dl>
-            {ach && (
-              <>
-                <Chunk frac={ach.pct / 100} tone={toneOfPct(ach.pct)} label={`${yearLabel(y)}の達成割合 ${ach.text}`} thin />
-                <div class="small secondary">達成割合 {ach.text}</div>
-              </>
-            )}
-          </li>
-        );
-      })}
-    </ol>
-    <details>
-      <summary>表で見る</summary>
-      <div class="table-wrap">
-        <table class="progress stack">
-          <thead>
-            <tr><th>報告年度</th><th>進捗状況</th><th>活動指標</th><th class="num">計画</th><th class="num">実績</th><th class="num">達成割合</th></tr>
-          </thead>
-          <tbody>
-            {yearsDesc.map((y) => {
-              const r = g.years[y];
-              if (!r) return <tr><th>{yearLabel(y)}</th><td colspan="5" class="secondary small wide">この年度の報告に、この名前の取組はありません</td></tr>;
-              return (
-                <tr>
-                  <th>{yearLabel(y)}</th>
-                  <td class="span2"><Chip tone={toneOfStatus(statusOf(r))} text={statusOf(r)} /></td>
-                  <td class="small wide" data-label="活動指標">{r.indicator || '—'}</td>
-                  <td class="num" data-label="計画">{r.target || '—'}</td>
-                  <td class="num" data-label="実績">{r.actual || '—'}</td>
-                  <td class="num" data-label="達成割合">{recs[y]?.achievement || '—'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  </section>
-
-  {plans.size > 0 && (
-    <section aria-labelledby="plan">
-      <h2 id="plan" class="anchor">年度別計画</h2>
-      <p class="small secondary lead">部局の検証票に書かれた、計画期間（3年）の年度ごとの活動の目標です（かっこ内は累計）。</p>
-      {[...plans.values()].map((p) => (
-        <div class="sticker plan">
-          <div class="plan-h">{p.years[0]}〜{p.years.at(-1)}の計画<span class="small secondary">（{yearLabel(p.report)}の報告の記載）</span></div>
-          {p.rows.map((r) => (
-            <div class="plan-row">
-              <div class="plan-ind">{r.indicator || '—'}</div>
-              <ol class="steps">
-                {p.years.map((y, i) => (
-                  <li class="step"><span class="step-y">{y}</span><span class="step-v">{r.values[i] || '—'}</span></li>
+  <section aria-labelledby="katsudou">
+    <h2 id="katsudou" class="anchor">活動指標の計画と実績</h2>
+    <p class="small secondary lead">実績が、その年度の計画の90%以上なら<Term word="進捗状況" />は「順調」です。</p>
+    {runs.some((r) => r.chart) && (
+      <ul class="chart-key" aria-hidden="true">
+        <li><span class="k-path"></span><span class="k-ring"></span>計画</li>
+        <li><span class="k-dot" style="--k:var(--pop)"></span>実績</li>
+      </ul>
+    )}
+    {runs.map((run, i) => (
+      <div class="sticker kcard">
+        {runs.length > 1 && <div class="k-span">{runSpan(run)}の活動指標{i === 0 ? '（いまの活動指標）' : ''}</div>}
+        <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{run.unit && <span class="secondary small">（{run.unit}）</span>}</h3>
+        <KatsudouChart run={run} here={i > 0 ? '' : t.year === LATEST ? 'いまここ' : '最後の報告'} />
+        {run.cumulative && <p class="small secondary note">図は、かっこの前に書かれたその年度の数で描いています（かっこの中は累計や内訳）。</p>}
+        {run.skipped && <p class="small secondary note">数で書かれていない値は、図に入れていません。</p>}
+        {run.planFrom && <p class="small secondary note">{futureText(run)}の計画は、{run.planFrom}の記載です。</p>}
+        <details open={!run.chart}>
+          <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
+          <div class="table-wrap">
+            <table class="progress stack">
+              <caption class="sr-only">{run.indicator}の年度ごとの計画と実績</caption>
+              <thead>
+                <tr><th>年度</th><th>進捗状況</th><th class="num">計画</th><th class="num">実績</th><th class="num">達成割合</th></tr>
+              </thead>
+              <tbody>
+                {[...run.years].reverse().map((r) => (
+                  <tr>
+                    <th>{yearLabel(r.y)}{r.future && <><br /><small class="secondary">年度別計画</small></>}</th>
+                    <td class="span2">{r.future ? <span class="small secondary">これから</span> : <Chip tone={toneOfStatus(r.status)} text={r.status} />}</td>
+                    <td class="num" data-label="計画">{r.plan_raw || '—'}</td>
+                    <td class="num" data-label="実績">{r.future ? '—' : <b>{r.actual_raw || '—'}</b>}</td>
+                    <td class="num" data-label="達成割合">{r.ach || '—'}</td>
+                  </tr>
                 ))}
-              </ol>
-            </div>
-          ))}
-        </div>
-      ))}
-      {latestRec && okUrl(latestRec.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
-    </section>
-  )}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    ))}
+    {latestRec && okUrl(latestRec.url) && <p class="small">関連ページ: <ExtLink href={latestRec.url}>{latestRec.url}</ExtLink></p>}
+  </section>
 
   <section aria-labelledby="yosan">
     <h2 id="yosan" class="anchor">予算の推移</h2>
@@ -534,24 +491,10 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .cand:hover { background: var(--sky); }
   .c-name { font-weight: 700; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   section h2 { scroll-margin-top: 72px; }
-  .ycards { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-  .ycard { display: grid; gap: 6px; align-content: start; padding: 14px 16px; }
-  .ycard.none { border: 2.5px dashed var(--hair); border-radius: 20px; padding: 14px 16px; }
-  .y-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .y { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; }
-  .y-ind { font-size: 0.875rem; color: var(--ink-2); line-height: 1.5; }
-  .y-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
-  .y-vals div { padding: 4px 8px; min-width: 0; }
-  .y-vals dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-  .y-vals dd { margin: 0; font-size: 0.9375rem; overflow-wrap: anywhere; }
-  .plan { margin-top: 12px; display: grid; gap: 12px; }
-  .plan-h { font-family: var(--font-display); font-weight: 700; }
-  .plan-ind { font-weight: 700; font-size: 0.9375rem; margin-bottom: 6px; }
-  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
-  .step { display: grid; gap: 2px; padding: 6px 14px; background: var(--sky); border: 2px solid var(--line); position: relative; border-radius: 12px; min-width: 7em; }
-  .step + .step::before { content: "→"; position: absolute; left: -18px; top: 50%; transform: translateY(-50%); color: var(--ink-2); font-weight: 700; }
-  .step-y { font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; color: var(--ink-2); }
-  .step-v { font-weight: 700; }
+  .kcard { margin-top: 12px; }
+  .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .k-name { margin: 0; }
+  .note { margin: 6px 0 0; }
   .bud { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
   .bud li { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; align-items: center; }
   .bud-y { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; line-height: 1.2; }
@@ -567,8 +510,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); margin-left: 6px; }
   .k-initial { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pop) 45%, var(--paper)) 0 2px, var(--paper) 2px 6px); margin-left: 6px; }
   section details { margin-top: 10px; }
-  .progress { min-width: 640px; }
-  .progress td.small { min-width: 14em; }
+  .progress { min-width: 480px; }
   .progress :global(.chip) { white-space: nowrap; }
   td.num { white-space: normal; min-width: 5em; }
   .budget { min-width: 720px; }
@@ -615,7 +557,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     .stack td[data-label]::before { content: attr(data-label); display: block; font-size: 0.8125rem; color: var(--ink-2); }
     .stack tr.sep th, .stack tr.sep td { border-top: 0; }
     .budget td:nth-child(2) { min-width: 0; }
-    .progress td.small { min-width: 0; }
     .bud li { grid-template-columns: 5.5em minmax(0, 1fr); }
     .flow > li { grid-template-columns: 32px minmax(0, 1fr); gap: 10px; }
     .badge { width: 32px; height: 32px; font-size: 0.95rem; }

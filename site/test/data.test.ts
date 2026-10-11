@@ -5,7 +5,7 @@ import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, fundOf, budgetKey,
-  PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow,
+  PATTERNS, JUDGE_TRENDS, torikumiSlug, torikumiHref, textGoalChartRow, activityQty,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -175,6 +175,20 @@ test('JUDGE_TRENDS: 最新の年度まで3年続けて C〜G', () => {
 test('取組のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
   assert.equal(torikumiSlug('abc'), 'a9993e36');
   assert.equal(torikumiHref('1-1-a-1', 'abc'), '/torikumi/1-1-a-1/a9993e36/');
+});
+
+test('activityQty: 活動指標の計画・実績は、かっこの前のその年度の数と単位を読む', () => {
+  assert.deepEqual(activityQty('10件（20件）'), { v: 10, u: '件' });
+  assert.deepEqual(activityQty('１,０７０人'), { v: 1070, u: '人' });
+  assert.deepEqual(activityQty('5.0％'), { v: 5, u: '%' });
+  assert.deepEqual(activityQty('２地区（新規１地区、継続１地区、累計２地区）'), { v: 2, u: '地区' });
+  // △ と - は減らす量。単位は NFKC で比べるので、₂ や ㎥ の中の数字も単位に入れる
+  assert.deepEqual(activityQty('△0.0015t-CO₂/千㎥（0.2978t-CO₂/千㎥）'), { v: -0.0015, u: 't-CO2/千m3' });
+  assert.deepEqual(activityQty('-0.006t-CO₂/千㎥'), { v: -0.006, u: 't-CO2/千m3' });
+  assert.equal(activityQty('方針検討'), null);
+  assert.equal(activityQty('－'), null);
+  assert.equal(activityQty('-％'), null);
+  assert.equal(activityQty(''), null);
 });
 
 // 目標値が文の成果指標の R7 の行
