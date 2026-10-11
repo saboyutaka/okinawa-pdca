@@ -55,7 +55,7 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
     </li>
     <li class="now">
       <span class="step-l">{x.year === LATEST ? 'いま' : `${yl}の報告`}</span>
-      <span class="step-main"><span class="step-v">{parts(x.actual_raw)[0]}<small>{parts(x.actual_raw)[1]}</small></span><span class="step-s">実績値{ref && `（${ref}）`}</span></span>
+      <span class="step-main"><span class="step-v">{parts(x.actual_raw)[0]}<small>{parts(x.actual_raw)[1]}</small></span><span class="step-s"><Term word="実績値" note={ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : undefined} /></span></span>
       {planRaw && <span class="step-s">{yl}の<Term word="計画値" /> <b class="num">{withUnit(planRaw, u)}</b></span>}
     </li>
     <li>
