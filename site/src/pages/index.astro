@@ -19,7 +19,7 @@ import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
-import { BOSHU, boshuState, dayText } from '../lib/iken.ts';
+import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
@@ -184,7 +184,7 @@ const boshu = boshuState();
         {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
         {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
         {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-        県にいつでも意見を送れる窓口や、SNS で <strong>#okinawa_pdca</strong> を付けて話す方法もまとめています。
+        県にいつでも意見を送れる窓口や、SNS で <strong>#{HASHTAG}</strong> を付けて話す方法もまとめています。
       </p>
       <div class="iken-actions">
         <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>

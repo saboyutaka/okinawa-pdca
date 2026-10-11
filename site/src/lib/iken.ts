@@ -47,7 +47,7 @@ export function dayText(iso: string, withYear = true) {
 export const periodText = (b: Period) => `${dayText(b.start)}〜${dayText(b.end, b.end.slice(0, 4) !== b.start.slice(0, 4))}`;
 
 // SNS で話すときのハッシュタグ（# なし）と、そのタグの投稿を見るページ。投稿画面を開くリンクは lib/share.ts
-export const HASHTAG = 'okinawa_pdca';
+export const HASHTAG = 'okinawa_miraima';
 export const TAG_PAGES = [
   { label: 'X', href: `https://x.com/search?q=${encodeURIComponent(`#${HASHTAG}`)}&f=live` },
   { label: 'Bluesky', href: `https://bsky.app/hashtag/${HASHTAG}` },

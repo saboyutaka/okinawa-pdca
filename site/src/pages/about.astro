@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { YEARS, LATEST, yearLabel, yearLong, load, getTorikumi, amountEntries, getFinanceReference, getBudgetRecords } from '../lib/data.ts';
 import { fmt } from '../lib/format.ts';
-import { LINKS, PROJECT } from '../lib/links.ts';
+import { LINKS, PROJECT, SITE } from '../lib/links.ts';
+import { HASHTAG } from '../lib/iken.ts';
 import { TERMS } from '../lib/terms.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import ExtLink from '../components/ExtLink.astro';
@@ -25,6 +26,20 @@ const themes = getThemes();
   <h1>このサイトについて</h1>
   <p class="lead">
     沖縄県が公表している「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
+  </p>
+
+  <h2 id="naritachi">このサイトのなりたち</h2>
+  <p>
+    私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian}>沖縄未来提案プロジェクト</ExtLink>」を行いました。
+    貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読みました。
+  </p>
+  <p>
+    その計画が{yearLong(YEARS[0])}に始まってから{YEARS.length}年。県による評価も{yearLabel(YEARS[0])}〜{yearLabel(LATEST)}の{YEARS.length}年分が公表されています。
+    そこで決められた計画や施策のいまを振り返るために、このサイトを作りました。
+  </p>
+  <p>
+    サイトの名前「{SITE.name}」には、計画が描いた沖縄のみらいが、いまどこまで来たかを見る、という意味を込めています。
+    縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。
   </p>
 
   <h2>沖縄県PDCAとは</h2>
