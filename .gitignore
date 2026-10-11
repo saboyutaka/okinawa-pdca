@@ -11,6 +11,10 @@ site/node_modules/
 site/dist/
 site/.astro/
 
+# 画面の確認（make shot）の依存パッケージとスクリーンショット
+scripts/shot/node_modules/
+tmp/
+
 # Cloudflare のツールが作るキャッシュ（アカウント情報を含む）
 .cloudflare/
 

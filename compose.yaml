@@ -23,5 +23,26 @@ services:
       - "${SITE_PORT:-4321}:${SITE_PORT:-4321}"
     command: npm run dev -- --host 0.0.0.0 --port ${SITE_PORT:-4321} --ignore-lock
 
+  # 画面の確認（Playwright の Chromium）。scripts/shot/shot.ts が site/dist を中で配信して、PC 幅とスマホ幅の
+  # スクリーンショットを tmp/shots に書き出す。node_modules は site と同じく名前付きボリュームに置き、
+  # まだ無いか package-lock.json のほうが新しければ（版を上げたあと）先に npm ci してから渡されたコマンドを動かす。
+  # init と ipc: host は Playwright の案内どおり（Chromium の共有メモリが足りなくならないように）
+  shot:
+    build: docker/shot
+    volumes:
+      - .:/work
+      - shot_node_modules:/work/scripts/shot/node_modules
+    working_dir: /work
+    environment:
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    init: true
+    ipc: host
+    entrypoint:
+      - sh
+      - -c
+      - 'set -e; cd scripts/shot; [ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund; cd /work; exec "$$@"'
+      - --
+
 volumes:
   site_node_modules:
+  shot_node_modules:

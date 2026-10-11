@@ -1,0 +1,16 @@
+{
+  // shot.ts は node でそのまま動かす（型を取り除くだけ）ので、取り除くだけで動く書き方に限る
+  // （enum・namespace・コンストラクタ引数のプロパティは使わない。型だけの import は import type）。型は tsc で確かめる
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true
+  },
+  "include": ["*.ts"]
+}
