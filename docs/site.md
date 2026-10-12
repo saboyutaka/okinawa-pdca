@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
-- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json` をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（[deploy.md](deploy.md) の 5章）、名前の変わらない控えの `/torikumi/data.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
+- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（[deploy.md](deploy.md) の 5章）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。将来像・部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
@@ -34,7 +34,7 @@
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`toc.ts`（ページ内の目次で、いま読んでいる節に印を付ける）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
   - `motion.ts`: 動き（[design.md](design.md) の12章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
-- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプト・`<style>` だけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ。[deploy.md](deploy.md) の 6章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
+- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ。[deploy.md](deploy.md) の 6章）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
   - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
@@ -50,7 +50,7 @@
 
 本番のドメインは `lib/links.ts` の `SITE.url`（https://okinawa-miraima.com/）に1か所で決め、`astro.config.ts` の `site` もこれを使う。URL・sitemap・robots.txt・構造化データを作る関数は `lib/seo.ts`。
 
-- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
+- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。プレビューと版ごとの URL（workers.dev。[deploy.md](deploy.md) の2章）・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
 - 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のカードは、全ページの head に `og:image`（大きさと説明の文も `og:image:width`・`og:image:height`・`og:image:alt` で書く）・`twitter:card`（`summary_large_image`）・`og:locale`（`ja_JP`）を出す。カードの題名と説明の文は、ページの題名と説明文（下の `lib/describe.ts`）をそのまま `og:title`・`og:description` に出す。
@@ -73,7 +73,15 @@
 - 一覧の行（`.row-list > li`）は `content-visibility: auto` で、画面の外の行を描かない（`styles/global.css`）。成果指標・施策・一括交付金などの一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重いため（スマホ幅でレイアウトのやり直しが 200ms 台から 10〜30ms に減った）。行の中身は行の外へはみ出せないので、吹き出しなどは body に付ける。`make shot` は画面の外まで撮るので、これを外して撮る。
 - ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
 - 動き（[design.md](design.md) の12章）は見た目だけを動かし（transform・opacity などで、レイアウトのやり直しをしない）、読み込んだときの動き（ドーナツ・スタンプ）は CSS だけで動かす（スクリプトの読み込みを待たず、止まっても必ず終わる）。外のライブラリは使わない。足したとき（2026-10）は、CPU を4倍遅くしたスマホ幅と PC 幅で、トップ・施策・将来像・成果指標をさがす・取組をさがすの CLS・LCP・長いタスク・50ms を超えたコマの数を前と比べ、測るたびのぶれの中で変わらないことを確かめた（CLS はどれも 0〜0.012 のまま）。
-- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの `data.json` の preload）。
+- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの検索用データ `data-<ハッシュ>.json` の preload）。
+- 取組をさがすの検索用データは、一覧と絞り込みに使う `data`（gzip で約105KB）と、キーワードで探すときだけ使う「やったこと」の `summary`（約96KB）の2つのファイルに分ける（`lib/search-data.ts`）。1つだったとき（約200KB）は、Slow 4G で読むだけで約1秒かかり、そのあいだ最初の一覧が出なかった。
+  - `summary` はキーワードの欄に入ったとき（クエリに `q` があるときは初めから `data` と一緒に）読む。最初の一覧は `summary` を待たない。届くまではキーワードで探さず、件数を「読み込み中…」にする（一覧はそのまま）。読めなかったときは名前などだけで探し、件数の横にそう書く。
+  - 片方だけを控え（`data.json`・`summary.json`）から読むと、公開し直した直後に、前の版と新しい版が混ざることがある。行の並びで対応させているので、`data` に同じビルドの `summary` の `hash` を持たせ、合わなければ両方を控えから読み直す。
+  - 行の URL（`href`）は施策の番号と重なるが、短くしても gzip で約4KB しか減らない（残りはハッシュの8桁で、縮まない）ので、URL の作り方をブラウザに持たせず、そのまま渡す。
+- CSS はページの `<style>` に埋め込まず（`astro.config.ts` の `build.inlineStylesheets: 'never'`）、全ページで1つのファイル（`vite.build.cssCodeSplit: false`。gzip で約18KB）にして `/_astro/` に書き出す（ずっとキャッシュされる）。
+  - 埋め込んでいたときは、ページごとの CSS（中央値 3.2KB）をページを移るたびに送り直していた。また Astro は、ビルド全体の `<style>` のハッシュ（約40個）をどのページの CSP にも入れる（約2KB。ハッシュは圧縮が効かない）。やめると、HTML（gzip）の中央値が 13.7KB から 11.1KB に、CSP が約3KB から約1KB になった（2026-10-12）。
+  - CSS のファイルを分けたまま（Astro の既定）だと、ページの種類ごとに初めて開くときに読む CSS が増え（部局のページで15個）、HTML のあとに CSS をもう1往復待つ。手元で HTTP/2・brotli で配り、スマホ幅・Slow 4G・CPU 4倍で測ると（2026-10-12）、1つにしたときは、最初に開くページの LCP が約50ms 遅く（CSS が大きくなるため）、トップから施策・取組のページに移ったときは約1.3秒から約0.65秒になった（CSS をキャッシュから読むため。埋め込んでいたときも、施策・取組のページは別の CSS のファイルを読んでいた）。
+  - CSS が1つなので、部品やページの `<style>` もどのページにも届く。Astro の `<style>` は部品ごとに範囲をしぼる（scoped）ので混ざらないが、`:global()` を単独で書くと全ページに効く。`.x :global(.y)` のように、範囲をしぼった要素の中に書く。
 - 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは [deploy.md](deploy.md) の 5章。
 - ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
   - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
