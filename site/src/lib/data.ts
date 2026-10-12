@@ -425,6 +425,9 @@ export function getShisaku(id: string) {
   return getShisakuList().find((s) => s.id === id);
 }
 
+// 施策の最新の年度の判定の内訳（A〜G。判定の無い施策は「なし」）。判定のマス目（トップ・将来像・部局・テーマ）とページの説明文で同じものを使う
+export const countJudges = (list: Pick<Shisaku, 'judges'>[]) => countBy(list, (s) => s.judges[LATEST] ?? 'なし', JUDGES.map((j) => j.key));
+
 // 年度をまたいで同じ取組を1行にまとめる。名前（sameKey）が同じものを同じ取組とみなす
 export function torikumiRows(shisaku: Shisaku) {
   const rows = new Map<string, YearGroup<TorikumiRow>>();

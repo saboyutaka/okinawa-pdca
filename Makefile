@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract cross-read check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck icons down
+.PHONY: help fetch extract cross-read check issues test test-py test-site urls site-install site-check dev build preview shot shot-typecheck icons down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -27,6 +27,7 @@ help:
 	@echo "make check         抽出結果を公表値と突き合わせ、紛らわしい文字（康熙部首など）を探すだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make test          テスト（抽出スクリプトの test-py とサイトの test-site の両方）"
+	@echo "make urls          公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す（PRUNE=1 で無くなった URL を消す。公開前だけ）"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make site-check    サイトの型を確かめるだけ（astro check。make build でも書き出しの前に行う）"
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
@@ -72,6 +73,11 @@ test-py:
 # サイトの lib のテスト（node --test。Node が型を取り除いて .ts をそのまま動かす）。data/extracted を読むテストもある
 test-site:
 	$(COMPOSE) run --rm site npm test
+
+# 公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す（消えた URL は残す）。
+# PRUNE=1 で、ページも転送（site/public/_redirects）も無くなった URL を一覧から消す。公開前だけ使う（docs/site.md の 8章）
+urls:
+	$(COMPOSE) run --rm site npm run urls $(if $(PRUNE),-- --prune)
 
 site-install:
 	$(COMPOSE) run --rm site npm ci

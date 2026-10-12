@@ -1,6 +1,7 @@
 ---
 // 基本施策1つのページ。施策のページと同じ並び: 頭（目指す姿）→ 目次 → 主要指標 → 施策 → 主な取組の進捗 → 県のふりかえり → シェア → 出典
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Crumbs from '../../components/Crumbs.astro';
@@ -12,14 +13,14 @@ import ShuyouCard from '../../components/ShuyouCard.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
+import { kihonDescription } from '../../lib/describe.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getKihonList, getShouraizou, getShisakuList, shuyouRows, shuyouAnchor, sourceLink,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy, countJudges,
+  getShouraizou, getShisakuList, shuyouRows, shuyouAnchor, sourceLink,
 } from '../../lib/data.ts';
 
-export function getStaticPaths() {
-  return getKihonList().map((k) => ({ params: { id: k.id }, props: { k } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['kihon/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { k } = Astro.props;
@@ -48,7 +49,7 @@ const hSrc = h && planSourceLink('hyoka', h.source, h.page);
 // この基本施策の取組が観光ロードマップでも評価されている施策の数
 const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => r.id))).size;
 ---
-<Base title={`${k.name}（基本施策）`} description={`沖縄県PDCA: 基本施策「${k.name}」の主要指標と施策の推進状況`}>
+<Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, { judges: countJudges(shisaku), tori: progressRows.at(-1)!.counts })}>
   <Crumbs items={[{ href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
   <header class="sticker lift k-head">
     <span class="code-no code-corner" title="県の報告書での番号">基本施策 {k.code}</span>

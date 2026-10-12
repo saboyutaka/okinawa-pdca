@@ -11,6 +11,7 @@
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
   - `JUDGE_CELLS`: 判定の区分表（[data.md](data.md) の 6.3）。判定のマス目（`components/JudgeMatrix.astro`）と、印字された判定が区分表どおりかを確かめるテストが使う。
   - `shisakuDepts`: 部局がかかわる施策（関係部等に名前がある施策と、その部局の取組がある施策）。
+  - `countJudges`: 施策の最新の年度の判定の内訳（A〜G と判定なし）。判定のマス目（トップ・将来像・部局・テーマ）と、ページの説明文（6章）が使う。
   - `seikaOfTorikumi`・`torikumiOfSeika`: 主な取組と成果指標の結び付き（部局票の「対応する成果指標」を、同じ施策のその年度の成果指標の名前と比べる。`seikaNameMatches`）。部局票は複数の指標をまとめた名前（「交通事故重傷者数及び死者数」「〜と考えている児童生徒の割合」など）で書くことがあるので、空白・記号の違いを無視して、含む・含まれるか、指標の名前の字が部局票の名前に同じ順で出てくれば当たりとする（指標の名前の末尾の「（小学校）」のような内訳の括弧は外しても比べる）。取組のページ・施策ページの取組のカードの「対応する成果指標」は、部局票がある最新の年度のもの。県は「対応する成果指標」に施策の成果指標をまとめて書いていて（R4〜R7 のどの部局票も、その施策のその年度の成果指標すべてに当たる。`test/integrity.test.ts`）、取組ごとには分かれていないので、成果指標のページの取組（`torikumiOfSeika`）は名前で結ばず、指標の最新の報告と同じ年度の施策の取組をまとめて出す。
 
 ## 2. TypeScript
@@ -18,25 +19,26 @@
 - Astro の `strict`。`npm run build` は `astro check` で型を確かめてから書き出すので、型の誤りがあると Cloudflare のビルドも止まる。`astro check` が TypeScript 7 に対応していないので、TypeScript は 6。
 - 抽出結果の JSON の形は `src/lib/types.ts`（`load(name)` の戻り値）。抽出の出力の欄を変えたらここも直す。
 - ページ用の形（`Shisaku`・`TorikumiGroup`・`SeikaGroup`・`KankoShisaku` など）は `lib/data.ts`・`lib/plans.ts` が出す。コンポーネントの `Props` はこれを使い、`any` にしない。状態の色と形は `lib/icons.ts` の `Tone`・`Shape`。
-- 動的なページは `getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。
+- 動的なページは `getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。`getStaticPaths` はページに書かず、`lib/routes.ts` の `ROUTES` に書く（8章）。
 - ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図は `scripts/charts.ts` の `SeikaData`・`TrendData`・`KatsudouData`、取組の検索は `lib/search-data.ts` の `SearchData`）。
 - 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。
 
 ## 3. lib とスクリプト
 
-- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`iken.ts`・`share.ts`（意見募集とシェア）。
+- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`（意見募集とシェア）。
+- `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
 - `src/scripts/`（ブラウザ）:
   - `charts.ts`: `[data-chart]` の JSON から表示幅に合わせて SVG の図を描く（固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため）。一覧の行の小さな図 `components/SeikaSpark.astro` は文字が無いのでビルド時に SVG にする。
   - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（すべて開く・# の行き先の details を開く）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
-- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプト・`<style>` だけ。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
+- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプト・`<style>` だけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ。[deploy.md](deploy.md) の 6章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
   - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
 ## 4. ページ
 
-トップ、`/theme/<id>/`（くらしのテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。
+トップ、`/theme/<id>/`（くらしのテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 
@@ -50,6 +52,8 @@
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
 - 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のシェアの URL も、ビルド時に本番のドメインで入れる（`components/Share.astro`）。
+- ページの説明文（`description`・`og:description`）は `lib/describe.ts` で作る。検索結果で切れても意味が通るように、最新の年度の中身（施策は判定と主な取組・成果指標の数、取組は4年分の進捗状況と所管課、成果指標は実績値・達成率・目標値、将来像・基本施策・部局・テーマは施策の判定と取組・成果指標の内訳）を先に、何のページかを後ろに書く。数はページが表示している数（頭の札・ドーナツ・判定のマス目）をそのまま渡し、`describe.ts` では数えない（1章）。内訳は県の区分の並びのまま、0でない区分を全部同じ重みで並べる（遅れだけを書く・遅れを先に書く、はしない）。くらしのテーマは、切れてもこのサイト独自の分類だと分かるように頭に書く。
+- 施策・基本施策・主な取組・成果指標・部局のページの題名には「沖縄県」を入れる（「〇〇（沖縄県の主な取組）」「沖縄県土木建築部の取組」）。サイトの名前はひらがなで、取組・指標・部局の名前だけではほかの県のものと見分けにくく、「沖縄県 〇〇」で探す人にも当たるようにするため。県の計画の項目だと書くだけで、サイトが県を名乗るのではない。くらしのテーマはこのサイト独自の分類なので入れない。
 
 ## 7. 表示の速さ
 
@@ -60,3 +64,21 @@
 - ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
   - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
   - ナビの横の位置は、前のページの位置を引き継ぐ（`layouts/Base.astro` の `NAV_SCROLL`。sessionStorage の `nav-x`）。端のぼかしもそこで付ける。
+
+## 8. URL を変えない
+
+SNS で共有されたリンクや検索エンジンの評価が切れないように、公開したページの URL は変えない。取組・成果指標の URL は名前の key のハッシュ（4章）なので、抽出を直して名前が変わると URL も変わる。取組は最新の年度の名前の key を使うので、新しい年度の報告で名前の書き方が変わったとき（表記ゆれでまとめた名前も）にも変わる。施策・基本施策・将来像・部局・くらしのテーマのページも、ID や slug が変わると URL が変わる。
+
+- 動的なページ（`src/pages` の `[..]` の付いたファイル）の `getStaticPaths` は、`lib/routes.ts` の `ROUTES` に1か所で書く（ページは `export const getStaticPaths = ROUTES['shisaku/[id]']`）。動的なページを足したら `ROUTES` にも足す（合わないと `make test` が落ちる）。
+- 全ページの URL は `pagePaths`（`src/pages` の `.astro` と `ROUTES` から作る。404 は除き、sitemap.xml と同じ）。テストは書き出さずにこれを使うので、ビルドの終わりに書き出したページと同じかを確かめる（`astro.config.ts`。違うとビルドが止まる）。
+- 公開した URL の一覧は `site/urls.txt`（1行に1つ）。一覧のどれかの URL のページが無くなり、`site/public/_redirects` の転送も無いと、`make test`（`test/routes.test.ts`）が落ちる。ページが増えるのはよい（一覧に無いページの数を出す）。
+- ページを足したとき・データを入れ直したときは、`make urls` で一覧に足してコミットする（消えた URL は残す）。
+
+URL を変えるとき（テストが落ちたとき）:
+
+1. 公開前（[deploy.md](deploy.md) の1章の noindex を外す前）は、転送は要らない。`make urls PRUNE=1` で、ページも転送も無くなった URL を一覧から消す。
+2. 公開した後は、テストが挙げた古い URL ごとに、`site/public/_redirects` に「古い URL 新しい URL 301」の行を足す（Cloudflare の [_redirects](https://developers.cloudflare.com/workers/static-assets/redirects/)）。古い URL は一覧に残し、`make urls` で新しい URL を足す。`PRUNE=1` は使わない。
+   - 新しい URL は、同じ取組・指標などの新しいページ。行き先の無くなったページ（取組の終了など）も、近いページ（施策のページなど）へ転送する。
+   - `make test` は、状態コードが 301 であること（書かないと 302 になり、検索エンジンが新しい URL に評価を移さない）・新しい URL のページがあること・古い URL にページが無いこと（Cloudflare は転送をページより先に効かせるので、そのページが見えなくなる）も確かめる。`*` や `:name` は使わず、完全なパスで書く。
+   - Cloudflare の `_redirects` に書ける転送は 2,000 行まで。データの入れ直しで何百もの URL が変わるときは、転送を足す前に URL の決め方を見直す。
+   - 確かめ方: `make build` のあと、`site` で `npx wrangler dev` を動かし（[deploy.md](deploy.md) の3章と同じく `node:24-slim` で）、古い URL が 301 と新しい URL の `Location` を返すか。2026-10-12 に wrangler 4.149.0 で、転送が効くことと `_redirects` そのものは配られないことを確かめた。
