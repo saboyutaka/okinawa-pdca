@@ -553,7 +553,8 @@ function seikaCard(g: SeikaGroupOfShisaku) {
     color('paper'),
     parent(g.shisaku, 'この指標の施策'),
     gap(8),
-    heading(kicker('成果指標'), x.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
+    // 名前はページの題名と同じ（印字の名前が同じで見分けられない指標は内訳の名前。lib/data.ts の seikaName）
+    heading(kicker('成果指標'), g.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
     inset(
       { rowGap: 10, height: INSET_H },
@@ -640,7 +641,7 @@ export function getCards(): Map<string, Card> {
     })),
     ...ROUTES['shihyou/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
       page: routePath('shihyou/[shisaku]/[slug]', params),
-      alt: `成果指標「${g.latest.name}」の基準値・実績値・目標値と、計画値に対する達成率`,
+      alt: `成果指標「${g.name}」の基準値・実績値・目標値と、計画値に対する達成率`,
       node: () => seikaCard(g),
     })),
   ];
