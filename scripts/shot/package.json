@@ -6,7 +6,9 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "playwright": "1.64.0"
+    "harfbuzzjs": "^1.6.2",
+    "playwright": "1.64.0",
+    "subset-font": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

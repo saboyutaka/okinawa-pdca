@@ -3,7 +3,7 @@
 // 同じ数字を何度も並べない。数字はここに1回だけ出し、図（SeikaRoute）は形（計画の道すじとのずれ）を見せる
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { LATEST, RATE_BINS, rateBin, yearLabel, planIndex, withUnit, refText, toneOfJudgement, type SeikaGroup } from '../lib/data.ts';
+import { LATEST, yearLabel, planIndex, withUnit, refText, toneOfJudgement, seikaVerdict, type SeikaGroup } from '../lib/data.ts';
 
 interface Props { row: SeikaGroup }
 const { row } = Astro.props;
@@ -13,25 +13,8 @@ const yl = yearLabel(x.year);
 const pi = planIndex(x.year);
 // 計画値の欄が空・「―」の指標は、計画値の行を出さない
 const planRaw = /[^\s\-－―—‐]/.test(x.plan_raw?.[pi] || '') ? x.plan_raw[pi] : null;
-const { base, actual, target } = x;
-const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
-const progress = nums ? (actual - base) / (target - base) : null;
-const down = nums && target < base;
-
-// 計画値に届いたか。色と形は達成率の区分（RATE_BINS）、文は区分ごとに言い切る
-const bin = rateBin(x);
-const tone = RATE_BINS.find((b) => b.key === bin)?.tone;
-const chipText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
-// 「達成」とだけ書かれた指標は、印字の数では計画値に届いていないものもあるので、県の判断として書く
-const verdict = {
-  '100%以上': x.rate_raw === '達成' ? `県の報告書では${yl}の計画値を「達成」としています`
-    : progress != null && progress > 1 ? `${yl}の計画値に届き、ゴールの目標値も超えています`
-    : progress === 1 ? `${yl}の計画値に届き、ゴールの目標値にも届いています` : `${yl}の計画値に届いています`,
-  '60%以上100%未満': `${yl}の計画値にまだ届いていません`,
-  '0%超60%未満': `${yl}の計画値にまだ届いていません`,
-  '0%以下': progress != null && progress < 0 ? 'スタートの基準値より悪くなっています' : x.rate_raw === '未達成' ? `${yl}の計画値に届いていません` : 'スタートの基準値から進んでいません',
-  '達成率なし': '県の報告書に達成率がありません',
-}[bin];
+// 計画値に届いたか（lib/data.ts の seikaVerdict。SNS のカードの画像と同じ文）
+const verdict = seikaVerdict(x);
 
 // 単位は小さく添えて、数字を折り返さない。文の値（「〜の縮小」など）が長いときは縦に並べる
 const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
@@ -39,7 +22,7 @@ const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, x.actual_raw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
 const ref = refText(x.actual_ref_year);
 ---
-<p class="verdict"><Chip tone={tone} text={chipText} /><span>{verdict}</span></p>
+<p class="verdict"><Chip tone={verdict.tone} text={verdict.chip} /><span>{verdict.text}</span></p>
 
 <ol class:list={['goal-steps', stack && 'stack']}>
   <li>
@@ -53,7 +36,7 @@ const ref = refText(x.actual_ref_year);
   </li>
   <li>
     <span class="gs-l">ゴール</span>
-    <span class="gs-main"><span class="gs-v">{parts(x.target_raw)[0]}<small>{parts(x.target_raw)[1]}</small></span><span class="gs-s"><Term word="目標値" />（{x.target_year}）{down && '・基準値より低い目標値'}</span></span>
+    <span class="gs-main"><span class="gs-v">{parts(x.target_raw)[0]}<small>{parts(x.target_raw)[1]}</small></span><span class="gs-s"><Term word="目標値" />（{x.target_year}）{verdict.down && '・基準値より低い目標値'}</span></span>
     {x.judgement && <span class="gs-s judge">県の見通し <Chip tone={toneOfJudgement(x.judgement)} text={x.judgement} /></span>}
   </li>
 </ol>

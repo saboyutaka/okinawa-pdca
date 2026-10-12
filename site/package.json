@@ -11,7 +11,9 @@
     "urls": "node scripts/urls.ts"
   },
   "dependencies": {
-    "astro": "^7.3.8"
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.3.8",
+    "satori": "^0.33.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

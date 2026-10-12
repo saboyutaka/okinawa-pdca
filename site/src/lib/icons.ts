@@ -15,6 +15,9 @@ const PATHS = {
   ring: '<circle class="ring" cx="6" cy="6" r="4.6"/>',
 };
 
+// 形の中身（12×12 の SVG の要素）。SNS のカードの画像（lib/card.ts）は CSS が効かないので、色を直接書いて描く
+export const shapeSvg = (shape: Shape) => PATHS[shape];
+
 export function iconSvg(tone?: Tone | null, shape?: Shape | null, size = 12) {
   const s = shape || (tone && SHAPES[tone]) || 'ring';
   return `<svg class="ic tone-${tone || 'blank'}" viewBox="0 0 12 12" width="${size}" height="${size}" aria-hidden="true" focusable="false">${PATHS[s]}</svg>`;
@@ -67,12 +70,15 @@ const THEME_ICONS: Record<string, string[]> = {
   kokusai: ['C12 12 9', 'M3 12h18', 'M12 3c3.5 3 3.5 15 0 18', 'M12 3c-3.5 3-3.5 15 0 18'],
   heiwa: ['M4 14c4 0 6-2 8-6 1 3 4 4 8 4-2 4-6 6-11 6l-3 2z'],
 };
-export function themeIconSvg(id: string) {
-  const parts = (THEME_ICONS[id] || []).map((p) => {
+// テーマの線画の中身（24×24 の SVG の要素）。線の色と太さはページでは CSS（.theme-ic）、SNS のカードの画像（lib/card.ts）では属性で付ける
+export function themeIconParts(id: string) {
+  return (THEME_ICONS[id] || []).map((p) => {
     const n = p.slice(1).trim().split(' ');
     if (p[0] === 'C') return `<circle cx="${n[0]}" cy="${n[1]}" r="${n[2]}"/>`;
     if (p[0] === 'R') return `<rect x="${n[0]}" y="${n[1]}" width="${n[2]}" height="${n[3]}" rx="${n[4]}"/>`;
     return `<path d="${p}"/>`;
-  });
-  return `<svg class="theme-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${parts.join('')}</svg>`;
+  }).join('');
+}
+export function themeIconSvg(id: string) {
+  return `<svg class="theme-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${themeIconParts(id)}</svg>`;
 }

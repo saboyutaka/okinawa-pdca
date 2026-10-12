@@ -19,7 +19,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges, toneOfJudgement,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, toneOfJudgement,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
@@ -29,6 +29,7 @@ import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import { oneLine } from '../../lib/text.ts';
 import { futureDescription } from '../../lib/describe.ts';
+import { futureHead } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['future/[id]'];
@@ -49,7 +50,9 @@ const toriOk = tori.filter(isOk).length;
 const seikaOk = seika.filter(reached).length;
 const allToriRate = pct(allTori.filter(isOk).length, allTori.length);
 const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
-const judgeCounts = countJudges(shisaku);
+// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
+const head = futureHead(v.id);
+const judgeCounts = head.judges;
 
 // 基本施策ごと
 const kihonCards = kihon.map((k) => {
@@ -103,7 +106,7 @@ const estimate = amountEntries(LATEST, 'estimate');
 const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e) => s + e.amount, 0);
 const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 ---
-<Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, { judges: judgeCounts, tori: torikumiRows.at(-1)!.counts, seika: seika.length, reached: seikaOk })} ogType="article">
+<Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
   <Crumbs items={[{ href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}` }]} />
 
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>

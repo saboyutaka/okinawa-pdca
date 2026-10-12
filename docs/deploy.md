@@ -20,8 +20,11 @@
 | ビルドコマンド | `npm run build`（`astro check` で型を確かめてから書き出す。型の誤りがあると止まる） |
 | デプロイコマンド | `npx wrangler deploy` |
 | Node | `site/.node-version`（24）。読まれないときは環境変数 `NODE_VERSION=24` |
+| ビルドキャッシュ | 有効（プロジェクトの Settings → Build → Build cache。下を参照） |
 
 ビルドは `../data/extracted` と `../data/reference` を読むので、リポジトリ全体がチェックアウトされている必要がある（Workers Builds はリポジトリ全体を取得する）。
+
+ビルドでは、ページごとの SNS のカードの画像（約2,600枚。[site.md](site.md) の6章）も描く。全部を描くと手元で約1分半かかるので、描いた画像を Astro のキャッシュのフォルダ（`site/node_modules/.astro/cards`）に置き、中身が前のビルドと同じ画像は描き直さない（`site/src/lib/card-cache.ts`。手元では2回目から約25秒）。[Workers Builds のビルドキャッシュ](https://developers.cloudflare.com/workers/ci-cd/builds/build-caching/)は、Astro のプロジェクトなら `node_modules/.astro` を次のビルドに残すので、有効にしておく。効いているかはビルドのログの `[card-cache]` の行（「前のビルドの画像を N 枚使い、M 枚を描いた」）で分かる。キャッシュは最後に読まれてから7日で消える（その次のビルドは全部を描く）。データ・カードの見た目・フォント・依存の版が変わった画像は描き直す。
 
 main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる（`site/wrangler.jsonc` の `previews` の枠が要る）。
 
