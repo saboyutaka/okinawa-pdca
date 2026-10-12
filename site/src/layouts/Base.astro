@@ -90,7 +90,10 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <meta property="og:site_name" content={SITE.name} />
     {canonical && <meta property="og:url" content={url} />}
     <meta name="author" content={PROJECT.org} />
+    {/* SVG を読まないブラウザは ICO（sizes を付けると、SVG を読むブラウザが ICO より SVG を選ぶ）。iPhone のホーム画面は PNG。ICO と PNG は make icons で favicon.svg から書き出す */}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
     <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
     <script type="speculationrules" is:inline set:html={SPECULATION_RULES} />
@@ -100,7 +103,19 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <a class="skip" href="#main">本文へスキップ</a>
     <header class="site-header">
       <div class="wrap">
-        <a class="site-title" href="/"><span class="mark" aria-hidden="true">PDCA</span><span>{SITE.name}</span></a>
+        <a class="site-title" href="/">
+          {/* ロゴ: 星空の丘で、まるい子（いま）がみらいの白い星を見上げる。色は styles/global.css の --logo-*。favicon は public/favicon.svg */}
+          <span class="mark" aria-hidden="true"><svg viewBox="0 0 36 36">
+            <path d="M6 3.4 Q6 6 8.6 6 Q6 6 6 8.6 Q6 6 3.4 6 Q6 6 6 3.4 Z M17.5 5.7 Q17.5 7.5 19.3 7.5 Q17.5 7.5 17.5 9.3 Q17.5 7.5 15.7 7.5 Q17.5 7.5 17.5 5.7 Z M32.5 16 Q32.5 18 34.5 18 Q32.5 18 32.5 20 Q32.5 18 30.5 18 Q32.5 18 32.5 16 Z M4.5 11.7 Q4.5 13 5.8 13 Q4.5 13 4.5 14.3 Q4.5 13 3.2 13 Q4.5 13 4.5 11.7 Z M12 2 Q12 3.2 13.2 3.2 Q12 3.2 12 4.4 Q12 3.2 10.8 3.2 Q12 3.2 12 2 Z M28 20.8 Q28 22 29.2 22 Q28 22 28 23.2 Q28 22 26.8 22 Q28 22 28 20.8 Z" fill="var(--logo-twinkle)" />
+            <path d="M-1 27.5 Q18 23 37 27.5 V37 H-1 Z" fill="var(--logo-hill)" stroke="var(--logo-ink)" stroke-width="2" />
+            <circle cx="14.5" cy="23" r="11.5" fill="var(--logo-body)" stroke="var(--logo-ink)" stroke-width="2.2" />
+            <ellipse cx="12.4" cy="20" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+            <ellipse cx="19.2" cy="19" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+            <circle cx="13.4" cy="18.8" r="1.35" fill="var(--logo-ink)" />
+            <circle cx="20.2" cy="17.8" r="1.35" fill="var(--logo-ink)" />
+            <path d="M28.5 3 L29.9 6.1 L33.3 6.5 L30.7 8.7 L31.4 12 L28.5 10.3 L25.6 12 L26.3 8.7 L23.7 6.5 L27.1 6.1 Z" fill="var(--logo-star)" stroke="var(--logo-ink)" stroke-width="1.5" stroke-linejoin="round" />
+          </svg></span><span>{SITE.name}</span>
+        </a>
         <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
           <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>

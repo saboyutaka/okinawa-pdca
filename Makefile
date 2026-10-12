@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract cross-read check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck down
+.PHONY: help fetch extract cross-read check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck icons down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -34,6 +34,7 @@ help:
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
 	@echo "make shot          書き出したサイトを PC 幅とスマホ幅で撮って tmp/shots に（PAGES=\"/ /shisaku/ --dark\"）"
 	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
+	@echo "make icons         site/public/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
 
@@ -96,6 +97,10 @@ shot:
 # scripts/shot の TypeScript の型を確かめる（node は型を取り除いて動かすだけで、型の誤りでは止まらないため）
 shot-typecheck:
 	$(COMPOSE) run --rm shot npm --prefix scripts/shot run typecheck
+
+# favicon の ICO と iPhone のホーム画面の PNG を、favicon.svg から書き出す（shot の Chromium で描く。scripts/shot/icons.ts）
+icons:
+	$(COMPOSE) run --rm shot node scripts/shot/icons.ts
 
 # worktree を片付ける前に使う。main では node_modules のボリュームは残す
 down:
