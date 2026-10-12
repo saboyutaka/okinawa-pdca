@@ -601,13 +601,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
      高さは動かさない（中身は一度に場所を取り、見た目だけを変える）。# の行き先・印刷で開いたときは動かさない */
   details.m-opening[open] > :not(summary), .m-in { animation: m-drop 0.18s ease-out; }
 
-  /* 内訳の棒・割合のメーター・ドーナツ: ページを読み込んだときに、棒は左から、ドーナツは上から右回りに伸びる（最初の画面にあるものだけが目に入る）。
-     棒は区間ごとではなく、全体にかぶせた覆いを左から外すので、途中でも区間の割合はずっと正しい。一覧の行の中の棒は数が多いので動かさない */
-  .sbar:not(.row-list .sbar), .chunk:not(.row-list .chunk) { position: relative; overflow: hidden; }
-  .sbar:not(.row-list .sbar)::after, .chunk:not(.row-list .chunk)::after {
-    content: ""; position: absolute; inset: 0; background: var(--paper); transform: scaleX(0); transform-origin: right; pointer-events: none;
-    animation: m-uncover 0.5s ease-out 0.05s both;
-  }
+  /* ドーナツ: ページを読み込んだときに、上から右回りに伸びる（最初の画面にあるものだけが目に入る）。内訳の棒・割合のメーターは動かさない（伸びる動きが要らないため） */
   .donut .d-arc { animation: m-arc 0.6s ease-out 0.05s both; }
   /* 施策の判定のハンコと4年分のスタンプ（施策・取組のページの頭。components/Stamps.astro の pop）: 順にポンと押す。--m-start（始まり）と --i（何番目か）で時間をずらす */
   .m-stamp { animation: m-stamp 0.3s cubic-bezier(0.3, 1.4, 0.6, 1) calc(var(--m-start, 0s) + var(--i, 0) * 70ms) both; }
@@ -623,7 +617,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 @keyframes m-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
 @keyframes m-fade { from { opacity: 0; } }
 @keyframes m-drop { from { opacity: 0; transform: translateY(-6px); } }
-@keyframes m-uncover { from { transform: scaleX(1); } }
 @keyframes m-arc { from { stroke-dasharray: 0 400; } }
 @keyframes m-stamp { from { scale: 1.7; opacity: 0; } 55% { scale: 0.93; opacity: 1; } }
 @keyframes m-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
