@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
-import { writeFile } from 'node:fs/promises';
+import { copyFile, writeFile } from 'node:fs/promises';
 import { SITE } from './src/lib/links.ts';
 import { sitemapPaths, sitemapXml } from './src/lib/seo.ts';
 import { pagePaths } from './src/lib/routes.ts';
@@ -23,12 +23,23 @@ const sitemap: AstroIntegration = {
 };
 
 // Cloudflare に静的ファイルとして置く。ページは /shisaku/1-1-a-1/ のようなディレクトリ形式。site は本番のドメイン（lib/links.ts の SITE.url）
+// ページの favicon は src/assets から /_astro/ にハッシュ付きの名前で書き出す（layouts/Base.astro）。
+// HTML を読まずに /favicon.ico を取りに来るところ（一部の RSS リーダーやボット）向けに、同じ ICO を根元にも置く
+const rootFavicon: AstroIntegration = {
+  name: 'root-favicon',
+  hooks: {
+    'astro:build:done': async ({ dir }) => {
+      await copyFile(new URL('./src/assets/favicon.ico', import.meta.url), new URL('favicon.ico', dir));
+    },
+  },
+};
+
 export default defineConfig({
   site: SITE.url,
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory' },
-  integrations: [sitemap],
+  integrations: [sitemap, rootFavicon],
   // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプト・<style> のハッシュだけを許す。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
   // frame-ancestors は <meta> では効かないので public/_headers で出す。

@@ -50,7 +50,7 @@
   /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
   /* ロゴ（ヘッダーの印）。淡い紫の星空と丘で、まるい子がみらいの白い星を見上げる。中の絵はダークでも同じ色にする
-     （ダークで変わるのはステッカーの縁と影だけ）。favicon（public/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
+     （ダークで変わるのはステッカーの縁と影だけ）。favicon（src/assets/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
   --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
   /* 以前の名前（ページの style から参照しているもの） */
   --page: var(--bg);
