@@ -35,6 +35,7 @@ import { LINKS, PROJECT, SITE } from '../lib/links.ts';
   <dl class="facts sticker">
     <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
     <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</dd></div>
+    <div><dt>制作協力</dt><dd>{PROJECT.collaborators.join('、')}</dd></div>
   </dl>
   <p>まちがいの報告やご意見は、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください。</p>
   <p>
