@@ -1,0 +1,3 @@
+# 公開した後に URL を変えたページの、古い URL から新しい URL への転送（Cloudflare。docs/site.md の 8章）。
+# 1行に1つ「古い URL 新しい URL 301」と書く。* や :name は使わず、/ で始まり / で終わる完全なパスで書く（make test で確かめる）。
+# 古い URL は site/urls.txt に残したままにする

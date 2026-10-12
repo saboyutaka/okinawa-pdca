@@ -3,13 +3,19 @@ import type { AstroIntegration } from 'astro';
 import { writeFile } from 'node:fs/promises';
 import { SITE } from './src/lib/links.ts';
 import { sitemapPaths, sitemapXml } from './src/lib/seo.ts';
+import { pagePaths } from './src/lib/routes.ts';
 
-// 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）
+// 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）。
+// 公開した URL の一覧のテストは、書き出さずに lib/routes.ts の pagePaths で全ページの URL を作るので、書き出したものと同じかもここで確かめる
 const sitemap: AstroIntegration = {
   name: 'sitemap',
   hooks: {
     'astro:build:done': async ({ pages, dir, logger }) => {
       const paths = sitemapPaths(pages.map((p) => p.pathname));
+      const built = new Set(paths);
+      const expected = new Set(pagePaths());
+      const diff = [...paths.filter((p) => !expected.has(p)), ...[...expected].filter((p) => !built.has(p))];
+      if (diff.length) throw new Error(`書き出したページと lib/routes.ts の pagePaths が違う（${diff.length} 件）: ${diff.slice(0, 5).join(' ')}`);
       await writeFile(new URL('sitemap.xml', dir), sitemapXml(paths));
       logger.info(`sitemap.xml に ${paths.length} ページを書いた`);
     },

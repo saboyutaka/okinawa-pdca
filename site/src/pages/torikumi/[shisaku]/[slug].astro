@@ -2,6 +2,7 @@
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
 // 頭は親の施策の札の下にぶら下げる。①いまの状態（進捗・活動指標・予算・対応する成果指標） ②活動指標の計画と実績（図。年度別計画のこの先の年度も置く） ③予算の推移 ④年度ごとの PDCA。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
 import Chip from '../../../components/Chip.astro';
 import Icon from '../../../components/Icon.astro';
@@ -16,7 +17,7 @@ import KatsudouChart from '../../../components/KatsudouChart.astro';
 import ParentShisaku from '../../../components/ParentShisaku.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, getTorikumiGroups, keySlug, budgetOf, fundOf,
+  YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
   sectionHref, sourceLink, seikaOfTorikumi, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements,
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
@@ -26,9 +27,8 @@ import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
 import type { AmountKind, BudgetAmountRow } from '../../../lib/types.ts';
 
-export function getStaticPaths() {
-  return getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: keySlug(g.key) }, props: { g } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['torikumi/[shisaku]/[slug]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { g } = Astro.props;
