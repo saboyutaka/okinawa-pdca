@@ -9,9 +9,20 @@ import { getThemes, unthemed } from '../lib/themes.ts';
 import ExtLink from '../components/ExtLink.astro';
 import PlanMap from '../components/PlanMap.astro';
 
-// 年度ごとの県の公開ページ（総括報告書の掲載ページ）
+// 年度ごとの県の公開ページ（総括報告書の掲載ページ）と、そこから読んだ総括報告書のPDFの数（zip の中のものを含む）
 const sources = load('sources');
-const pages = YEARS.map((y) => sources.find((s) => s.year === y && s.page_url)).filter((s) => s != null);
+const pages = YEARS.flatMap((y) => {
+  const rows = sources.filter((s) => s.year === y);
+  const page = rows.find((s) => s.page_url);
+  return page ? [{ ...page, pdf: rows.length, zip: rows.filter((s) => s.zip_member).length }] : [];
+});
+// 読んだ部局の検証票（主な取組・成果指標）のPDFの数（年度別）
+const bukyokuFiles = load('bukyoku/files');
+const bukyokuPdf = YEARS.map((y) => `${yearLabel(y)} ${fmt(bukyokuFiles.filter((f) => f.year === y).length)}`).join('・');
+// 沖縄県PDCAのほかの資料で出典にしているPDFの数（評価検証報告書は本文だけを読んでいる）
+const kankoPdf = load('kanko/sources').length;
+const ikkatsuPdf = load('ikkatsu/sources').length;
+const hyokaPdf = load('hyoka/sources').filter((s) => s.kind === 'honbun').length;
 // 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
 const torikumiBudget = Math.round(amountEntries(LATEST, 'estimate').reduce((s, e) => s + e.amount, 0) / 1e5);
 const prefBudget = getFinanceReference().prefecture;
@@ -89,14 +100,15 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
   <h2 id="shutten">出典</h2>
   <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
   <ul>
-    {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink></li>)}
+    {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink>のPDF {fmt(p.pdf)}件{p.zip > 0 && `（うち${fmt(p.zip)}件はzipの中）`}</li>)}
   </ul>
+  <p>部局の検証票（主な取組と成果指標）は、{YEARS.length}年分で{fmt(bukyokuFiles.length)}件のPDFを読んでいます（{bukyokuPdf}）。</p>
   <p>各施策・各取組のページの「出典」から、元のPDFの該当ページを開けます（zipで公開されている年度はzipへのリンクです）。</p>
   <p id="others">沖縄県PDCAのほかに、次の県の公表資料も読み取っています。</p>
   <ul>
-    <li><a href="/keikaku/kanko/">観光ロードマップ</a>: 沖縄県「<ExtLink href={LINKS.kankoRm}>沖縄観光推進ロードマップ</ExtLink>」の年度別の「沖縄観光推進ロードマップPDCA実施報告書」（R4〜R6）。第6次沖縄県観光振興基本計画の実施計画の評価です。</li>
-    <li>施策のページの「一括交付金（ソフト）の事業」と<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>: 沖縄県「<ExtLink href={LINKS.ikkatsu}>沖縄振興特別推進交付金の事後評価</ExtLink>」の総括表（成果目標・評価）と検証シート（施策のコード・予算の執行・今後の方針）（R4〜R6）。沖縄県PDCAとは別の評価で、主な取組とは結び付けていません。</li>
-    <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」の第2章（基本施策の推進による成果と課題）。</li>
+    <li><a href="/keikaku/kanko/">観光ロードマップ</a>: 沖縄県「<ExtLink href={LINKS.kankoRm}>沖縄観光推進ロードマップ</ExtLink>」の年度別の「沖縄観光推進ロードマップPDCA実施報告書」（R4〜R6、PDF {fmt(kankoPdf)}件）。第6次沖縄県観光振興基本計画の実施計画の評価です。</li>
+    <li>施策のページの「一括交付金（ソフト）の事業」と<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>: 沖縄県「<ExtLink href={LINKS.ikkatsu}>沖縄振興特別推進交付金の事後評価</ExtLink>」の総括表（成果目標・評価）と検証シート（施策のコード・予算の執行・今後の方針）（R4〜R6、PDF {fmt(ikkatsuPdf)}件）。沖縄県PDCAとは別の評価で、主な取組とは結び付けていません。</li>
+    <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」の本文の第2章（基本施策の推進による成果と課題。PDF {fmt(hyokaPdf)}件）。</li>
   </ul>
 
   <h2 id="tsukurikata">作り方</h2>
