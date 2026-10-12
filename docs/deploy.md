@@ -35,11 +35,27 @@ main 以外のブランチ（PR）は `npx wrangler preview` でブランチご�
 | CSP（`default-src 'self'` と、スクリプト・`<style>` のハッシュ） | 各ページの `<meta>`。`site/astro.config.ts` の `security.csp` で Astro が書き出す | このサイトのファイルと、ビルドで書き出したスクリプト（とアクセス解析のスクリプト。6章）しか動かさない。データに何か混ざっても、スクリプトとしては動かない |
 | `frame-ancestors 'none'`・`X-Frame-Options: DENY` | `site/public/_headers` | ほかのサイトの枠（iframe）の中に表示させない。`frame-ancestors` は `<meta>` では効かないのでヘッダーで出す |
 | `X-Content-Type-Options`・`Referrer-Policy`・`Permissions-Policy` | `site/public/_headers` | ファイルの種類の決めつけをさせない、県などへのリンクでは、どのページから来たかを送らずサイトのドメインだけを送る、カメラなどを使わせない |
+| HSTS（`Strict-Transport-Security: max-age=31536000`） | `site/public/_headers` | 一度 https で開いたブラウザに、この先1年は http で開かせない。http のリンクから来たときなどに、https に移る前の1回目のやりとりを書き換えられないように |
 
 - ページの作り方の決まり（`<script is:inline>` のハッシュなど）は [site.md](site.md) の 3章。
 - `_headers` を変えたら、`wrangler dev` で返るヘッダーを確かめられる（Alpine の `site` コンテナでは動かないので `node:24-slim` で動かす。`site/.wrangler/` に作業用のファイルができる）。
 - 依存パッケージを入れるときのスクリプトは `site/.npmrc` の `ignore-scripts=true` で動かさない。ルートディレクトリ（`site`）に置いているので、Cloudflare のビルドで依存を入れるときと `npx wrangler deploy` にも効く（2026-10-12 に wrangler 4.149.0 の `deploy --dry-run` が通ることを確かめた）。
-- 独自ドメインを付けたら、Cloudflare のダッシュボードで「Always Use HTTPS」と HSTS を有効にする（`workers.dev` は `.dev` なのでブラウザが初めから HTTPS にする）。
+- http から https への転送（301）は、Cloudflare のダッシュボードの「Always Use HTTPS」で有効にしてある。HSTS は git で追えて `wrangler dev` で確かめられるように `_headers` で出し、ダッシュボードの HSTS（SSL/TLS → Edge Certificates）は切ったままにする（片方だけにする）。`workers.dev` は `.dev` なので、ブラウザが初めから https にする。
+- HSTS に `includeSubDomains`・`preload` は付けない。サブドメインを使っていないうえ、`preload` はブラウザに組み込まれる一覧に載り、すぐには外せないため。そのぶん、初めて http で開いたときの1回目のやりとりは守れない。確かめ方: `curl -sI https://okinawa-miraima.com/ | grep -i strict-transport`
+
+### Cloudflare が配信のときに差し込むスクリプトと CSP
+
+Cloudflare は、配信のときに各ページの `</body>` の前へスクリプトを足す。サイトのコードには無く、手元（`make dev`・`make build`・`make shot`）でも入らないので、本番で確かめる。
+
+| 何を | CSP では | 理由 |
+|---|---|---|
+| アクセス解析（Web Analytics）の `<script src="https://static.cloudflareinsights.com/…">`（6章） | 許す（`script-src` にホストを足してある） | 外のファイルを読むだけなので、ホストで許せる |
+| ボット検出（[JavaScript detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)）のインラインの `<script>`。隠した iframe を作り、`/cdn-cgi/challenge-platform/scripts/jsd/main.js` を読み込む | 止まる | 中身にリクエストごとの値（`window.__CF$cv$params={r:'…',t:'…'}`）が入るので、ハッシュでは許せない。Cloudflare は CSP の nonce をレスポンスヘッダーからしか読まず、`<meta>` の CSP には対応していない |
+
+- ボット検出のスクリプトが止まると、ブラウザのコンソールに `Executing inline script violates the following Content Security Policy directive 'script-src …'` が出る。ボット検出が動かないだけで、ページの表示や動きには影響しない。
+- Cloudflare の docs では、JS detections を切れるのは Super Bot Fight Mode（Pro 以上）と Enterprise の Bot Management で、Bot Fight Mode では常に有効で切れない。このゾーンは Free で、Bot Fight Mode を切ってあっても差し込まれている（2026-10-12 に確かめた。ブラウザでなくても、`curl -s https://okinawa-miraima.com/ | grep -c challenge-platform` が 1）。
+- 許すために `'unsafe-inline'` は足さない（ハッシュがあると無視されるうえ、データに混ざったスクリプトも動いてしまう）。nonce を使うには、ページを Worker で配ってリクエストごとに CSP のヘッダーを作ることになるので、そこまではしない。
+- `make shot` で `--base` を付けて本番を撮るとこのエラーが出るので、差し込まれたスクリプトのハッシュを名指しした CSP のエラーだけは NG に数えない（`scripts/shot/shot.ts`）。ほかの CSP のエラーは NG のまま。
 
 ## 4. ドメイン
 
@@ -72,6 +88,7 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 ページの閲覧数（PV）・訪問・よく見られるページ・どこから来たかは、[Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/)（無料・Cookie を使わない）で見る。ダッシュボードの「Web Analytics」で okinawa-miraima.com を自動で差し込む設定（automatic setup）にしてあり、Cloudflare が配信のときに各ページの `</body>` の前へ計測のスクリプト（`https://static.cloudflareinsights.com/beacon.min.js/v…`）を足す。サイトのコードには入れていない。
 
 - CSP の `script-src` に `https://static.cloudflareinsights.com` を足してある（`site/astro.config.ts`）。差し込まれる URL は版で変わるので、ホストで許す。計測の送り先は同じドメインの `/cdn-cgi/rum` なので、`default-src 'self'` で足りる。
+- 同じところに、ボット検出のインラインのスクリプトも差し込まれる。こちらは CSP に止められ、コンソールにエラーが出る（3章）。計測には関わらない。
 - 差し込まれるのは `Accept: text/html` を付けたリクエスト（ブラウザ）のときだけ。`curl` の既定（`Accept: */*`）では入らない。手元（`make dev`・`make build`）でも入らないので、計測されない。
 - ゾーンの「Analytics & Logs」→「HTTP Traffic」の数（リクエスト・Unique Visitors）は CSS・JS・ボットも含み、Unique Visitors は IP で数えるので多めに出る。人がどのページを見たかは Web Analytics で見る。
 - 確かめ方: `curl -s -H 'Accept: text/html' https://okinawa-miraima.com/ | grep -c cloudflareinsights` が 1。ブラウザの開発者ツールでは、コンソールに CSP の違反が出ず、ネットワークに `/cdn-cgi/rum` への送信があること。
