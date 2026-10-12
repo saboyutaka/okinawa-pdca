@@ -21,6 +21,7 @@ import {
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
+import { torikumiDescription } from '../../../lib/describe.ts';
 import ExtLink from '../../../components/ExtLink.astro';
 import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
@@ -105,7 +106,7 @@ const latestEstimate = latestBudget?.kind === 'estimate' ? latestBudget.amount :
 const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).map((b) => b.name)).filter(Boolean))];
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 ---
-<Base title={`${t.name}（主な取組）`} description={`沖縄県PDCA: 主な取組「${t.name}」の令和4〜7年度の進捗状況・予算・県の検証と改善案`}>
+<Base title={`${t.name}（沖縄県の主な取組）`} description={torikumiDescription({ statuses: g.statuses, section: t.section, shisaku: s.name })}>
   <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: t.name }]} />
 
   <ParentShisaku s={s} kind="この取組が入っている施策" />

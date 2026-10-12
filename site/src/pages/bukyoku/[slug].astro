@@ -21,7 +21,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, countJudges,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
@@ -29,6 +29,7 @@ import {
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
+import { deptDescription } from '../../lib/describe.ts';
 
 export function getStaticPaths() {
   return DEPTS.map((dept) => ({ params: { slug: dept.slug }, props: { dept } }));
@@ -64,7 +65,7 @@ const toriText = (shisakuId: string) => {
   const n = gs.filter((g) => g.statuses[last]).length;
   return n ? `この部局の取組 ${fmt(n)}件` : `この部局の取組 ${fmt(gs.length)}件（${yearLabel(LATEST)}の報告には無い）`;
 };
-const judgeCounts = countBy(related.map((r) => r.s), (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const judgeCounts = countJudges(related.map((r) => r.s));
 
 // 課ごと（最新年度）。行の id は、取組のページの「所管」のリンクの行き先（lib/data.ts の sectionHref）
 const sections = [...new Set(latest.map((g) => g.section))];
@@ -130,7 +131,7 @@ const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
-<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`}>
+<Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, { judges: judgeCounts, tori: progressRows.at(-1)!.counts, seika: seikaLatest.length, reached: seikaOk })}>
   <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
 
   <header class="sticker lift d-head">

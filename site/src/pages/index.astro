@@ -11,7 +11,7 @@ import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
@@ -32,7 +32,7 @@ const latestSeika = getSeika(LATEST);
 const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
 const byId = new Map(shisaku.map((s) => [s.id, s]));
-const judgeCounts = countBy(shisaku, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const judgeCounts = countJudges(shisaku);
 
 // くらしのテーマ（このサイト独自の分類）
 const groupKeys = JUDGE_GROUPS.map((g) => g.key);
