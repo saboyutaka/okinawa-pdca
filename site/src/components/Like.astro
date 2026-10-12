@@ -51,7 +51,7 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
         pop.classList.remove('leaving');
       };
       pop.classList.add('leaving');
-      // 動きを減らす設定のときは消える動きが無いので、すぐに隠す
+      // 消える動き（styles/global.css の「動き」）が終わってから隠す。動きを減らす設定・印刷のときは動きが無いので、すぐに隠す
       if (pop.getAnimations().length) pop.addEventListener('animationend', done, { once: true });
       else done();
     };
@@ -78,7 +78,7 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
 
 <style>
   .like-wrap { position: relative; display: inline-flex; }
-  /* シェアパネル（Share.astro）と同じ高さの白い枠。押すとハートをロゴのまるい子の色でぬり、少しはずませる */
+  /* シェアパネル（Share.astro）と同じ高さの白い枠。押すとハートをロゴのまるい子の色でぬる（はずむ動きは styles/global.css の「動き」） */
   .like-btn {
     display: inline-flex; align-items: center; gap: 6px; min-height: 54px; padding: 0 20px 0 15px;
     background: var(--paper); color: var(--ink); border: 2px solid var(--line); border-radius: 27px;
@@ -96,7 +96,7 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
   }
   @media (max-width: 360px) { .like-btn { width: 48px; min-height: 48px; } }
 
-  /* お礼のポップアップ。ボタンの上に、尾をハートに向けて出す（用語の説明 .termpop と同じ線と影） */
+  /* お礼のポップアップ。ボタンの上に、尾をハートに向けて出す（用語の説明 .termpop と同じ線と影。出る・消える動きは styles/global.css の「動き」で、尾のほうからふくらむ） */
   .like-pop {
     position: absolute; z-index: 45; left: 0; bottom: calc(100% + 14px);
     display: flex; align-items: flex-start; gap: 12px; width: max-content; max-width: min(400px, calc(100vw - 72px));
@@ -118,14 +118,6 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
   .like-from { margin: 6px 0 0; font-size: 0.8125rem; line-height: 1.5; }
   .like-org { white-space: nowrap; }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .like-btn[aria-pressed="true"] .heart { animation: like-heart 0.35s ease-out; }
-    .like-pop:not([hidden]) { animation: like-pop-in 0.3s cubic-bezier(0.3, 1.4, 0.6, 1); }
-    .like-pop.leaving { animation: like-pop-out 0.2s ease-in forwards; }
-  }
-  @keyframes like-heart { 0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
-  @keyframes like-pop-in { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
-  @keyframes like-pop-out { to { opacity: 0; transform: scale(0.94); } }
   /* スマホでは、差出人が1行に収まるように、ポップアップを少し広げ、差出人の字を小さくする（上の .like-pop・.like-from より後に置く） */
   @media (max-width: 520px) {
     .like-pop { max-width: calc(100vw - 56px); padding-right: 16px; }
