@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { OG_IMAGE, absUrl, sitemapPaths, sitemapXml, robotsTxt, ldJson, websiteLd, breadcrumbLd } from '../src/lib/seo.ts';
+import { OG_IMAGE, absUrl, sitemapPaths, sitemapXml, robotsTxt, ldJson, websiteLd, breadcrumbLd, duplicateHeads } from '../src/lib/seo.ts';
 import { SITE, PROJECT } from '../src/lib/links.ts';
 
 test('本番のドメインは https で、末尾にスラッシュがある', () => {
@@ -34,6 +34,17 @@ test('sitemap.xml は本番の URL を並べる', () => {
   assert.ok(xml.includes(`<url><loc>${SITE.url}</loc></url>`));
   assert.ok(xml.includes(`<url><loc>${SITE.url}about/</loc></url>`));
   assert.ok(sitemapXml(['/?a=1&b=2']).includes('?a=1&amp;b=2'));
+});
+
+test('題名・説明文がほかのページと同じページを、同じものごとにまとめて出す（ビルドで警告する）', () => {
+  const page = (path: string, title: string, description: string) =>
+    ({ path, html: `<head><title>${title}</title><meta name="description" content="${description}"></head>` });
+  const pages = [page('/a/', 'A', '説明1'), page('/b/', 'A', '説明2'), page('/c/', 'C', '説明2'), page('/d/', 'D', '説明3')];
+  assert.deepEqual(duplicateHeads(pages), [
+    { kind: '題名', text: 'A', paths: ['/a/', '/b/'] },
+    { kind: '説明文', text: '説明2', paths: ['/b/', '/c/'] },
+  ]);
+  assert.deepEqual(duplicateHeads(pages.slice(2)), []);
 });
 
 test('robots.txt は巡回を止めず、sitemap の場所を書く', () => {

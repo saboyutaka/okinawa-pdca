@@ -102,7 +102,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
                     'data-judge': x.judgement,
                     'data-dept': seikaDept(x),
                     'data-theme': themeIdsOfItem(r.shisaku.id, x.name).join('|'),
-                    'data-text': `${x.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`,
+                    'data-text': `${r.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`,
                   }}
                 />
               );

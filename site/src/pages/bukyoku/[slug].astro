@@ -291,7 +291,7 @@ const sources = deptSourcePages(dept.name);
                 row={row}
                 shisaku={s}
                 href={seikaHref(x.shisaku_id, row.key)}
-                attrs={{ 'data-item': '', 'data-theme': themeIdsOfItem(x.shisaku_id, x.name).join('|'), 'data-text': `${x.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
+                attrs={{ 'data-item': '', 'data-theme': themeIdsOfItem(x.shisaku_id, x.name).join('|'), 'data-text': `${row.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );
           })}

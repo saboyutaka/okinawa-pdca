@@ -252,9 +252,10 @@ function splitByLabels(raw: string, labels: string[]) {
 
 // 道のりの図（components/SeikaChart.astro）に渡す1年度分。成果指標の行（SeikaRow）はそのまま渡せる
 export type ChartYear = Pick<SeikaRow, 'year' | 'base' | 'actual' | 'target' | 'plan' | 'plan_raw' | 'base_raw' | 'actual_raw' | 'actual_ref_year' | 'target_raw' | 'target_year'>;
-// 道のりの図に渡す指標。成果指標の年度をまたいだまとまり（SeikaGroup）と、主要指標の部分（ShuyouPart）を渡せる
+// 道のりの図に渡す指標。成果指標の年度をまたいだまとまり（SeikaGroup）と、主要指標の部分（ShuyouPart）を渡せる。name は読み上げる名前
 export interface ChartRow {
-  latest: { year: number; name: string };
+  name: string;
+  latest: { year: number };
   years: Record<number, ChartYear>;
 }
 // 主要指標の部分の1年度分。b・a・t は基準値・実績値・目標値の欄を読んだもの（画面には text を出す）
@@ -442,21 +443,68 @@ export function torikumiRows(shisaku: Shisaku) {
 
 // 成果指標も名前で年度をまたいでまとめる（R7で指標が入れ替わった施策は別の行になる）。
 // 名前の正規化は抽出側の取組の key と同じ規則（scripts/extract_soukatsu.py の name_key。同じになるかは test/integrity.test.ts で確かめる）。同じ施策に同じ名前の指標が複数ある（男女別など）ときは出てくる順で区別する
+// （印字の名前が同じで見分けられないものは、内訳の名前で出す。SEIKA_ALIASES）
 export const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、，,。.（）()「」『』〔〕]/g, '');
 // 年度をまたいで同じ取組・成果指標かを比べる key。名前の key の表記ゆれ（R7からの「こども」の書き方など。lib/search.ts）をそろえたもの。
 // 同じ年度の中の照合（部局票との結び付けなど）も、年度をまたいだまとまりから引くときはこれで比べる
 export const sameKey = (key: string) => foldVariants(key);
-export type SeikaGroup = YearGroup<SeikaRow>;
+
+// 同じ施策の同じ年度の報告書に、同じ名前で2つ以上載っている成果指標（内訳の名前が印字に無いもの）。名前だけでは見分けられず、ページの題名も同じになるので、
+// 内訳の名前で載っているほかの報告書の名前で出し、年度をまたいでその名前の指標とまとめる。どの内訳かは、ほかの報告書と同じ値の欄（field）で選ぶ。
+// 2026-10-12 にページの画像で、印字の名前が同じことと、ほかの報告書の名前・値を確かめた
+interface SeikaAlias {
+  shisaku: string;
+  printed: string; // 印字の名前
+  field: 'base_raw' | 'target_raw';
+  names: Record<string, string>; // field の値 → 出す名前
+  from: string; // 出す名前を取った報告書（成果指標のページの出典に書く）
+}
+export const SEIKA_ALIASES: SeikaAlias[] = [
+  // R7 は3つとも内訳の無い名前。R4〜R6 は（大学）（短大）（専門学校）を付けて、同じ基準値で載っている
+  {
+    shisaku: '5-3-c-3', printed: '新規学卒者（大学・短大・専門学校）の就職内定率', field: 'base_raw', from: '基準値が同じR4〜R6の報告書',
+    names: { '85.7': '新規学卒者（大学・短大・専門学校）の就職内定率（大学）', '92': '新規学卒者（大学・短大・専門学校）の就職内定率（短大）', '90': '新規学卒者（大学・短大・専門学校）の就職内定率（専門学校）' },
+  },
+  // R4・R5 は2つとも同じ名前。R6 から（娯楽・入場費）（宿泊費）に分かれ、R6 の基準値が同じ
+  {
+    shisaku: '3-2-c-4', printed: '一人当たり観光消費額（娯楽・入場費、宿泊費）', field: 'base_raw', from: '基準値が同じR6の報告書',
+    names: { '6,647': '一人当たり観光消費額（娯楽・入場費）', '23,398': '一人当たり観光消費額（宿泊費）' },
+  },
+  // R4〜R6 は2つとも同じ名前。R7 から（小学校）（中学校）に分かれ、基準値が同じ
+  {
+    shisaku: '5-2-b-1', printed: '人が困っているときは、進んで助けていると考えている児童生徒の割合', field: 'base_raw', from: '基準値が同じR7の報告書',
+    names: { '82.1': '人が困っているときは、進んで助けていると考えている児童の割合（小学校）', '83.4': '人が困っているときは、進んで助けていると考えている生徒の割合（中学校）' },
+  },
+  // R4〜R6 は2つとも同じ名前で、基準値も0。観光ロードマップの報告書（R5・R6）には、同じ目標値・計画値で（オフライン参加者数）（オンライン参加者数）として載っている
+  {
+    shisaku: '3-6-b-3', printed: '大型eスポーツイベント参加者数', field: 'target_raw', from: '目標値が同じ観光ロードマップの報告書',
+    names: { '6,000': '大型eスポーツイベント参加者数（オフライン参加者数）', '30,000': '大型eスポーツイベント参加者数（オンライン参加者数）' },
+  },
+];
+// 成果指標の1行に SEIKA_ALIASES の名前があれば、その名前と取った報告書
+export function seikaAlias(s: SeikaRow) {
+  const a = SEIKA_ALIASES.find((x) => x.shisaku === s.shisaku_id && nameKey(x.printed) === nameKey(s.name));
+  const name = a?.names[s[a.field]];
+  return a && name ? { name, from: a.from } : null;
+}
+// 成果指標の名前（ページ・一覧に出す名前）。ふつうは印字のまま
+export const seikaName = (s: SeikaRow) => seikaAlias(s)?.name ?? s.name;
+
+// name は最新の報告の名前（seikaName）
+export interface SeikaGroup extends YearGroup<SeikaRow> {
+  name: string;
+}
 export function seikaRows(shisaku: Shisaku) {
   const rows = new Map<string, SeikaGroup>();
   const seen = new Map<string, number>();
   const sorted = [...shisaku.seika].sort((a, b) => b.year - a.year);
   for (const s of sorted) {
-    const base = sameKey(nameKey(s.name));
+    const name = seikaName(s);
+    const base = sameKey(nameKey(name));
     const n = (seen.get(`${s.year}|${base}`) || 0) + 1;
     seen.set(`${s.year}|${base}`, n);
     const k = `${base}#${n}`;
-    if (!rows.has(k)) rows.set(k, { key: k, latest: s, years: {} });
+    if (!rows.has(k)) rows.set(k, { key: k, name, latest: s, years: {} });
     rows.get(k)!.years[s.year] = s;
   }
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
@@ -649,11 +697,11 @@ export function seikaNameMatches(seikaName: string | null | undefined, name: str
   const head = sameKey(nameKey(name.replace(NAME_TAIL, '')));
   return a.includes(b) || b.includes(a) || inOrder(b, a) || (Boolean(head) && inOrder(head, a));
 }
-// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（最新の報告の名前で比べ、同じ名前の指標があればそれを先に）
+// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（ページの名前 SeikaGroup の name で比べ、同じ名前の指標があればそれを先に）
 export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
   const list = seikaGroupsOf(shisakuId);
   const k = sameKey(nameKey(name || ''));
-  return (list.find((r) => sameKey(nameKey(r.latest.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.latest.name)))?.href ?? null;
+  return (list.find((r) => sameKey(nameKey(r.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.name)))?.href ?? null;
 }
 // 主な取組の対応する成果指標（取組のページ・施策ページの取組のカード）。部局票がある最新の年度の「対応する成果指標」（名前）を、
 // 同じ施策のその年度の成果指標の名前と比べ、当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
