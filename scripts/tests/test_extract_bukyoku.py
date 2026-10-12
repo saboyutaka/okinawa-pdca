@@ -241,8 +241,11 @@ class StatusTest(unittest.TestCase):
         rows1 = [["活動指標名", "クラス数", None, "R6年度"], ["", "R4年度", "R5年度", "実績値(A)", "目標値(B)", "達成割合\n- 26 -\nA/B"]]
         rows2 = [["実績値", "―", "16クラス", "1", "18", "5.6%"]]
         cur = self.cur()
-        state = read_status(None, fake_table(rows1), rows1, cur, None, [])
-        read_status(None, fake_table(rows2), rows2, cur, state, [])
+        # read_status は前の表を id(tb) で覚えるので、前のページの表は持ったままにする（read_file でも残っている）。
+        # その場で捨てると、次の表が同じ番地に作られて同じ id になり、値の行を読んだ行として飛ばすことがある
+        tb1, tb2 = fake_table(rows1), fake_table(rows2)
+        state = read_status(None, tb1, rows1, cur, None, [])
+        read_status(None, tb2, rows2, cur, state, [])
         rec = finish(cur)
         self.assertEqual(rec["past"], [{"year": "R4年度", "value": "―"}, {"year": "R5年度", "value": "16クラス"}])
         self.assertEqual(rec["achievement"], "5.6%")
