@@ -37,6 +37,27 @@ export interface ShuyouRow {
   page: number;
 }
 
+// 主要指標の達成状況（shuyou_gaiyou.json。概要版の「主要指標の達成状況2」の表）。1指標1行（49指標）で、値は印字のまま。
+// R5 は表が画像で読めないので無い。基準値・目標値は統計の基準改定で試算し直したもの（revised）があり、付属資料（ShuyouRow）と違うことがある
+export interface ShuyouGaiyouRow {
+  year: number;
+  no: number; // 表の順
+  kihon_id: string;
+  code: string; // 1-(1)
+  name: string;
+  base_raw: string;
+  base_ref: string | null; // 基準値の年（「R3年度」）
+  target_raw: string;
+  target_ref: string | null;
+  actual_raw: string;
+  actual_ref: string | null; // 直近の実績値が何年の値か
+  rate_raw: string; // 目標値に対する達成率の印字（「51%」「達成」「後退」「-」）
+  rate: number | null;
+  revised: boolean;
+  source: string;
+  page: number;
+}
+
 // 施策（shisaku.json）。判定（judge）は R5 から
 export interface ShisakuRow {
   year: number;
@@ -384,6 +405,7 @@ export interface ExtractedFiles {
   shouraizou: ShouraizouRow[];
   kihon: KihonRow[];
   shuyou: ShuyouRow[];
+  shuyou_gaiyou: ShuyouGaiyouRow[];
   shisaku: ShisakuRow[];
   torikumi: TorikumiRow[];
   seika: SeikaRow[];

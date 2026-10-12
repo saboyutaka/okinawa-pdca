@@ -5,7 +5,7 @@
 使い方:
   python3 scripts/check_extracted.py
 
-件数（施策・主な取組・成果指標・基本施策）が公表値と違えば失敗（終了コード1）。
+件数（施策・主な取組・成果指標・基本施策）と、主要指標の達成率の区分ごとの数（概要版の表から読んだもの）が公表値と違えば失敗（終了コード1）。
 進捗状況の内訳・施策の推進状況（A〜G）の差は警告にとどめる。PDF の個別の欄と県の集計が
 もともと一致しないものがあるため（進捗状況が空欄・「-」の取組など。施策の推進状況の差は原因が特定できていない）。
 成果指標の計画値・達成率は、概要版に書かれた式で計算し直して報告書の値と比べ、件数を参考として出す。
@@ -38,6 +38,28 @@ EXPECTED = {
     2025: {"kihon": 36, "shisaku": 339, "seika": 391, "torikumi": 1534, "status": (1272, 108, 46, 84, 24),
            "judge": {"A": 194, "B": 50, "C": 53, "D": 28, "E": 8, "F": 0, "G": 3, "その他": 3}},
 }
+
+# 主要指標の達成状況（概要版「主要指標の達成状況1」の表。49指標）。区分は SHUYOU_BINS の順
+SHUYOU_BINS = ("100%以上", "60%以上100%未満", "0%超60%未満", "横ばい", "後退", "その他")
+SHUYOU_EXPECTED = {
+    2022: (16, 9, 13, 1, 8, 2),
+    2023: (23, 7, 3, 4, 11, 1),
+    2024: (24, 8, 6, 1, 9, 1),
+    2025: (11, 8, 14, 1, 11, 4),
+}
+# 概要版の指標ごとの表（「主要指標の達成状況2」）が画像で、文字を読めない年度
+SHUYOU_IMAGE_ONLY = {2023}
+
+
+def shuyou_bin(r: dict) -> str:
+    """概要版の主要指標の行の区分。達成率の印字で決める（県の集計と同じ。数で表せない目標は「達成」「後退」と印字されている）。"""
+    t = unicodedata.normalize("NFKC", r["rate_raw"]).strip()
+    rate = r["rate"]
+    if t in ("達成", "100%以上") or (rate is not None and rate >= 100):
+        return "100%以上"
+    if rate is not None:
+        return "60%以上100%未満" if rate >= 60 else "0%超60%未満" if rate > 0 else "横ばい" if rate == 0 else "後退"
+    return "後退" if t == "後退" else "その他"
 
 
 def plan_index(year: int) -> int:
@@ -213,7 +235,7 @@ def main() -> int:
     args = ap.parse_args()
     d = Path(args.dir)
     data = {name: json.loads((d / f"{name}.json").read_text(encoding="utf-8"))
-            for name in ("kihon", "shisaku", "torikumi", "seika")}
+            for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou_gaiyou")}
 
     failed = False
     for year, exp in EXPECTED.items():
@@ -239,6 +261,16 @@ def main() -> int:
             judge = Counter(s["judge"] or "なし" for s in rows["shisaku"])
             diff = {k: f"{judge.get(k, 0)}/{v}" for k, v in exp["judge"].items() if judge.get(k, 0) != v}
             print(f"  {'OK ' if not diff else '警告'} 施策の推進状況 " + (f"差（抽出/公表）: {diff}" if diff else "一致"))
+
+        shuyou = [r for r in data["shuyou_gaiyou"] if r["year"] == year]
+        if year in SHUYOU_IMAGE_ONLY and not shuyou:
+            print("  --  主要指標（概要版）: 指標ごとの表が画像で読めない")
+        elif year in SHUYOU_EXPECTED:
+            bins = Counter(shuyou_bin(r) for r in shuyou)
+            got = tuple(bins[b] for b in SHUYOU_BINS)
+            ok = len(shuyou) == sum(SHUYOU_EXPECTED[year]) and got == SHUYOU_EXPECTED[year]
+            failed |= not ok
+            print(f"  {'OK ' if ok else 'NG '} 主要指標（概要版） {len(shuyou)}指標 {got}（公表 {SHUYOU_EXPECTED[year]}。{'・'.join(SHUYOU_BINS)}）")
 
     # 部局別の検証票（予算）が総括報告書のどの取組に結び付いたか（参考）
     budget_path = d.parent / "bukyoku" / "torikumi.json"

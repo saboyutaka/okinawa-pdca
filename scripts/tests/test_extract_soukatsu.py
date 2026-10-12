@@ -2,9 +2,9 @@
 import unittest
 
 from extract_soukatsu import (
-    circled, clean, dept_of, fix_chars, fix_strings, is_visible, join_cell_lines, join_lines, judge_of, kihon_id,
-    name_key, parse_code, parse_num, read_mezasu, shisaku_code, shisaku_id, split_section, tenkai_id, uncid,
-    with_lines,
+    circled, clean, dept_of, fix_chars, fix_strings, gaiyou_rows, is_visible, join_cell_lines, join_lines, judge_of,
+    kihon_code, kihon_id, name_key, parse_code, parse_num, parse_rate, read_mezasu, shisaku_code, shisaku_id,
+    split_ref, split_section, tenkai_id, uncid, with_lines,
 )
 
 
@@ -214,6 +214,67 @@ class WithLinesTest(unittest.TestCase):
         self.assertEqual(out["target"], "300件・12回\n300件\n12回")
         self.assertEqual(out["actual"], "325件\n12回")
         self.assertEqual(out["lines"], lines)
+
+
+
+def line(x0: float, y0: float, text: str, size: float = 9.0, width: float | None = None) -> dict:
+    """概要版の文字の行（高さは字の大きさ）。幅を省くと字の数から決める。"""
+    return {"x0": x0, "y0": y0, "x1": x0 + (width if width is not None else size * len(text)), "y1": y0 + size, "size": size, "text": text}
+
+
+class GaiyouTest(unittest.TestCase):
+    def test_kihon_code(self):
+        """欄の文字全体が基本施策の番号のときだけ番号とみなす（施策の番号・文の中の番号は除く）。"""
+        self.assertEqual(kihon_id(kihon_code("２－（３）")), "2-3")
+        self.assertEqual(kihon_id(kihon_code("3-(10)")), "3-10")
+        self.assertIsNone(kihon_code("1-(1)-ア"))
+        self.assertIsNone(kihon_code("○１（４）「県が支援した文化芸術関連イベントの参加者数」"))
+
+    def test_split_ref(self):
+        """後ろの括弧の注を分ける。全角・半角の括弧が混ざっていてもよい。"""
+        self.assertEqual(split_ref("1,032万ｔ-CO₂（R3年度）"), ("1,032万ｔ-CO₂", "R3年度"))
+        self.assertEqual(split_ref("1,042万t-CO₂(令和5年度）"), ("1,042万t-CO₂", "令和5年度"))
+        self.assertEqual(split_ref("（R6.10～R7.9）"), ("", "R6.10～R7.9"))
+        self.assertEqual(split_ref("前回調査から延伸"), ("前回調査から延伸", None))
+
+    def test_parse_rate(self):
+        """数の達成率だけを数にする。△ はマイナス。全角の数字も読む。"""
+        self.assertEqual(parse_rate("-6%"), -6.0)
+        self.assertEqual(parse_rate("△21%"), -21.0)
+        self.assertEqual(parse_rate("65.3%"), 65.3)
+        self.assertEqual(parse_rate("０%"), 0.0)
+        for t in ("１００％以上", "達成", "後退", "‐", "－"):
+            self.assertIsNone(parse_rate(t), t)
+
+    def test_rows(self):
+        """番号を行の目印にして、名前・基準値→目標値・直近の実績値・達成率を読む。左右の表は左から順に返す。"""
+        lines = [
+            # 左の表: 見出し・将来像の見出し（番号より左）・2つの指標
+            line(30, 40, "基本"), line(300, 40, "直近の"), line(10, 80, "将来像１　沖縄らしい…", 11),
+            line(30, 120, "１－（１）"), line(80, 116, "二酸化炭素排出量"), line(80, 126, "1,032万t（R3年度）→876万t（R9年度）", 8, 160),
+            line(300, 116, "1,042万t", 8, 40), line(300, 126, "（令和5年度）", 8, 40), line(370, 118, "-6%", 14, 30),
+            line(30, 170, "４－（４）"), line(80, 160, "離島地域人口社会増数"), line(80, 170, "△70人（R2年10月～R３年９月）"),
+            line(80, 180, "→増加（令和３年10月～令和9年9月の累計）", 9, 180),
+            line(300, 165, "１１人", 8, 40), line(296, 175, "(R３年10月", 8, 44), line(296, 183, "～R４年９月)", 8, 44),
+            line(370, 168, "１００％以上", 9, 30),
+            # 右の表の左に置かれた検証結果の枠（右へはみ出す）は、左の表に入れない
+            line(395, 190, "【主な検証結果（将来像１)】", 11, 200),
+            # 右の表: 名前の後ろの「※」と、基準値・目標値の肩の小さな「※」
+            line(420, 120, "３－（１）"), line(470, 116, "県内純生産（市場価格表示）※"), line(470, 126, "32,866億円（R3年度）→37,335億円（R9年度）", 8, 160),
+            line(520, 122, "※", 6, 6),
+            line(690, 116, "3兆4,517億円", 8, 40), line(690, 126, "（令和5年度）", 8, 40), line(760, 118, "37%", 14, 30),
+        ]
+        rows = gaiyou_rows(lines)
+        self.assertEqual([r["code"] for r in rows], ["1-(1)", "4-(4)", "3-(1)"])
+        a, b, c = rows
+        self.assertEqual((a["name"], a["base"], a["target"]), ("二酸化炭素排出量", ("1,032万t", "R3年度"), ("876万t", "R9年度")))
+        self.assertEqual((a["actual_raw"], a["actual_ref"], a["rate_raw"], a["revised"]), ("1,042万t", "令和5年度", "-6%", False))
+        # 基準値が名前と同じ大きさの字で、「→」が次の行の頭にある
+        self.assertEqual(b["name"], "離島地域人口社会増数")
+        self.assertEqual((b["base"], b["target"]), (("△70人", "R2年10月～R３年９月"), ("増加", "令和３年10月～令和9年9月の累計")))
+        # 括弧の注が2行に折り返している
+        self.assertEqual((b["actual_raw"], b["actual_ref"], b["rate_raw"]), ("１１人", "R３年10月～R４年９月", "１００％以上"))
+        self.assertEqual((c["name"], c["revised"], c["base"][0]), ("県内純生産（市場価格表示）", True, "32,866億円"))
 
 
 if __name__ == "__main__":

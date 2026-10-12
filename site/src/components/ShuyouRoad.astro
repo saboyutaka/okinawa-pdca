@@ -1,0 +1,90 @@
+---
+// 将来像ページの主要指標の「道のり」の行（県の概要版の主要指標の達成状況）。1指標1行で、左に名前と値（いま・スタート・ゴール）、右にスタート
+// （基準値）からゴール（目標値）までの道と、達成率の位置の点、達成率の札。道の外（後退・目標値に到達）は位置で比べず、左右の枠に置く
+// （lib/data.ts の shuyouSpot）。横の並び（後退 | 道 | 目標値に到達）はトップの将来像ごとの点の図（ShuyouMap）と同じで、見出しの行に1回だけ書く。
+// 点は状態で色を分けず実績値の青1色（区分は置き場所と札の文字で分かる）。並びは概要版の表の順（良い・悪いで並べ替えない）
+import { SHUYOU_BINS, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
+
+interface Props { rows: ShuyouStatus[] }
+const { rows } = Astro.props;
+const value = (raw: string, ref: string | null) => (ref ? `${raw}（${ref}）` : raw);
+const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.label;
+---
+<ul class="row-list road-list">
+  <li class="road-head" aria-hidden="true">
+    <span class="road">
+      <span class="z-back">後退</span>
+      <span class="z-road"><span>スタート</span><span>ゴール</span></span>
+      <span class="z-goal">目標値に<wbr />到達</span>
+    </span>
+    <span class="rate">達成率</span>
+  </li>
+  {rows.map((r) => {
+    const s = r.spot;
+    const fill = s?.zone === 'goal' ? 100 : s?.zone === 'road' ? s.at : 0;
+    return (
+      <li class="road-row">
+        <div class="r-name">
+          <a class="name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" aria-hidden="true">※</span>} <span class="code-no">{r.code}</span>
+        </div>
+        <div class="r-vals small secondary" aria-hidden="true">
+          いま <b>{r.actual_raw}</b>{r.actual_ref && <small>（{r.actual_ref}）</small>}<span class="sep">｜</span>スタート {value(r.base_raw, r.base_ref)} → ゴール {value(r.target_raw, r.target_ref)}
+        </div>
+        <span class="road" aria-hidden="true">
+          <span class="z-back">{s?.zone === 'back' && <i class="dot" />}</span>
+          <span class="z-road">
+            <i class="line" />
+            {fill > 0 && <i class="fill" style={`width:${fill}%`} />}
+            <i class="start" />
+            <i class="ring" />
+            {s?.zone === 'road' && <i class="dot" style={`left:${s.at}%`} />}
+            {!s && <span class="none">比べられない</span>}
+          </span>
+          <span class="z-goal">{s?.zone === 'goal' && <i class="dot" />}</span>
+        </span>
+        <span class="rate num" aria-hidden="true">{shuyouRateText(r)}</span>
+        <span class="sr-only">
+          {`達成率 ${shuyouRateText(r)}（${binLabel(r)}）。基準値 ${value(r.base_raw, r.base_ref)}、実績値 ${value(r.actual_raw, r.actual_ref)}、目標値 ${value(r.target_raw, r.target_ref)}${r.revised ? '。統計の基準改定にあわせて試算し直した基準値・目標値' : ''}`}
+        </span>
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  /* PC は「名前・値 | 道 | 札」の3列。スマホは名前と値の下に道と札を並べる */
+  .road-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 280px 3.6em; grid-template-areas: "name road rate" "vals road rate"; gap: 2px 16px; align-items: center; }
+  .road-list > .road-head { grid-template-areas: ". road rate"; padding-top: 8px; padding-bottom: 6px; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); background: var(--bg); }
+  .r-name { grid-area: name; min-width: 0; }
+  .r-vals { grid-area: vals; line-height: 1.5; }
+  .r-vals b { color: var(--ink); }
+  .r-vals small { font-size: 1em; }
+  .sep { color: var(--hair); margin: 0 0.4em; }
+  .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
+  .rate { grid-area: rate; text-align: right; font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
+  .road-head .rate { font-family: var(--font); font-size: 0.75rem; font-weight: 700; }
+
+  /* 道: 左の「後退」の枠・スタートからゴールまでの道・右の「目標値に到達」の枠。枠の幅は左右で同じ */
+  .road { grid-area: road; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; align-items: center; }
+  .road-row .road { height: 24px; }
+  .road-row .z-back, .road-row .z-goal { height: 100%; border-radius: 6px; background: var(--bg); display: grid; place-items: center; }
+  .road-head .z-back, .road-head .z-goal { text-align: center; line-height: 1.2; }
+  .road-head .z-road { display: flex; justify-content: space-between; }
+  .z-road { position: relative; height: 100%; }
+  .road-row .z-road { margin: 0 6px; }
+  .line, .fill { position: absolute; top: 50%; left: 0; height: 4px; margin-top: -2px; border-radius: 2px; }
+  .line { right: 0; background: var(--grid); }
+  .fill { background: color-mix(in oklab, var(--pop) 45%, var(--paper)); }
+  .start { position: absolute; top: 50%; left: 0; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--ink-2); }
+  .ring { position: absolute; top: 50%; left: 100%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; border: 2.5px solid var(--ink-2); background: var(--paper); box-sizing: border-box; }
+  .dot { display: block; width: 13px; height: 13px; border-radius: 50%; background: var(--pop); border: 1.5px solid var(--line); box-sizing: border-box; }
+  .z-road .dot { position: absolute; top: 50%; margin: -6.5px 0 0 -6.5px; }
+  .none { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 0 6px; background: var(--paper); font-size: 0.75rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .road-list > li { grid-template-columns: minmax(0, 1fr) 3.4em; grid-template-areas: "name name" "vals vals" "road rate"; gap: 4px 10px; }
+    .road-list > .road-head { grid-template-areas: "road rate"; }
+    .road { grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 4px; }
+    .road-row .road { margin-top: 4px; }
+  }
+</style>

@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
 import type {
-  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, ShisakuRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
+  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, ShisakuRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
@@ -391,6 +391,77 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
 }
 // 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。主要指標の一覧の行から飛ぶ
 export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
+
+// ---------------------------------------------------------------- 主要指標の達成状況（概要版）
+
+// 主要指標の達成状況の区分（概要版「主要指標の達成状況1」の表と同じ。前進のうち 100%以上・60%以上・60%未満、横ばい、後退、その他）。
+// 達成率は計画期間の最後（中期はR9、前期はR6）の目標値に対する割合で、成果指標の達成率（その年度の計画値に対する割合）とは違う。
+// 区分は概要版の表の達成率の印字で決める（scripts/check_extracted.py の shuyou_bin と同じ数え方）。目標が数でない指標（「増加」
+// 「可能な限り減少させる」など）は、県が「達成」「後退」と印字している。「-」は統計がまだ出ていないなどで比べられないもの
+export const SHUYOU_BINS = [
+  { key: '100%以上', label: '目標値に到達' },
+  { key: '60%以上100%未満', label: '前進（60%以上）' },
+  { key: '0%超60%未満', label: '前進（60%未満）' },
+  { key: '横ばい', label: '横ばい' },
+  { key: '後退', label: '後退' },
+  { key: 'その他', label: '比べられない' },
+] as const;
+export type ShuyouBin = (typeof SHUYOU_BINS)[number]['key'];
+type ShuyouRate = Pick<ShuyouGaiyouRow, 'rate' | 'rate_raw'>;
+export function shuyouBin(r: ShuyouRate): ShuyouBin {
+  const t = r.rate_raw.normalize('NFKC').trim();
+  if (t === '達成' || t === '100%以上' || (r.rate != null && r.rate >= 100)) return '100%以上';
+  if (r.rate != null) return r.rate >= 60 ? '60%以上100%未満' : r.rate > 0 ? '0%超60%未満' : r.rate === 0 ? '横ばい' : '後退';
+  return t === '後退' ? '後退' : 'その他';
+}
+// 前進（基準値より良くなった）の区分
+export const SHUYOU_FORWARD: ShuyouBin[] = ['100%以上', '60%以上100%未満', '0%超60%未満'];
+// 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
+export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
+
+// 主要指標の達成状況の図（トップの将来像ごとの点の図 ShuyouMap・将来像ページの道のりの行 ShuyouRoad）での置き場所。
+// スタート（基準値＝0%）からゴール（目標値＝100%）までの道の上に、達成率の位置で置く。道の外は位置で比べない（基準値と目標値の差が
+// 小さい指標は達成率が -639% のように桁違いになる）ので、左の「後退」・右の「目標値に到達」の枠にまとめる。比べられないもの（その他）は置かない
+export type ShuyouSpot = { zone: 'back' } | { zone: 'road'; at: number } | { zone: 'goal' } | null;
+export function shuyouSpot(r: ShuyouRate): ShuyouSpot {
+  const bin = shuyouBin(r);
+  if (bin === '100%以上') return { zone: 'goal' };
+  if (bin === '後退') return { zone: 'back' };
+  if (bin === 'その他' || r.rate == null) return null;
+  return { zone: 'road', at: r.rate };
+}
+
+// 概要版の指標（1指標1行）が、付属資料のどの主要指標（基本施策ページのカード）にあたるか。カードの id を返す。
+// 基本施策の主要指標が1つならそれ（男性・女性などはカードの中の部分）、2つ以上（3-(12) の県内空港の旅客数・重要港湾の公共取扱貨物量）なら名前で選ぶ
+function shuyouCardId(r: ShuyouGaiyouRow) {
+  const groups = shuyouRows(r.kihon_id);
+  const now = groups.filter((g) => g.latest.year === r.year);
+  const key = (s: string) => s.normalize('NFKC').replace(/[\s※]/g, '');
+  const g = now.length === 1 ? now[0] : now.find((g) => key(r.name).startsWith(key(g.latest.name)) || key(g.latest.name).startsWith(key(r.name))) ?? now[0];
+  return g ? shuyouAnchor(groups, g) : 'shuyou';
+}
+
+export interface ShuyouStatus extends ShuyouGaiyouRow {
+  bin: ShuyouBin;
+  spot: ShuyouSpot;
+  kihon: { id: string; name: string; code: string; shouraizou: number };
+  href: string; // 基本施策ページのその主要指標のカード
+}
+// 最新の報告の主要指標の達成状況（概要版の表の順。良い・悪いで並べ替えない）。概要版の表が読めない年度は空
+let shuyouStatus: ShuyouStatus[] | undefined;
+export function getShuyouStatus(): ShuyouStatus[] {
+  if (shuyouStatus) return shuyouStatus;
+  const kihon = new Map(getKihonList().map((k) => [k.id, k]));
+  shuyouStatus = load('shuyou_gaiyou').filter((r) => r.year === LATEST).map((r) => {
+    const k = kihon.get(r.kihon_id)!;
+    return {
+      ...r, bin: shuyouBin(r), spot: shuyouSpot(r),
+      kihon: { id: k.id, name: k.name, code: k.code, shouraizou: k.shouraizou },
+      href: `/kihon/${k.id}/#${shuyouCardId(r)}`,
+    };
+  });
+  return shuyouStatus;
+}
 
 // ---------------------------------------------------------------- 施策
 

@@ -5,8 +5,8 @@ import unittest
 from pathlib import Path
 
 from check_extracted import (
-    check_chars, expected_plans, expected_rate, plan_index, plan_matches, rate_matches, record_label, suspicious_char,
-    suspicious_in, walk_strings,
+    check_chars, expected_plans, expected_rate, plan_index, plan_matches, rate_matches, record_label, shuyou_bin,
+    suspicious_char, suspicious_in, walk_strings,
 )
 
 
@@ -98,6 +98,17 @@ class SuspiciousCharTest(unittest.TestCase):
                 ("soukatsu/shisaku.json", "[0] year=2022 id=1-1-a-1", "action", "U+2F40 \u2f40（康熙部首）"),
                 ("years.json", "[0]", "note", "U+FFFD \ufffd（置換文字）"),
             ])
+
+
+
+class ShuyouBinTest(unittest.TestCase):
+    def test_bins(self):
+        """主要指標の区分は概要版の達成率の印字で決める（サイトの lib/data.ts の shuyouBin と同じ）。"""
+        cases = [(131.0, "131%", "100%以上"), (None, "達成", "100%以上"), (None, "１００％以上", "100%以上"),
+                 (84.0, "84%", "60%以上100%未満"), (44.0, "44%", "0%超60%未満"), (0.0, "0%", "横ばい"),
+                 (-6.0, "-6%", "後退"), (None, "後退", "後退"), (None, "-", "その他"), (None, "‐", "その他")]
+        for rate, raw, want in cases:
+            self.assertEqual(shuyou_bin({"rate": rate, "rate_raw": raw}), want, raw)
 
 
 if __name__ == "__main__":

@@ -9,10 +9,11 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
+import ShuyouMap from '../components/ShuyouMap.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, getShuyouStatus,
 } from '../lib/data.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
@@ -46,6 +47,9 @@ const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
   return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
+
+// 主要指標の達成状況（県の概要版の表。読めない年度は空）
+const shuyou = getShuyouStatus();
 
 // 4年間の推移
 const trend = YEARS.map((y) => {
@@ -131,6 +135,15 @@ const boshu = boshuState();
       ))}
     </ul>
   </section>
+
+  {shuyou.length > 0 && (
+    <section aria-labelledby="shuyou-h">
+      <h2 id="shuyou-h"><Term word="主要指標" />で見る、めざす姿までの道のり</h2>
+      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。</p>
+      <ShuyouMap rows={shuyou} visions={visions} />
+      <p class="small">指標ごとの値と図は、<a href="/shihyou/shuyou/">主要指標の一覧</a>と各将来像のページにあります。</p>
+    </section>
+  )}
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
