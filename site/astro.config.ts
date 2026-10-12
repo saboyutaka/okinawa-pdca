@@ -31,11 +31,13 @@ export default defineConfig({
   integrations: [sitemap],
   // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプト・<style> のハッシュだけを許す。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
-  // frame-ancestors は <meta> では効かないので public/_headers で出す
+  // frame-ancestors は <meta> では効かないので public/_headers で出す。
+  // 外から読み込むのは、Cloudflare が配信のときに差し込むアクセス解析（Web Analytics）のスクリプトだけ。
+  // 差し込まれる URL は /beacon.min.js/v… と版で変わるので、ホストで許す。送り先は同じドメインの /cdn-cgi/rum なので 'self' で足りる
   security: {
     csp: {
       directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],
-      scriptDirective: { resources: ["'self'"] },
+      scriptDirective: { resources: ["'self'", 'https://static.cloudflareinsights.com'] },
       styleDirective: { resources: [{ resource: "'self'", kind: 'element' }, { resource: "'unsafe-inline'", kind: 'attribute' }] },
     },
   },
