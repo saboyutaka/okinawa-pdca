@@ -6,9 +6,12 @@
 // 主要指標の一覧（part）では、主要指標に年度ごとの計画値がないので、基本施策ページの図と同じく計画の道すじを引かず、ゴールの丸だけを置く。
 // 道すじが無いと、白い地の行では図が前期の地の右端で終わったように見え、ゴールの丸が図の外に浮くので、主要指標は R4〜R9 の全体に地を敷き、
 // 前期の地を少し濃くする（styles/global.css の .spark-goal）。
+// 主要指標では、点（各年度の実績値・スタートの基準値・ゴールの目標値）にマウスを乗せる・押すと値を出す（scripts/tooltip.ts の data-tip-*）。
+// 点は小さくて押しにくいので、点より大きい透明な円（.sp-hit）に付ける。スタートの円は小さくして、いまの点の円の上に重ねる。
+// 成果指標の一覧は行が多いので付けない（値は施策ページ・成果指標のページの図にある）。
 // 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
-import { YEARS, textGoalChartRow, type ChartRow, type ChartYear, type SeikaGroup, type ShuyouPart } from '../lib/data.ts';
+import { YEARS, textGoalChartRow, yearLabel, refText, type ChartRow, type ChartYear, type SeikaGroup, type ShuyouPart } from '../lib/data.ts';
 
 // row は成果指標、part は主要指標の部分（男性・女性など。分けない指標は1つ）
 type Props = { row: SeikaGroup; part?: never } | { part: ShuyouPart; row?: never };
@@ -31,6 +34,10 @@ let band: number | null = null;
 let plans: { cur: boolean; start: Pt | null; rings: Pt[]; path: string | null }[] = [];
 let dots: Pt[] = [];
 let actPath: string | null = null;
+// 主要指標の点の値（ツールチップ）。r は透明な円の半径
+type Hit = { at: Pt; r: number; value: string; label: string };
+let hits: Hit[] = [];
+const withRef = (label: string, note: string | null | undefined) => (refText(note) ? `${label}（${refText(note)}）` : label);
 if (drawable) {
   // 計画期間ごとの最後の報告（基準値・計画値・目標値はこれを使う）
   const periods = [SLOTS.slice(0, 3), SLOTS.slice(3)].flatMap((ys) => {
@@ -55,6 +62,16 @@ if (drawable) {
   });
   dots = act.map((r): Pt => [x(r.year), y(r.actual)]);
   actPath = dots.length > 1 ? d(dots) : null;
+  if (part) {
+    const cur = plans.find((p) => p.cur);
+    const r = periods.find((p) => p.cur)?.r;
+    const b = r && part.years[r.year]?.b;
+    hits = [
+      ...act.map((r, i): Hit => ({ at: dots[i], r: 7, value: r.actual_raw, label: withRef(`${yearLabel(r.year)}の報告の実績値`, r.actual_ref_year) })),
+      ...(cur && r && cur.rings.length ? [{ at: cur.rings[0], r: 7, value: r.target_raw, label: `ゴールの目標値（${r.target_year}）` }] : []),
+      ...(cur?.start && r ? [{ at: cur.start, r: 4.5, value: r.base_raw, label: withRef('スタートの基準値', b?.note) }] : []),
+    ];
+  }
 }
 ---
 {drawable && (
@@ -72,5 +89,10 @@ if (drawable) {
       {actPath && <path d={actPath} />}
       {dots.map(([cx, cy], i) => <circle cx={cx} cy={cy} r={i === dots.length - 1 ? 4 : 2.6} />)}
     </g>
+    {hits.length > 0 && (
+      <g class="sp-hit">
+        {hits.map((h) => <circle cx={h.at[0]} cy={h.at[1]} r={h.r} data-tip-value={h.value} data-tip-label={h.label} />)}
+      </g>
+    )}
   </svg>
 )}

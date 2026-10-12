@@ -19,7 +19,7 @@ const count = (keys: string[]) => rows.filter((r) => keys.includes(r.bin)).lengt
 <figure class="sticker shuyou-grid">
   <figcaption>
     <div class="chart-title">主要指標の移り変わり（{yearLong(LATEST)}の報告の{fmt(rows.length)}指標）</div>
-    <div class="chart-caption">報告の年度ごとの<Term word="実績値" />の折れ線です。○は R9年度の<Term word="目標値" />、右下の数は県の<Term word="主要指標の達成率" label="達成率" />です。名前を押すと、基本施策のページの大きな図を開きます。</div>
+    <div class="chart-caption">報告の年度ごとの<Term word="実績値" />の折れ線です。○は R9年度の<Term word="目標値" />、下の数は県の<Term word="主要指標の達成率" label="達成率" />です。図の点にマウスを乗せる（スマホでは押す）と値を出します。名前を押すと、基本施策のページの大きな図を開きます。</div>
   </figcaption>
   <SeikaKey mini plan={false} goal where="各指標の" />
   {groups.map((v) => (

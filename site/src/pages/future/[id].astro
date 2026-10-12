@@ -138,7 +138,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   {shuyou.length > 0 && (
     <section aria-labelledby="shuyou-h">
       <h2 id="shuyou-h" class="anchor"><Term word="主要指標" />の移り変わり（{fmt(shuyou.length)}）</h2>
-      <p class="small secondary lead">{yearLong(LATEST)}の報告の指標です。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。名前を押すと、基本施策のページの大きな図を開きます。</p>
+      <p class="small secondary lead">{yearLong(LATEST)}の報告の指標です。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と、その年度の値とスタート・ゴールの値を出します。名前を押すと、基本施策のページの大きな図を開きます。</p>
       <SeikaKey mini plan={false} goal />
       <ShuyouTrendList rows={shuyou} />
       <p class="small secondary">{yearLong(LATEST)}の値と達成率は県の概要版の表、それより前の年度の値は総括報告書の付属資料のものです（基本施策のページの値は付属資料のもので、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>

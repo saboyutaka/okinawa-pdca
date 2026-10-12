@@ -1,6 +1,7 @@
 ---
-// 将来像ページの主要指標の一覧（県の概要版の49指標のうち、その将来像のもの）。1指標1行で、左に名前と値（いま・スタート・ゴール）、
+// 将来像ページの主要指標の一覧（県の概要版の49指標のうち、その将来像のもの）。1指標1行で、左に名前といまの値、
 // 右に報告年度ごとの値の小さな折れ線（SeikaSpark。値は lib/data.ts の getShuyouStatus の series）と、県の達成率（目標値に対する割合）。
+// スタート・ゴールの値は文に書かず（行がごちゃつくため）、図の点にマウスを乗せる・押すと出す（SeikaSpark）。読み上げ用の文には残す。
 // 図の凡例は一覧の上に1回だけ（SeikaKey mini）。並びは概要版の表の順（良い・悪いで並べ替えない）
 import SeikaSpark from './SeikaSpark.astro';
 import { SHUYOU_BINS, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
@@ -17,7 +18,7 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
         <a class="name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" aria-hidden="true">※</span>} <span class="code-no">{r.code}</span>
       </div>
       <div class="r-vals small secondary" aria-hidden="true">
-        いま <b>{r.actual_raw}</b>{r.actual_ref && <>（{r.actual_ref}）</>}<span class="sep">｜</span>スタート {value(r.base_raw, r.base_ref)} → ゴール {value(r.target_raw, r.target_ref)}
+        いま <b>{r.actual_raw}</b>{r.actual_ref && <>（{r.actual_ref}）</>}
       </div>
       <div class="r-viz" aria-hidden="true"><SeikaSpark part={r.series} /></div>
       <div class="r-rate" aria-hidden="true"><small>達成率</small><b>{shuyouRateText(r)}</b></div>
@@ -34,7 +35,6 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
   .r-name { grid-area: name; min-width: 0; }
   .r-vals { grid-area: vals; line-height: 1.5; }
   .r-vals b { color: var(--ink); }
-  .sep { color: var(--hair); margin: 0 0.4em; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
   .r-viz { grid-area: viz; }
   .r-viz :global(.spark) { width: 100%; height: auto; }
