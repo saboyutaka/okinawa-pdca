@@ -50,7 +50,7 @@
 
 本番のドメインは `lib/links.ts` の `SITE.url`（https://okinawa-miraima.com/）に1か所で決め、`astro.config.ts` の `site` もこれを使う。URL・sitemap・robots.txt・構造化データを作る関数は `lib/seo.ts`。
 
-- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
+- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。プレビューと版ごとの URL（workers.dev。[deploy.md](deploy.md) の2章）・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
 - 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のカードは、全ページの head に `og:image`（大きさと説明の文も `og:image:width`・`og:image:height`・`og:image:alt` で書く）・`twitter:card`（`summary_large_image`）・`og:locale`（`ja_JP`）を出す。カードの題名と説明の文は、ページの題名と説明文（下の `lib/describe.ts`）をそのまま `og:title`・`og:description` に出す。
@@ -77,6 +77,9 @@
 - ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
   - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
   - ナビの横の位置は、前のページの位置を引き継ぐ（`layouts/Base.astro` の `NAV_SCROLL`。sessionStorage の `nav-x`）。端のぼかしもそこで付ける。
+  - 取組をさがすの一覧は、検索用のデータが届いてからスクリプトで描く。届くまでは一覧（`#results` の `aria-busy`）が画面の高さぶんの場所を取っておく。空のままだと下の注記が最初の画面に見え、届いて行を描くと押し出されて、ページが大きくずれていた（CLS が PC 幅で 0.33、スマホ幅で 0.27。0.1 以下が「良い」）。絞り込み中の札も、URL の条件からデータを待たずに出す。
+  - クエリ付きの URL で当たりが0件のときは、取っておいた場所が無くなって注記が画面に入るので、そのぶんずれる（CLS 約0.2）。1件以上なら 0.1 未満。
+  - 確かめ方: Chrome の開発者ツールの Performance（Layout shifts）か Lighthouse。手元の `make build` ではデータがすぐ届くので、回線を絞るか、データの読み込みを遅らせて測る。
 
 ## 8. URL を変えない
 
