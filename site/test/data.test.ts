@@ -6,6 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
+  shuyouBin, shuyouRateText,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -304,4 +305,25 @@ test('textGoalChartRow: 描けない指標は null', () => {
   // 単位が指標と違う・数で読めない
   assert.equal(chartYear({ base_raw: '3件', actual_raw: '5件' }), undefined);
   assert.equal(chartYear({ base_raw: '調査中', actual_raw: '5区域' }), undefined);
+});
+
+test('shuyouBin: 主要指標の達成状況の区分は、概要版の達成率の印字で決める（県の集計と同じ）', () => {
+  // [達成率, 印字, 区分]
+  const cases: [number | null, string, string][] = [
+    [131, '131%', '100%以上'], [100, '100%', '100%以上'], [null, '達成', '100%以上'], [null, '１００％以上', '100%以上'],
+    [84, '84%', '60%以上100%未満'], [60, '60%', '60%以上100%未満'],
+    [44, '44%', '0%超60%未満'], [0.5, '0.5%', '0%超60%未満'],
+    [0, '0%', '横ばい'],
+    [-6, '-6%', '後退'], [-21, '△21%', '後退'], [null, '後退', '後退'],
+    [null, '-', 'その他'], [null, '‐', 'その他'], [null, '－', 'その他'],
+  ];
+  for (const [rate, rate_raw, bin] of cases) assert.equal(shuyouBin({ rate, rate_raw }), bin, rate_raw);
+});
+
+test('shuyouRateText: 主要指標の達成率の札の文字（数はそのまま、比べられないものは —）', () => {
+  assert.equal(shuyouRateText({ rate: -6, rate_raw: '-6%' }), '-6%');
+  assert.equal(shuyouRateText({ rate: 51, rate_raw: '51%' }), '51%');
+  assert.equal(shuyouRateText({ rate: null, rate_raw: '達成' }), '達成');
+  assert.equal(shuyouRateText({ rate: null, rate_raw: '後退' }), '後退');
+  assert.equal(shuyouRateText({ rate: null, rate_raw: '‐' }), '—');
 });

@@ -1,5 +1,5 @@
 ---
-// 将来像1つのページ。ひとめで（取組と成果の割合）→ 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
+// 将来像1つのページ。ひとめで（取組と成果の割合）→ 主要指標の移り変わり → 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
@@ -9,7 +9,6 @@ import DonutCard from '../../components/DonutCard.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import Moves, { type MoveGroup } from '../../components/Moves.astro';
 import Chunk from '../../components/Chunk.astro';
-import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -18,16 +17,16 @@ import TrendChart from '../../components/TrendChart.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
+import ShuyouTrendList from '../../components/ShuyouTrendList.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, toneOfJudgement,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { getThemes } from '../../lib/themes.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
-import { oneLine } from '../../lib/text.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
 
@@ -64,9 +63,11 @@ const kihonCards = kihon.map((k) => {
     ok: t.filter(isOk).length,
     counts: countBy(t, statusOf, statusKeys),
     shisaku: ss.length,
-    shuyou: getShuyou(k.id).filter((r) => r.year === LATEST),
   };
 });
+
+// 主要指標の達成状況（県の概要版の表の順。読めない年度は空）
+const shuyou = getShuyouStatus().filter((r) => r.kihon.shouraizou === v.id);
 
 // 4年間の推移
 const trend = YEARS.map((y) => {
@@ -134,6 +135,16 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     </DonutCard>
   </div>
 
+  {shuyou.length > 0 && (
+    <section aria-labelledby="shuyou-h">
+      <h2 id="shuyou-h" class="anchor"><Term word="主要指標" />の移り変わり（{fmt(shuyou.length)}）</h2>
+      <p class="small secondary lead">{yearLong(LATEST)}の報告の指標です。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と、その年度の値とスタート・ゴールの値を出します。名前を押すと、基本施策のページの大きな図を開きます。</p>
+      <SeikaKey mini plan={false} goal />
+      <ShuyouTrendList rows={shuyou} />
+      <p class="small secondary">{yearLong(LATEST)}の値と達成率は県の概要版の表、それより前の年度の値は総括報告書の付属資料のものです（基本施策のページの値は付属資料のもので、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>
+    </section>
+  )}
+
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">施策の判定（{yearLong(LATEST)}）</h2>
     <p class="small secondary lead">マスを押すと、将来像{v.id}とその判定で絞り込んだ施策の一覧を開きます。</p>
@@ -148,7 +159,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">棒は主な取組の<Term word="進捗状況" />（{yearLong(LATEST)}）、下の箱は<Term word="主要指標" />の見通しです。</p>
+    <p class="small secondary lead">棒は主な取組の<Term word="進捗状況" />（{yearLong(LATEST)}）です。</p>
     <ul class="kcards">
       {kihonCards.map((k) => (
         <li class="sticker kcard">
@@ -159,20 +170,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
           </div>
           {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
           <div class="small"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a></div>
-          {k.shuyou.length > 0 && (
-            <ul class="shuyou">
-              {k.shuyou.map((r) => {
-                const tone = toneOfJudgement(r.judgement);
-                return (
-                  <li class="inset">
-                    <div class="s-name">{r.name}</div>
-                    <div class="small">実績 <b>{oneLine(r.actual_raw)}</b>　→ 目標 {oneLine(r.target_raw)}</div>
-                    {r.judgement && <div>{tone ? <Chip tone={tone} text={`見通し: ${r.judgement}`} /> : <span class="small">見通し: {r.judgement}</span>}</div>}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
         </li>
       ))}
     </ul>
@@ -264,9 +261,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .k-name { line-height: 1.5; }
   .k-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .k-pv { font-size: 1.3rem; }
-  .shuyou { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 8px; }
-  .shuyou li { padding: 8px 12px; display: grid; gap: 2px; }
-  .s-name { font-weight: 700; font-size: 0.9375rem; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }

@@ -1,0 +1,64 @@
+---
+// トップの主要指標の節の中身。県の概要版の49指標を、将来像の見出しの下に将来像ページと同じ行（ShuyouTrendList。名前・いまの値・
+// 報告年度ごとの値の小さな折れ線・達成率）で表の順に並べる（良い・悪いで並べ替えない・選ばない）。将来像ごとに最初の SHOW 件より後は
+// 「さらに表示」で開く（scripts/show-more.ts。残りが2件以下なら畳まない）。下に区分ごとの数を同じ重みで1行と「表で見る」
+import Sz from './Sz.astro';
+import SeikaKey from './SeikaKey.astro';
+import ShuyouTrendList from './ShuyouTrendList.astro';
+import { SHUYOU_BINS, SHUYOU_FORWARD, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
+import { fmt } from '../lib/format.ts';
+
+interface Props { rows: ShuyouStatus[]; visions: { id: number; name: string }[] }
+const { rows, visions } = Astro.props;
+const SHOW = 5;
+const value = (raw: string, ref: string | null) => (ref ? `${raw}（${ref}）` : raw);
+const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.label;
+const groups = visions.map((v) => ({ ...v, rows: rows.filter((r) => r.kihon.shouraizou === v.id) })).filter((v) => v.rows.length);
+const count = (keys: string[]) => rows.filter((r) => keys.includes(r.bin)).length;
+---
+<SeikaKey mini plan={false} goal />
+{groups.map((v) => (
+  <>
+    <h3 class:list={['v-h', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/#shuyou-h`}>将来像{v.id}　{v.name}</a><span class="n">（{fmt(v.rows.length)}）</span></span></h3>
+    <ShuyouTrendList rows={v.rows} id={`shuyou-${v.id}`} more={SHOW} />
+    {v.rows.length > SHOW + 2 && <p class="more-row"><button type="button" class="button" data-more-btn={`shuyou-${v.id}`} hidden>さらに表示（残り {fmt(v.rows.length - SHOW)}指標）</button></p>}
+  </>
+))}
+<p class="m-sum">
+  前進 <b>{fmt(count([...SHUYOU_FORWARD]))}</b>（うち目標値に到達 {fmt(count(['100%以上']))}）・横ばい <b>{fmt(count(['横ばい']))}</b>・後退 <b>{fmt(count(['後退']))}</b>・比べられない <b>{fmt(count(['その他']))}</b>（{fmt(rows.length)}指標。県の区分で、基準値と比べたもの）
+</p>
+<details class="m-table">
+  <summary>表で見る</summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>将来像</th><th>主要指標</th><th>基準値</th><th>直近の実績値</th><th>目標値</th><th class="num">達成率</th><th>区分</th></tr></thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr>
+            <td class="nowrap">将来像{r.kihon.shouraizou}</td>
+            <th scope="row"><a href={r.href}>{r.name}</a>{r.revised && '※'} <span class="code-no">{r.code}</span></th>
+            <td>{value(r.base_raw, r.base_ref)}</td>
+            <td>{value(r.actual_raw, r.actual_ref)}</td>
+            <td>{value(r.target_raw, r.target_ref)}</td>
+            <td class="num nowrap">{shuyouRateText(r)}</td>
+            <td class="nowrap">{binLabel(r)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  {rows.some((r) => r.revised) && <p class="small secondary">※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。</p>}
+</details>
+
+<script src="../scripts/show-more.ts"></script>
+
+<style>
+  .v-h { display: flex; align-items: flex-start; gap: 8px; margin: 1.4em 0 0.5em; font-size: 1rem; line-height: 1.4; }
+  .v-h :global(.badge-sz) { flex: none; width: 26px; height: 26px; font-size: 0.875rem; }
+  .v-h .n { font-weight: 400; color: var(--ink-2); white-space: nowrap; }
+  .more-row { margin-top: 12px; }
+  .m-sum { margin: 16px 0 0; font-size: 0.875rem; color: var(--ink-2); }
+  .m-sum b { font-family: var(--font-num); font-weight: 600; color: var(--ink); font-size: 1.05rem; }
+  .m-table { margin-top: 8px; }
+  .nowrap { white-space: nowrap; }
+</style>

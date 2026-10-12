@@ -6,7 +6,7 @@
   docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025   # R7 だけ読み直して差し替える
 
 入力: data/raw/soukatsu/<年度>/ の PDF と、data/interim/soukatsu/<年度>/ に展開した zip 内の PDF
-  （先に scripts/expand_zips.py を実行しておく）。どのファイルが「将来像」「付属資料」かは
+  （先に scripts/expand_zips.py を実行しておく）。どのファイルが「将来像」「付属資料」「概要版」かは
   manifest.jsonl のリンク文言で判定する。
 出力: data/extracted/soukatsu/
   shouraizou.json 将来像（年度×5）
@@ -15,6 +15,7 @@
   torikumi.json  主な取組（年度×約1,535）
   seika.json     成果指標（年度×約390）
   shuyou.json    主要指標（付属資料の主要指標一覧。1行に複数の指標を含むことがある）
+  shuyou_gaiyou.json 主要指標の達成率（概要版の「主要指標の達成状況2」の表。1指標1行。R5 は表が画像なので無い）
   sources.json   出典（ファイルID → 県のURL・リンク文言）
 すべての行に出典（source: ファイルID, page: PDFのページ番号）を付ける。
 
@@ -228,6 +229,8 @@ def classify(link_text: str) -> str | None:
         return "body"
     if "付属資料" in link_text or "附属資料" in link_text:
         return "fuzoku"
+    if link_text.startswith("概要版"):
+        return "gaiyou"
     return None
 
 
@@ -723,6 +726,181 @@ def read_fuzoku(year: int, src: dict) -> tuple[list[dict], list[dict]]:
     return out, names
 
 
+# ---------------------------------------------------------------- 概要版（主要指標の達成状況）
+
+# 表の見出しの文字（行の目印の番号に近くても、指標の行に入れない）
+GAIYOU_HEADERS = {"基本", "施策", "基本施策", "主要指標", "主要指標名", "直近の", "実績値", "直近の実績値", "目標値に", "対する", "達成率"}
+DASHES = "-‐－―−–—ー"
+# 達成率の欄の文字（「84%」「△21%」「100%以上」「達成」「後退」、比べられないものは「-」）
+RATE_TEXT_RE = re.compile(rf"^(?:[{DASHES}△▲]?\d+(?:\.\d+)?%(?:以上)?|達成|後退|[{DASHES}])$")
+# 欄の文字に付いた括弧の注（「1,042万t-CO₂（令和5年度）」の「令和5年度」）。括弧は全角・半角が混ざる
+REF_RE = re.compile(r"^(.*?)\s*[（(]([^（()）]*)[)）]$")
+# 1行に収まる文字の中心の距離（pt）。番号からこれより離れた文字は、指標の行の外（見出し・検証結果の枠など）
+ROW_REACH = 32
+
+
+def kihon_code(text: str) -> dict | None:
+    """欄の文字全体が基本施策の番号（「２－（３）」「3-(10)」）なら分解した番号。"""
+    c = parse_code(text)
+    if not c or c["kana"] is not None:
+        return None
+    t = re.sub(r"\s", "", unicodedata.normalize("NFKC", text))
+    t = re.sub(rf"[{DASHES}]", "-", t)
+    return c if re.fullmatch(r"\d-\(\d+\)", t) else None
+
+
+def split_ref(text: str) -> tuple[str, str | None]:
+    """「1,032万ｔ-CO₂（R3年度）」→（「1,032万ｔ-CO₂」, 「R3年度」）。括弧の注が無ければ（文字, None）。"""
+    t = text.strip()
+    m = REF_RE.match(t)
+    return (m.group(1).strip(), m.group(2).strip()) if m else (t, None)
+
+
+def parse_rate(text: str) -> float | None:
+    """達成率の印字を数にする（「-6%」→ -6、「△21%」→ -21）。「100%以上」「達成」「後退」「-」は None。"""
+    t = unicodedata.normalize("NFKC", text).strip()
+    m = re.fullmatch(rf"([{DASHES}△▲]?)(\d+(?:\.\d+)?)%", t)
+    if not m:
+        return None
+    return -float(m.group(2)) if m.group(1) else float(m.group(2))
+
+
+def gaiyou_rows(lines: list[dict]) -> list[dict]:
+    """概要版の「主要指標の達成状況2」の1ページの文字の行（x0・y0・x1・y1・size・text）から、主要指標の行を読む。
+
+    表は左右に並び、列は「基本施策の番号 | 主要指標の名前と（基準値→目標値）| 直近の実績値 | 目標値に対する達成率」。
+    罫線や地の色の付け方が年度・表ごとに違い、表として取り出すと行が欠けたりくっついたりするので、文字の位置で読む:
+    - 基本施策の番号（1-(1) など。1つの指標に1つずつある）を行の目印にし、ほかの文字は縦の中心がいちばん近い番号の行に入れる。
+      番号から ROW_REACH より離れた文字・番号より左の文字（将来像の見出し・検証結果の枠）・表の見出しは使わない。
+    - 列は、番号の右の文字を、達成率（右端。印字が RATE_TEXT_RE のもの）・直近の実績値（「（令和7年度）」のような
+      括弧だけの行がある列）・名前の欄（それより左）に分ける。名前の欄は、名前の後ろに小さい字（R4 は同じ大きさで「→」を含む行）で
+      「基準値（年度）→目標値（年度）」が続く。
+    返す行は表の順（左の表から、上から順）。
+    """
+    def cx(l): return (l["x0"] + l["x1"]) / 2
+    def cy(l): return (l["y0"] + l["y1"]) / 2
+
+    codes = [(l, c) for l in lines if (c := kihon_code(l["text"]))]
+    if not codes:
+        return []
+    # 番号の列（左右の表）ごとに分ける
+    codes.sort(key=lambda lc: lc[0]["x0"])
+    groups: list[list[tuple[dict, dict]]] = []
+    for lc in codes:
+        if groups and lc[0]["x0"] - groups[-1][-1][0]["x0"] < 100:
+            groups[-1].append(lc)
+        else:
+            groups.append([lc])
+    lefts = [min(l["x0"] for l, _ in g) - 5 for g in groups] + [float("inf")]
+
+    out = []
+    for gi, group in enumerate(groups):
+        code_x1 = max(l["x1"] for l, _ in group)
+        # 表の幅に収まる文字だけ（右の表の左にある検証結果の枠の文字は、右へはみ出すので入れない）
+        cells = [l for l in lines
+                 if code_x1 - 1 <= l["x0"] and l["x1"] <= lefts[gi + 1] + 2 and not kihon_code(l["text"])
+                 and re.sub(r"\s", "", l["text"]) not in GAIYOU_HEADERS and not l["text"].lstrip().startswith(("（基準値", "(基準値"))]
+        rate_like = [l for l in cells if RATE_TEXT_RE.match(unicodedata.normalize("NFKC", l["text"]).strip())]
+        refs = [l for l in cells if re.match(r"^[（(][^→]*[)）]$", l["text"].strip())]
+        if not rate_like or not refs:
+            continue
+        rate_cx = sorted(cx(l) for l in rate_like)[len(rate_like) // 2]
+        actual_cx = sorted(cx(l) for l in refs)[len(refs) // 2]
+        rows = {id(l): {"code": l, "c": c, "name": [], "actual": [], "rate": [], "mark": False} for l, c in group}
+        for l in cells:
+            near = min(group, key=lambda lc: abs(cy(lc[0]) - cy(l)))[0]
+            if abs(cy(near) - cy(l)) > ROW_REACH:
+                continue
+            # 「※」だけの行は基準値・目標値の肩の小さな印（R4。統計の基準改定に基づいて試算し直した値）。文字には入れず印として持つ
+            if re.fullmatch(r"\s*※+\s*", l["text"]):
+                rows[id(near)]["mark"] = True
+                continue
+            if l in rate_like and abs(cx(l) - rate_cx) <= 25:
+                col = "rate"
+            elif abs(cx(l) - actual_cx) <= 30:
+                col = "actual"
+            else:
+                col = "name"
+            rows[id(near)][col].append(l)
+        for r in sorted(rows.values(), key=lambda r: cy(r["code"])):
+            name_lines = sorted(r["name"], key=lambda l: l["y0"])
+            first = name_lines[0]["size"] if name_lines else 0
+            # 名前の後ろの「基準値（年度）→目標値（年度）」は、名前より小さい字か「→」を含む行から。
+            # 「→」が行の頭にあるとき（4-(4) の「△70人（R2年10月～R３年９月）」「→増加（…）」）は、その前の行の基準値から
+            i = next((k for k, l in enumerate(name_lines) if "→" in l["text"] or l["size"] < first - 0.4), len(name_lines))
+            if 1 < i < len(name_lines) and name_lines[i]["text"].lstrip().startswith("→") and name_lines[i]["size"] >= first - 0.4:
+                i -= 1
+            span = "".join(l["text"].strip() for l in name_lines[i:])
+            base, _, target = span.partition("→")
+            # 直近の実績値は値の行と、括弧の注の行（2行に折り返すことがある。R4 4-(4) の「(R３年10月」「～R４年９月)」）
+            actual = [l["text"].strip() for l in sorted(r["actual"], key=lambda l: l["y0"])]
+            k = next((j for j, t in enumerate(actual) if t.startswith(("（", "("))), len(actual))
+            c = r["c"]
+            out.append({
+                "kihon_id": kihon_id(c),
+                "code": f"{c['shouraizou']}-({c['kihon']})",
+                "name": re.sub(r"\s*※+$", "", (name := "".join(l["text"].strip() for l in name_lines[:i]))),
+                "revised": r["mark"] or "※" in name,
+                "range": span,
+                "base": split_ref(base),
+                "target": split_ref(target),
+                "actual_raw": "".join(actual[:k]),
+                "actual_ref": split_ref("".join(actual[k:]))[1] if k < len(actual) else None,
+                "rate_raw": "".join(l["text"].strip() for l in sorted(r["rate"], key=lambda l: l["y0"])),
+            })
+    return out
+
+
+def page_lines(page) -> list[dict]:
+    """PyMuPDF のページの文字の行（位置と字の大きさつき）。"""
+    out = []
+    for b in page.get_text("dict")["blocks"]:
+        for ln in b.get("lines", []):
+            text = "".join(s["text"] for s in ln["spans"])
+            if text.strip():
+                x0, y0, x1, y1 = ln["bbox"]
+                out.append({"x0": x0, "y0": y0, "x1": x1, "y1": y1, "size": max(s["size"] for s in ln["spans"]), "text": text})
+    return out
+
+
+def read_gaiyou(year: int, src: dict) -> list[dict]:
+    """概要版の「主要指標の達成状況2」の表から、主要指標ごとの基準値・目標値・直近の実績値・達成率を読む。
+
+    付属資料の主要指標一覧（shuyou.json）は1行に男女別などの複数の指標をまとめていて達成率が無い。概要版は1指標1行（49指標）で、
+    県がこの表の達成率で「前進・横ばい・後退・その他」を数えている。R5 の表は画像で文字が無いので、行は返らない。
+    値は印字のまま持つ（rate だけ数にする）。revised は「※」の印のあるもの（統計の基準改定に基づいて試算し直した基準値・目標値。
+    付属資料の基準値・目標値と違うことがある）。
+    """
+    out = []
+    with pymupdf.open(src["path"]) as doc:
+        for i, page in enumerate(doc):
+            head = re.sub(r"\s", "", unicodedata.normalize("NFKC", page.get_text()))
+            if "主要指標の達成状況2" not in head:
+                continue
+            for r in gaiyou_rows(page_lines(page)):
+                if not (r["name"] and r["actual_raw"] and r["rate_raw"] and "→" in r["range"]):
+                    print(f"警告: {year} 概要版 {i + 1}ページ {r['code']} の行を読み切れない: {r}", file=sys.stderr)
+                out.append({
+                    "year": year,
+                    "no": len(out) + 1,
+                    "kihon_id": r["kihon_id"],
+                    "code": r["code"],
+                    "name": r["name"],
+                    "base_raw": r["base"][0],
+                    "base_ref": r["base"][1],
+                    "target_raw": r["target"][0],
+                    "target_ref": r["target"][1],
+                    "actual_raw": r["actual_raw"],
+                    "actual_ref": r["actual_ref"],
+                    "rate_raw": r["rate_raw"],
+                    "rate": parse_rate(r["rate_raw"]),
+                    "revised": r["revised"],
+                    "source": src["id"],
+                    "page": i + 1,
+                })
+    return out
+
+
 # ---------------------------------------------------------------- 出力
 
 
@@ -767,6 +945,9 @@ def main() -> int:
                 result["shuyou"].extend(rows)
                 result["shouraizou"].extend(names)
                 continue
+            if src["kind"] == "gaiyou":
+                result["shuyou_gaiyou"].extend(read_gaiyou(year, src))
+                continue
             p = BodyParser(year, src)
             p.run()
             p.finish()
@@ -799,12 +980,12 @@ def main() -> int:
         keep = [r for r in json.loads(path.read_text(encoding="utf-8")) if r["year"] not in years]
         return sorted(keep + rows, key=lambda r: r["year"])  # 年度内の並びは保つ（sort は安定）
 
-    for name in ("shouraizou", "kihon", "shisaku", "torikumi", "seika", "shuyou"):
+    for name in ("shouraizou", "kihon", "shisaku", "torikumi", "seika", "shuyou", "shuyou_gaiyou"):
         # 康熙部首などの見た目が同じ別の文字を、普通の漢字に直す（fix_chars）
         result[name] = [fix_strings(r) for r in merged(name, result[name])]
         write_json(out / f"{name}.json", result[name])
     write_json(out / "sources.json", merged("sources", sources))
-    for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou"):
+    for name in ("kihon", "shisaku", "torikumi", "seika", "shuyou", "shuyou_gaiyou"):
         counts = defaultdict(int)
         for r in result[name]:
             counts[r["year"]] += 1
