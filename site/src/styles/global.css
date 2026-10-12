@@ -491,7 +491,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 
 /* ページ内の目次（施策・取組のページ）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
-   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ。「すべて開く」は端に置いたまま） */
+   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ） */
 .toc {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 6px;
   margin: 18px -16px 0; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
@@ -505,7 +505,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .toc a:hover { background: var(--sky); }
 /* いま読んでいる節（scripts/toc.ts が aria-current="location" を付ける） */
 .toc a[aria-current="location"] { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-.toc .button { flex: none; margin-left: auto; min-height: 38px; padding: 2px 14px; font-size: 0.875rem; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); }
 .anchor, [id^="seika-"], [id^="shuyou-"] { scroll-margin-top: 72px; }
 
 
@@ -599,7 +598,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   .termpop:not([hidden]) { animation: m-pop-in 0.14s ease-out; transform-origin: 16px 0; }
   .tooltip:not([hidden]) { animation: m-fade 0.1s ease-out; }
   /* 畳んだ内容を押して開いたとき（scripts/disclosure.ts が details に m-opening を付ける）と「さらに表示」で出した行（scripts/show-more.ts が m-in を付ける）は、すっと出す。
-     高さは動かさない（中身は一度に場所を取り、見た目だけを変える）。「すべて開く」・# の行き先・印刷で開いたときは動かさない */
+     高さは動かさない（中身は一度に場所を取り、見た目だけを変える）。# の行き先・印刷で開いたときは動かさない */
   details.m-opening[open] > :not(summary), .m-in { animation: m-drop 0.18s ease-out; }
 
   /* 内訳の棒・割合のメーター・ドーナツ: ページを読み込んだときに、棒は左から、ドーナツは上から右回りに伸びる（最初の画面にあるものだけが目に入る）。
@@ -631,14 +630,14 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 @keyframes m-pop { from { transform: scale(0); } }
 
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
-   ナビ・配色のボタン・目次・絞り込み・シェア・開け閉めのボタンは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
+   ナビ・配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
    地の色は白にし、状態の色は画面と同じに印刷する（色だけでなく形と文字でも出しているので、白黒の印刷でも読める） */
 html.printing .wrap { max-width: 186mm; padding-inline: 0; }
 @media print {
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-open-all], [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
+  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
   .beta-notice { background: none; color: var(--ink); border-bottom: 1.5px solid var(--line); }
   .beta-notice b { border: 1.5px solid var(--line); }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }

@@ -472,7 +472,7 @@ for (const el of document.querySelectorAll<HTMLElement>('[data-chart]')) {
 }
 const renderAll = () => { for (const c of charts) c.render(); };
 renderAll();
-// 幅が変わったとき（画面の回転・「すべて開く」で縦のスクロールバーが出たとき）に描き直す。
+// 幅が変わったとき（画面の回転・縦のスクロールバーが出たとき）に描き直す。
 // スマホはアドレスバーが出入りするたびに resize が起きるが、幅は変わらないので描き直さない
 let w = document.documentElement.clientWidth;
 window.addEventListener('resize', () => {

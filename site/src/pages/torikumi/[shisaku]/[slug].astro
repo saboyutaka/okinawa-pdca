@@ -190,7 +190,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
       <a href="#source">出典</a>
     </div>
-    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
   {(t.year !== LATEST || first !== YEARS[0]) && (
