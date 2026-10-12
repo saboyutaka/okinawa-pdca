@@ -35,7 +35,7 @@ help:
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
 	@echo "make shot          書き出したサイトを PC 幅とスマホ幅で撮って tmp/shots に（PAGES=\"/ /shisaku/ --dark\"）"
 	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
-	@echo "make icons         site/public/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
+	@echo "make icons         site/src/assets/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
 

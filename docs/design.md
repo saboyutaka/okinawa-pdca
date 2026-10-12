@@ -65,7 +65,7 @@
 
 Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL は `site/src/lib/links.ts` の `PROJECT`）。
 
-ロゴは、角の丸い四角のステッカーに、淡い紫の星空と丘を描き、まるい子（いま）がみらいの白い星を見上げる絵（ヘッダーの印と favicon）。丸いハンコは施策の判定だけに使うので、印は丸にしない。笑顔などの表情は付けない（順調・遅れのどちらかの気分を足さないため）。色は `styles/global.css` の `--logo-*` で、状態の色と将来像の色は使わない。中の絵はダークでも同じ色にし、ダークで変えるのはステッカーの縁と影だけ（ほかのステッカーと同じ）。絵は `layouts/Base.astro` の SVG と `public/favicon.svg`（ライトの色の値を直接書く）の2か所にあり、変えたら両方を直して `make icons`（`favicon.ico` と iPhone のホーム画面の `apple-touch-icon.png` を書き出す）。
+ロゴは、角の丸い四角のステッカーに、淡い紫の星空と丘を描き、まるい子（いま）がみらいの白い星を見上げる絵（ヘッダーの印と favicon）。丸いハンコは施策の判定だけに使うので、印は丸にしない。笑顔などの表情は付けない（順調・遅れのどちらかの気分を足さないため）。色は `styles/global.css` の `--logo-*` で、状態の色と将来像の色は使わない。中の絵はダークでも同じ色にし、ダークで変えるのはステッカーの縁と影だけ（ほかのステッカーと同じ）。絵は `layouts/Base.astro` の SVG と `src/assets/favicon.svg`（ライトの色の値を直接書く）の2か所にあり、変えたら両方を直して `make icons`（`favicon.ico` と iPhone のホーム画面の `apple-touch-icon.png` を書き出す）。
 
 ## 11. ページごとの並び
 

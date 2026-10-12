@@ -6,6 +6,11 @@ import ExtLink from '../components/ExtLink.astro';
 import { absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
 import fontUrl from '../fonts/fredoka-num.woff2?url';
+// favicon。src/assets から読み、/_astro/ にハッシュ付きの名前で書き出す（ずっとキャッシュさせる。public/_headers）。
+// HTML を読まずに /favicon.ico を取りに来るところ向けの根元の ICO は、astro.config.ts の rootFavicon が置く
+import faviconSvg from '../assets/favicon.svg';
+import faviconIco from '../assets/favicon.ico';
+import appleTouchIcon from '../assets/apple-touch-icon.png';
 
 // canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
 interface Props { title?: string; description?: string; canonical?: boolean }
@@ -91,9 +96,9 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     {canonical && <meta property="og:url" content={url} />}
     <meta name="author" content={PROJECT.org} />
     {/* SVG を読まないブラウザは ICO（sizes を付けると、SVG を読むブラウザが ICO より SVG を選ぶ）。iPhone のホーム画面は PNG。ICO と PNG は make icons で favicon.svg から書き出す */}
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href={faviconIco} sizes="32x32" />
+    <link rel="icon" href={faviconSvg.src} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={appleTouchIcon.src} />
     {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
     <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
     <script type="speculationrules" is:inline set:html={SPECULATION_RULES} />
@@ -104,7 +109,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <header class="site-header">
       <div class="wrap">
         <a class="site-title" href="/">
-          {/* ロゴ: 星空の丘で、まるい子（いま）がみらいの白い星を見上げる。色は styles/global.css の --logo-*。favicon は public/favicon.svg */}
+          {/* ロゴ: 星空の丘で、まるい子（いま）がみらいの白い星を見上げる。色は styles/global.css の --logo-*。favicon は src/assets/favicon.svg */}
           <span class="mark" aria-hidden="true"><svg viewBox="0 0 36 36">
             <path d="M6 3.4 Q6 6 8.6 6 Q6 6 6 8.6 Q6 6 3.4 6 Q6 6 6 3.4 Z M17.5 5.7 Q17.5 7.5 19.3 7.5 Q17.5 7.5 17.5 9.3 Q17.5 7.5 15.7 7.5 Q17.5 7.5 17.5 5.7 Z M32.5 16 Q32.5 18 34.5 18 Q32.5 18 32.5 20 Q32.5 18 30.5 18 Q32.5 18 32.5 16 Z M4.5 11.7 Q4.5 13 5.8 13 Q4.5 13 4.5 14.3 Q4.5 13 3.2 13 Q4.5 13 4.5 11.7 Z M12 2 Q12 3.2 13.2 3.2 Q12 3.2 12 4.4 Q12 3.2 10.8 3.2 Q12 3.2 12 2 Z M28 20.8 Q28 22 29.2 22 Q28 22 28 23.2 Q28 22 26.8 22 Q28 22 28 20.8 Z" fill="var(--logo-twinkle)" />
             <path d="M-1 27.5 Q18 23 37 27.5 V37 H-1 Z" fill="var(--logo-hill)" stroke="var(--logo-ink)" stroke-width="2" />

@@ -1,14 +1,14 @@
-// site/public/favicon.svg から、SVG の favicon を読まないところ向けの画像を書き出す（ロゴを変えたら make icons）。
+// site/src/assets/favicon.svg から、SVG の favicon を読まないところ向けの画像を書き出す（ロゴを変えたら make icons）。
 //
-//   site/public/favicon.ico          … 16・32・48px（古いブラウザ・ブックマーク・Windows のショートカット）
-//   site/public/apple-touch-icon.png … 180px（iPhone のホーム画面）。角は端末が丸めるので、縁（#edge）を消し、
-//                                      四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
+//   site/src/assets/favicon.ico          … 16・32・48px（古いブラウザ・ブックマーク・Windows のショートカット）
+//   site/src/assets/apple-touch-icon.png … 180px（iPhone のホーム画面）。角は端末が丸めるので、縁（#edge）を消し、
+//                                          四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
 //
 // コンテナ shot の Chromium で SVG を描いて撮る（ホストに画像のツールを入れないため）
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const SRC = 'site/public/favicon.svg';
+const SRC = 'site/src/assets/favicon.svg';
 const svg = await readFile(SRC, 'utf8');
 const tile = svg.match(/id="tile"[^>]*fill="([^"]+)"/)?.[1];
 if (!tile) throw new Error(`${SRC} に id="tile" の地の四角が見つからない`);
@@ -45,14 +45,14 @@ function ico(images: { size: number; data: Buffer }[]): Buffer {
 const sizes = [16, 32, 48];
 const images = [];
 for (const size of sizes) images.push({ size, data: await png(size, svg) });
-await writeFile('site/public/favicon.ico', ico(images));
+await writeFile('site/src/assets/favicon.ico', ico(images));
 
 // 縁の内側だけを 180px に広げ、縁と四角の角の丸みを消す（丘が下の角まで続くように。ellipse の rx は残す）
 const touch = svg
   .replace(/viewBox="[^"]*"/, 'viewBox="1.2 1.2 33.6 33.6"')
   .replace(/<rect id="edge"[^>]*\/>/, '')
   .replace(/(<rect[^>]*?)\srx="[^"]*"/g, '$1');
-await writeFile('site/public/apple-touch-icon.png', await png(180, touch, tile));
+await writeFile('site/src/assets/apple-touch-icon.png', await png(180, touch, tile));
 
 await browser.close();
 console.log(`favicon.ico（${sizes.join('・')}px）と apple-touch-icon.png（180px）を ${SRC} から書き出した`);
