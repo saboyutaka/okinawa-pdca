@@ -110,7 +110,7 @@ const boshu = boshuState();
     <ul class="themes">
       {themes.map((t) => (
         <li>
-          <a class="theme" href={`/theme/${t.id}/`}>
+          <a class="theme press" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
             <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
             <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
@@ -252,7 +252,7 @@ const boshu = boshuState();
   .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .theme {
     display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
-    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
+    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
   }
   .theme:hover { background: var(--sky); }
   .theme:active { transform: translate(2px, 2px); box-shadow: none; }
