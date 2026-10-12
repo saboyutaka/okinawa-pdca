@@ -1,9 +1,11 @@
-// Cloudflare Workers の静的アセットとして site/dist をそのまま置く（Worker のコードは無い）。
+// Cloudflare Workers の静的アセットとして site/dist をそのまま置く。Worker のコードは、/api/ を受ける worker/api.ts だけ（いまは、いいねだけ。docs/deploy.md の7章）。
 // GitHub 連携（Workers Builds）で main に push するたびに、ビルド後に `npx wrangler deploy` で公開される。
 // main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる
 {
   "name": "okinawa-pdca",
   "compatibility_date": "2026-09-01",
+  // いいね（POST /api/like?page=<ページのパス>）に 204 を返すだけの Worker。何も記録しない
+  "main": "./worker/api.ts",
   // 本番は okinawa-miraima.com（ダッシュボードで付けたカスタムドメイン）だけで開く。workers.dev の URL（okinawa-pdca.<アカウント>.workers.dev）は止める。
   // ダッシュボードで切っても、`npx wrangler deploy` のたびにここの値（書かなければ有効）に戻るので、ここで決める
   "workers_dev": false,
@@ -12,8 +14,14 @@
   "preview_urls": true,
   // プレビューの設定。`npx wrangler preview` にはこの枠が要る。本番と分ける設定（変数・バインディング）は無いので空
   "previews": {},
+  // Worker の呼び出しのログ（Workers Logs）を残す。いいねの件数は、このログで /api/like の URL を数えて見る（無料プランは3日分）
+  "observability": { "enabled": true },
   "assets": {
     "directory": "./dist",
+    // Worker から静的なファイル（404 のページ）を返すときに使う
+    "binding": "ASSETS",
+    // /api/ だけ Worker を先に通す。ほかは静的なファイルを先に探す（無いときのページの移動は 404 のページ、それ以外は Worker が 404 のページを返す）
+    "run_worker_first": ["/api/*"],
     // 無いページには Astro が書き出した 404.html を返す
     "not_found_handling": "404-page",
     // /shisaku/1-1-a-1 → /shisaku/1-1-a-1/ のように末尾のスラッシュに揃える（astro.config.ts の trailingSlash: 'always' と同じ）

@@ -1,23 +1,26 @@
 ---
-// 施策・基本施策・主な取組・成果指標・部局・将来像・くらしのテーマのページの終わり（出典の前）に置く、シェアの枠。
-// 「シェアしよう」の言葉とシェアパネルだけを置く（説明は書かない。県に意見を届ける方法は /iken/ とフッターで案内する）。
+// 施策・基本施策・主な取組・成果指標・部局・将来像・くらしのテーマのページの終わり（出典の前）に置く、いいねとシェアの枠。
+// 「この〇〇のページが役に立ったら」の言葉と、いいねのボタン（Like.astro）・シェアパネルだけを置く（説明は書かない。県に意見を届ける方法は /iken/ とフッターで案内する）。
+// いいねはページへのもの（施策への賛成ではない）と読めるように、言葉は「ページが役に立ったら」にする。押すと、ボタンの上に運営からのお礼のポップアップが出る。
 // SNS には、そのページの名前と URL（と #okinawa_miraima。lib/iken.ts の HASHTAG）を入れて投稿できる。
-// 公開前（lib/links.ts の STEALTH）は、SNS への投稿を控えてもらうので枠ごと出さない
+import Like from './Like.astro';
 import Share from './Share.astro';
-import { STEALTH } from '../lib/links.ts';
 import { shareText } from '../lib/iken.ts';
 
 interface Props { kind: string; name: string }
 const { kind, name } = Astro.props;
 ---
-{!STEALTH && (
-  <section class="sticker share-box" aria-labelledby="share-h">
-    <h2 id="share-h" class="anchor">この{kind}のページをシェアしよう</h2>
-    <Share text={shareText(kind, name)} label={`この${kind}を SNS でシェア`} />
-  </section>
-)}
+<section class="sticker share-box" aria-labelledby="share-h">
+  <h2 id="share-h" class="anchor">この{kind}のページが役に立ったら</h2>
+  <div class="share-actions">
+    <Like />
+    <Share text={shareText(kind, name)} label={`この${kind}を SNS でシェア`} compact />
+  </div>
+</section>
 
 <style>
   .share-box { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; margin-top: 2.2em; background: var(--lilac); }
+  .share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  @media (max-width: 520px) { .share-actions { gap: 8px; } }
   h2 { margin: 0; font-size: 1.08rem; }
 </style>

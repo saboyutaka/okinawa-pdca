@@ -4,11 +4,11 @@
 
 ## 1. 検索エンジンに載せない設定
 
-**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出し、SNS のシェアボタンを隠す。検索に載せてよくなったら、`STEALTH` を `false` にし、`X-Robots-Tag` の行を外す（本番の workers.dev の URL は先に止めてあり、本番を開けるのは okinawa-miraima.com だけ。2章）。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
+**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出す（SNS のシェアボタンは、このあいだも出す）。検索に載せてよくなったら、`STEALTH` を `false` にし、`X-Robots-Tag` の行を外す（本番の workers.dev の URL は先に止めてあり、本番を開けるのは okinawa-miraima.com だけ。2章）。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
 
 ## 2. Cloudflare の設定
 
-[Cloudflare Workers の静的アセット](https://developers.cloudflare.com/workers/static-assets/)として置く（Worker のコードは無く、`site/dist` をそのまま配る）。設定は [site/wrangler.jsonc](../site/wrangler.jsonc)、配るときのヘッダーは [site/public/_headers](../site/public/_headers)、公開した後に変えた URL の転送は [site/public/_redirects](../site/public/_redirects)（[site.md](site.md) の 8章）。GitHub 連携（[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)）で、main に push するたびに Cloudflare 側でビルドして公開する。
+[Cloudflare Workers の静的アセット](https://developers.cloudflare.com/workers/static-assets/)として置き、`site/dist` をそのまま配る。Worker のコードは、`/api/` を受ける `site/worker/api.ts` だけ（いまは、いいねだけ。7章）。設定は [site/wrangler.jsonc](../site/wrangler.jsonc)、配るときのヘッダーは [site/public/_headers](../site/public/_headers)、公開した後に変えた URL の転送は [site/public/_redirects](../site/public/_redirects)（[site.md](site.md) の 8章）。GitHub 連携（[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)）で、main に push するたびに Cloudflare 側でビルドして公開する。
 
 ダッシュボードの「Workers & Pages」→「Create application」→「Import a repository」で `saboyutaka/okinawa-pdca` を選び、次のように設定する:
 
@@ -94,3 +94,16 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 - 差し込まれるのは `Accept: text/html` を付けたリクエスト（ブラウザ）のときだけ。`curl` の既定（`Accept: */*`）では入らない。手元（`make dev`・`make build`）でも入らないので、計測されない。
 - ゾーンの「Analytics & Logs」→「HTTP Traffic」の数（リクエスト・Unique Visitors）は CSS・JS・ボットも含み、Unique Visitors は IP で数えるので多めに出る。人がどのページを見たかは Web Analytics で見る。
 - 確かめ方: `curl -s -H 'Accept: text/html' https://okinawa-miraima.com/ | grep -c cloudflareinsights` が 1。ブラウザの開発者ツールでは、コンソールに CSP の違反が出ず、ネットワークに `/cdn-cgi/rum` への送信があること。
+
+## 7. いいねの数
+
+ページの終わりのいいねのボタン（`site/src/components/Like.astro`。[design.md](design.md) の 9章）は、押すと `POST /api/like?page=<ページのパス>`（`/shisaku/1-1-a-1/` なら `/api/like?page=/shisaku/1-1-a-1/`）を1回送る。受けるのは `site/worker/api.ts` で、204 を返すだけで何も記録しない。データベースも、数を返す API も無い。件数は画面に出さず、運営が Cloudflare のダッシュボードで見るだけ。
+
+- `site/wrangler.jsonc` の `main` が Worker、`assets.run_worker_first: ["/api/*"]` で `/api/` だけ Worker を先に通す。ほかは今までどおり静的なファイルを先に探す。ビルドとデプロイの手順（2章）は変わらない（`npx wrangler deploy` が Worker のコードをまとめて `dist` と一緒に上げる。PR のプレビューにも入る）。
+- 無いファイルへの、ページの移動でないリクエスト（`fetch`・画像など）も Worker に来る（ページの移動は来ない。`compatibility_date` が 2025-04-01 より後のため）。Worker は `/api/like` でなければ静的なファイルの側（`assets.binding` の `ASSETS`）に戻し、今までと同じ 404 のページを返す。
+- 件数の見方: ダッシュボードの「Workers & Pages」→ `okinawa-pdca` →「Observability」のログ（Workers Logs。`wrangler.jsonc` の `observability`）で、URL が `/api/like` のものを数える。どのページかは URL の `page` で分かる。無料プランでは**3日分しか残らない**（1日20万件まで）ので、数日おきに見る。
+- 「Metrics」の Requests の数は3か月見られるが、上の無いファイルへのリクエスト（ボットの探索など）も入るので、いいねの数にはならない。
+- 何度でも送れる（ログインも記録も無いので、同じ人かどうか分からない）。`curl` などでいくらでも増やせるので、数は目安として見る。押せるのはボタンを1回表示したうち1回だけ（開き直せばまた押せる）。
+- クローラーがたどったり先読みしたりしても数に入らないように、`POST` だけを受ける（ほかは 405）。
+- 無料プランの Worker の1日の上限（10万回）を超えると、その日は Worker に来るリクエストだけが 429 になる。静的なファイルの配信は数えられず、上限も無いので、サイトのページは止まらない。
+- 手元（`make dev`・`make shot`）には Worker が無い。`make dev` ではボタンの送信が失敗するが、お礼は送れたかどうかに関係なく出す。`make shot` は Worker の代わりに `/api/like` への POST に 204 を返す（`--click .like-btn` で押してから撮れる。[dev.md](dev.md) の 3章）。Worker を動かして確かめるときは、`make build` のあと `site` で `npx wrangler dev`（3章と同じく `node:24-slim` で）。2026-10-12 に wrangler 4.149.0 で、`POST /api/like` が 204、`GET /api/like` が 405、ページが 200、無いページと無いファイルが 404 のページになることを確かめた。
