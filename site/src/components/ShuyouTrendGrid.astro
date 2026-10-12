@@ -80,8 +80,6 @@ const count = (keys: string[]) => rows.filter((r) => keys.includes(r.bin)).lengt
   .t-name { font-size: 0.8125rem; line-height: 1.45; }
   .t-viz { margin-top: auto; }
   .t-viz :global(.spark) { width: 100%; height: auto; }
-  /* 箱の地（.inset）と図の前期の地が同じ色になるので、前期の地を少し濃くする */
-  .t-viz :global(.sp-band) { fill: var(--grid); }
   /* いまの値と達成率は2行に分けて、どの箱も同じ高さの位置に図を置く */
   .t-foot { display: grid; color: var(--ink-2); line-height: 1.4; }
   .t-foot b { color: var(--ink); }

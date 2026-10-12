@@ -30,7 +30,7 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
 
 <style>
   /* PC は「名前・値 | 小さな折れ線 | 達成率」の3列。スマホは名前と値の下に折れ線と達成率を並べる */
-  .trend-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 132px 4.2em; grid-template-areas: "name viz rate" "vals viz rate"; gap: 2px 16px; align-items: center; }
+  .trend-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 150px 4.2em; grid-template-areas: "name viz rate" "vals viz rate"; gap: 2px 16px; align-items: center; }
   .r-name { grid-area: name; min-width: 0; }
   .r-vals { grid-area: vals; line-height: 1.5; }
   .r-vals b { color: var(--ink); }
@@ -41,8 +41,9 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
   .r-rate { grid-area: rate; display: grid; justify-items: end; line-height: 1.2; }
   .r-rate small { font-size: 0.6875rem; font-weight: 700; color: var(--ink-2); }
   .r-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
+  /* スマホは名前と値の下に、図を広めに（達成率の札の左いっぱいまで）置く */
   @media (max-width: 640px) {
-    .trend-list > li { grid-template-columns: 132px minmax(0, 1fr); grid-template-areas: "name name" "vals vals" "viz rate"; gap: 4px 12px; }
-    .r-viz { margin-top: 4px; }
+    .trend-list > li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name name" "vals vals" "viz rate"; gap: 4px 16px; align-items: end; }
+    .r-viz { margin-top: 4px; max-width: 240px; }
   }
 </style>
