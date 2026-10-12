@@ -5,11 +5,11 @@ import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } 
 import { fmt } from '../../lib/format.ts';
 import { getThemes } from '../../lib/themes.ts';
 import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.ts';
-import { SEARCH_DATA_FALLBACK, searchDataPath } from '../../lib/search-data.ts';
+import { SEARCH_DATA_FALLBACK, SEARCH_SUMMARY_FALLBACK, searchDataPath, searchSummaryPath } from '../../lib/search-data.ts';
 
 const groups = getTorikumiGroups();
 const depts = DEPTS.filter((d) => groups.some((g) => g.dept === d.name));
-// 検索用のデータ。名前に中身のハッシュが付く（lib/search-data.ts）
+// 検索用のデータと、キーワードで探すときだけ読むやったこと。名前に中身のハッシュが付く（lib/search-data.ts）
 const dataPath = searchDataPath();
 ---
 <Base title="取組をさがす" description="沖縄県PDCAの主な取組（約1,700件）を、令和4〜7年度の進捗状況つきで検索できます。">
@@ -70,9 +70,9 @@ const dataPath = searchDataPath();
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件を表示</span></p>
+  <p class="result-count" aria-live="polite"><span id="count">読み込み中…</span><span id="unit" hidden>件を表示</span><span id="no-summary" class="small secondary" hidden>（やったことを読み込めなかったため、キーワードは取組の名前などだけでさがしています）</span></p>
 
-  <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={SEARCH_DATA_FALLBACK}></ul>
+  <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={SEARCH_DATA_FALLBACK} data-summary-src={searchSummaryPath()} data-summary-fallback={SEARCH_SUMMARY_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <p class="small secondary">
     同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（「子ども」「こども」のような書き方の違いは同じ名前とみなします。R7の中期実施計画で名前が変わった取組などは別の行）。キーワードは「子ども」「子供」「こども」・「障害」「障がい」のどの書き方でも同じように探せます。部局は最新の報告での所管部局です。
@@ -85,7 +85,7 @@ const dataPath = searchDataPath();
 <script>
   import { iconSvg } from '../../lib/icons.ts';
   import { matchesAll, searchText, searchWords, type SearchWord } from '../../lib/search.ts';
-  import type { SearchData as Data } from '../../lib/search-data.ts';
+  import type { SearchData as Data, SearchSummary as Summary } from '../../lib/search-data.ts';
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
   const form = document.getElementById('tf') as HTMLFormElement;
@@ -93,7 +93,11 @@ const dataPath = searchDataPath();
   const count = document.getElementById('count')!;
   const more = document.getElementById('more') as HTMLButtonElement;
   let data: Data | undefined;
+  // やったこと（data.rows と同じ並び）。キーワードで探すときに読む。読めなかったときは summaryFailed
+  let summary: string[] | undefined;
+  let summaryFailed = false;
   const unit = document.getElementById('unit')!;
+  const noSummary = document.getElementById('no-summary')!;
   let hits: number[] = []; // 当たった行の番号（data.rows の）
   let shown = 0;
   let words: SearchWord[] = [];
@@ -131,7 +135,7 @@ const dataPath = searchDataPath();
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
     if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
     // キーワードが行に見える文字に無く、やったことにだけあるときは、やったことを出す（なぜ出たかが分かるように）
-    if (words.length && !matchesAll(texts[i][0], words)) main.append(el('div', 'small secondary', `R${latestYear - 2018}にやったこと: ${row[13]}`));
+    if (words.length && summary && !matchesAll(texts[i][0], words)) main.append(el('div', 'small secondary', `R${latestYear - 2018}にやったこと: ${summary[i]}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
     li.append(main, stamps(sts));
     return li;
@@ -176,6 +180,15 @@ const dataPath = searchDataPath();
     }
     const f = new FormData(form);
     words = searchWords(String(f.get('q') || ''));
+    // キーワードは、やったことが届いてから探す（読み始めて、届いたらもう一度ここに来る）。それまでの一覧はそのまま
+    if (words.length && !summary && !summaryFailed) {
+      loadSummary();
+      count.textContent = '読み込み中…';
+      unit.hidden = true;
+      renderActive();
+      return;
+    }
+    noSummary.hidden = !(words.length && summaryFailed);
     const s = String(f.get('s') || '');
     const dept = String(f.get('dept') || '');
     const st = String(f.get('st') || '');
@@ -185,9 +198,9 @@ const dataPath = searchDataPath();
     const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
     if (words.length && !texts.length) {
-      texts = data.rows.map(([sid, name, section, , , indicator, , , , , , , , summary]) => {
+      texts = data.rows.map(([sid, name, section, , , indicator], i) => {
         const sh = data!.shisaku[sid];
-        return [searchText(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`), searchText(summary)];
+        return [searchText(`${name} ${section} ${indicator} ${sh[0]} ${sh[1]}`), searchText(summary?.[i] ?? '')];
       });
     }
     const ok = (r: Data['rows'][number], i: number) => {
@@ -205,6 +218,7 @@ const dataPath = searchDataPath();
       return true;
     };
     hits = data.rows.flatMap((r, i) => (ok(r, i) ? [i] : []));
+    list.removeAttribute('aria-busy');
     count.textContent = hits.length.toLocaleString('ja-JP');
     unit.hidden = false;
     list.replaceChildren();
@@ -250,24 +264,63 @@ const dataPath = searchDataPath();
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   more.addEventListener('click', showMore);
-  const load = (url: string) =>
-    fetch(url).then((r) => {
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json() as Promise<Data>;
-    });
-  // 名前にハッシュの付いたデータ（ずっとキャッシュされる）を読む。公開し直した直後に、キャッシュした前のページから開くと
+  async function load<T>(url: string) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json() as Promise<T>;
+  }
+  // 名前にハッシュの付いたファイル（ずっとキャッシュされる）を読む。公開し直した直後に、キャッシュした前のページから開くと
   // 前のハッシュのファイルはもう無いので、名前の変わらない控えを読む
-  load(list.dataset.src!)
-    .catch(() => load(list.dataset.fallback!))
+  async function loadOr<T>(src: string, fallback: string) {
+    try {
+      return await load<T>(src);
+    } catch {
+      return load<T>(fallback);
+    }
+  }
+  const { src, fallback, summarySrc, summaryFallback } = list.dataset as Record<string, string>;
+  const dataLoad = loadOr<Data>(src, fallback);
+  dataLoad
     .then((d) => {
       data = d;
-      list.removeAttribute('aria-busy');
       apply();
     })
     .catch(() => {
       list.removeAttribute('aria-busy');
       count.textContent = '検索用のデータを読み込めませんでした。時間をおいて、ページを再読み込みしてください。';
     });
+
+  // やったことは、キーワードで探すときにしか使わないので、キーワードの欄に入ったときに読む（最初の一覧はこれを待たない）
+  let summaryLoad: Promise<void> | undefined;
+  function loadSummary() {
+    summaryLoad ??= Promise.all([dataLoad, loadOr<Summary>(summarySrc, summaryFallback)])
+      .then(async ([d, s]) => {
+        if (s.hash === d.summary) {
+          summary = s.rows;
+          return false;
+        }
+        // 片方だけ控えを読むと、データとやったことの版が違うことがある（公開し直した直後で、片方が前の版のままブラウザにキャッシュされているとき）。
+        // そのときは両方を控えから読み直す（行の並びで対応させているので、合わないと別の取組のやったことで当たってしまう）
+        [d, s] = await Promise.all([load<Data>(fallback), load<Summary>(summaryFallback)]);
+        if (s.hash !== d.summary) throw new Error('版が合わない');
+        data = d;
+        summary = s.rows;
+        return true;
+      })
+      .catch(() => {
+        summaryFailed = true;
+        return false;
+      })
+      .then((reloaded) => {
+        texts = [];
+        // キーワードで探すのを待っていたときと、データを読み直したときだけ探し直す（キーワードの欄に入っただけなら、さらに表示した一覧をそのまま残す）
+        if (words.length || reloaded) apply();
+      });
+  }
+  // URL にキーワードがあるときは、データと同じときに読み始める
+  const q = form.elements.namedItem('q') as HTMLInputElement;
+  if (q.value.trim()) loadSummary();
+  q.addEventListener('focus', loadSummary, { once: true });
 </script>
 
 <style>

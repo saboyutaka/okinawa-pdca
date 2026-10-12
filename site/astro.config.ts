@@ -59,10 +59,12 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   // concurrency: ページを並べて書き出す数。SNS のカードの画像（pages/og/[...card].png.ts。約2,600枚）は1枚50ms ほどかかるが、
-  // 描くのはメインのスレッドの外（lib/card-render.ts の renderAsync。Node のスレッドは4つ）なので、並べると速くなる
-  build: { format: 'directory', concurrency: 4 },
+  // 描くのはメインのスレッドの外（lib/card-render.ts の renderAsync。Node のスレッドは4つ）なので、並べると速くなる。
+  // inlineStylesheets: CSS をページの <style> に埋め込まず、/_astro/ のファイルにする（ずっとキャッシュされ、ページを移るたびに送り直さない）。
+  // 埋め込むと、Astro はビルド全体の <style> のハッシュ（約40個）をどのページの CSP にも入れる（下の vite.build.cssCodeSplit と docs/site.md の 7章）
+  build: { format: 'directory', concurrency: 4, inlineStylesheets: 'never' },
   integrations: [sitemap, rootFavicon, cardCache],
-  // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプト・<style> のハッシュだけを許す。
+  // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプトのハッシュだけを許す（<style> は書き出さない）。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
   // frame-ancestors は <meta> では効かないので public/_headers で出す。
   // 外から読み込むのは、Cloudflare が配信のときに差し込むアクセス解析（Web Analytics）のスクリプトだけ。
@@ -77,7 +79,10 @@ export default defineConfig({
   },
   // コードの色付け（Shiki）は使わない。style 属性で色を付けるので CSP と合わない（使っていなくても CSP の警告が出る）
   markdown: { syntaxHighlight: false },
-  // 数字のフォント（約4KB）は小さいので、そのままだと Vite が CSS に data: で埋め込み、CSP の default-src 'self' に止められる。
+  // cssCodeSplit: CSS をページや部品ごとに分けず、全ページで1つのファイルにする（gzip で約18KB）。分けると、ページの種類ごとに初めて開くときに
+  // 読む CSS が増え（部局のページで15個）、HTML のあとに CSS をもう1往復待つ。1つにすると、2ページ目からは CSS を読まない（docs/site.md の 7章）。
+  // 部品の <style> もどのページにも届くので、:global() は .x :global(.y) のように、範囲をしぼった要素の中に書く。
+  // assetsInlineLimit: 数字のフォント（約4KB）は小さいので、そのままだと Vite が CSS に data: で埋め込み、CSP の default-src 'self' に止められる。
   // フォントだけは埋め込まず、/_astro/ にハッシュ付きの名前で書き出す（ずっとキャッシュされる。layouts/Base.astro で preload）
-  vite: { build: { assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined) } },
+  vite: { build: { cssCodeSplit: false, assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined) } },
 });
