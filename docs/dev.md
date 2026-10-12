@@ -25,6 +25,7 @@ make build && make shot                                    # PC 幅（1280px）�
 make shot PAGES="/ /shisaku/1-1-a-1/ --dark"               # ページとオプションを選ぶ
 make shot PAGES="/torikumi/ --top"                         # 最初の画面だけ
 make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"     # 最初に当たる要素だけ
+make shot PAGES="/shisaku/1-1-a-1/ --click .like-btn --top"   # 押してから撮る（いいねのお礼のポップアップなど。押した要素が見える位置で撮る）
 ```
 
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ただし `--base https://okinawa-miraima.com` で本番を撮るときに出る、Cloudflare が差し込んだボット検出のスクリプトが CSP に止められたエラーは数えない（[deploy.md](deploy.md) の 3章）。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。

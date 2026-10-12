@@ -5,14 +5,15 @@
 //   make shot PAGES="/ /shisaku/1-1-a-1/"        # ページを並べる
 //   make shot PAGES="/torikumi/ --dark --top"    # ダーク・最初の画面だけ
 //   make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"       # 最初に当たる要素だけ
+//   make shot PAGES="/shisaku/1-1-a-1/ --click .like-btn --top"  # 押してから撮る
 //
 // PAGES はシェルにそのまま渡るので、# や & を含むもの（セレクタ・クエリ）は ' で囲む。
 //
 // - site/dist をこの中で配信して撮る（開発サーバーは要らない）。Cloudflare と同じく、無いページは 404.html を
 //   404 で返し、ディレクトリは末尾に / を付けた URL へ転送する。--base で動いているサーバー（Cloudflare の
 //   プレビューなど）も撮れる。開発サーバー（make dev）は Vite がホスト名 site からの読み込みを断る
-//   （server.allowedHosts）ので撮れない
-// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
+//   （server.allowedHosts）ので撮れない。いいねの POST（/api/like）には、Worker（site/worker/api.ts）の代わりに 204 を返す
+// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>][+<押した要素>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
 // - ページ全体の画像は縦に長い。画像を読ませて確かめるときは --top や --selector で範囲をしぼる
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
 // - 端末で動きを減らす設定（prefers-reduced-motion: reduce）にして開き、動き（styles/global.css の「動き」）の途中ではなく動き終わった形を撮る
@@ -33,6 +34,7 @@ const HELP = `使い方: node scripts/shot/shot.ts [ページのパス ...] [オ
   --dark             ダークで撮る
   --top              ページ全体ではなく最初の画面だけ撮る
   --selector <css>   この CSS セレクタに最初に当たる要素だけ撮る
+  --click <css>      この CSS セレクタに最初に当たる要素を押してから撮る（押すときにその要素まで動くので、--top はその画面を撮る）
   --scale <倍率>     画素の倍率（2 で高精細の端末と同じ細かさ。初めは 1）
   --base <url>       撮るサーバーの URL（初めは --dist をこの中で配信する）
   --dist <dir>       配信するフォルダ（初めは site/dist）
@@ -63,6 +65,10 @@ async function serve(dist: string): Promise<{ base: string; close: () => void }>
   const root = resolve(dist);
   const server = createServer(async (req, res) => {
     const { pathname } = new URL(req.url ?? '/', 'http://localhost');
+    if (req.method === 'POST' && pathname === '/api/like') {
+      res.writeHead(204).end();
+      return;
+    }
     const file = join(root, decodeURIComponent(pathname));
     let status = 200;
     let target = file;
@@ -108,6 +114,7 @@ const { values: opts, positionals } = parseArgs({
     dark: { type: 'boolean', default: false },
     top: { type: 'boolean', default: false },
     selector: { type: 'string' },
+    click: { type: 'string' },
     scale: { type: 'string', default: '1' },
     base: { type: 'string' },
     dist: { type: 'string', default: 'site/dist' },
@@ -176,9 +183,22 @@ try {
         }
       });
       const name =
-        slug(pagePath) + (opts.selector ? `@${slug(opts.selector)}` : '') + `-${width}${opts.dark ? '-dark' : ''}.png`;
+        slug(pagePath) +
+        (opts.selector ? `@${slug(opts.selector)}` : '') +
+        (opts.click ? `+${slug(opts.click)}` : '') +
+        `-${width}${opts.dark ? '-dark' : ''}.png`;
       const path = join(opts.out, name);
       const status = res?.status() ?? 0;
+      if (status < 400 && opts.click) {
+        const button = page.locator(opts.click).first();
+        if (await button.count()) {
+          await button.click();
+          // 押した後の動き（ポップアップが出るなど）と、送ったリクエストが終わるのを待つ
+          await page.waitForTimeout(1000);
+        } else {
+          errors.unshift(`${opts.click} が見つかりません`);
+        }
+      }
       if (status >= 400) {
         errors.unshift(`HTTP ${status}`);
       } else if (opts.selector) {

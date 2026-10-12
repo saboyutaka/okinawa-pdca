@@ -1,0 +1,131 @@
+---
+// いいねのボタン。シェアの枠（ShareBox.astro）でシェアパネルの隣に置く。
+// 押すと POST /api/like?page=<このページのパス> を1回送り（lib/like.ts・worker/api.ts）、ボタンの上に運営からのお礼のポップアップを出す
+// （お礼が上、差出人が下に署名のように）。スマホ（520px 以下）では、シェアと1行に並ぶように「いいね」の文字を隠してハートだけにする（読み上げには残す）。
+// ポップアップは3.5秒たつか、ほかの場所を押すか、Esc で閉じる（消えるときは、すっと薄くなって消える）。読み上げには、ポップアップの代わりに role="status" の文字で伝える。
+// 件数はどこにも残さず画面にも出さない（運営が Cloudflare のログで数えるだけ。docs/deploy.md の7章）。
+// 1回の表示で1回だけ押せる（押したら押せない状態にする。開き直せばまた押せる）。
+// お礼は送れたかどうかに関係なく出す（make dev などの Astro だけのときは送り先が無いため）
+import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
+---
+<span class="like-wrap" data-like>
+  <button type="button" class="like-btn" aria-pressed="false">
+    <svg class="heart" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M12 20.5C6 16.5 2.5 13 2.5 8.9 2.5 6.1 4.6 4 7.3 4c1.9 0 3.6 1.1 4.7 2.8C13.1 5.1 14.8 4 16.7 4c2.7 0 4.8 2.1 4.8 4.9 0 4.1-3.5 7.6-9.5 11.6Z" /></svg>
+    <span class="like-label">いいね</span>
+  </button>
+  <div class="like-pop" aria-hidden="true" hidden>
+    {/* 運営の印は、ヘッダーのロゴのまるい子（layouts/Base.astro）の顔だけ */}
+    <span class="avatar like-avatar"><svg viewBox="0.5 9 28 28" width="40" height="40" focusable="false">
+      <circle cx="14.5" cy="23" r="11.5" fill="var(--logo-body)" stroke="var(--logo-ink)" stroke-width="2.2" />
+      <ellipse cx="12.4" cy="20" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+      <ellipse cx="19.2" cy="19" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+      <circle cx="13.4" cy="18.8" r="1.35" fill="var(--logo-ink)" />
+      <circle cx="20.2" cy="17.8" r="1.35" fill="var(--logo-ink)" />
+    </svg></span>
+    <div>
+      <p class="like-text">{LIKE_THANKS.map((t) => <span>{t}</span>)}</p>
+      <p class="like-from secondary">{LIKE_FROM[0]}<span class="like-org">{LIKE_FROM[1]}</span></p>
+    </div>
+  </div>
+  <span class="sr-only" role="status"></span>
+</span>
+
+<script>
+  import { LIKE_FROM, LIKE_THANKS, likeUrl } from '../lib/like.ts';
+
+  const SHOW_MS = 3500;
+  // ボタンとポップアップのあいだ（.like-pop の bottom・top と同じ）
+  const GAP = 14;
+
+  for (const wrap of document.querySelectorAll<HTMLElement>('[data-like]')) {
+    const btn = wrap.querySelector<HTMLButtonElement>('.like-btn');
+    const pop = wrap.querySelector<HTMLElement>('.like-pop');
+    const status = wrap.querySelector<HTMLElement>('[role="status"]');
+    if (!btn || !pop || !status) continue;
+    let timer = 0;
+    const close = () => {
+      window.clearTimeout(timer);
+      if (pop.hidden || pop.classList.contains('leaving')) return;
+      const done = () => {
+        pop.hidden = true;
+        pop.classList.remove('leaving');
+      };
+      pop.classList.add('leaving');
+      // 消える動き（styles/global.css の「動き」）が終わってから隠す。動きを減らす設定・印刷のときは動きが無いので、すぐに隠す
+      if (pop.getAnimations().length) pop.addEventListener('animationend', done, { once: true });
+      else done();
+    };
+    btn.addEventListener('click', () => {
+      if (btn.getAttribute('aria-pressed') === 'true') return;
+      // disabled にするとフォーカスが外れるので、押せないことは aria-disabled で伝える
+      btn.setAttribute('aria-pressed', 'true');
+      btn.setAttribute('aria-disabled', 'true');
+      fetch(likeUrl(location.pathname), { method: 'POST', keepalive: true }).catch(() => {});
+      status.textContent = `${LIKE_THANKS.join('')}（${LIKE_FROM.join('')}より）`;
+      pop.hidden = false;
+      // ボタンの上に出す場所が画面に無いとき（ボタンが画面の上の端にあるとき）は、下に出す
+      pop.classList.toggle('below', btn.getBoundingClientRect().top - pop.offsetHeight - GAP < 8);
+      timer = window.setTimeout(close, SHOW_MS);
+    });
+    document.addEventListener('click', (e) => {
+      if (!pop.hidden && !btn.contains(e.target as Node)) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+  }
+</script>
+
+<style>
+  .like-wrap { position: relative; display: inline-flex; }
+  /* シェアパネル（Share.astro）と同じ高さの白い枠。押すとハートをロゴのまるい子の色でぬる（はずむ動きは styles/global.css の「動き」） */
+  .like-btn {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 54px; padding: 0 20px 0 15px;
+    background: var(--paper); color: var(--ink); border: 2px solid var(--line); border-radius: 27px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; cursor: pointer;
+  }
+  .like-btn:hover:not([aria-pressed="true"]) { background: var(--sky); }
+  .like-btn:active:not([aria-pressed="true"]) { transform: translate(1px, 1px); }
+  .like-btn[aria-pressed="true"] { cursor: default; }
+  .heart path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+  .like-btn[aria-pressed="true"] .heart path { fill: var(--logo-body); stroke: var(--logo-ink); }
+  /* スマホでは、シェアパネル（compact）と1行に並ぶように、ハートだけの丸にする（高さはシェアパネルと同じ） */
+  @media (max-width: 520px) {
+    .like-btn { justify-content: center; width: 52px; min-height: 52px; padding: 0; }
+    .like-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
+  @media (max-width: 360px) { .like-btn { width: 48px; min-height: 48px; } }
+
+  /* お礼のポップアップ。ボタンの上に、尾をハートに向けて出す（用語の説明 .termpop と同じ線と影。出る・消える動きは styles/global.css の「動き」で、尾のほうからふくらむ） */
+  .like-pop {
+    position: absolute; z-index: 45; left: 0; bottom: calc(100% + 14px);
+    display: flex; align-items: flex-start; gap: 12px; width: max-content; max-width: min(400px, calc(100vw - 72px));
+    background: var(--paper); color: var(--ink); border: 2.5px solid var(--line); border-radius: 16px; box-shadow: 4px 4px 0 var(--shadow);
+    padding: 12px 20px 12px 12px; word-break: auto-phrase; transform-origin: 28px 100%;
+  }
+  .like-pop[hidden] { display: none; }
+  .like-pop::after {
+    content: ""; position: absolute; left: 19px; bottom: -10px; width: 16px; height: 16px; background: var(--paper);
+    border-right: 2.5px solid var(--line); border-bottom: 2.5px solid var(--line); transform: rotate(45deg);
+  }
+  .like-pop.below { bottom: auto; top: calc(100% + 14px); transform-origin: 28px 0; }
+  .like-pop.below::after { bottom: auto; top: -10px; border: 0; border-left: 2.5px solid var(--line); border-top: 2.5px solid var(--line); }
+  .like-avatar { background: var(--logo-sky); overflow: hidden; }
+  /* お礼は1文ずつの行にし、顔の上の端とそろえる。差出人は少しあけて下に */
+  .like-text { margin: 0; padding-top: 2px; font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1.6; }
+  .like-text span { display: block; }
+  /* 差出人は小さく1行に（スマホは字をもう少し小さくし、360px 以下は顔の印も小さくして1行に収める。それより狭いときだけ団体名の前で折り返す） */
+  .like-from { margin: 6px 0 0; font-size: 0.8125rem; line-height: 1.5; }
+  .like-org { white-space: nowrap; }
+
+  /* スマホでは、差出人が1行に収まるように、ポップアップを少し広げ、差出人の字を小さくする（上の .like-pop・.like-from より後に置く） */
+  @media (max-width: 520px) {
+    .like-pop { max-width: calc(100vw - 56px); padding-right: 16px; }
+    .like-from { font-size: 0.75rem; }
+  }
+  @media (max-width: 360px) {
+    .like-pop { gap: 8px; padding-left: 10px; }
+    .like-avatar { width: 38px; height: 38px; }
+    .like-avatar svg { width: 32px; height: 32px; }
+  }
+</style>

@@ -25,7 +25,7 @@ export const SITE = {
 };
 
 // まだ公開前（ステルス）。県への問い合わせが済むまでは、検索エンジンに載せず（noindex）、全ページのヘッダーの上にベータ版の帯を出して
-// 共有を知り合いへ直接にとどめてほしいと伝え、SNS のシェアボタンを隠す（layouts/Base.astro・components/Share.astro・ShareBox.astro・pages/iken.astro）。
+// そのことを伝える（layouts/Base.astro）。SNS のシェアボタンは、このあいだも出す。
 // 公開してよくなったら false にし、public/_headers の X-Robots-Tag も外す
 export const STEALTH = true;
 
