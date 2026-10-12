@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 import ExtLink from '../components/ExtLink.astro';
 import Share from '../components/Share.astro';
 import { yearLong } from '../lib/data.ts';
-import { LINKS, PROJECT } from '../lib/links.ts';
+import { LINKS, PROJECT, STEALTH } from '../lib/links.ts';
 import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, HASHTAG, TAG_PAGES, boshuState, dayText, periodText } from '../lib/iken.ts';
 
 // 受付中かどうかはビルドした日で決まる（lib/iken.ts）。箱の中は募集の告知として書き、終わったら上に「終了しました」の張り紙を貼る
@@ -78,12 +78,17 @@ const endText = `${ey}年${em}月${ed}日`;
   <p>
     このサイトを見て思ったこと・気づいたことは、ハッシュタグ <strong>#{HASHTAG}</strong> を付けて SNS に投稿してください。同じタグで、ほかの人の声も読めます。
   </p>
-  <div class="share-row">
-    <Share link="top" label="このサイトを SNS でシェア" />
-  </div>
-  <p class="small secondary">
-    X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#{HASHTAG} を書き足してください。LINE は知り合いに送る画面です。将来像・基本施策・施策・主な取組・部局・くらしのテーマのページの上と下のシェアからは、そのページへのリンクを付けて投稿できます。
-  </p>
+  {/* 公開前（lib/links.ts の STEALTH）はシェアボタンを出さないので、ボタンの説明も出さない */}
+  {!STEALTH && (
+    <>
+      <div class="share-row">
+        <Share link="top" label="このサイトを SNS でシェア" />
+      </div>
+      <p class="small secondary">
+        X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#{HASHTAG} を書き足してください。LINE は知り合いに送る画面です。将来像・基本施策・施策・主な取組・部局・くらしのテーマのページの上と下のシェアからは、そのページへのリンクを付けて投稿できます。
+      </p>
+    </>
+  )}
   <p class="small">#{HASHTAG} の投稿を見る: {TAG_PAGES.map((t, i) => <>{i > 0 && '・'}<ExtLink href={t.href}>{t.label}</ExtLink></>)}</p>
   <p class="x-note small">SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
 

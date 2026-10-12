@@ -1,7 +1,7 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { LINKS, PROJECT, SITE } from '../lib/links.ts';
+import { LINKS, PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
@@ -15,9 +15,6 @@ import appleTouchIcon from '../assets/apple-touch-icon.png';
 // canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
 // ogType: 'article' は、1つのもの（施策・取組・成果指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページ。一覧・トップ・サイトの説明は 'website'
 interface Props { title?: string; description?: string; canonical?: boolean; ogType?: 'website' | 'article' }
-// まだ公開前（ステルス）なので、検索エンジンに載せず、全ページのヘッダーの上にベータ版の帯を出す（県への問い合わせが済むまでは、共有を知り合いへ直接にとどめてほしいと伝える）。
-// 公開してよくなったら false にし、public/_headers の X-Robots-Tag も外す
-const STEALTH = true;
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true, ogType = 'website' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const path = Astro.url.pathname;
