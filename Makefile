@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract cross-read check issues test test-py test-site urls site-install site-check dev build preview shot shot-typecheck icons og-image down
+.PHONY: help fetch extract cross-read check issues test test-py test-site urls site-install site-check dev build preview shot shot-typecheck icons og-image card-font down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -37,6 +37,7 @@ help:
 	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
 	@echo "make icons         site/src/assets/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
 	@echo "make og-image      SNS のカードの画像（site/public/og-image.png）を作り直す（サイトの名前を変えたとき）"
+	@echo "make card-font     ページごとのカードの画像で使う字だけをフォントから切り出す（新しい字が出て make test が落ちたとき）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
 
@@ -112,6 +113,11 @@ icons:
 # SNS のカードの画像（og:image）を HTML から書き出す（scripts/shot/og-image.ts。書き出した PNG は git に入れる）
 og-image:
 	$(COMPOSE) run --rm shot node scripts/shot/og-image.ts
+
+# ページごとの SNS のカードの画像（ビルドで site/src/lib/card-render.ts が作る）で使う字だけを、Noto Sans CJK JP から切り出す
+# （scripts/shot/card-font.ts。書き出した site/src/fonts/card-bold.woff と card-chars.txt は git に入れる）
+card-font:
+	$(COMPOSE) run --rm shot node scripts/shot/card-font.ts
 
 # worktree を片付ける前に使う。main では node_modules のボリュームは残す
 down:

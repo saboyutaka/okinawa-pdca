@@ -4,6 +4,7 @@ import { copyFile, writeFile } from 'node:fs/promises';
 import { SITE } from './src/lib/links.ts';
 import { sitemapPaths, sitemapXml } from './src/lib/seo.ts';
 import { pagePaths } from './src/lib/routes.ts';
+import { pruneCardCache } from './src/lib/card-cache.ts';
 
 // 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）。
 // 公開した URL の一覧のテストは、書き出さずに lib/routes.ts の pagePaths で全ページの URL を作るので、書き出したものと同じかもここで確かめる
@@ -18,6 +19,22 @@ const sitemap: AstroIntegration = {
       if (diff.length) throw new Error(`書き出したページと lib/routes.ts の pagePaths が違う（${diff.length} 件）: ${diff.slice(0, 5).join(' ')}`);
       await writeFile(new URL('sitemap.xml', dir), sitemapXml(paths));
       logger.info(`sitemap.xml に ${paths.length} ページを書いた`);
+    },
+  },
+};
+
+// SNS のカードの画像のキャッシュ（lib/card-cache.ts）。ビルドの終わりに、前のビルドの画像を使った数と描いた数をログに出し、
+// このビルドで使わなかった画像をキャッシュから消す
+let buildStart = 0;
+const cardCache: AstroIntegration = {
+  name: 'card-cache',
+  hooks: {
+    'astro:build:start': () => {
+      buildStart = Date.now();
+    },
+    'astro:build:done': ({ logger }) => {
+      const { reused, drawn, removed } = pruneCardCache(buildStart);
+      logger.info(`SNS のカードの画像: 前のビルドの画像を ${reused} 枚使い、${drawn} 枚を描いた（使わなくなった ${removed} 枚をキャッシュから消した）`);
     },
   },
 };
@@ -38,8 +55,10 @@ export default defineConfig({
   site: SITE.url,
   output: 'static',
   trailingSlash: 'always',
-  build: { format: 'directory' },
-  integrations: [sitemap, rootFavicon],
+  // concurrency: ページを並べて書き出す数。SNS のカードの画像（pages/og/[...card].png.ts。約2,600枚）は1枚50ms ほどかかるが、
+  // 描くのはメインのスレッドの外（lib/card-render.ts の renderAsync。Node のスレッドは4つ）なので、並べると速くなる
+  build: { format: 'directory', concurrency: 4 },
+  integrations: [sitemap, rootFavicon, cardCache],
   // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプト・<style> のハッシュだけを許す。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
   // frame-ancestors は <meta> では効かないので public/_headers で出す。

@@ -25,6 +25,7 @@ import { themesOf } from '../../lib/themes.ts';
 import { joinLines, firstSentence } from '../../lib/text.ts';
 import { fmt } from '../../lib/format.ts';
 import { shisakuDescription } from '../../lib/describe.ts';
+import { shisakuHead } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
@@ -46,11 +47,13 @@ const progressRows = YEARS.map((y) => ({
   sub: y <= 2024 ? '前期' : '中期',
   counts: countBy(s.torikumi.filter((t) => t.year === y), statusOf, statusKeys),
 }));
+// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
+const head = shisakuHead(s);
 const toriLatest = s.torikumi.filter((t) => t.year === LATEST);
-const toriCounts = countBy(toriLatest, statusOf, statusKeys);
+const toriCounts = head.tori;
 const seikaLatest = sRows.filter((r) => r.latest.year === LATEST);
 const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
-const reached = seikaLatest.filter((r) => rateBin(r.latest) === '100%以上').length;
+const { reached } = head;
 const toneOfBin = (x: SeikaRow) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
 const rateText = (x: SeikaRow) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
 
@@ -73,7 +76,7 @@ const ikPast = ikkatsu.filter((g) => g.latest.year !== ikYear);
 const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 'なし', GRADES.map((x) => x.key));
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
-<Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, judge: s.judges[LATEST], tori: toriCounts, seika: seikaLatest.length, reached })} ogType="article">
+<Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
   <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/kihon/${s.kihon_id}/`, label: kihon?.name }, { label: s.name }]} />
 
   <header class="sticker lift head">

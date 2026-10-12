@@ -129,6 +129,30 @@ export function rateBin(s: Rate) {
 export const rateText = (s: Rate) => (s.rate != null ? `${s.rate}%` : s.rate_raw === '達成' || s.rate_raw === '未達成' ? s.rate_raw : 'なし');
 export const rateTone = (s: Rate) => RATE_BINS.find((b) => b.key === rateBin(s))?.tone;
 
+// 成果指標1つが計画値に届いたか（施策ページのカード・成果指標のページの頭の components/SeikaGoal.astro と、SNS のカードの画像 lib/card.ts）。
+// 札（chip）の色と形は達成率の区分（RATE_BINS）、文（text）は区分ごとに言い切る
+type GoalRow = Pick<SeikaRow, 'year' | 'rate' | 'rate_raw' | 'base' | 'actual' | 'target'>;
+export function seikaVerdict(x: GoalRow) {
+  const yl = yearLabel(x.year);
+  const { base, actual, target } = x;
+  const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
+  // スタートの基準値からゴールの目標値までのどこまで来たか（1でゴール）
+  const progress = nums ? (actual - base) / (target - base) : null;
+  const bin = rateBin(x);
+  const chip = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '達成率なし';
+  // 「達成」とだけ書かれた指標は、印字の数では計画値に届いていないものもあるので、県の判断として書く
+  const text = {
+    '100%以上': x.rate_raw === '達成' ? `県の報告書では${yl}の計画値を「達成」としています`
+      : progress != null && progress > 1 ? `${yl}の計画値に届き、ゴールの目標値も超えています`
+      : progress === 1 ? `${yl}の計画値に届き、ゴールの目標値にも届いています` : `${yl}の計画値に届いています`,
+    '60%以上100%未満': `${yl}の計画値にまだ届いていません`,
+    '0%超60%未満': `${yl}の計画値にまだ届いていません`,
+    '0%以下': progress != null && progress < 0 ? 'スタートの基準値より悪くなっています' : x.rate_raw === '未達成' ? `${yl}の計画値に届いていません` : 'スタートの基準値から進んでいません',
+    '達成率なし': '県の報告書に達成率がありません',
+  }[bin]!;
+  return { tone: RATE_BINS.find((b) => b.key === bin)?.tone, chip, text, down: nums && target < base };
+}
+
 // 成果指標の「達成状況」欄（目標の見通し）
 export const JUDGEMENTS: Category[] = [
   { key: '目標達成', tone: 'good' },

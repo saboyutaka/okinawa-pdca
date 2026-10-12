@@ -4,6 +4,7 @@ import '../styles/global.css';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
+import { CARD_SIZE, cardMeta } from '../lib/card.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
 import fontUrl from '../fonts/fredoka-num.woff2?url';
 // favicon。src/assets から読み、/_astro/ にハッシュ付きの名前で書き出す（ずっとキャッシュさせる。public/_headers）。
@@ -22,6 +23,12 @@ const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tag
 const path = Astro.url.pathname;
 // 本番のドメインでのこのページの URL（クエリを除く）。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、このページとして扱ってもらう
 const url = absUrl(path);
+// SNS のカードの画像。施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページは、そのページの名前と様子を入れた画像（lib/card.ts）、
+// ほかのページはサイト共通の画像（lib/seo.ts の OG_IMAGE）
+const card = canonical ? cardMeta(path) : null;
+const ogImage = card
+  ? { url: absUrl(card.image), ...CARD_SIZE, alt: `${card.alt}（${SITE.name}・非公式）` }
+  : { url: absUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
 // サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。くらしのテーマ（このサイト独自の分類）はナビに置かず、トップの節・施策と取組のテーマの札・フッターから入る。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
@@ -96,13 +103,13 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:locale" content="ja_JP" />
     {canonical && <meta property="og:url" content={url} />}
-    {/* SNS のカードの画像はどのページも同じ1枚（lib/seo.ts の OG_IMAGE）。X も og:image を読む。画像の説明は X 向けに twitter:image:alt にも書く */}
-    <meta property="og:image" content={absUrl(OG_IMAGE.path)} />
-    <meta property="og:image:width" content={String(OG_IMAGE.width)} />
-    <meta property="og:image:height" content={String(OG_IMAGE.height)} />
-    <meta property="og:image:alt" content={OG_IMAGE.alt} />
+    {/* SNS のカードの画像（上の ogImage）。X も og:image を読む。画像の説明は X 向けに twitter:image:alt にも書く */}
+    <meta property="og:image" content={ogImage.url} />
+    <meta property="og:image:width" content={String(ogImage.width)} />
+    <meta property="og:image:height" content={String(ogImage.height)} />
+    <meta property="og:image:alt" content={ogImage.alt} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image:alt" content={OG_IMAGE.alt} />
+    <meta name="twitter:image:alt" content={ogImage.alt} />
     <meta name="author" content={PROJECT.org} />
     {/* SVG を読まないブラウザは ICO（sizes を付けると、SVG を読むブラウザが ICO より SVG を選ぶ）。iPhone のホーム画面は PNG。ICO と PNG は make icons で favicon.svg から書き出す */}
     <link rel="icon" href={faviconIco} sizes="32x32" />
