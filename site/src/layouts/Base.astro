@@ -1,7 +1,7 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { LINKS, PROJECT, SITE } from '../lib/links.ts';
+import { LINKS, PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
@@ -15,8 +15,6 @@ import appleTouchIcon from '../assets/apple-touch-icon.png';
 // canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
 // ogType: 'article' は、1つのもの（施策・取組・成果指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページ。一覧・トップ・サイトの説明は 'website'
 interface Props { title?: string; description?: string; canonical?: boolean; ogType?: 'website' | 'article' }
-// まだ公開前（ステルス）なので、検索エンジンに載せない。載せてよくなったら false にし、public/_headers の X-Robots-Tag も外す
-const NOINDEX = true;
 const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true, ogType = 'website' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const path = Astro.url.pathname;
@@ -85,7 +83,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
-    {NOINDEX && <meta name="robots" content="noindex, nofollow" />}
+    {STEALTH && <meta name="robots" content="noindex, nofollow" />}
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -115,6 +113,11 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
   </head>
   <body>
     <a class="skip" href="#main">本文へスキップ</a>
+    {STEALTH && (
+      <aside class="beta-notice" aria-label="ベータ版のお知らせ">
+        <p class="wrap"><b>ベータ版</b><span>沖縄県への問い合わせが済むまで、検索エンジンには載せていません。共有はお知り合いへ直接お願いします（SNS への投稿はお控えください）。</span></p>
+      </aside>
+    )}
     <header class="site-header">
       <div class="wrap">
         <a class="site-title" href="/">
