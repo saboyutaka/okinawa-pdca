@@ -1,5 +1,5 @@
 ---
-// 将来像1つのページ。ひとめで（取組と成果の割合）→ 主要指標の道のり → 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
+// 将来像1つのページ。ひとめで（取組と成果の割合）→ 主要指標の移り変わり → 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
@@ -17,7 +17,7 @@ import TrendChart from '../../components/TrendChart.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
-import ShuyouRoad from '../../components/ShuyouRoad.astro';
+import ShuyouTrendList from '../../components/ShuyouTrendList.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
@@ -137,10 +137,11 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   {shuyou.length > 0 && (
     <section aria-labelledby="shuyou-h">
-      <h2 id="shuyou-h" class="anchor"><Term word="主要指標" />：めざす姿までの道のり（{fmt(shuyou.length)}）</h2>
-      <p class="small secondary lead">{yearLong(LATEST)}の報告です。スタート（<Term word="基準値" />）からゴール（R9年度の<Term word="目標値" />）までのどこにいるかを、県の<Term word="主要指標の達成率" label="達成率" />の位置に置きました。名前を押すと、基本施策のページの図を開きます。</p>
-      <ShuyouRoad rows={shuyou} />
-      <p class="small secondary">値と達成率は県の概要版の表のとおりです（基本施策のページの値は総括報告書の付属資料で、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>
+      <h2 id="shuyou-h" class="anchor"><Term word="主要指標" />の移り変わり（{fmt(shuyou.length)}）</h2>
+      <p class="small secondary lead">{yearLong(LATEST)}の報告の指標です。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。名前を押すと、基本施策のページの大きな図を開きます。</p>
+      <SeikaKey mini plan={false} goal />
+      <ShuyouTrendList rows={shuyou} />
+      <p class="small secondary">{yearLong(LATEST)}の値と達成率は県の概要版の表、それより前の年度の値は総括報告書の付属資料のものです（基本施策のページの値は付属資料のもので、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>
     </section>
   )}
 

@@ -306,8 +306,7 @@ function shuyouParts(latest: ShuyouRow, years: Record<number, ShuyouRow>): Shuyo
   const labels = (judgesOf(latest.judgement) || []).map((j) => j.label);
   const pick = (x: ShuyouRow) => [x.base_raw, x.actual_raw, x.target_raw].map((raw) => splitByLabels(raw, labels));
   const split = labels.length > 1 && labels.every(Boolean) && pick(latest).every(Boolean);
-  type Cells = Pick<ShuyouYear, 'year' | 'b' | 'a' | 't' | 'judgement'>;
-  const parts = (split ? labels : ['']).map((label) => ({ label, name: label ? `${latest.name}（${label}）` : latest.name, cells: {} as Record<number, Cells> }));
+  const parts = (split ? labels : ['']).map((label) => ({ label, name: label ? `${latest.name}（${label}）` : latest.name, cells: {} as Record<number, PartCells> }));
   for (const [y, x] of Object.entries(years)) {
     const cells: (string[] | null)[] = split ? pick(x) : [[x.base_raw], [x.actual_raw], [x.target_raw]];
     if (!cells.every((c): c is string[] => c != null)) continue;
@@ -317,26 +316,30 @@ function shuyouParts(latest: ShuyouRow, years: Record<number, ShuyouRow>): Shuyo
       p.cells[+y] = { year: +y, b, a, t, judgement: split ? judges?.find((j) => j.label === p.label)?.key || '' : x.judgement };
     });
   }
-  return parts.map(({ cells, ...p }) => {
-    // 図の目盛りの位と単位は、最新の報告の目標値（なければ基準値・実績値）の書き方に合わせる
-    const cur = cells[latest.year];
-    const ref = [cur.t, cur.b, cur.a].find((c): c is NumCell => c.value != null);
-    const scaled = (c: Cell) => (ref && c.value != null && (!c.unit || unitKey(c) === unitKey(ref)) ? c.value / ref.scale : null);
-    const years: Record<number, ShuyouYear> = {};
-    for (const [y, r] of Object.entries(cells)) {
-      years[+y] = {
-        ...r,
-        base: scaled(r.b), actual: scaled(r.a), target: scaled(r.t),
-        base_raw: r.b.text, actual_raw: r.a.text, actual_ref_year: r.a.note, target_raw: r.t.text,
-        target_year: r.year <= 2024 ? 'R6年度' : 'R9年度', plan: [], plan_raw: [],
-      };
-    }
-    // 図は、実績値と基準値か目標値が数で読めれば描く（目標値が「可能な限り減少させる」のような文の指標も、スタートからの動きを見せる）
-    const ys = Object.values(years);
-    const goal = ys.some((r) => r.target != null);
-    const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
-    return { ...p, years, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...years[latest.year], name: p.name } };
-  });
+  return parts.map(({ label, name, cells }) => partOf(label, name, cells, latest.year));
+}
+
+// 主要指標の部分の1年度分の欄（基準値・実績値・目標値を読んだもの）
+type PartCells = Pick<ShuyouYear, 'year' | 'b' | 'a' | 't' | 'judgement'>;
+// 年度ごとの欄から、図に渡す主要指標の部分を作る。図の目盛りの位と単位は、最新の報告（latestYear）の目標値（なければ基準値・実績値）の書き方に合わせる
+function partOf(label: string, name: string, cells: Record<number, PartCells>, latestYear: number): ShuyouPart {
+  const cur = cells[latestYear];
+  const ref = [cur.t, cur.b, cur.a].find((c): c is NumCell => c.value != null);
+  const scaled = (c: Cell) => (ref && c.value != null && (!c.unit || unitKey(c) === unitKey(ref)) ? c.value / ref.scale : null);
+  const years: Record<number, ShuyouYear> = {};
+  for (const [y, r] of Object.entries(cells)) {
+    years[+y] = {
+      ...r,
+      base: scaled(r.b), actual: scaled(r.a), target: scaled(r.t),
+      base_raw: r.b.text, actual_raw: r.a.text, actual_ref_year: r.a.note, target_raw: r.t.text,
+      target_year: r.year <= 2024 ? 'R6年度' : 'R9年度', plan: [], plan_raw: [],
+    };
+  }
+  // 図は、実績値と基準値か目標値が数で読めれば描く（目標値が「可能な限り減少させる」のような文の指標も、スタートからの動きを見せる）
+  const ys = Object.values(years);
+  const goal = ys.some((r) => r.target != null);
+  const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
+  return { label, name, years, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...years[latestYear], name } };
 }
 
 // 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
@@ -419,18 +422,6 @@ export const SHUYOU_FORWARD: ShuyouBin[] = ['100%以上', '60%以上100%未満',
 // 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
 export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
 
-// 主要指標の達成状況の図（トップの将来像ごとの点の図 ShuyouMap・将来像ページの道のりの行 ShuyouRoad）での置き場所。
-// スタート（基準値＝0%）からゴール（目標値＝100%）までの道の上に、達成率の位置で置く。道の外は位置で比べない（基準値と目標値の差が
-// 小さい指標は達成率が -639% のように桁違いになる）ので、左の「後退」・右の「目標値に到達」の枠にまとめる。比べられないもの（その他）は置かない
-export type ShuyouSpot = { zone: 'back' } | { zone: 'road'; at: number } | { zone: 'goal' } | null;
-export function shuyouSpot(r: ShuyouRate): ShuyouSpot {
-  const bin = shuyouBin(r);
-  if (bin === '100%以上') return { zone: 'goal' };
-  if (bin === '後退') return { zone: 'back' };
-  if (bin === 'その他' || r.rate == null) return null;
-  return { zone: 'road', at: r.rate };
-}
-
 // 概要版の指標（1指標1行）が、付属資料のどの主要指標（基本施策ページのカード）にあたるか。カードの id を返す。
 // 基本施策の主要指標が1つならそれ（男性・女性などはカードの中の部分）、2つ以上（3-(12) の県内空港の旅客数・重要港湾の公共取扱貨物量）なら名前で選ぶ
 function shuyouCardId(r: ShuyouGaiyouRow) {
@@ -441,9 +432,48 @@ function shuyouCardId(r: ShuyouGaiyouRow) {
   return g ? shuyouAnchor(groups, g) : 'shuyou';
 }
 
+// 概要版の値（「2.5万人」と括弧の中の年「R２年」）を欄にする
+const gaiyouCell = (raw: string, ref: string | null) => cellOf(ref ? `${raw}（${ref}）` : raw);
+const gaiyouCells = (r: ShuyouGaiyouRow): PartCells => ({
+  year: r.year, b: gaiyouCell(r.base_raw, r.base_ref), a: gaiyouCell(r.actual_raw, r.actual_ref), t: gaiyouCell(r.target_raw, r.target_ref), judgement: '',
+});
+
+// 概要版の指標（1指標1行）ごとの、報告年度ごとの値（トップと将来像ページの小さな折れ線 SeikaSpark に渡す主要指標の部分）。
+// 最新の年度は概要版の値（達成率と同じ表。統計の基準改定で試算し直した基準値・目標値（※）もこちら）。それより前の年度は付属資料の値で、
+// 基本施策の主要指標の部分（shuyouRows）と概要版の指標が同じ数なら、表の順に1つずつ対応させて部分の値を使う（基本施策ページの図と同じ値）。
+// 数が違う基本施策（付属資料の欄の男女別などを分けられない 2-(8)・3-(7)・4-(4)）は、年度ごとに付属資料の欄をその年度の見通しの名前で分け、
+// 分けられない欄（名前が値の後ろにある・PDF の欄で文字が切れている）は同じ年度の概要版の値（同じ数なら表の順）で補う。R5 は概要版が読めない
+function shuyouSeries(kihonId: string, rows: ShuyouGaiyouRow[]): ShuyouPart[] {
+  const groups = shuyouRows(kihonId).filter((g) => g.latest.year === LATEST);
+  const parts = groups.flatMap((g) => g.parts);
+  const n = rows.length;
+  const gaiyou = load('shuyou_gaiyou').filter((r) => r.kihon_id === kihonId);
+  const none = cellOf('');
+  return rows.map((row, i) => {
+    const cells: Record<number, PartCells> = {};
+    if (parts.length === n) {
+      for (const [y, c] of Object.entries(parts[i].years)) cells[+y] = c;
+    } else {
+      for (const [y, x] of Object.entries(groups.length === 1 ? groups[0].years : {})) {
+        const labels = (judgesOf(x.judgement) || []).map((j) => j.label);
+        const same = gaiyou.filter((r) => r.year === +y);
+        const g = same.length === n ? same[i] : null;
+        const pick = (raw: string, k: 'base' | 'actual' | 'target') => {
+          const v = labels.length === n ? splitByLabels(raw, labels)?.[i] : null;
+          return v != null ? cellOf(v) : g ? gaiyouCell(g[`${k}_raw`], g[`${k}_ref`]) : null;
+        };
+        const a = pick(x.actual_raw, 'actual');
+        if (a) cells[+y] = { year: +y, b: pick(x.base_raw, 'base') ?? none, a, t: pick(x.target_raw, 'target') ?? none, judgement: '' };
+      }
+    }
+    cells[row.year] = gaiyouCells(row);
+    return partOf('', row.name, cells, row.year);
+  });
+}
+
 export interface ShuyouStatus extends ShuyouGaiyouRow {
   bin: ShuyouBin;
-  spot: ShuyouSpot;
+  series: ShuyouPart; // 報告年度ごとの値（小さな折れ線）
   kihon: { id: string; name: string; code: string; shouraizou: number };
   href: string; // 基本施策ページのその主要指標のカード
 }
@@ -452,10 +482,16 @@ let shuyouStatus: ShuyouStatus[] | undefined;
 export function getShuyouStatus(): ShuyouStatus[] {
   if (shuyouStatus) return shuyouStatus;
   const kihon = new Map(getKihonList().map((k) => [k.id, k]));
-  shuyouStatus = load('shuyou_gaiyou').filter((r) => r.year === LATEST).map((r) => {
+  const latest = load('shuyou_gaiyou').filter((r) => r.year === LATEST);
+  const series = new Map([...new Set(latest.map((r) => r.kihon_id))].flatMap((id) => {
+    const rows = latest.filter((r) => r.kihon_id === id);
+    const parts = shuyouSeries(id, rows);
+    return rows.map((r, i) => [r, parts[i]] as const);
+  }));
+  shuyouStatus = latest.map((r) => {
     const k = kihon.get(r.kihon_id)!;
     return {
-      ...r, bin: shuyouBin(r), spot: shuyouSpot(r),
+      ...r, bin: shuyouBin(r), series: series.get(r)!,
       kihon: { id: k.id, name: k.name, code: k.code, shouraizou: k.shouraizou },
       href: `/kihon/${k.id}/#${shuyouCardId(r)}`,
     };

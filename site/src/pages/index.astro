@@ -9,7 +9,7 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
-import ShuyouMap from '../components/ShuyouMap.astro';
+import ShuyouTrendGrid from '../components/ShuyouTrendGrid.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
@@ -138,10 +138,10 @@ const boshu = boshuState();
 
   {shuyou.length > 0 && (
     <section aria-labelledby="shuyou-h">
-      <h2 id="shuyou-h"><Term word="主要指標" />で見る、めざす姿までの道のり</h2>
+      <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
       <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。</p>
-      <ShuyouMap rows={shuyou} visions={visions} />
-      <p class="small">指標ごとの値と図は、<a href="/shihyou/shuyou/">主要指標の一覧</a>と各将来像のページにあります。</p>
+      <ShuyouTrendGrid rows={shuyou} visions={visions} />
+      <p class="small">基準値・目標値と県の見通しは、各将来像のページと<a href="/shihyou/shuyou/">主要指標の一覧</a>にあります。</p>
     </section>
   )}
 

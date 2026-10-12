@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouSpot, shuyouRateText,
+  shuyouBin, shuyouRateText,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -320,15 +320,10 @@ test('shuyouBin: 主要指標の達成状況の区分は、概要版の達成率
   for (const [rate, rate_raw, bin] of cases) assert.equal(shuyouBin({ rate, rate_raw }), bin, rate_raw);
 });
 
-test('shuyouSpot: 道の上は 0〜100% の達成率の位置、道の外は左右の枠、比べられないものは置かない', () => {
-  assert.deepEqual(shuyouSpot({ rate: 51, rate_raw: '51%' }), { zone: 'road', at: 51 });
-  assert.deepEqual(shuyouSpot({ rate: 0, rate_raw: '0%' }), { zone: 'road', at: 0 });
-  assert.deepEqual(shuyouSpot({ rate: 147, rate_raw: '147%' }), { zone: 'goal' });
-  assert.deepEqual(shuyouSpot({ rate: null, rate_raw: '達成' }), { zone: 'goal' });
-  assert.deepEqual(shuyouSpot({ rate: -639, rate_raw: '-639%' }), { zone: 'back' });
-  assert.deepEqual(shuyouSpot({ rate: null, rate_raw: '後退' }), { zone: 'back' });
-  assert.equal(shuyouSpot({ rate: null, rate_raw: '-' }), null);
+test('shuyouRateText: 主要指標の達成率の札の文字（数はそのまま、比べられないものは —）', () => {
   assert.equal(shuyouRateText({ rate: -6, rate_raw: '-6%' }), '-6%');
+  assert.equal(shuyouRateText({ rate: 51, rate_raw: '51%' }), '51%');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '達成' }), '達成');
+  assert.equal(shuyouRateText({ rate: null, rate_raw: '後退' }), '後退');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '‐' }), '—');
 });
