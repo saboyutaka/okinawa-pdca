@@ -35,6 +35,7 @@
 - 数え方は1か所で決めてどのページもそれを使う（`lib/data.ts` の `PATTERNS`・`JUDGE_TRENDS`・`JUDGE_CELLS`・`shisakuDepts`）。
 - TypeScript strict。JSON の形は `lib/types.ts`、ページ用の形は `lib/data.ts`・`lib/plans.ts` の型を使い、`any` にしない。
 - 外のサイトへのリンクは `components/ExtLink.astro`。ブラウザにデータ全体は配らない。
+- 公開したページの URL は変えない。一覧（`site/urls.txt`）の URL が無くなると `make test` が落ちる。ページを足したら `make urls`、URL を変えるときは `docs/site.md` の 8章。
 
 ## デザインの大原則
 

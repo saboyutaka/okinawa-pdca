@@ -1,6 +1,7 @@
 ---
 // 部局1つのページ。将来像のページと同じ並び: ひとめで（取組と成果の割合）→ 施策の判定と前の年度からの変化 → 課ごと → 4年間の推移・予算 → 一覧
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import HeadStats from '../../components/HeadStats.astro';
@@ -21,7 +22,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, DEPTS, REORGANIZED, rateBin, countBy, countJudges,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy, countJudges,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
@@ -31,9 +32,8 @@ import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
 import { deptDescription } from '../../lib/describe.ts';
 
-export function getStaticPaths() {
-  return DEPTS.map((dept) => ({ params: { slug: dept.slug }, props: { dept } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['bukyoku/[slug]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { dept } = Astro.props;

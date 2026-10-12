@@ -1,6 +1,7 @@
 ---
 // 将来像1つのページ。ひとめで（取組と成果の割合）→ 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
@@ -19,7 +20,7 @@ import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges, toneOfJudgement,
-  getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { getThemes } from '../../lib/themes.ts';
@@ -29,9 +30,8 @@ import ExtLink from '../../components/ExtLink.astro';
 import { oneLine } from '../../lib/text.ts';
 import { futureDescription } from '../../lib/describe.ts';
 
-export function getStaticPaths() {
-  return getShouraizou().map((v) => ({ params: { id: String(v.id) }, props: { v } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['future/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { v } = Astro.props;

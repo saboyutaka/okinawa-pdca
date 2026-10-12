@@ -12,7 +12,8 @@
 
 `make test` で `make test-py`（`scripts/tests/`。抽出の関数を作った値で確かめる。PDF は読まない）と `make test-site`（`site/test/`。lib の関数）の両方。
 
-- `site/test/integrity.test.ts` だけはコミットした `data/extracted` を読み、サイトが前提にしていること（抽出側の `name_key` とサイトの `nameKey` が同じ・どの行も出典にたどれる・取組の URL が重複しない・どの施策もテーマに入る・部局のページがある など）を確かめる。
+- `site/test/routes.test.ts` は、公開した URL の一覧（`site/urls.txt`）の URL がどれもページか転送で開けるかを確かめる（[site.md](site.md) の 8章）。
+- `site/test/integrity.test.ts` はコミットした `data/extracted` を読み、サイトが前提にしていること（抽出側の `name_key` とサイトの `nameKey` が同じ・どの行も出典にたどれる・取組の URL が重複しない・どの施策もテーマに入る・部局のページがある など）を確かめる。
 - 依存は増やさない（Python は標準の `unittest`、サイトは Node の `node:test`）。`.ts` は Node が型を取り除いて動かすので、enum のような取り除くだけでは動かない書き方は使わない。テストの型も `astro check` で確かめる。
 
 ## 3. 画面の確認（make shot）

@@ -1,6 +1,7 @@
 ---
 // 基本施策1つのページ。施策のページと同じ並び: 頭（目指す姿）→ 目次 → 主要指標 → 施策 → 主な取組の進捗 → 県のふりかえり → シェア → 出典
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Crumbs from '../../components/Crumbs.astro';
@@ -15,12 +16,11 @@ import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../..
 import { kihonDescription } from '../../lib/describe.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy, countJudges,
-  getKihonList, getShouraizou, getShisakuList, shuyouRows, shuyouAnchor, sourceLink,
+  getShouraizou, getShisakuList, shuyouRows, shuyouAnchor, sourceLink,
 } from '../../lib/data.ts';
 
-export function getStaticPaths() {
-  return getKihonList().map((k) => ({ params: { id: k.id }, props: { k } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['kihon/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { k } = Astro.props;

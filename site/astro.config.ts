@@ -3,13 +3,19 @@ import type { AstroIntegration } from 'astro';
 import { writeFile } from 'node:fs/promises';
 import { SITE } from './src/lib/links.ts';
 import { sitemapPaths, sitemapXml } from './src/lib/seo.ts';
+import { pagePaths } from './src/lib/routes.ts';
 
-// 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）
+// 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）。
+// 公開した URL の一覧のテストは、書き出さずに lib/routes.ts の pagePaths で全ページの URL を作るので、書き出したものと同じかもここで確かめる
 const sitemap: AstroIntegration = {
   name: 'sitemap',
   hooks: {
     'astro:build:done': async ({ pages, dir, logger }) => {
       const paths = sitemapPaths(pages.map((p) => p.pathname));
+      const built = new Set(paths);
+      const expected = new Set(pagePaths());
+      const diff = [...paths.filter((p) => !expected.has(p)), ...[...expected].filter((p) => !built.has(p))];
+      if (diff.length) throw new Error(`書き出したページと lib/routes.ts の pagePaths が違う（${diff.length} 件）: ${diff.slice(0, 5).join(' ')}`);
       await writeFile(new URL('sitemap.xml', dir), sitemapXml(paths));
       logger.info(`sitemap.xml に ${paths.length} ページを書いた`);
     },
@@ -25,11 +31,13 @@ export default defineConfig({
   integrations: [sitemap],
   // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプト・<style> のハッシュだけを許す。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
-  // frame-ancestors は <meta> では効かないので public/_headers で出す
+  // frame-ancestors は <meta> では効かないので public/_headers で出す。
+  // 外から読み込むのは、Cloudflare が配信のときに差し込むアクセス解析（Web Analytics）のスクリプトだけ。
+  // 差し込まれる URL は /beacon.min.js/v… と版で変わるので、ホストで許す。送り先は同じドメインの /cdn-cgi/rum なので 'self' で足りる
   security: {
     csp: {
       directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],
-      scriptDirective: { resources: ["'self'"] },
+      scriptDirective: { resources: ["'self'", 'https://static.cloudflareinsights.com'] },
       styleDirective: { resources: [{ resource: "'self'", kind: 'element' }, { resource: "'unsafe-inline'", kind: 'attribute' }] },
     },
   },

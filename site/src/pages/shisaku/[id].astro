@@ -1,5 +1,6 @@
 ---
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
@@ -16,7 +17,7 @@ import ThemeTags from '../../components/ThemeTags.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getShisakuList, getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref,
+  getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref,
 } from '../../lib/data.ts';
 import type { SeikaRow } from '../../lib/types.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -28,9 +29,8 @@ import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
 
-export function getStaticPaths() {
-  return getShisakuList().map((s) => ({ params: { id: s.id }, props: { s } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['shisaku/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { s } = Astro.props;

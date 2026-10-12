@@ -1,5 +1,6 @@
 ---
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
@@ -11,7 +12,7 @@ import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import { LATEST, STATUSES, yearLabel, yearLong, rateBin, seikaHref, countBy, countJudges, getTorikumi, getSeika, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { themeIdsOfItem } from '../../lib/themes.ts';
 import { fmt, pct } from '../../lib/format.ts';
 import { themeDescription } from '../../lib/describe.ts';
 import { KANKO } from '../../lib/plans.ts';
@@ -20,9 +21,8 @@ import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 
-export function getStaticPaths() {
-  return getThemes().map((t) => ({ params: { id: t.id }, props: { t } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['theme/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { t } = Astro.props;
