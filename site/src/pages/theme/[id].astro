@@ -8,6 +8,7 @@ import ThemeIcon from '../../components/ThemeIcon.astro';
 import DonutCard from '../../components/DonutCard.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
@@ -86,10 +87,19 @@ const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
     </DonutCard>
   </div>
 
+  <Toc
+    links={[
+      { href: '#judge-h', label: '施策の判定' },
+      { href: '#list-h', label: '施策' },
+      seika.length > 0 && { href: '#seika-h', label: '成果指標' },
+    ]}
+    head={{ kind: 'くらしのテーマ', tag: 'ttag', title: t.label }}
+  />
+
   {t.id === KANKO.theme && <RmSummary />}
 
   <section aria-labelledby="judge-h">
-    <h2 id="judge-h">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
+    <h2 id="judge-h" class="anchor">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
     <p class="small secondary lead">マスを押すと、このテーマとその判定で絞り込んだ施策の一覧を開きます。</p>
     <JudgeMatrix counts={judgeCounts} caption={`「${t.label}」の${fmt(items.length)}施策`} hrefOf={listHref} />
   </section>

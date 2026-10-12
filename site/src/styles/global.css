@@ -488,21 +488,48 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .years { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 
-/* ページ内の目次（施策・取組のページ）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
-   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ。「すべて開く」は端に置いたまま） */
+/* ページ内の目次（components/Toc.astro）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
+   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ。「すべて開く」は端に置いたまま）。
+   上に貼り付いたら（scripts/toc.ts の stuck）、リンクの上に何のページか（区分・名前・判定など）の1行（.toc-head）を出す。
+   その1行の高さだけ下の余白を負にして、本文の位置は変えない（目次が下の本文に重なるだけで、本文はずれない） */
+.toc-mark { height: 1px; margin-top: 17px; }
 .toc {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: 6px;
-  margin: 18px -16px 0; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
+  --toc-head: 32px;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  margin: 0 -16px; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
 }
-.toc-links { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 4px 4px 2px; margin: -2px -4px -4px -2px; }
-.toc-links::-webkit-scrollbar { display: none; }
+.toc-row { display: flex; align-items: center; gap: 6px; }
+.toc-head { height: 0; overflow: hidden; visibility: hidden; }
+.toc.stuck { margin-bottom: calc(-1 * var(--toc-head)); }
+.toc.stuck .toc-head { height: var(--toc-head); visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .toc { transition: margin-bottom 0.16s ease; }
+  .toc-head { transition: height 0.16s ease, visibility 0.16s; }
+}
+.toc-head-in { display: flex; align-items: center; gap: 8px; height: calc(var(--toc-head) - 6px); }
+.toc-kind {
+  flex: none; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; color: var(--ink-2);
+  border: 1.5px solid var(--hair); border-radius: 6px; padding: 0 7px; line-height: 1.6; white-space: nowrap;
+}
+.toc-kind.ttag, .toc-kind.plan-tag { color: var(--ink); border-color: var(--line); font-size: 0.75rem; }
+.toc-kind .badge-sz { width: 1.5em; height: 1.5em; font-size: 0.6875rem; border-width: 1.5px; margin-left: -4px; }
+.toc-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: 0.9375rem; }
+.toc-st { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; white-space: nowrap; }
+.toc-st small { color: var(--ink-2); font-size: 0.75rem; }
+.toc-st .chip { font-size: 0.8125rem; }
+.toc-st .jstamp { width: 24px; height: 24px; font-size: 0.75rem; border-width: 1.5px; }
 .toc a {
   flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 14px; min-height: 38px;
   display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 999px; background: var(--paper);
 }
+.toc-links { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 4px 4px 2px; margin: -2px -4px -4px -2px; }
+.toc-links::-webkit-scrollbar { display: none; }
 .toc a:hover { background: var(--sky); }
 .toc .button { flex: none; margin-left: auto; min-height: 38px; padding: 2px 14px; font-size: 0.875rem; box-shadow: 2px 2px 0 var(--shadow); }
-.anchor, [id^="seika-"], [id^="shuyou-"] { scroll-margin-top: 72px; }
+/* 目次の線のすぐ下の見出しは、ほかの節の間ほど空けない（目次の線が区切りになるため） */
+.toc + section > h2:first-child { margin-top: 1.2em; }
+/* # の行き先は、貼り付いた目次（何のページかの1行とリンク）の下に出す */
+.anchor, [id^="seika-"], [id^="shuyou-"] { scroll-margin-top: 104px; }
 
 
 .prose { white-space: pre-line; }

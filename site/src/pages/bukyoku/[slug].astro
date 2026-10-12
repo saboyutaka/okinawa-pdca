@@ -19,6 +19,7 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
 import {
@@ -161,16 +162,29 @@ const sources = deptSourcePages(dept.name);
     )}
   </div>
 
+  <Toc
+    links={[
+      related.length > 0 && { href: '#judge-h', label: '施策の判定' },
+      { href: '#moves-h', label: '前の年度からの変化' },
+      { href: '#ka', label: '課ごとの取組' },
+      { href: '#trend-h', label: '4年間の推移' },
+      { href: '#yosan', label: '予算' },
+      { href: '#lists', label: '成果指標・施策' },
+      { href: '#source', label: '出典' },
+    ]}
+    head={{ kind: '部局', title: dept.name }}
+  />
+
   {related.length > 0 && (
     <section aria-labelledby="judge-h">
-      <h2 id="judge-h">かかわる施策の判定（{yearLong(LATEST)}）</h2>
+      <h2 id="judge-h" class="anchor">かかわる施策の判定（{yearLong(LATEST)}）</h2>
       <p class="small secondary lead">関係部等にこの部局の名前がある施策と、この部局の主な取組がある施策です。マスを押すと、{dept.name}とその判定で絞り込んだ施策の一覧を開きます。</p>
       <JudgeMatrix counts={judgeCounts} caption={`${dept.name}がかかわる${fmt(related.length)}施策`} hrefOf={(k) => `/shisaku/?dept=${q}&judge=${k}`} />
     </section>
   )}
 
   <section aria-labelledby="moves-h">
-    <h2 id="moves-h">前の年度からの変化</h2>
+    <h2 id="moves-h" class="anchor">前の年度からの変化</h2>
     <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
     <Moves groups={moves} />
   </section>
@@ -182,7 +196,7 @@ const sources = deptSourcePages(dept.name);
   </section>
 
   <section aria-labelledby="trend-h">
-    <h2 id="trend-h">4年間の推移</h2>
+    <h2 id="trend-h" class="anchor">4年間の推移</h2>
     {drawTrend ? (
       <>
         <figure class="sticker">
@@ -225,7 +239,7 @@ const sources = deptSourcePages(dept.name);
   </section>
 
   <section aria-labelledby="yosan">
-    <h2 id="yosan">予算</h2>
+    <h2 id="yosan" class="anchor">予算</h2>
     {budgetRows.some((r) => Object.values(r.amounts).some((v) => v > 0)) ? (
       <>
         <AmountChart
@@ -260,7 +274,7 @@ const sources = deptSourcePages(dept.name);
   </section>
 
   <section aria-labelledby="lists" id="dept-lists">
-    <h2 id="lists">{dept.name}の成果指標・施策</h2>
+    <h2 id="lists" class="anchor">{dept.name}の成果指標・施策</h2>
     <p class="small">{dept.name}の主な取組（{yearLabel(LATEST)}・{fmt(latest.length)}件）は、<a href={`/torikumi/?dept=${q}`}>取組をさがす</a>で進捗状況や4年間の様子で絞り込んで見られます。</p>
     <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
       <label class="q" data-label="キーワード">キーワード（指標・施策の名前）

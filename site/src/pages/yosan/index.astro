@@ -10,6 +10,7 @@ import StatusBar from '../../components/StatusBar.astro';
 import BudgetItem from '../../components/BudgetItem.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import Toc from '../../components/Toc.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, countBy,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
@@ -138,15 +139,16 @@ const suspects = getSuspects();
     </div>
   </div>
 
-  <nav class="toc" aria-label="このページの内容">
-    <div class="toc-links" data-scroll-hint>
-      <a href="#suii">財源の推移</a>
-      <a href="#ikkatsu">一括交付金の事業</a>
-      <a href="#bunya">部局・将来像</a>
-      <a href="#jigyo">大きな予算事業</a>
-      <a href="#note">データの注意</a>
-    </div>
-  </nav>
+  <Toc
+    links={[
+      { href: '#suii', label: '財源の推移' },
+      { href: '#ikkatsu', label: '一括交付金の事業' },
+      { href: '#bunya', label: '部局・将来像' },
+      { href: '#jigyo', label: '大きな予算事業' },
+      { href: '#note', label: 'データの注意' },
+    ]}
+    head={{ title: '予算と財源' }}
+  />
 
   <section aria-labelledby="suii">
     <h2 id="suii" class="anchor">財源別の推移</h2>

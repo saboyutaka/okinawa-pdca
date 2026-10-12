@@ -15,6 +15,7 @@ import Prose from '../../components/Prose.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import Toc from '../../components/Toc.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
   getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref,
@@ -128,16 +129,22 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     </div>
   </div>
 
-  <nav class="toc" aria-label="このページの内容">
-    <div class="toc-links" data-scroll-hint>
-      <a href="#seika">成果指標</a>
-      <a href="#torikumi">主な取組</a>
-      {ikkatsu.length > 0 && <a href="#ikkatsu">一括交付金</a>}
-      <a href="#check">県のふりかえり</a>
-      <a href="#source">出典</a>
-    </div>
-    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
-  </nav>
+  <Toc
+    links={[
+      { href: '#seika', label: '成果指標' },
+      { href: '#torikumi', label: '主な取組' },
+      ikkatsu.length > 0 && { href: '#ikkatsu', label: '一括交付金' },
+      { href: '#check', label: '県のふりかえり' },
+      { href: '#source', label: '出典' },
+    ]}
+    head={{ kind: '施策', title: s.name }}
+    openAll
+  >
+    <Fragment slot="status">
+      <small>{yearLabel(LATEST)}の判定</small>
+      <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, j && JUDGE_UI[j.key].hatch && 'hatch']}>{j ? <><Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={8} />{j.key}</> : '—'}</span>
+    </Fragment>
+  </Toc>
 
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>

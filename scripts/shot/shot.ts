@@ -5,6 +5,7 @@
 //   make shot PAGES="/ /shisaku/1-1-a-1/"        # ページを並べる
 //   make shot PAGES="/torikumi/ --dark --top"    # ダーク・最初の画面だけ
 //   make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"       # 最初に当たる要素だけ
+//   make shot PAGES="/shisaku/1-1-a-1/ --at '#torikumi'"        # その要素まで # で跳んだときの画面（上に貼り付く目次を見る）
 //
 // PAGES はシェルにそのまま渡るので、# や & を含むもの（セレクタ・クエリ）は ' で囲む。
 //
@@ -12,7 +13,7 @@
 //   404 で返し、ディレクトリは末尾に / を付けた URL へ転送する。--base で動いているサーバー（Cloudflare の
 //   プレビューなど）も撮れる。開発サーバー（make dev）は Vite がホスト名 site からの読み込みを断る
 //   （server.allowedHosts）ので撮れない
-// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
+// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>][~<--at のセレクタ>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
 // - ページ全体の画像は縦に長い。画像を読ませて確かめるときは --top や --selector で範囲をしぼる
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
 // - ページの読み込みに失敗したとき・ブラウザでスクリプトのエラーが出たときは表示して、終了コード1。ただし、Cloudflare が
@@ -32,6 +33,7 @@ const HELP = `使い方: node scripts/shot/shot.ts [ページのパス ...] [オ
   --dark             ダークで撮る
   --top              ページ全体ではなく最初の画面だけ撮る
   --selector <css>   この CSS セレクタに最初に当たる要素だけ撮る
+  --at <css>         この CSS セレクタに最初に当たる要素まで、# のリンクと同じようにスクロールしてから、その画面を撮る
   --scale <倍率>     画素の倍率（2 で高精細の端末と同じ細かさ。初めは 1）
   --base <url>       撮るサーバーの URL（初めは --dist をこの中で配信する）
   --dist <dir>       配信するフォルダ（初めは site/dist）
@@ -107,6 +109,7 @@ const { values: opts, positionals } = parseArgs({
     dark: { type: 'boolean', default: false },
     top: { type: 'boolean', default: false },
     selector: { type: 'string' },
+    at: { type: 'string' },
     scale: { type: 'string', default: '1' },
     base: { type: 'string' },
     dist: { type: 'string', default: 'site/dist' },
@@ -174,11 +177,24 @@ try {
         }
       });
       const name =
-        slug(pagePath) + (opts.selector ? `@${slug(opts.selector)}` : '') + `-${width}${opts.dark ? '-dark' : ''}.png`;
+        slug(pagePath) + (opts.selector ? `@${slug(opts.selector)}` : '') + (opts.at ? `~${slug(opts.at)}` : '') + `-${width}${opts.dark ? '-dark' : ''}.png`;
       const path = join(opts.out, name);
       const status = res?.status() ?? 0;
       if (status >= 400) {
         errors.unshift(`HTTP ${status}`);
+      } else if (opts.at) {
+        // # のリンクと同じく scroll-margin-top を守って跳ぶ（なめらかなスクロールは待たない）。上に貼り付く目次の切り替え（scripts/toc.ts）を待ってから撮る
+        const found = await page.evaluate((sel) => {
+          const el = document.querySelector(sel);
+          el?.scrollIntoView({ behavior: 'instant', block: 'start' });
+          return Boolean(el);
+        }, opts.at);
+        if (found) {
+          await page.waitForTimeout(400);
+          await page.screenshot({ path });
+        } else {
+          errors.unshift(`${opts.at} が見つかりません`);
+        }
       } else if (opts.selector) {
         const target = page.locator(opts.selector).first();
         if (await target.count()) await target.screenshot({ path });

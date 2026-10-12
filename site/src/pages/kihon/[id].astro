@@ -11,6 +11,7 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ShuyouCard from '../../components/ShuyouCard.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import Toc from '../../components/Toc.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
 import { kihonDescription } from '../../lib/describe.ts';
@@ -67,16 +68,17 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     )}
   </header>
 
-  <nav class="toc" aria-label="このページの内容">
-    <div class="toc-links" data-scroll-hint>
-      <a href="#shuyou">主要指標</a>
-      <a href="#list">施策</a>
-      <a href="#progress">取組の進捗</a>
-      {h && <a href="#hyoka">県のふりかえり</a>}
-      <a href="#source">出典</a>
-    </div>
-    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
-  </nav>
+  <Toc
+    links={[
+      { href: '#shuyou', label: '主要指標' },
+      { href: '#list', label: '施策' },
+      { href: '#progress', label: '取組の進捗' },
+      h && { href: '#hyoka', label: '県のふりかえり' },
+      { href: '#source', label: '出典' },
+    ]}
+    head={{ kind: '基本施策', title: k.name }}
+    openAll
+  />
 
   <section aria-labelledby="shuyou">
     <h2 id="shuyou" class="anchor"><Term word="主要指標" />：ゴールまでの道のり</h2>

@@ -16,6 +16,7 @@ import StatusChart from '../../components/StatusChart.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendChart from '../../components/TrendChart.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import Toc from '../../components/Toc.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import {
@@ -134,14 +135,27 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     </DonutCard>
   </div>
 
+  <Toc
+    links={[
+      { href: '#judge-h', label: '施策の判定' },
+      { href: '#moves-h', label: '前の年度からの変化' },
+      { href: '#kihon', label: '基本施策' },
+      seikaGroups.length > 0 && { href: '#seika-h', label: '成果指標' },
+      { href: '#trend-h', label: '4年間の推移' },
+      { href: '#theme-h', label: 'くらしのテーマ' },
+      { href: '#yosan-h', label: '予算' },
+    ]}
+    head={{ kind: `将来像${v.id}`, sz: v.id, title: v.name }}
+  />
+
   <section aria-labelledby="judge-h">
-    <h2 id="judge-h">施策の判定（{yearLong(LATEST)}）</h2>
+    <h2 id="judge-h" class="anchor">施策の判定（{yearLong(LATEST)}）</h2>
     <p class="small secondary lead">マスを押すと、将来像{v.id}とその判定で絞り込んだ施策の一覧を開きます。</p>
     <JudgeMatrix counts={judgeCounts} caption={`将来像${v.id}の${fmt(shisaku.length)}施策`} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
   </section>
 
   <section aria-labelledby="moves-h">
-    <h2 id="moves-h">前の年度からの変化</h2>
+    <h2 id="moves-h" class="anchor">前の年度からの変化</h2>
     <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
     <Moves groups={moves} />
   </section>
@@ -197,7 +211,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   )}
 
   <section aria-labelledby="trend-h">
-    <h2 id="trend-h">4年間の推移</h2>
+    <h2 id="trend-h" class="anchor">4年間の推移</h2>
     <figure class="sticker">
       <figcaption>
         <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合（将来像{v.id}）</div>
@@ -231,7 +245,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   </section>
 
   <section aria-labelledby="theme-h">
-    <h2 id="theme-h">くらしのテーマで見る<span class="own">このサイト独自の分類</span></h2>
+    <h2 id="theme-h" class="anchor">くらしのテーマで見る<span class="own">このサイト独自の分類</span></h2>
     <p class="small secondary lead">将来像{v.id}の施策が多いテーマの順です。押すと、将来像{v.id}とそのテーマで絞り込んだ施策の一覧を開きます。</p>
     <ul class="tlist">
       {themes.map((t) => <li><a class="ttag t-big" href={`/shisaku/?s=${v.id}&theme=${t.id}`}>{t.label}<b>{fmt(t.n)}</b></a></li>)}
@@ -239,7 +253,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   </section>
 
   <section aria-labelledby="yosan-h">
-    <h2 id="yosan-h">予算</h2>
+    <h2 id="yosan-h" class="anchor">予算</h2>
     <div class="sticker budget">
       <div class="tile-label">将来像{v.id}の主な取組に書かれた予算事業（{yearLong(LATEST)}の決算見込額）</div>
       <div class="tile-value">{yen(budget)}</div>
