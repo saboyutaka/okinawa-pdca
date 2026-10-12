@@ -49,6 +49,9 @@
   --sz-5: #00a88e; --sz-5-ink: #151a3d; --sz-5-wash: #dbf3ee;
   /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
+  /* ロゴ（ヘッダーの印）。淡い紫の星空と丘で、まるい子がみらいの白い星を見上げる。中の絵はダークでも同じ色にする
+     （ダークで変わるのはステッカーの縁と影だけ）。favicon（public/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
+  --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
   /* 以前の名前（ページの style から参照しているもの） */
   --page: var(--bg);
   --surface: var(--paper);
@@ -124,14 +127,15 @@ small, .small { font-size: 0.875rem; }
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-/* PDCA の印は幅を決めておく（スマホで2行目の字下げを、印の幅とすき間から計算するため。書体で幅が変わらないように） */
-.site-header { --mark-w: 62px; --mark-gap: 8px; }
+/* ロゴの印は幅を決めておく（スマホで2行目の字下げを、印の幅とすき間から計算するため） */
+.site-header { --mark-w: 40px; --mark-gap: 10px; }
 .site-title { display: inline-flex; align-items: center; gap: var(--mark-gap); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; line-height: 1.3; }
+/* 角の丸い四角のステッカー（丸いハンコは施策の判定だけに使うので、丸にしない）。絵は Base.astro の SVG */
 .site-title .mark {
-  display: inline-grid; place-items: center; flex: none; width: var(--mark-w); height: 34px; padding: 0; border-radius: 999px; white-space: nowrap;
-  background: var(--pop); color: var(--pop-ink); border: 2.5px solid var(--line); box-shadow: 2px 2px 0 var(--shadow);
-  font-family: var(--font); font-weight: 800; font-size: 0.75rem; letter-spacing: 0.04em; transform: rotate(-4deg);
+  display: block; flex: none; width: var(--mark-w); height: var(--mark-w); border-radius: 30%; overflow: hidden;
+  background: var(--logo-sky); border: 2.5px solid var(--line); box-shadow: 2px 2px 0 var(--shadow); transform: rotate(-4deg);
 }
+.site-title .mark svg { display: block; width: 100%; height: 100%; }
 /* 「（非公式）」と作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面ではタイトルの下の行に小さく置く */
 .site-sub { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; margin-left: -12px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); }
 .site-sub small { font-size: 0.9375rem; }
