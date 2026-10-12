@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
+  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias,
 } from '../src/lib/data.ts';
@@ -117,7 +117,7 @@ test('どのくらしのテーマにもアイコンがある', () => {
 });
 
 test('沖縄県PDCA の抽出結果は、どの行も出典（県の PDF のページ）にたどれる', () => {
-  for (const file of ['shisaku', 'kihon', 'torikumi', 'seika', 'shuyou', 'bukyoku/torikumi'] as const) {
+  for (const file of ['shisaku', 'kihon', 'torikumi', 'seika', 'shuyou', 'shuyou_gaiyou', 'bukyoku/torikumi'] as const) {
     const rows: { source: string; page: number }[] = load(file);
     none(rows.filter((r) => !r.page || !sourceLink(r.source, r.page)), (r) => `${file}: ${r.source} p.${r.page}`);
   }
@@ -186,6 +186,34 @@ test('主要指標の一覧の行の行き先（基本施策ページのカー�
     const latest = groups.map((g) => g.latest.year === LATEST);
     assert.deepEqual(latest, [...latest].sort((a, b) => Number(b) - Number(a)), `${k.id}: 最新の報告の指標が先にない`);
   }
+});
+
+test('主要指標の達成状況（概要版）は、最新の年度の49指標で、区分ごとの数が概要版の集計と同じ', () => {
+  const rows = getShuyouStatus();
+  assert.equal(rows.length, 49);
+  // 概要版（R7）「主要指標の達成状況1」の表: 100%以上 11・60%以上 8・0%超60%未満 14・横ばい 1・後退 11・その他 4
+  assert.deepEqual(SHUYOU_BINS.map((b) => rows.filter((r) => r.bin === b.key).length), [11, 8, 14, 1, 11, 4]);
+  // 将来像ごとの数（概要版の将来像ごとの棒の合計）
+  assert.deepEqual([1, 2, 3, 4, 5].map((v) => rows.filter((r) => r.kihon.shouraizou === v).length), [5, 14, 18, 5, 7]);
+});
+
+test('主要指標の達成状況の49指標は、どれも報告年度ごとの値の折れ線を描ける（付属資料の欄を分けられない指標は概要版で補う）', () => {
+  const rows = getShuyouStatus();
+  none(rows.filter((r) => !r.series.drawable || r.series.years[LATEST]?.actual == null), (r) => `${r.code} ${r.name}`);
+  // 2-(8)・3-(7)・4-(4) は付属資料の欄を年度ごとに分け、分けられない欄を概要版で補って、R4〜R7 の実績値がそろう
+  const filled = rows.filter((r) => ['2-8', '3-7', '4-4'].includes(r.kihon_id));
+  assert.equal(filled.length, 10);
+  none(filled.filter((r) => YEARS.some((y) => r.series.years[y]?.actual == null)), (r) => `${r.code} ${r.name}`);
+});
+
+test('主要指標の達成状況の名前は、基本施策ページのその指標のカードへ向く（基本施策に主要指標が2つあれば名前で選ぶ）', () => {
+  for (const r of getShuyouStatus()) {
+    const groups = shuyouRows(r.kihon_id);
+    const ids = groups.filter((g) => g.latest.year === LATEST).map((g) => `/kihon/${r.kihon_id}/#${shuyouAnchor(groups, g)}`);
+    assert.ok(ids.includes(r.href), `${r.code} ${r.name}: ${r.href}`);
+  }
+  const k312 = getShuyouStatus().filter((r) => r.kihon_id === '3-12');
+  assert.equal(new Set(k312.map((r) => r.href)).size, 2, '3-(12) の2つの指標が同じカードに向いている');
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {

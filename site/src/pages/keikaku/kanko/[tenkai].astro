@@ -45,7 +45,6 @@ const next = all[i + 1];
     label="このページの施策"
     links={t.shisaku.map((s) => ({ href: `#rm-${s.id}`, title: s.name, label: s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name }))}
     head={{ kind: KANKO.short, tag: 'plan-tag', title: t.name }}
-    openAll
   />
 
   {t.shisaku.map((s, si) => {

@@ -10,6 +10,7 @@
 // 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
 // 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
 import { matchesAll, searchText, searchWords } from '../lib/search.ts';
+import { bump } from './motion.ts';
 
 // 絞り込みの入力（キーワード・チェックボックス・ラジオ・select）
 type Field = HTMLInputElement | HTMLSelectElement;
@@ -115,6 +116,7 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
     summary.replaceChildren(head, ...chips, ...(parts.length > 1 ? [all] : []));
   };
 
+  let ready = false; // 開いたときの最初の絞り込みが済んだか
   const apply = () => {
     const conds = conditions();
     let n = 0;
@@ -137,7 +139,11 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
       g.hidden = shown === 0;
       for (const c of g.querySelectorAll('[data-group-count]')) c.textContent = String(shown);
     }
-    if (count) count.textContent = String(n);
+    // 件数が変わったら数字を小さくはねさせる（開いたときの最初の絞り込みでは動かさない）
+    if (count && count.textContent !== String(n)) {
+      count.textContent = String(n);
+      if (ready) bump(count);
+    }
     if (empty) empty.hidden = n > 0;
     renderSummary(conds);
     const changed = [...conds].filter(([k]) => k !== 'q').reduce((s, [k, values]) => s + values.filter((v) => !isDefault(k, v)).length, 0);
@@ -163,4 +169,5 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
   form.addEventListener('change', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
   apply();
+  ready = true;
 }

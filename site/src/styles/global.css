@@ -449,6 +449,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .fchip:hover > input + span { background: var(--sky); }
 .filters label .own { justify-self: start; transform: none; margin: 0; }
 .result-count { font-size: 0.9375rem; color: var(--ink-2); font-weight: 700; }
+/* 件数の数字は、変わったときに小さくはねる（scripts/motion.ts の bump。inline のままでは動かない） */
+.result-count [id] { display: inline-block; }
 /* いまの絞り込みの条件（scripts/list-filter.ts）。1つずつ外せる */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
 .active-filters .active-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
@@ -489,7 +491,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .years .yl { font-size: 0.8125rem; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
 
 /* ページ内の目次（components/Toc.astro）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
-   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ。「すべて開く」は端に置いたまま）。
+   続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ）。
    上に貼り付いたら（scripts/toc.ts の stuck）、リンクの上に何のページか（区分・名前・判定など）の1行（.toc-head）を出す。
    その1行の高さだけ下の余白を負にして、本文の位置は変えない（目次が下の本文に重なるだけで、本文はずれない） */
 .toc-mark { height: 1px; margin-top: 17px; }
@@ -498,14 +500,9 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   margin: 0 -16px; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
 }
-.toc-row { display: flex; align-items: center; gap: 6px; }
 .toc-head { height: 0; overflow: hidden; visibility: hidden; }
 .toc.stuck { margin-bottom: calc(-1 * var(--toc-head)); }
 .toc.stuck .toc-head { height: var(--toc-head); visibility: visible; }
-@media (prefers-reduced-motion: no-preference) {
-  .toc { transition: margin-bottom 0.16s ease; }
-  .toc-head { transition: height 0.16s ease, visibility 0.16s; }
-}
 .toc-head-in { display: flex; align-items: center; gap: 8px; height: calc(var(--toc-head) - 6px); }
 .toc-kind {
   flex: none; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; color: var(--ink-2);
@@ -525,7 +522,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .toc-links { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 4px 4px 2px; margin: -2px -4px -4px -2px; }
 .toc-links::-webkit-scrollbar { display: none; }
 .toc a:hover { background: var(--sky); }
-.toc .button { flex: none; margin-left: auto; min-height: 38px; padding: 2px 14px; font-size: 0.875rem; box-shadow: 2px 2px 0 var(--shadow); }
+/* いま読んでいる節（scripts/toc.ts が aria-current="location" を付ける） */
+.toc a[aria-current="location"] { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
 /* 目次の線のすぐ下の見出しは、ほかの節の間ほど空けない（目次の線が区切りになるため） */
 .toc + section > h2:first-child { margin-top: 1.2em; }
 /* # の行き先は、貼り付いた目次（何のページかの1行とリンク）の下に出す */
@@ -562,6 +560,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 /* 成果指標の計画の道すじ（charts.ts の drawSeika の点線） */
 .k-path { width: 18px; height: 0; border-top: 2px dashed var(--ink-2); }
 .k-band { width: 16px; height: 11px; border-radius: 3px; background: var(--bg); border: 1px solid var(--hair); }
+.k-band.on-frame { background: var(--grid); border-color: var(--grid); }
+.k-start { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); }
 .chart .here { fill: var(--ink); }
 
 /* 成果指標・主要指標のカード（components/SeikaCard.astro・ShuyouCard.astro）の頭の1行と「スタート → いま → ゴール」。
@@ -591,6 +591,12 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 /* 成果指標の一覧の行の小さな道のりの図（components/SeikaSpark.astro）。行が多いので、色と太さは要素に書かずここで付ける */
 .spark { display: block; overflow: visible; }
 .sp-band { fill: var(--bg); }
+/* 主要指標の小さな図（components/SeikaSpark.astro の part）: R4〜R9 の全体に地を敷き、前期の地を少し濃くする */
+.spark-goal .sp-frame { fill: var(--bg); }
+.spark-goal .sp-band { fill: var(--grid); }
+/* 主要指標の点の値を出す透明な円（ツールチップ）。マウスを乗せた円だけ薄い線で囲む */
+.sp-hit circle { fill: transparent; stroke: none; }
+.sp-hit circle:hover { stroke: var(--ink-2); stroke-width: 0.8; }
 .sp-plan path { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 3 2.5; stroke-linejoin: round; }
 .sp-plan circle { fill: var(--paper); stroke: var(--ink-2); stroke-width: 1.5; }
 .sp-plan .sp-start { fill: var(--ink-2); stroke: none; }
@@ -599,15 +605,64 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .sp-act circle { fill: var(--pop); stroke: var(--line); stroke-width: 1; }
 .sp-act circle:last-child { stroke-width: 1.5; }
 
+/* 動き（docs/design.md の12章）。意味のある動き（押した・変わったの手ごたえ、図を読む順、どこからどこへ）だけを、1回だけ短く付ける。
+   動かすのは見た目だけ（transform・scale・opacity・clip-path・SVG の線の描き方）で、幅・高さ・位置などレイアウトにかかわるものは動かさない（ずれ・ガタつきが起きないように）。
+   どの要素も、ふだんの見た目は動き終わった形にし、キーフレームには始まりの形だけを書く。ここが効かないとき（端末で動きを減らす設定・印刷・対応していないブラウザ）は、
+   はじめから動き終わった形で見える。状態の区分はどれも同じ動きにする（遅れだけを目立たせない） */
+@media (prefers-reduced-motion: no-preference) {
+  /* ページを移るとき: 前のページから次のページへ短く重ねて切り替える（スクリプトは使わない。対応していないブラウザはこれまでどおり）。
+     ヘッダーに名前を付けて別に動かすと、下までスクロールしたページから移ったときに上から降りてくるので、ページ全体をそのまま重ねる */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
+  /* 配色の切り替え: ボタンから丸く広げる（scripts/theme.ts が html に vt-theme とボタンの位置 --vt-x・--vt-y・--vt-r を付ける） */
+  html.vt-theme::view-transition-old(root), html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  html.vt-theme::view-transition-new(root) { animation: m-reveal 0.4s ease-out; }
+
+  /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・親の施策の札・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
+     影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
+  .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
+  @media (hover: hover) {
+    :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
+  }
+  /* 用語の吹き出しは出るときに少しふくらむ。ツールチップは薄く出す */
+  .termpop:not([hidden]) { animation: m-pop-in 0.14s ease-out; transform-origin: 16px 0; }
+  .tooltip:not([hidden]) { animation: m-fade 0.1s ease-out; }
+  /* 畳んだ内容を押して開いたとき（scripts/disclosure.ts が details に m-opening を付ける）と「さらに表示」で出した行（scripts/show-more.ts が m-in を付ける）は、すっと出す。
+     高さは動かさない（中身は一度に場所を取り、見た目だけを変える）。# の行き先・印刷で開いたときは動かさない */
+  details.m-opening[open] > :not(summary), .m-in { animation: m-drop 0.18s ease-out; }
+  /* ページ内の目次が上に貼り付いたときに出す、何のページかの1行（scripts/toc.ts の stuck）。場所は一度に取り（本文には重ねるのでずれない）、中身をすっと出す */
+  .toc.stuck .toc-head-in { animation: m-drop 0.18s ease-out; }
+
+  /* ドーナツ: ページを読み込んだときに、上から右回りに伸びる（最初の画面にあるものだけが目に入る）。内訳の棒・割合のメーターは動かさない（伸びる動きが要らないため） */
+  .donut .d-arc { animation: m-arc 0.6s ease-out 0.05s both; }
+  /* 施策の判定のハンコと4年分のスタンプ（施策・取組のページの頭。components/Stamps.astro の pop）: 順にポンと押す。--m-start（始まり）と --i（何番目か）で時間をずらす */
+  .m-stamp { animation: m-stamp 0.3s cubic-bezier(0.3, 1.4, 0.6, 1) calc(var(--m-start, 0s) + var(--i, 0) * 70ms) both; }
+
+  /* スクリプトで描く図（scripts/charts.ts）: 図が画面に入ったときに1回だけ、実績の線を始まりから伸ばし、点は線が届いたときに置き、
+     「いまここ」などの札は描き終わってから出す。計画の道すじ・ゴール・目盛りは最初から出しておく（比べる相手を先に見せる）。
+     初めて描くときに図に m-anim を付けて止めておき、画面に入ると m-go で動かす。動き終わったら両方を外す */
+  .chart.m-anim .m-line { stroke-dasharray: var(--len); animation: m-draw 0.55s linear both paused; }
+  .chart.m-anim :is(.m-dot, .m-tag) { transform-box: fill-box; transform-origin: center; animation: m-pop 0.22s cubic-bezier(0.3, 1.5, 0.6, 1) var(--d, 0ms) both paused; }
+  .chart.m-anim.m-go :is(.m-line, .m-dot, .m-tag) { animation-play-state: running; }
+}
+@keyframes m-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y)); } }
+@keyframes m-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-drop { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes m-arc { from { stroke-dasharray: 0 400; } }
+@keyframes m-stamp { from { scale: 1.7; opacity: 0; } 55% { scale: 0.93; opacity: 1; } }
+@keyframes m-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+@keyframes m-pop { from { transform: scale(0); } }
+
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
-   ナビ・配色のボタン・目次・絞り込み・シェア・開け閉めのボタンは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
+   ナビ・配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
    地の色は白にし、状態の色は画面と同じに印刷する（色だけでなく形と文字でも出しているので、白黒の印刷でも読める） */
 html.printing .wrap { max-width: 186mm; padding-inline: 0; }
 @media print {
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-open-all], [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
+  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
   .beta-notice { background: none; color: var(--ink); border-bottom: 1.5px solid var(--line); }
   .beta-notice b { border: 1.5px solid var(--line); }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
@@ -619,4 +674,6 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   [data-chart] svg { max-width: 100%; height: auto; }
   h1, h2, h3, h4, summary { break-after: avoid; }
   .row-list > li, .goal-steps, tr, [data-chart] svg, .spark { break-inside: avoid; }
+  /* 紙には動き終わった形を印刷する（動きは、ふだんの見た目を動き終わった形にしてある。上の「動き」） */
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

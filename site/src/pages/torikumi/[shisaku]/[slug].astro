@@ -128,7 +128,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       </div>
       <div class="now-years">
         <span class="now-yl">4年間</span>
-        <Stamps items={stamps} label="4年間の進捗状況" size="small" />
+        <Stamps items={stamps} label="4年間の進捗状況" size="small" pop={0.1} />
       </div>
     </div>
     {latestRec?.activity && (
@@ -192,7 +192,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
       { href: '#source', label: '出典' },
     ]}
     head={{ kind: '主な取組', title: t.name }}
-    openAll
   >
     <Fragment slot="status"><small>{yearLabel(t.year)}</small><Chip tone={latestTone} text={latestStatus} /></Fragment>
   </Toc>

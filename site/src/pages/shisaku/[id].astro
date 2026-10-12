@@ -92,13 +92,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     </div>
     <div class="head-side">
       <div class:list={['stamp-big', `tone-${j ? j.tone : 'blank'}`]}>
-        <div class:list={['circle', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
+        <div class:list={['circle', 'm-stamp', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
         <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
         <div class="sb">{yearLong(LATEST)}の<Term word="推進状況" label="県の判定" /></div>
       </div>
       <div class="head-years">
         <div class="small secondary label">4年間の判定</div>
-        <Stamps items={judgeStamps} label="4年間の判定" size="small" />
+        <Stamps items={judgeStamps} label="4年間の判定" size="small" pop={0.22} />
       </div>
     </div>
     {s.houkou && (
@@ -138,7 +138,6 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       { href: '#source', label: '出典' },
     ]}
     head={{ kind: '施策', title: s.name }}
-    openAll
   >
     <Fragment slot="status">
       <small>{yearLabel(LATEST)}の判定</small>

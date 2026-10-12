@@ -9,10 +9,11 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
+import ShuyouTrendTop from '../components/ShuyouTrendTop.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, getShuyouStatus,
 } from '../lib/data.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
@@ -46,6 +47,9 @@ const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
   return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
+
+// 主要指標の達成状況（県の概要版の表。読めない年度は空）
+const shuyou = getShuyouStatus();
 
 // 4年間の推移
 const trend = YEARS.map((y) => {
@@ -106,7 +110,7 @@ const boshu = boshuState();
     <ul class="themes">
       {themes.map((t) => (
         <li>
-          <a class="theme" href={`/theme/${t.id}/`}>
+          <a class="theme press" href={`/theme/${t.id}/`}>
             <span class="ico"><ThemeIcon id={t.id} /></span>
             <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
             <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
@@ -131,6 +135,15 @@ const boshu = boshuState();
       ))}
     </ul>
   </section>
+
+  {shuyou.length > 0 && (
+    <section aria-labelledby="shuyou-h">
+      <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
+      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。{yearLong(LATEST)}の報告の{fmt(shuyou.length)}指標を、報告の年度ごとの<Term word="実績値" />の折れ線で並べました。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と値を出します。</p>
+      <ShuyouTrendTop rows={shuyou} visions={visions} />
+      <p class="small">県の見通しは、<a href="/shihyou/shuyou/">主要指標の一覧</a>と基本施策のページにあります。</p>
+    </section>
+  )}
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
@@ -239,7 +252,7 @@ const boshu = boshuState();
   .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
   .theme {
     display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
-    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
+    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
   }
   .theme:hover { background: var(--sky); }
   .theme:active { transform: translate(2px, 2px); box-shadow: none; }

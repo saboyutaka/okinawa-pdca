@@ -1,5 +1,5 @@
 ---
-// ページ内の目次。画面の上に固定する（styles/global.css の .toc）。
+// ページ内の目次。画面の上に固定する（styles/global.css の .toc）。いま読んでいる節のリンクには印を付ける（scripts/toc.ts。layouts/Base.astro が読み込む）。
 // head を渡すと、目次が画面の上に貼り付いたあと（ページの頭が見えなくなったあと）、リンクの上に何のページか（区分・名前と、slot="status" の判定など）を1行で出す（scripts/toc.ts）。
 // 中身はページの頭（h1 と判定の札）と同じなので、読み上げでは読まない
 import Sz from './Sz.astro';
@@ -11,14 +11,11 @@ interface Props {
   links: (Link | false | null | undefined)[];
   label?: string;
   head?: Head;
-  openAll?: boolean;
 }
-const { links, label = 'このページの内容', head, openAll = false } = Astro.props;
+const { links, label = 'このページの内容', head } = Astro.props;
 const items = links.filter((l): l is Link => Boolean(l));
 const status = Astro.slots.has('status');
 ---
-{/* スクリプトは目次の前に置く（目次のすぐ後の見出しの余白を styles/global.css の .toc + section で決めているため） */}
-<script src="../scripts/toc.ts"></script>
 {/* 目次のもとの位置の目印。これが画面の上から出たら、目次が貼り付いている */}
 <div class="toc-mark" aria-hidden="true"></div>
 <nav class="toc" aria-label={label}>
@@ -31,10 +28,7 @@ const status = Astro.slots.has('status');
       </div>
     </div>
   )}
-  <div class="toc-row">
-    <div class="toc-links" data-scroll-hint>
-      {items.map((l) => <a href={l.href} title={l.title}>{l.label}</a>)}
-    </div>
-    {openAll && <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>}
+  <div class="toc-links" data-scroll-hint>
+    {items.map((l) => <a href={l.href} title={l.title}>{l.label}</a>)}
   </div>
 </nav>

@@ -1,0 +1,52 @@
+---
+// 将来像ページの主要指標の一覧（県の概要版の49指標のうち、その将来像のもの）。1指標1行で、左に名前といまの値、
+// 右に報告年度ごとの値の小さな折れ線（SeikaSpark。値は lib/data.ts の getShuyouStatus の series）と、県の達成率（目標値に対する割合）。
+// スタート・ゴールの値と、いまの値が何年の値かは文に書かず（行がごちゃつくため）、図の点にマウスを乗せる・押すと出す（SeikaSpark）。
+// 基本施策のページのカードにもある。読み上げ用の文には残す。
+// 図の凡例は一覧の上に1回だけ（SeikaKey mini）。並びは概要版の表の順（良い・悪いで並べ替えない）。
+// 行を低くするため、図は平たくし（SeikaSpark の h）、スマホでも PC と同じく図を右に置いて、左にいまの値と達成率を重ねる。
+// トップでは将来像ごとに使い、id と more（最初に見せる行の数。scripts/show-more.ts）を渡す
+import SeikaSpark from './SeikaSpark.astro';
+import { SHUYOU_BINS, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
+
+interface Props { rows: ShuyouStatus[]; id?: string; more?: number }
+const { rows, id, more } = Astro.props;
+const value = (raw: string, ref: string | null) => (ref ? `${raw}（${ref}）` : raw);
+const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.label;
+---
+<ul class="row-list trend-list" id={id} data-more={more}>
+  {rows.map((r) => (
+    <li>
+      <div class="r-name">
+        <a class="name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" aria-hidden="true">※</span>} <span class="code-no">{r.code}</span>
+      </div>
+      <div class="r-vals small secondary" aria-hidden="true">
+        いま <b>{r.actual_raw}</b>
+      </div>
+      <div class="r-viz" aria-hidden="true"><SeikaSpark part={r.series} h={26} /></div>
+      <div class="r-rate" aria-hidden="true"><small>達成率</small><b>{shuyouRateText(r)}</b></div>
+      <span class="sr-only">
+        {`達成率 ${shuyouRateText(r)}（${binLabel(r)}）。基準値 ${value(r.base_raw, r.base_ref)}、実績値 ${value(r.actual_raw, r.actual_ref)}、目標値 ${value(r.target_raw, r.target_ref)}${r.revised ? '。統計の基準改定にあわせて試算し直した基準値・目標値' : ''}`}
+      </span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  /* PC は「名前・値 | 小さな折れ線 | 達成率」の3列。スマホは名前の下に「いまの値・達成率 | 折れ線」 */
+  .trend-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 160px 4.2em; grid-template-areas: "name viz rate" "vals viz rate"; gap: 2px 16px; align-items: center; }
+  .r-name { grid-area: name; min-width: 0; }
+  .r-vals { grid-area: vals; line-height: 1.5; }
+  .r-vals b { color: var(--ink); }
+  .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
+  .r-viz { grid-area: viz; }
+  .r-viz :global(.spark) { width: 100%; height: auto; }
+  .r-rate { grid-area: rate; display: grid; justify-items: end; line-height: 1.2; }
+  .r-rate small { font-size: 0.6875rem; font-weight: 700; color: var(--ink-2); }
+  .r-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .trend-list > li { grid-template-columns: minmax(0, 1fr) 128px; grid-template-areas: "name name" "vals viz" "rate viz"; gap: 0 12px; }
+    .r-name { margin-bottom: 2px; }
+    .r-rate { display: flex; align-items: baseline; gap: 6px; justify-content: start; }
+  }
+</style>
