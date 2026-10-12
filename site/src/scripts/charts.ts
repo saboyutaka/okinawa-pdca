@@ -1,6 +1,7 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
 import { showRows, hide, type TipRow } from './tip.ts';
+import { moving } from './motion.ts';
 
 // 図の JSON の形。書き出すのは components/TrendChart.astro（trend）と SeikaChart.astro・RmSeika.astro（seika）、KatsudouChart.astro（katsudou）
 export interface TrendPoint {
@@ -70,6 +71,25 @@ function niceTicks(lo: number, hi: number, n = 4) {
   const out: number[] = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
   return out;
+}
+
+// 動き（styles/global.css の「動き」）。実績の線は始まりから DRAW_MS かけて伸ばし、点は線がそこへ届いたときに、札は描き終わってから出す。
+// ここでは印にクラスと時間を付けるだけで、動かすかどうかは図の m-anim で決まる（付いていなければ、はじめから描き終わった形）
+const DRAW_MS = 550;
+// 折れ線に伸ばす動きを付け（線の長さを --len に）、それぞれの点に線が届くまでの時間（ms）を返す
+function drawIn(path: SVGPathElement, pts: Pt[]) {
+  const at = [0];
+  for (let i = 1; i < pts.length; i++) at.push(at[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const len = at[at.length - 1];
+  path.classList.add('m-line');
+  path.style.setProperty('--len', String(Math.ceil(len) + 1));
+  return at.map((d) => (len ? Math.round((DRAW_MS * d) / len) : 0));
+}
+// 点（m-dot）と札（m-tag）を、ms たってからポンと出す
+function popAt<E extends SVGElement>(el: E, cls: 'm-dot' | 'm-tag', ms: number) {
+  el.classList.add(cls);
+  el.style.setProperty('--d', `${ms}ms`);
+  return el;
 }
 
 // 横に並ぶ点（年度）を、ポインターと矢印キーで選ぶ
@@ -170,12 +190,15 @@ function placer(W: number, top: number, bottom: number) {
 }
 
 // 最後の実績に添える「いまここ」の札。点の右 → 上 → 下 → 左の順に、ほかの印と重ならない場所を探す
-function hereTag(svg: SVGSVGElement, textW: TextW, place: ReturnType<typeof placer>['place'], now: { cx: number; cy: number }, text: string) {
+// 札は、実績の線が「いまここ」の点に届いてから出す（ms）
+function hereTag(svg: SVGSVGElement, textW: TextW, place: ReturnType<typeof placer>['place'], now: { cx: number; cy: number }, text: string, ms: number) {
   const w = textW(text, 'lbl2') + 18;
   const h = 22;
   const [bx, by] = place(w, h, [[now.cx + 12, now.cy - h / 2], [now.cx - w / 2, now.cy - 12 - h], [now.cx - w / 2, now.cy + 12], [now.cx - 12 - w, now.cy - h / 2]]);
-  svg.append(sv('rect', { x: bx, y: by, width: w, height: h, rx: h / 2, fill: 'var(--paper)', stroke: 'var(--line)', 'stroke-width': 2 }));
-  svg.append(sv('text', { class: 'lbl2 here', x: bx + w / 2, y: by + 15.5, 'text-anchor': 'middle' }, text));
+  const g = popAt(sv('g'), 'm-tag', ms);
+  g.append(sv('rect', { x: bx, y: by, width: w, height: h, rx: h / 2, fill: 'var(--paper)', stroke: 'var(--line)', 'stroke-width': 2 }));
+  g.append(sv('text', { class: 'lbl2 here', x: bx + w / 2, y: by + 15.5, 'text-anchor': 'middle' }, text));
+  svg.append(g);
 }
 
 // トップの4年間の推移: 主な取組の「順調」の割合と、成果指標の計画値に届いた割合（どちらも0〜100%の同じ目盛り）
@@ -216,12 +239,14 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
   const shift = Math.max(0, m.t - ly[top]) - Math.max(0, ly[bottom] - (H - m.b - 10));
   ly[top] += shift;
   ly[bottom] += shift;
+  // 2本の線は同じ時間で R4 から右へ伸ばし、右端の値と名前は描き終わってから出す
   for (const [k, color, shape, name] of series) {
-    svg.append(sv('path', { d: points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p[k])}`).join(''), fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-    points.forEach((p, i) => svg.append(shape === 'circle'
-      ? sv('circle', { cx: x(i), cy: y(p[k]), r: 6, fill: color, stroke: 'var(--line)', 'stroke-width': 2 })
-      : sv('rect', { x: x(i) - 5.5, y: y(p[k]) - 5.5, width: 11, height: 11, fill: color, stroke: 'var(--line)', 'stroke-width': 2 })));
-    const t = sv('text', { class: 'lbl', x: x(last) + 14, y: ly[k] });
+    const pts = points.map((p, i): Pt => [x(i), y(p[k])]);
+    const at = drawIn(svg.appendChild(sv('path', { d: pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join(''), fill: 'none', stroke: color, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' })), pts);
+    pts.forEach(([px, py], i) => svg.append(popAt(shape === 'circle'
+      ? sv('circle', { cx: px, cy: py, r: 6, fill: color, stroke: 'var(--line)', 'stroke-width': 2 })
+      : sv('rect', { x: px - 5.5, y: py - 5.5, width: 11, height: 11, fill: color, stroke: 'var(--line)', 'stroke-width': 2 }), 'm-dot', at[i])));
+    const t = popAt(sv('text', { class: 'lbl', x: x(last) + 14, y: ly[k] }), 'm-tag', DRAW_MS + 80);
     t.append(sv('tspan', {}, `${points[last][k].toFixed(1)}%`), sv('tspan', { class: 'lbl2', x: x(last) + 14, dy: 16 }, name));
     svg.append(t);
   }
@@ -304,11 +329,13 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
     circles.forEach(([cx, cy]) => svg.append(sv('circle', { cx, cy, r: 5, fill: 'var(--paper)', stroke: ink, 'stroke-width': 2.5 })));
     if (num(p.r.base)) svg.append(sv('circle', { cx: sx, cy: y(p.r.base), r: 3.5, fill: ink }));
   }
-  if (act.length > 1) svg.append(sv('path', { d: line(act.map((a) => [a.cx, a.cy])), fill: 'none', stroke: 'var(--pop)', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-  act.forEach((a) => svg.append(sv('circle', { cx: a.cx, cy: a.cy, r: a === now ? 8 : 5.5, fill: 'var(--pop)', stroke: 'var(--line)', 'stroke-width': a === now ? 2.5 : 2 })));
+  // 実績の線はスタートの年度から伸ばす（点は線が届いたときに置く）
+  const actPts = act.map((a): Pt => [a.cx, a.cy]);
+  const at = act.length > 1 ? drawIn(svg.appendChild(sv('path', { d: line(actPts), fill: 'none', stroke: 'var(--pop)', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' })), actPts) : [0];
+  act.forEach((a, i) => svg.append(popAt(sv('circle', { cx: a.cx, cy: a.cy, r: a === now ? 8 : 5.5, fill: 'var(--pop)', stroke: 'var(--line)', 'stroke-width': a === now ? 2.5 : 2 }), 'm-dot', at[i])));
 
   // 「いまここ」の札（最新の報告で使われなくなった指標は「最後の報告」）と、スタート・ゴールの文字
-  if (now) hereTag(svg, textW, place, now, latest ? 'いまここ' : '最後の報告');
+  if (now) hereTag(svg, textW, place, now, latest ? 'いまここ' : '最後の報告', at[at.length - 1] + 160);
   for (const { name, ex, ey, start, rising } of ends) {
     const w = textW(name, 'lbl2');
     const h = 14;
@@ -379,15 +406,17 @@ function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: Katsu
     if (pts.length > 1) svg.append(sv('path', { d: line(pts), fill: 'none', stroke: ink, 'stroke-width': 2, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' }));
     pts.forEach(([cx, cy]) => { if (!under(cx, cy)) svg.append(sv('circle', { cx, cy, r: 5, fill: 'var(--paper)', stroke: ink, 'stroke-width': 2.5 })); });
   }
-  if (act.length > 1) svg.append(sv('path', { d: line(act.map((a) => [a.cx, a.cy])), fill: 'none', stroke: 'var(--pop)', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-  act.forEach((a) => svg.append(sv('circle', { cx: a.cx, cy: a.cy, r: dotR(a), fill: 'var(--pop)', stroke: 'var(--line)', 'stroke-width': a === now ? 2.5 : 2 })));
+  // 実績の線は最初の年度から伸ばす（点は線が届いたときに置く。計画の白い丸・輪は最初から出しておく）
+  const actPts = act.map((a): Pt => [a.cx, a.cy]);
+  const at = act.length > 1 ? drawIn(svg.appendChild(sv('path', { d: line(actPts), fill: 'none', stroke: 'var(--pop)', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' })), actPts) : [0];
+  act.forEach((a, i) => svg.append(popAt(sv('circle', { cx: a.cx, cy: a.cy, r: dotR(a), fill: 'var(--pop)', stroke: 'var(--line)', 'stroke-width': a === now ? 2.5 : 2 }), 'm-dot', at[i])));
   for (const { p, pts } of plans) {
     for (const [cx, cy] of pts) {
       const a = under(cx, cy);
       if (a) svg.append(sv('circle', { cx: a.cx, cy: a.cy, r: dotR(a) + 3, fill: 'none', stroke: p.cur ? 'var(--ink-2)' : 'var(--none)', 'stroke-width': 2 }));
     }
   }
-  if (now) hereTag(svg, textW, place, now, here);
+  if (now) hereTag(svg, textW, place, now, here, at[at.length - 1] + 160);
 
   crosshair(wrap, svg, slots.map(x), m.t - 8, m.t + ih, (i, cx, cy) => {
     const s = slots[i];
@@ -407,13 +436,39 @@ function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: Katsu
 }
 
 const DRAW = { trend: drawTrend, seika: drawSeika, katsudou: drawKatsudou };
+// 動き: 初めて描く図は、画面に入ってから実績の線を伸ばす（styles/global.css の「動き」）。それまでは図に m-anim を付けて止めておき、
+// 3分の1ほど画面に入ったら m-go で動かし、動き終わったら両方を外す。描き直したとき（幅が変わった・印刷）は動かさない。
+// 動きを減らす設定・IntersectionObserver の無いブラウザでは、はじめから描き終わった形
+const ANIM_END_MS = DRAW_MS + 600;
+const io = moving() && 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries, obs) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      obs.unobserve(e.target);
+      e.target.classList.add('m-go');
+      setTimeout(() => e.target.classList.remove('m-anim', 'm-go'), ANIM_END_MS);
+    }
+  }, { threshold: 0.35 })
+  : null;
 const charts: { el: HTMLElement; render: () => void }[] = [];
 for (const el of document.querySelectorAll<HTMLElement>('[data-chart]')) {
   const json = el.querySelector('script[type="application/json"]');
   const draw = DRAW[el.dataset.chart as keyof typeof DRAW];
   if (!json || !draw) continue;
   const data = JSON.parse(json.textContent!);
-  charts.push({ el, render: () => el.clientWidth && draw(el, el.clientWidth, data) });
+  let drawn = false;
+  charts.push({
+    el,
+    render: () => {
+      if (!el.clientWidth) return;
+      if (!drawn && io) {
+        el.classList.add('m-anim');
+        io.observe(el);
+      }
+      drawn = true;
+      draw(el, el.clientWidth, data);
+    },
+  });
 }
 const renderAll = () => { for (const c of charts) c.render(); };
 renderAll();
@@ -428,5 +483,7 @@ window.addEventListener('resize', () => {
 // <details> を開いたときは、その中の図だけを描く（閉じている間は幅が 0 なので描いていない）
 for (const d of document.querySelectorAll('details')) d.addEventListener('toggle', () => { if (d.open) for (const c of charts) if (d.contains(c.el)) c.render(); });
 // 印刷の前後には全部を描き直す（scripts/print.ts が畳んだ内容を開いてページを紙の幅にそろえたあと・元に戻したあと）
+// まだ画面に入っていない図も、紙には描き終わった形で出す
+window.addEventListener('beforeprint', () => { for (const c of charts) c.el.classList.remove('m-anim', 'm-go'); });
 window.addEventListener('beforeprint', renderAll);
 window.addEventListener('afterprint', renderAll);

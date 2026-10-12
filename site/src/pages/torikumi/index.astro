@@ -86,6 +86,7 @@ const dataPath = searchDataPath();
   import { iconSvg } from '../../lib/icons.ts';
   import { matchesAll, searchText, searchWords, type SearchWord } from '../../lib/search.ts';
   import type { SearchData as Data } from '../../lib/search-data.ts';
+  import { bump } from '../../scripts/motion.ts';
   const PAGE = 50;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
   const form = document.getElementById('tf') as HTMLFormElement;
@@ -205,7 +206,13 @@ const dataPath = searchDataPath();
       return true;
     };
     hits = data.rows.flatMap((r, i) => (ok(r, i) ? [i] : []));
-    count.textContent = hits.length.toLocaleString('ja-JP');
+    // 件数が変わったら数字を小さくはねさせる（データが届いて初めて出すときは動かさない）
+    const n = hits.length.toLocaleString('ja-JP');
+    if (count.textContent !== n) {
+      const first = unit.hidden;
+      count.textContent = n;
+      if (!first) bump(count);
+    }
     unit.hidden = false;
     list.replaceChildren();
     shown = 0;
