@@ -4,17 +4,16 @@
 // アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
 // 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる。
-// 公開前（lib/links.ts の STEALTH）は、SNS への投稿を控えてもらうので出さない
+// compact はシェアの枠（ShareBox.astro）用。スマホ（520px 以下）では、いいねと1行に並ぶように「シェア」の文字を隠してアイコンだけにする。
 import { SNS, shareHref } from '../lib/share.ts';
-import { STEALTH } from '../lib/links.ts';
 import { SHARE_ICONS } from '../lib/share-icons.ts';
 import { absUrl } from '../lib/seo.ts';
 
-interface Props { text?: string; link?: 'page' | 'top'; label?: string }
-const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
+interface Props { text?: string; link?: 'page' | 'top'; label?: string; compact?: boolean }
+const { text = '', link = 'page', label = 'SNS でシェア', compact = false } = Astro.props;
 const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
 ---
-{!STEALTH && <div class="share-panel" role="group" aria-label={label}>
+<div class:list={['share-panel', { compact }]} role="group" aria-label={label}>
   <span class="share-label" aria-hidden="true">シェア</span>
   <ul class="share-list">
     {SNS.map((s) => (
@@ -26,7 +25,7 @@ const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
       </li>
     ))}
   </ul>
-</div>}
+</div>
 
 <style>
   /* 白い枠に「シェア」と丸いアイコンを並べる。狭い画面では「シェア」の下にアイコンの列を折り返す */
@@ -42,4 +41,9 @@ const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
   .share-ic svg { fill: currentColor; }
   /* 320px 前後の狭い画面では、折り返したアイコンの列が枠に収まるように丸を小さくする */
   @media (max-width: 360px) { .share-ic { width: 38px; height: 38px; } }
+  /* 「シェア」の文字は aria-hidden（読み上げは枠の aria-label）なので、隠しても読み上げは変わらない */
+  @media (max-width: 520px) {
+    .compact { padding: 3px; }
+    .compact .share-label { display: none; }
+  }
 </style>

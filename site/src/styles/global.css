@@ -632,6 +632,11 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   details.m-opening[open] > :not(summary), .m-in { animation: m-drop 0.18s ease-out; }
   /* ページ内の目次が上に貼り付いたときに出す、何のページかの1行（scripts/toc.ts の stuck）。場所は一度に取り（本文には重ねるのでずれない）、中身をすっと出す */
   .toc.stuck .toc-head-in { animation: m-drop 0.18s ease-out; }
+  /* いいね（components/Like.astro）: 押すとハートがポンとはね、お礼のポップアップが尾のほうからふくらんで出る。
+     閉じるときは、スクリプトが leaving を付けて薄く消し、動き終わってから hidden にする（消える動きなので、キーフレームには終わりの形を書いて forwards で止める） */
+  .like-btn[aria-pressed="true"] .heart { animation: m-heart 0.25s ease-out; }
+  .like-pop:not([hidden]) { animation: m-like-in 0.22s cubic-bezier(0.3, 1.4, 0.6, 1); }
+  .like-pop.leaving { animation: m-like-out 0.2s ease-in forwards; }
 
   /* ドーナツ: ページを読み込んだときに、上から右回りに伸びる（最初の画面にあるものだけが目に入る）。内訳の棒・割合のメーターは動かさない（伸びる動きが要らないため） */
   .donut .d-arc { animation: m-arc 0.6s ease-out 0.05s both; }
@@ -653,6 +658,9 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 @keyframes m-stamp { from { scale: 1.7; opacity: 0; } 55% { scale: 0.93; opacity: 1; } }
 @keyframes m-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
 @keyframes m-pop { from { transform: scale(0); } }
+@keyframes m-heart { 45% { transform: scale(1.35); } }
+@keyframes m-like-in { from { opacity: 0; transform: scale(0.75); } }
+@keyframes m-like-out { to { opacity: 0; transform: scale(0.94); } }
 
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
    ナビ・配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
