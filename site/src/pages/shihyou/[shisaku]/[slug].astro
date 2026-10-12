@@ -61,7 +61,7 @@ const stampsOf = (t: TorikumiGroup) => YEARS.map((y, i) => {
 // 観光ロードマップ（個別計画）にも同じ成果指標があるか
 const rm = kankoOfSeika(g.href);
 ---
-<Base title={`${x.name}（沖縄県の成果指標）`} description={seikaDescription(x)}>
+<Base title={`${x.name}（沖縄県の成果指標）`} description={seikaDescription(x)} ogType="article">
   <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: x.name }]} />
 
   <ParentShisaku s={s} kind="この指標が入っている施策" />

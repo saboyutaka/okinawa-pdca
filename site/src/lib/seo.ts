@@ -4,6 +4,15 @@ import { LINKS, PROJECT, SITE } from './links.ts';
 // サイトの中のパス（/shisaku/1-1-a-1/・/#themes）を本番の完全な URL にする
 export const absUrl = (path: string) => new URL(path, SITE.url).href;
 
+// SNS のカードの画像（og:image）。どのページも同じ1枚（site/public/og-image.png）。
+// 画像は scripts/shot/og-image.ts が、ここの大きさとサイトの名前（lib/links.ts の SITE・PROJECT）で書き出す（make og-image）。名前を変えたら作り直す
+export const OG_IMAGE = {
+  path: '/og-image.png',
+  width: 1200,
+  height: 630,
+  alt: `${SITE.name}（${SITE.tagline}）by ${PROJECT.org}`,
+};
+
 // sitemap.xml に入れるページのパス。Astro の astro:build:done が渡す pathname（先頭の / が無く、トップは ''）を / で始まる形にそろえ、
 // ページでないもの（/torikumi/data.json・/robots.txt のようにファイルの名前で終わるもの）と 404 を除く
 export function sitemapPaths(pathnames: string[]): string[] {

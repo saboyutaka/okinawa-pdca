@@ -49,7 +49,7 @@ const hSrc = h && planSourceLink('hyoka', h.source, h.page);
 // この基本施策の取組が観光ロードマップでも評価されている施策の数
 const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => r.id))).size;
 ---
-<Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, { judges: countJudges(shisaku), tori: progressRows.at(-1)!.counts })}>
+<Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, { judges: countJudges(shisaku), tori: progressRows.at(-1)!.counts })} ogType="article">
   <Crumbs items={[{ href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
   <header class="sticker lift k-head">
     <span class="code-no code-corner" title="県の報告書での番号">基本施策 {k.code}</span>

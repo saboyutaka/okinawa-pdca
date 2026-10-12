@@ -1,7 +1,8 @@
 // 検索エンジンと SNS に向けた URL・sitemap・robots.txt・構造化データ（lib/seo.ts）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { absUrl, sitemapPaths, sitemapXml, robotsTxt, ldJson, websiteLd, breadcrumbLd } from '../src/lib/seo.ts';
+import { readFileSync } from 'node:fs';
+import { OG_IMAGE, absUrl, sitemapPaths, sitemapXml, robotsTxt, ldJson, websiteLd, breadcrumbLd } from '../src/lib/seo.ts';
 import { SITE, PROJECT } from '../src/lib/links.ts';
 
 test('本番のドメインは https で、末尾にスラッシュがある', () => {
@@ -12,6 +13,14 @@ test('サイトの中のパスを本番の完全な URL にする', () => {
   assert.equal(absUrl('/'), SITE.url);
   assert.equal(absUrl('/shisaku/1-1-a-1/'), `${SITE.url}shisaku/1-1-a-1/`);
   assert.equal(absUrl('/#themes'), `${SITE.url}#themes`);
+});
+
+test('SNS のカードの画像は public にあり、og:image:width・height に書く大きさと同じ', () => {
+  // PNG の頭の IHDR に幅と高さがある（make og-image で作り直したときに大きさがずれないように）
+  const png = readFileSync(new URL(`../public${OG_IMAGE.path}`, import.meta.url));
+  assert.equal(png.subarray(1, 4).toString('latin1'), 'PNG');
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [OG_IMAGE.width, OG_IMAGE.height]);
+  assert.ok(OG_IMAGE.alt.includes(SITE.name) && OG_IMAGE.alt.includes(PROJECT.org));
 });
 
 test('sitemap にはページだけを入れ、ファイルと 404 は入れない', () => {

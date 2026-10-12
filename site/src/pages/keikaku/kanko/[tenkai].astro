@@ -29,7 +29,7 @@ const i = all.findIndex((x) => x.id === t.id);
 const prev = all[i - 1];
 const next = all[i + 1];
 ---
-<Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`}>
+<Base title={`${t.name}（${KANKO.short}）`} description={`${KANKO.name}の施策展開「${t.name}」の施策ごとの成果指標・主な取組・県の分析（観光ロードマップPDCA）`} ogType="article">
   <Crumbs items={[{ href: '/keikaku/', label: '個別計画' }, { href: KANKO.href, label: KANKO.short }, { label: t.name }]} />
 
   <header class="sticker lift head">
