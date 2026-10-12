@@ -40,7 +40,7 @@ main 以外のブランチ（PR）は `npx wrangler preview` でブランチご�
 
 ## 4. ドメイン
 
-本番は https://okinawa-miraima.com/（Cloudflare のカスタムドメイン）。ドメインを変えるときは `site/src/lib/links.ts` の `SITE.url` を直す（`canonical`・`og:url`・sitemap・構造化データ・シェアの URL がここから作られる。[site.md](site.md) の6章）。
+本番は https://okinawa-miraima.com/（Cloudflare のカスタムドメイン）。ドメインを変えるときは `site/src/lib/links.ts` の `SITE.url` を直す（`canonical`・`og:url`・`og:image`・sitemap・構造化データ・シェアの URL がここから作られる。[site.md](site.md) の6章）。SNS のカードの画像にもドメインを書いているので、`make og-image` で作り直す。
 
 Cloudflare の管理用の robots.txt（AI 向けの content signals）を有効にしていると、Cloudflare が `robots.txt` の頭に自分の文を書き足す。
 

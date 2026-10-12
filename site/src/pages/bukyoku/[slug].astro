@@ -130,7 +130,7 @@ const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
-<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`}>
+<Base title={`${dept.name}の取組`} description={`沖縄県PDCA: ${dept.name}が所管する主な取組と成果指標・かかわる施策の進み具合（令和4〜7年度）`} ogType="article">
   <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
 
   <header class="sticker lift d-head">

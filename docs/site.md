@@ -49,6 +49,8 @@
 - 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
 - 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
+- SNS のカードは、全ページの head に `og:image`（どのページも同じ1枚の `public/og-image.png`。大きさと説明の文も `og:image:width`・`og:image:height`・`og:image:alt` で書く）・`twitter:card`（`summary_large_image`）・`og:locale`（`ja_JP`）を出す。画像のパス・大きさ・説明の文は `lib/seo.ts` の `OG_IMAGE` に1か所で決める。画像は `scripts/shot/og-image.ts` が HTML から書き出す（`make og-image`。サイトの名前・説明・作り手は `lib/links.ts` から入れるので、名前を変えたら作り直す。書き出した PNG はコミットする）。
+- `og:type` は、1つのもの（施策・取組・成果指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページを `article`、一覧・トップ・サイトの説明を `website` にする（`Base` の `ogType`）。
 - SNS のシェアの URL も、ビルド時に本番のドメインで入れる（`components/Share.astro`）。
 
 ## 7. 表示の速さ

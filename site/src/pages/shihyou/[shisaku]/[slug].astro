@@ -64,7 +64,7 @@ const rm = kankoOfSeika(g.href);
 // 検索結果に出る説明。最新の報告の数字を先に置く
 const description = `沖縄県PDCAの成果指標「${x.name}」。${yl}の実績値 ${oneLine(withUnit(x.actual_raw, u))}（達成率 ${rateText(x)}）、目標値 ${oneLine(withUnit(x.target_raw, u))}（${x.target_year}）。基準値からの道のり・県による説明・かかわる主な取組。`;
 ---
-<Base title={`${x.name}（成果指標）`} description={description}>
+<Base title={`${x.name}（成果指標）`} description={description} ogType="article">
   <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: x.name }]} />
 
   <ParentShisaku s={s} kind="この指標が入っている施策" />

@@ -53,7 +53,7 @@ const visions = getShouraizou()
 // マス目を押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く
 const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
-<Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`}>
+<Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`} ogType="article">
   <Crumbs items={[{ href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} />
   <header class="sticker lift t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>

@@ -3,15 +3,16 @@ import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
-import { absUrl, ldJson, websiteLd } from '../lib/seo.ts';
+import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
 import fontUrl from '../fonts/fredoka-num.woff2?url';
 
 // canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
-interface Props { title?: string; description?: string; canonical?: boolean }
+// ogType: 'article' は、1つのもの（施策・取組・成果指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページ。一覧・トップ・サイトの説明は 'website'
+interface Props { title?: string; description?: string; canonical?: boolean; ogType?: 'website' | 'article' }
 // まだ公開前（ステルス）なので、検索エンジンに載せない。載せてよくなったら false にし、public/_headers の X-Robots-Tag も外す
 const NOINDEX = true;
-const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true } = Astro.props;
+const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true, ogType = 'website' } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const path = Astro.url.pathname;
 // 本番のドメインでのこのページの URL（クエリを除く）。workers.dev・プレビュー・絞り込みのクエリ付きの URL も、このページとして扱ってもらう
@@ -86,9 +87,17 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     {canonical && <link rel="canonical" href={url} />}
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="ja_JP" />
     {canonical && <meta property="og:url" content={url} />}
+    {/* SNS のカードの画像はどのページも同じ1枚（lib/seo.ts の OG_IMAGE）。X も og:image を読む。画像の説明は X 向けに twitter:image:alt にも書く */}
+    <meta property="og:image" content={absUrl(OG_IMAGE.path)} />
+    <meta property="og:image:width" content={String(OG_IMAGE.width)} />
+    <meta property="og:image:height" content={String(OG_IMAGE.height)} />
+    <meta property="og:image:alt" content={OG_IMAGE.alt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image:alt" content={OG_IMAGE.alt} />
     <meta name="author" content={PROJECT.org} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
