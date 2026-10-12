@@ -25,7 +25,7 @@ const themes = getThemes();
 const reached = YEARS.map((y) => `${yearLabel(y)} ${fmt(getSeika(y).filter((s) => rateBin(s) === '100%以上').length)}`).join('・');
 const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISHED[y])}`).join('・');
 ---
-<Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・注意点">
+<Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・使っている技術・注意点">
   <h1>このサイトについて</h1>
   <p class="lead">
     沖縄県が公表している「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
@@ -93,13 +93,48 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」の第2章（基本施策の推進による成果と課題）。</li>
   </ul>
 
-  <h2>作り方</h2>
+  <h2 id="tsukurikata">作り方</h2>
   <ol>
-    <li>県のサイトから報告書のPDF・zipを取得します。</li>
-    <li>PDFの表を機械的に読み取り、施策・主な取組・成果指標・主要指標の表にします。</li>
+    <li>県のサイトから報告書のPDF・zipを取得します。どのファイルを・いつ・どのページから取ったかを台帳に残し、各ページの「出典」のリンクはこの台帳から作っています。</li>
+    <li>総括報告書のPDFの表を機械的に読み取り、施策・主な取組・成果指標・主要指標の表にします。各部局の「主な取組」検証票からは、予算事業と金額、取組ごとの活動・検証・改善案を読み取ります。</li>
+    <li>総括報告書の成果指標と主な取組は、別のプログラムでもう一度読み取り、欄ごとに突き合わせます。食い違いがあれば、元のPDFのページを見て確かめます。見た目は同じでも別の文字（康熙部首など）が混ざると検索で見つからなくなるため、そうした文字が残っていないかも調べます。</li>
+    <li>施策総括表に印字された判定（A〜G）が、取組の進捗の内訳と成果指標の達成率から県の区分表どおりに決まっているかを、判定のあるR5〜R7の全施策で確かめます。</li>
     <li>件数を県の概要版の公表値と突き合わせます。施策（339）・主な取組（1,539／1,539／1,539／1,534）・成果指標（393／393／393／391）・基本施策（36）は、4年度とも公表値と一致しています。</li>
     <li>観光ロードマップ（R5・R6 とも主な取組291件・成果指標100、進捗状況の内訳と「前進」の数）と、一括交付金の事後評価（R4 181・R5 179・R6 176事業と評価の内訳）も、県の公表値と一致しています。</li>
   </ol>
+  <p>データを作り直すたびに、これらの突き合わせを自動で行っています。</p>
+
+  <h2 id="gijutsu">使っている技術</h2>
+  <p>報告書の取得からサイトの公開まで、次の道具で作っています。</p>
+  <dl class="tech sticker">
+    <div>
+      <dt>データの読み取り</dt>
+      <dd>
+        <ExtLink href="https://www.python.org/">Python</ExtLink>。PDF の表は <ExtLink href="https://github.com/jsvine/pdfplumber">pdfplumber</ExtLink> で読み取り、<ExtLink href="https://pymupdf.readthedocs.io/">PyMuPDF</ExtLink> で読み直して突き合わせます。読み取った結果から、施策（<code>shisaku.json</code>）・主な取組（<code>torikumi.json</code>）・成果指標（<code>seika.json</code>）などの JSON ファイルを作成します。
+      </dd>
+    </div>
+    <div>
+      <dt>サイト</dt>
+      <dd>
+        <ExtLink href="https://astro.build/">Astro</ExtLink> と <ExtLink href="https://www.typescriptlang.org/">TypeScript</ExtLink>。読み取った JSON から、すべてのページを前もって HTML に書き出しています（静的サイト生成、SSG）。グラフは、グラフ用のライブラリを使わずに SVG と CSS で描いています。
+      </dd>
+    </div>
+    <div>
+      <dt>公開</dt>
+      <dd><ExtLink href="https://workers.cloudflare.com/">Cloudflare Workers</ExtLink>。GitHub に変更を入れると、Cloudflare がサイトを書き出して公開します。</dd>
+    </div>
+    <div>
+      <dt>開発</dt>
+      <dd><ExtLink href="https://www.docker.com/">Docker</ExtLink>（読み取りもサイトの書き出しも、コンテナの中で動かします）、Git と GitHub、画面の確かめに <ExtLink href="https://playwright.dev/">Playwright</ExtLink>。</dd>
+    </div>
+    <div>
+      <dt>AI</dt>
+      <dd>読み取りのプログラムやサイトの多くは、AI（Anthropic の <ExtLink href="https://claude.com/product/claude-code">Claude Code</ExtLink>）と一緒に書いています。AI と一緒に書いたものも、上の作り方のとおり、公表値との突き合わせ・別のプログラムでの読み直し・テストで確かめています。</dd>
+    </div>
+  </dl>
+  <p>
+    <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています（<a href="/code-for-okinawa/">{PROJECT.org} とは</a>）。
+  </p>
 
   <h2 id="kazoekata">このサイトでの数え方</h2>
   <ul>
@@ -152,4 +187,9 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
   .terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 24px; margin: 8px 0 0; }
   .terms dt { font-family: var(--font-display); font-weight: 700; }
   .terms dd { margin: 2px 0 0; font-size: 0.9375rem; }
+  .tech { display: grid; gap: 12px; margin: 8px 0 16px; }
+  .tech > div { display: grid; grid-template-columns: 9em 1fr; gap: 4px 16px; }
+  .tech dt { font-family: var(--font-display); font-weight: 700; }
+  .tech dd { margin: 0; }
+  @media (max-width: 560px) { .tech > div { grid-template-columns: 1fr; } }
 </style>
