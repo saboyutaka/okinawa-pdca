@@ -20,6 +20,20 @@ export function sitemapPaths(pathnames: string[]): string[] {
   return [...new Set(paths)].sort();
 }
 
+// 書き出したページの HTML から、題名・説明文がほかのページと同じものを探す（検索結果で見分けにくく、検索エンジンに重複とみなされやすいため）。
+// pages は sitemap に入れるページ（404 は除く）。見つかったものを、同じ題名・説明文ごとにページの URL を並べて返す
+export function duplicateHeads(pages: { path: string; html: string }[]) {
+  const kinds = { 題名: /<title>([^<]*)<\/title>/, 説明文: /<meta name="description" content="([^"]*)"/ };
+  return Object.entries(kinds).flatMap(([kind, re]) => {
+    const byText = new Map<string, string[]>();
+    for (const p of pages) {
+      const text = p.html.match(re)?.[1];
+      if (text) byText.set(text, [...(byText.get(text) || []), p.path]);
+    }
+    return [...byText].filter(([, paths]) => paths.length > 1).map(([text, paths]) => ({ kind, text, paths }));
+  });
+}
+
 const xmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const sitemapXml = (paths: string[]) =>

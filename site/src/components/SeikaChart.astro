@@ -17,7 +17,7 @@ const periodText = (r: SeikaChartYear) => `${r.y <= 2024 ? '前期' : '中期'}�
 const periods = [years.filter((r) => r.y <= 2024).pop(), years.filter((r) => r.y >= 2025).pop()].filter((r) => r != null);
 // 主要指標には年度ごとの計画値がない（plan_raw が空）。目標値が文の成果指標は計画値が「―」
 const planText = (r: SeikaChartYear) => { const p = r.plan_raw[planIndex(r.y)]; return p && /[^\s\-－―—‐]/.test(p) ? `、計画値 ${withUnit(p, unit)}` : ''; };
-const aria = `${row.latest.name}のゴールまでの道のり。${periods.map(periodText).join('、')}。${years.map((r) => `${yearLabel(r.y)}報告 実績値 ${withUnit(r.actual_raw, unit)}${r.ref ? `（${r.ref}）` : ''}${planText(r)}`).join('。')}。左右の矢印キーで年度を移れます`;
+const aria = `${row.name}のゴールまでの道のり。${periods.map(periodText).join('、')}。${years.map((r) => `${yearLabel(r.y)}報告 実績値 ${withUnit(r.actual_raw, unit)}${r.ref ? `（${r.ref}）` : ''}${planText(r)}`).join('。')}。左右の矢印キーで年度を移れます`;
 ---
 {drawable && (
   <div class="chart seika-chart" data-chart="seika" tabindex="0" role="img" aria-label={aria}>

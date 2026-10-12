@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika,
+  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -61,6 +61,23 @@ test('成果指標のページの URL が重複せず、どの成果指標（各
   assert.equal(new Set(groups.map((g) => g.href)).size, groups.length);
   const inGroups = new Set(groups.flatMap((g) => Object.values(g.years)));
   none(load('seika').filter((x) => !inGroups.has(x)), (x) => `${x.year} ${x.shisaku_id} ${x.name}`);
+});
+
+test('印字の名前で見分けられない成果指標は、どれも内訳の名前で出し、その名前のほかの年度の指標とまとめる（SEIKA_ALIASES）', () => {
+  // 同じ施策の同じ年度に同じ名前の指標が2つ以上ある行は、どれも SEIKA_ALIASES で名前が付く（新しい年度の報告で増えたら、ページの画像で内訳を確かめて足す）
+  const rows = load('seika');
+  const count = new Map<string, number>();
+  for (const x of rows) count.set(`${x.year}|${x.shisaku_id}|${nameKey(x.name)}`, (count.get(`${x.year}|${x.shisaku_id}|${nameKey(x.name)}`) || 0) + 1);
+  const twins = rows.filter((x) => count.get(`${x.year}|${x.shisaku_id}|${nameKey(x.name)}`)! > 1);
+  none(twins.filter((x) => !seikaAlias(x)), (x) => `${x.year} ${x.shisaku_id} ${x.name}`);
+  // 表の名前はどれも使われている（抽出を直して印字の名前が変わったら、ここで分かる）
+  const used = new Set(rows.flatMap((x) => seikaAlias(x)?.name ?? []));
+  none(SEIKA_ALIASES.flatMap((a) => Object.values(a.names).filter((n) => !used.has(n))), (n) => n);
+  // 内訳の名前のページは、内訳の名前で載っている年度とまとまる（R7 の就職内定率は R4〜R6 の（大学）（短大）（専門学校）と）
+  const g = getSeikaGroups().filter((x) => x.shisaku.id === '5-3-c-3');
+  assert.deepEqual(g.map((x) => [x.name.replace(/^.*の就職内定率/, ''), Object.keys(x.years).join(',')]), [
+    ['（大学）', '2022,2023,2024,2025'], ['（短大）', '2022,2023,2024,2025'], ['（専門学校）', '2022,2023,2024,2025'],
+  ]);
 });
 
 test('部局票の「対応する成果指標」は、その施策のその年度の成果指標すべてに当たる（県は施策の成果指標をまとめて書いている）', () => {

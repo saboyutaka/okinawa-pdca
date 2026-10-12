@@ -1,12 +1,13 @@
 import { defineConfig } from 'astro/config';
 import type { AstroIntegration } from 'astro';
-import { copyFile, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import { SITE } from './src/lib/links.ts';
-import { sitemapPaths, sitemapXml } from './src/lib/seo.ts';
+import { duplicateHeads, sitemapPaths, sitemapXml } from './src/lib/seo.ts';
 import { pagePaths } from './src/lib/routes.ts';
 
 // 書き出した全ページの URL を sitemap.xml にする（依存を足さないため、@astrojs/sitemap を使わずここで書く。中身は lib/seo.ts）。
-// 公開した URL の一覧のテストは、書き出さずに lib/routes.ts の pagePaths で全ページの URL を作るので、書き出したものと同じかもここで確かめる
+// 公開した URL の一覧のテストは、書き出さずに lib/routes.ts の pagePaths で全ページの URL を作るので、書き出したものと同じかもここで確かめる。
+// 題名・説明文がほかのページと同じページがあれば警告する（取組・成果指標は test/describe.test.ts で落とす。docs/site.md の6章）
 const sitemap: AstroIntegration = {
   name: 'sitemap',
   hooks: {
@@ -18,6 +19,8 @@ const sitemap: AstroIntegration = {
       if (diff.length) throw new Error(`書き出したページと lib/routes.ts の pagePaths が違う（${diff.length} 件）: ${diff.slice(0, 5).join(' ')}`);
       await writeFile(new URL('sitemap.xml', dir), sitemapXml(paths));
       logger.info(`sitemap.xml に ${paths.length} ページを書いた`);
+      const dups = duplicateHeads(await Promise.all(paths.map(async (path) => ({ path, html: await readFile(new URL(`.${path}index.html`, dir), 'utf-8') }))));
+      for (const d of dups) logger.warn(`${d.kind}が同じページが ${d.paths.length} ある: ${d.text.slice(0, 60)} ${d.paths.slice(0, 3).join(' ')}`);
     },
   },
 };
