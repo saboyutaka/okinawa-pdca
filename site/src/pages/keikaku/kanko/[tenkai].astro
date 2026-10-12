@@ -10,6 +10,7 @@ import ExtLink from '../../../components/ExtLink.astro';
 import Prose from '../../../components/Prose.astro';
 import RmSeika from '../../../components/RmSeika.astro';
 import RmTorikumi from '../../../components/RmTorikumi.astro';
+import Toc from '../../../components/Toc.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.ts';
 import { joinLines, firstSentence } from '../../../lib/text.ts';
@@ -40,11 +41,11 @@ const next = all[i + 1];
     <p class="small secondary meta">これは<Term word="観光ロードマップ" />の施策展開です。施策の番号は沖縄県PDCAの施策とは別です。</p>
   </header>
 
-  <nav class="toc" aria-label="このページの施策">
-    <div class="toc-links" data-scroll-hint>
-      {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
-    </div>
-  </nav>
+  <Toc
+    label="このページの施策"
+    links={t.shisaku.map((s) => ({ href: `#rm-${s.id}`, title: s.name, label: s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name }))}
+    head={{ kind: KANKO.short, tag: 'plan-tag', title: t.name }}
+  />
 
   {t.shisaku.map((s, si) => {
     const active = s.torikumi.filter((g) => g.years[RM_LATEST]);

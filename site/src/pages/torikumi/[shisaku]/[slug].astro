@@ -15,6 +15,7 @@ import ThemeTags from '../../../components/ThemeTags.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
 import ParentShisaku from '../../../components/ParentShisaku.astro';
+import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
@@ -182,15 +183,18 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     </div>
   </div>
 
-  <nav class="toc" aria-label="このページの内容">
-    <div class="toc-links" data-scroll-hint>
-      <a href="#katsudou">活動指標</a>
-      <a href="#yosan">予算</a>
-      <a href="#pdca">活動と検証</a>
-      {rm.length > 0 && <a href="#rm">{KANKO.short}</a>}
-      <a href="#source">出典</a>
-    </div>
-  </nav>
+  <Toc
+    links={[
+      { href: '#katsudou', label: '活動指標' },
+      { href: '#yosan', label: '予算' },
+      { href: '#pdca', label: '活動と検証' },
+      rm.length > 0 && { href: '#rm', label: KANKO.short },
+      { href: '#source', label: '出典' },
+    ]}
+    head={{ kind: '主な取組', title: t.name }}
+  >
+    <Fragment slot="status"><small>{yearLabel(t.year)}</small><Chip tone={latestTone} text={latestStatus} /></Fragment>
+  </Toc>
 
   {(t.year !== LATEST || first !== YEARS[0]) && (
     <div class="bubble-row notice-row">
@@ -478,7 +482,6 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
   .cand { display: grid; gap: 2px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); text-decoration: none; color: var(--ink); }
   .cand:hover { background: var(--sky); }
   .c-name { font-weight: 700; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
-  section h2 { scroll-margin-top: 72px; }
   .kcard { margin-top: 12px; }
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .k-name { margin: 0; }
