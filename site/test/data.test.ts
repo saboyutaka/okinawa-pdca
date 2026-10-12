@@ -263,7 +263,7 @@ const textGoalRow = (r: Partial<SeikaRow>): SeikaRow => ({
 // 図の材料の R7 の行。描けなければ undefined
 const chartYear = (r: Partial<SeikaRow>) => {
   const x = textGoalRow(r);
-  return textGoalChartRow({ key: nameKey(x.name), latest: x, years: { [x.year]: x } })?.years[x.year];
+  return textGoalChartRow({ key: nameKey(x.name), name: x.name, latest: x, years: { [x.year]: x } })?.years[x.year];
 };
 const drawn = (r: Partial<SeikaRow>) => {
   const y = chartYear(r);

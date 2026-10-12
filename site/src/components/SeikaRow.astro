@@ -19,7 +19,7 @@ const srText = `${rateLabel} ${rateText(x)}。基準値 ${withUnit(x.base_raw, x
 ---
 <li class="m-row" {...attrs}>
   <div class="m-head">
-    <a class="name-link" href={href}>{x.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
+    <a class="name-link" href={href}>{row.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
     {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
   </div>
   {s && <div class="sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}

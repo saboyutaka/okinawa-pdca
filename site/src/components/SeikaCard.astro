@@ -14,7 +14,7 @@ const x = row.latest;
 const u = x.unit;
 ---
 <article class="sticker scard">
-  <h3><a class="name-link" href={row.href}>{x.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
+  <h3><a class="name-link" href={row.href}>{row.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
   <SeikaGoal row={row} />
