@@ -5,13 +5,12 @@
 //                                      四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
 //
 // コンテナ shot の Chromium で SVG を描いて撮る（ホストに画像のツールを入れないため）
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { LOGO_SRC, fullBleed, readLogo, tileColor } from './logo.ts';
 
-const SRC = 'site/public/favicon.svg';
-const svg = await readFile(SRC, 'utf8');
-const tile = svg.match(/id="tile"[^>]*fill="([^"]+)"/)?.[1];
-if (!tile) throw new Error(`${SRC} に id="tile" の地の四角が見つからない`);
+const svg = await readLogo();
+const tile = tileColor(svg);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
@@ -47,12 +46,8 @@ const images = [];
 for (const size of sizes) images.push({ size, data: await png(size, svg) });
 await writeFile('site/public/favicon.ico', ico(images));
 
-// 縁の内側だけを 180px に広げ、縁と四角の角の丸みを消す（丘が下の角まで続くように。ellipse の rx は残す）
-const touch = svg
-  .replace(/viewBox="[^"]*"/, 'viewBox="1.2 1.2 33.6 33.6"')
-  .replace(/<rect id="edge"[^>]*\/>/, '')
-  .replace(/(<rect[^>]*?)\srx="[^"]*"/g, '$1');
-await writeFile('site/public/apple-touch-icon.png', await png(180, touch, tile));
+// 縁の内側だけを 180px に広げる
+await writeFile('site/public/apple-touch-icon.png', await png(180, fullBleed(svg), tile));
 
 await browser.close();
-console.log(`favicon.ico（${sizes.join('・')}px）と apple-touch-icon.png（180px）を ${SRC} から書き出した`);
+console.log(`favicon.ico（${sizes.join('・')}px）と apple-touch-icon.png（180px）を ${LOGO_SRC} から書き出した`);
