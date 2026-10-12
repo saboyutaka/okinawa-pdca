@@ -17,7 +17,7 @@
 /*/
   Cache-Control: public, max-age=300
 
-# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったら X-Robots-Tag の行と Base.astro の NOINDEX を外す。
+# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったら X-Robots-Tag の行を外し、src/lib/links.ts の STEALTH を false にする（ベータ版の帯が消え、シェアボタンが出る）。
 # ほかは守りのヘッダー（docs/deploy.md の 3）。読み込んでよいもの（CSP）は各ページの <meta>（astro.config.ts の security.csp）で出し、
 # <meta> では効かない frame-ancestors（ほかのサイトの枠の中に表示させない）だけここで出す
 /*

@@ -3,8 +3,10 @@
 // X・Threads・Bluesky は #okinawa_miraima（lib/iken.ts の HASHTAG）を付けた投稿画面を開く（lib/share.ts）。
 // アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
 // 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
-// link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる
+// link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる。
+// 公開前（lib/links.ts の STEALTH）は、SNS への投稿を控えてもらうので出さない
 import { SNS, shareHref } from '../lib/share.ts';
+import { STEALTH } from '../lib/links.ts';
 import { SHARE_ICONS } from '../lib/share-icons.ts';
 import { absUrl } from '../lib/seo.ts';
 
@@ -12,7 +14,7 @@ interface Props { text?: string; link?: 'page' | 'top'; label?: string }
 const { text = '', link = 'page', label = 'SNS でシェア' } = Astro.props;
 const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
 ---
-<div class="share-panel" role="group" aria-label={label}>
+{!STEALTH && <div class="share-panel" role="group" aria-label={label}>
   <span class="share-label" aria-hidden="true">シェア</span>
   <ul class="share-list">
     {SNS.map((s) => (
@@ -24,7 +26,7 @@ const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
       </li>
     ))}
   </ul>
-</div>
+</div>}
 
 <style>
   /* 白い枠に「シェア」と丸いアイコンを並べる。狭い画面では「シェア」の下にアイコンの列を折り返す */
