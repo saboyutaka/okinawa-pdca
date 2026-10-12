@@ -1,6 +1,7 @@
 ---
 // 将来像1つのページ。ひとめで（取組と成果の割合）→ 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
@@ -18,8 +19,8 @@ import ShareBox from '../../components/ShareBox.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, toneOfJudgement,
-  getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges, toneOfJudgement,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyou, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { getThemes } from '../../lib/themes.ts';
@@ -27,10 +28,10 @@ import { fmt, pct, yen } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import { oneLine } from '../../lib/text.ts';
+import { futureDescription } from '../../lib/describe.ts';
 
-export function getStaticPaths() {
-  return getShouraizou().map((v) => ({ params: { id: String(v.id) }, props: { v } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['future/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { v } = Astro.props;
@@ -48,7 +49,7 @@ const toriOk = tori.filter(isOk).length;
 const seikaOk = seika.filter(reached).length;
 const allToriRate = pct(allTori.filter(isOk).length, allTori.length);
 const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
-const judgeCounts = countBy(shisaku, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const judgeCounts = countJudges(shisaku);
 
 // 基本施策ごと
 const kihonCards = kihon.map((k) => {
@@ -102,7 +103,7 @@ const estimate = amountEntries(LATEST, 'estimate');
 const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e) => s + e.amount, 0);
 const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 ---
-<Base title={`将来像${v.id} ${v.name}`} description={`沖縄県PDCA: 将来像${v.id}「${v.name}」の基本施策・施策・主な取組・成果指標の進み具合（令和4〜7年度）`} ogType="article">
+<Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, { judges: judgeCounts, tori: torikumiRows.at(-1)!.counts, seika: seika.length, reached: seikaOk })} ogType="article">
   <Crumbs items={[{ href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}` }]} />
 
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>

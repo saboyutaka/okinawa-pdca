@@ -1,6 +1,7 @@
 ---
 // 観光ロードマップの施策展開1つ。施策ごとに、成果指標・主な取組・県の分析（Check）と推進戦略案（Action）
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
 import Crumbs from '../../../components/Crumbs.astro';
 import StatusBar from '../../../components/StatusBar.astro';
@@ -14,9 +15,8 @@ import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTen
 import { joinLines, firstSentence } from '../../../lib/text.ts';
 import { fmt } from '../../../lib/format.ts';
 
-export function getStaticPaths() {
-  return kankoTenkaiList().map((t) => ({ params: { tenkai: t.id }, props: { t } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['keikaku/kanko/[tenkai]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { t } = Astro.props;

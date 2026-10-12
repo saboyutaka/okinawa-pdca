@@ -1,5 +1,6 @@
 ---
 import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
@@ -10,18 +11,18 @@ import ShareBox from '../../components/ShareBox.astro';
 import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import { LATEST, yearLabel, yearLong, rateBin, seikaHref, countBy, getTorikumi, getSeika, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { LATEST, STATUSES, yearLabel, yearLong, rateBin, seikaHref, countBy, countJudges, getTorikumi, getSeika, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
+import { themeIdsOfItem } from '../../lib/themes.ts';
 import { fmt, pct } from '../../lib/format.ts';
+import { themeDescription } from '../../lib/describe.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 
-export function getStaticPaths() {
-  return getThemes().map((t) => ({ params: { id: t.id }, props: { t } }));
-}
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['theme/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { t } = Astro.props;
@@ -31,6 +32,8 @@ const items = t.ids.map((id) => byId.get(id)!);
 const groups = getTorikumiGroups().filter((g) => themeIdsOfItem(g.shisaku.id, g.latest.name).includes(t.id));
 const tori = groups.filter((g) => g.statuses[g.statuses.length - 1]);
 const toriOk = tori.filter((g) => g.statuses[g.statuses.length - 1] === '順調').length;
+// 最新の年度の進捗状況の内訳（ページの説明文）
+const toriCounts = countBy(tori, (g) => g.statuses[g.statuses.length - 1]!, STATUSES.map((s) => s.key));
 const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && themeIdsOfItem(r.shisaku.id, r.latest.name).includes(t.id));
 const seikaOk = seika.filter((r) => rateBin(r.latest) === '100%以上').length;
 // 県全体（将来像・部局のページと同じ数え方）
@@ -40,7 +43,7 @@ const allToriRate = pct(allTori.filter((x) => x.status === '順調').length, all
 const allSeikaRate = pct(allSeika.filter((x) => rateBin(x) === '100%以上').length, allSeika.length);
 // 成果指標の一覧は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
 const SEIKA_SHOW = 10;
-const judgeCounts = countBy(items, (s) => s.judges[LATEST] ?? 'なし', ['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+const judgeCounts = countJudges(items);
 // 一覧は将来像 › 基本施策の見出しの下に施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
 const kihonList = getKihonList();
 const visions = getShouraizou()
@@ -53,7 +56,7 @@ const visions = getShouraizou()
 // マス目を押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く
 const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
-<Base title={`${t.label}（くらしのテーマ）`} description={`沖縄県PDCA: 「${t.label}」に関係する施策（${items.length}）・主な取組・成果指標の進み具合（このサイト独自の分類）`} ogType="article">
+<Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, { judges: judgeCounts, tori: toriCounts, seika: seika.length, reached: seikaOk })} ogType="article">
   <Crumbs items={[{ href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} />
   <header class="sticker lift t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>

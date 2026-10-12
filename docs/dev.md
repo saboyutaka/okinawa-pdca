@@ -12,7 +12,8 @@
 
 `make test` で `make test-py`（`scripts/tests/`。抽出の関数を作った値で確かめる。PDF は読まない）と `make test-site`（`site/test/`。lib の関数）の両方。
 
-- `site/test/integrity.test.ts` だけはコミットした `data/extracted` を読み、サイトが前提にしていること（抽出側の `name_key` とサイトの `nameKey` が同じ・どの行も出典にたどれる・取組の URL が重複しない・どの施策もテーマに入る・部局のページがある など）を確かめる。
+- `site/test/routes.test.ts` は、公開した URL の一覧（`site/urls.txt`）の URL がどれもページか転送で開けるかを確かめる（[site.md](site.md) の 8章）。
+- `site/test/integrity.test.ts` はコミットした `data/extracted` を読み、サイトが前提にしていること（抽出側の `name_key` とサイトの `nameKey` が同じ・どの行も出典にたどれる・取組の URL が重複しない・どの施策もテーマに入る・部局のページがある など）を確かめる。
 - 依存は増やさない（Python は標準の `unittest`、サイトは Node の `node:test`）。`.ts` は Node が型を取り除いて動かすので、enum のような取り除くだけでは動かない書き方は使わない。テストの型も `astro check` で確かめる。
 
 ## 3. 画面の確認（make shot）
@@ -29,6 +30,7 @@ make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"     # 最初に当たる�
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。
 - 一覧の行は画面の外を描かない（`content-visibility`。[site.md](site.md) の 7章）ので、撮るときはそれを外している。画面の外の行が空に写ることはないが、スクロールしたときの見え方はこの画像では確かめられない。
 - 中身は `scripts/shot/shot.ts`。Node が型を取り除いて動かすので `erasableSyntaxOnly` の書き方に限り、変えたら `make shot-typecheck`。TypeScript と `@types/node` の版はサイトにそろえ、Playwright の版は `docker/shot/Dockerfile` の FROM と `package.json` をそろえる。
+- `make icons` も同じコンテナの Chromium で、`site/public/favicon.svg` から `favicon.ico`（16・32・48px）と `apple-touch-icon.png`（180px）を書き出す（`scripts/shot/icons.ts`）。ロゴを変えたら動かしてコミットする。
 - SNS のカードの画像（`site/public/og-image.png`）も同じコンテナで HTML から書き出す（`make og-image`。中身は `scripts/shot/og-image.ts` で、`make shot-typecheck` で一緒に型を確かめる。[site.md](site.md) の6章）。
 
 ## 4. git worktree での開発

@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract cross-read check issues test test-py test-site site-install site-check dev build preview shot shot-typecheck og-image down
+.PHONY: help fetch extract cross-read check issues test test-py test-site urls site-install site-check dev build preview shot shot-typecheck icons og-image down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -27,6 +27,7 @@ help:
 	@echo "make check         抽出結果を公表値と突き合わせ、紛らわしい文字（康熙部首など）を探すだけ"
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make test          テスト（抽出スクリプトの test-py とサイトの test-site の両方）"
+	@echo "make urls          公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す（PRUNE=1 で無くなった URL を消す。公開前だけ）"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make site-check    サイトの型を確かめるだけ（astro check。make build でも書き出しの前に行う）"
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
@@ -34,6 +35,7 @@ help:
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
 	@echo "make shot          書き出したサイトを PC 幅とスマホ幅で撮って tmp/shots に（PAGES=\"/ /shisaku/ --dark\"）"
 	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
+	@echo "make icons         site/public/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
 	@echo "make og-image      SNS のカードの画像（site/public/og-image.png）を作り直す（サイトの名前を変えたとき）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
 	$(if $(WORKTREE_NAME),@echo "（worktree $(WORKTREE_NAME): compose.worktree.yaml を重ねて okinawa-pdca-$(WORKTREE_NAME) として動かす）")
@@ -73,6 +75,11 @@ test-py:
 test-site:
 	$(COMPOSE) run --rm site npm test
 
+# 公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す（消えた URL は残す）。
+# PRUNE=1 で、ページも転送（site/public/_redirects）も無くなった URL を一覧から消す。公開前だけ使う（docs/site.md の 8章）
+urls:
+	$(COMPOSE) run --rm site npm run urls $(if $(PRUNE),-- --prune)
+
 site-install:
 	$(COMPOSE) run --rm site npm ci
 
@@ -97,6 +104,10 @@ shot:
 # scripts/shot の TypeScript の型を確かめる（node は型を取り除いて動かすだけで、型の誤りでは止まらないため）
 shot-typecheck:
 	$(COMPOSE) run --rm shot npm --prefix scripts/shot run typecheck
+
+# favicon の ICO と iPhone のホーム画面の PNG を、favicon.svg から書き出す（shot の Chromium で描く。scripts/shot/icons.ts）
+icons:
+	$(COMPOSE) run --rm shot node scripts/shot/icons.ts
 
 # SNS のカードの画像（og:image）を HTML から書き出す（scripts/shot/og-image.ts。書き出した PNG は git に入れる）
 og-image:
