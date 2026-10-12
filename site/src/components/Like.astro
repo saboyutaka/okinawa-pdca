@@ -2,7 +2,7 @@
 // いいねのボタン。シェアの枠（ShareBox.astro）でシェアパネルの隣に置く。
 // 押すと POST /api/like?page=<このページのパス> を1回送り（lib/like.ts・worker/api.ts）、ボタンの上に運営からのお礼のポップアップを出す
 // （お礼が上、差出人が下に署名のように）。スマホ（520px 以下）では、シェアと1行に並ぶように「いいね」の文字を隠してハートだけにする（読み上げには残す）。
-// ポップアップは5秒たつか、ほかの場所を押すか、Esc で閉じる。読み上げには、ポップアップの代わりに role="status" の文字で伝える。
+// ポップアップは3.5秒たつか、ほかの場所を押すか、Esc で閉じる（消えるときは、すっと薄くなって消える）。読み上げには、ポップアップの代わりに role="status" の文字で伝える。
 // 件数はどこにも残さず画面にも出さない（運営が Cloudflare のログで数えるだけ。docs/deploy.md の7章）。
 // 1回の表示で1回だけ押せる（押したら押せない状態にする。開き直せばまた押せる）。
 // お礼は送れたかどうかに関係なく出す（make dev などの Astro だけのときは送り先が無いため）
@@ -33,7 +33,7 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
 <script>
   import { LIKE_FROM, LIKE_THANKS, likeUrl } from '../lib/like.ts';
 
-  const SHOW_MS = 5000;
+  const SHOW_MS = 3500;
   // ボタンとポップアップのあいだ（.like-pop の bottom・top と同じ）
   const GAP = 14;
 
@@ -45,7 +45,15 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
     let timer = 0;
     const close = () => {
       window.clearTimeout(timer);
-      pop.hidden = true;
+      if (pop.hidden || pop.classList.contains('leaving')) return;
+      const done = () => {
+        pop.hidden = true;
+        pop.classList.remove('leaving');
+      };
+      pop.classList.add('leaving');
+      // 動きを減らす設定のときは消える動きが無いので、すぐに隠す
+      if (pop.getAnimations().length) pop.addEventListener('animationend', done, { once: true });
+      else done();
     };
     btn.addEventListener('click', () => {
       if (btn.getAttribute('aria-pressed') === 'true') return;
@@ -113,9 +121,11 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
   @media (prefers-reduced-motion: no-preference) {
     .like-btn[aria-pressed="true"] .heart { animation: like-heart 0.35s ease-out; }
     .like-pop:not([hidden]) { animation: like-pop-in 0.3s cubic-bezier(0.3, 1.4, 0.6, 1); }
+    .like-pop.leaving { animation: like-pop-out 0.2s ease-in forwards; }
   }
   @keyframes like-heart { 0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
   @keyframes like-pop-in { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+  @keyframes like-pop-out { to { opacity: 0; transform: scale(0.94); } }
   /* スマホでは、差出人が1行に収まるように、ポップアップを少し広げ、差出人の字を小さくする（上の .like-pop・.like-from より後に置く） */
   @media (max-width: 520px) {
     .like-pop { max-width: calc(100vw - 56px); padding-right: 16px; }
