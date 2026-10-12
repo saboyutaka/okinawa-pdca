@@ -9,7 +9,7 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
-import ShuyouTrendGrid from '../components/ShuyouTrendGrid.astro';
+import ShuyouTrendTop from '../components/ShuyouTrendTop.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
@@ -139,9 +139,9 @@ const boshu = boshuState();
   {shuyou.length > 0 && (
     <section aria-labelledby="shuyou-h">
       <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
-      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。</p>
-      <ShuyouTrendGrid rows={shuyou} visions={visions} />
-      <p class="small">基準値・目標値と県の見通しは、各将来像のページと<a href="/shihyou/shuyou/">主要指標の一覧</a>にあります。</p>
+      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。{yearLong(LATEST)}の報告の{fmt(shuyou.length)}指標を、報告の年度ごとの<Term word="実績値" />の折れ線で並べました。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と値を出します。</p>
+      <ShuyouTrendTop rows={shuyou} visions={visions} />
+      <p class="small">県の見通しは、<a href="/shihyou/shuyou/">主要指標の一覧</a>と基本施策のページにあります。</p>
     </section>
   )}
 

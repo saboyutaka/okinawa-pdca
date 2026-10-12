@@ -13,13 +13,14 @@
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
 import { YEARS, textGoalChartRow, yearLabel, refText, type ChartRow, type ChartYear, type SeikaGroup, type ShuyouPart } from '../lib/data.ts';
 
-// row は成果指標、part は主要指標の部分（男性・女性など。分けない指標は1つ）
-type Props = { row: SeikaGroup; part?: never } | { part: ShuyouPart; row?: never };
+// row は成果指標、part は主要指標の部分（男性・女性など。分けない指標は1つ）。h は図の高さ（横 120 に対して。トップ・将来像ページの
+// 主要指標の行は、行を低くするため平たくする）
+type Props = ({ row: SeikaGroup; part?: never } | { part: ShuyouPart; row?: never }) & { h?: number };
 type Pt = [x: number, y: number];
-const { row, part } = Astro.props;
+const { row, part, h = 40 } = Astro.props;
 const W = 120;
-const H = 40;
-const PAD = 5; // 上下の余白（点がはみ出ないように）
+const H = h;
+const PAD = H < 40 ? 4 : 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
 const sw = W / SLOTS.length;
 const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);

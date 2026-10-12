@@ -5,12 +5,11 @@
 // goal は、計画の道すじを引かずゴールの丸だけを置く図（主要指標）。plan={false} と合わせて使う。図の全体に地を敷き前期の地を濃くするので、
 // 前期の印もその色にし、道すじの頭でないと分かりにくいスタートの点も凡例に出す
 // rm は観光ロードマップの一覧の図（RmSeikaSpark）。横は R4〜R6 で、計画期間が1つなので地の色は無い
-// where は mini の小さな図の置き場所（一覧の行は「右の」。トップの主要指標のように図を並べるところは「各指標の」）
-interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; where?: string }
-const { mini = false, plan = true, goal = false, rm = false, where = '右の' } = Astro.props;
+interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean }
+const { mini = false, plan = true, goal = false, rm = false } = Astro.props;
 ---
 <ul class="chart-key seika-key" aria-hidden="true">
-  {mini && <li>{where}小さな図（横は報告年度 {rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
+  {mini && <li>右の小さな図（横は報告年度 {rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
   {mini && !rm && <li><span class:list={['k-band', goal && 'on-frame']}></span>前期（R4〜R6）</li>}
   {plan && <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴールの目標値）</li>}
   {goal && <li><span class="k-start"></span>スタートの基準値</li>}
