@@ -4,7 +4,7 @@
 
 ## 1. 検索エンジンに載せない設定
 
-**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出し、SNS のシェアボタンを隠す。検索に載せてよくなったら、`STEALTH` を `false` にし、`X-Robots-Tag` の行を外す。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
+**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出し、SNS のシェアボタンを隠す。検索に載せてよくなったら、`STEALTH` を `false` にし、`X-Robots-Tag` の行を外す（本番の workers.dev の URL は先に止めてあり、本番を開けるのは okinawa-miraima.com だけ。2章）。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
 
 ## 2. Cloudflare の設定
 
@@ -26,7 +26,9 @@
 
 ビルドでは、ページごとの SNS のカードの画像（約2,600枚。[site.md](site.md) の6章）も描く。全部を描くと手元で約1分半かかるので、描いた画像を Astro のキャッシュのフォルダ（`site/node_modules/.astro/cards`）に置き、中身が前のビルドと同じ画像は描き直さない（`site/src/lib/card-cache.ts`。手元では2回目から約25秒）。[Workers Builds のビルドキャッシュ](https://developers.cloudflare.com/workers/ci-cd/builds/build-caching/)は、Astro のプロジェクトなら `node_modules/.astro` を次のビルドに残すので、有効にしておく。効いているかはビルドのログの `[card-cache]` の行（「前のビルドの画像を N 枚使い、M 枚を描いた」）で分かる。キャッシュは最後に読まれてから7日で消える（その次のビルドは全部を描く）。データ・カードの見た目・フォント・依存の版が変わった画像は描き直す。
 
-main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる（`site/wrangler.jsonc` の `previews` の枠が要る）。
+workers.dev の URL（`okinawa-pdca.<アカウント>.workers.dev`）は `site/wrangler.jsonc` の `workers_dev: false` で止めてあり、本番は okinawa-miraima.com（4章）でだけ開く。検索に載せたときに、同じページが別の URL で読まれないようにするため。ダッシュボード（Settings → Domains & Routes）で切っても、次の `npx wrangler deploy` で `wrangler.jsonc` の値（書かなければ有効）に戻るので、`wrangler.jsonc` で決める。カスタムドメインはダッシュボードで付けていて `wrangler.jsonc` には書いていないので、デプロイのログに `No targets deployed for okinawa-pdca` と出ても、公開はされている。
+
+main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる（`site/wrangler.jsonc` の `previews` の枠が要る）。プレビューの URL は workers.dev の `<ブランチ>-okinawa-pdca.<アカウント>.workers.dev`（Cloudflare が PR にコメントで書く）で、`site/wrangler.jsonc` の `preview_urls: true` で有効にしている。書かないと `workers_dev` に合わせて止まることがある（wrangler 4.149.0 は、プレビューに URL が無いとき `preview_urls = true` を足すよう案内する）。`preview_urls` は、本番の版ごとの URL（`<版の ID の頭8文字>-okinawa-pdca.<アカウント>.workers.dev`）も開けるようにする。プレビューと版ごとの URL には Cloudflare が `X-Robots-Tag: noindex` を付けるので、検索には載らない（2026-10-12 に版ごとの URL で確かめた）。
 
 ## 3. 守りのヘッダーと CSP
 
@@ -40,7 +42,7 @@ main 以外のブランチ（PR）は `npx wrangler preview` でブランチご�
 - ページの作り方の決まり（`<script is:inline>` のハッシュなど）は [site.md](site.md) の 3章。
 - `_headers` を変えたら、`wrangler dev` で返るヘッダーを確かめられる（Alpine の `site` コンテナでは動かないので `node:24-slim` で動かす。`site/.wrangler/` に作業用のファイルができる）。
 - 依存パッケージを入れるときのスクリプトは `site/.npmrc` の `ignore-scripts=true` で動かさない。ルートディレクトリ（`site`）に置いているので、Cloudflare のビルドで依存を入れるときと `npx wrangler deploy` にも効く（2026-10-12 に wrangler 4.149.0 の `deploy --dry-run` が通ることを確かめた）。
-- http から https への転送（301）は、Cloudflare のダッシュボードの「Always Use HTTPS」で有効にしてある。HSTS は git で追えて `wrangler dev` で確かめられるように `_headers` で出し、ダッシュボードの HSTS（SSL/TLS → Edge Certificates）は切ったままにする（片方だけにする）。`workers.dev` は `.dev` なので、ブラウザが初めから https にする。
+- http から https への転送（301）は、Cloudflare のダッシュボードの「Always Use HTTPS」で有効にしてある。HSTS は git で追えて `wrangler dev` で確かめられるように `_headers` で出し、ダッシュボードの HSTS（SSL/TLS → Edge Certificates）は切ったままにする（片方だけにする）。プレビューの `workers.dev` は `.dev` なので、ブラウザが初めから https にする。
 - HSTS に `includeSubDomains`・`preload` は付けない。サブドメインを使っていないうえ、`preload` はブラウザに組み込まれる一覧に載り、すぐには外せないため。そのぶん、初めて http で開いたときの1回目のやりとりは守れない。確かめ方: `curl -sI https://okinawa-miraima.com/ | grep -i strict-transport`
 
 ### Cloudflare が配信のときに差し込むスクリプトと CSP
@@ -59,7 +61,7 @@ Cloudflare は、配信のときに各ページの `</body>` の前へスクリ�
 
 ## 4. ドメイン
 
-本番は https://okinawa-miraima.com/（Cloudflare のカスタムドメイン）。ドメインを変えるときは `site/src/lib/links.ts` の `SITE.url` を直す（`canonical`・`og:url`・`og:image`・sitemap・構造化データ・シェアの URL がここから作られる。[site.md](site.md) の6章）。SNS のカードの画像にもドメインを書いているので、`make og-image` で作り直す。
+本番は https://okinawa-miraima.com/（Cloudflare のカスタムドメイン。ダッシュボードの Settings → Domains & Routes で付けている）。workers.dev の URL は止めてある（2章）。ドメインを変えるときは `site/src/lib/links.ts` の `SITE.url` を直す（`canonical`・`og:url`・`og:image`・sitemap・構造化データ・シェアの URL がここから作られる。[site.md](site.md) の6章）。SNS のカードの画像にもドメインを書いているので、`make og-image` で作り直す。
 
 Cloudflare の管理用の robots.txt（AI 向けの content signals）を有効にしていると、Cloudflare が `robots.txt` の頭に自分の文を書き足す。
 
@@ -74,7 +76,7 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 | ページ（`/` と末尾が `/` の URL） | 5分 | HTML にだけ ETag が付かず、304 で済ませられないため（開くたびに全部を取り直していた） |
 | ほか（検索用データの控えの `/torikumi/data.json`・根元の `/favicon.ico` など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
 
-- HTML に ETag が付かないのは、workers.dev でも独自ドメイン（okinawa-miraima.com）でも同じ。Cloudflare の配信の途中で外れていて、ゾーンの設定では直らない（2026-10-12 に確かめた）。
+- HTML に ETag が付かないのは、workers.dev でも独自ドメイン（okinawa-miraima.com）でも同じ。Cloudflare の配信の途中で外れていて、ゾーンの設定では直らない（2026-10-12 に確かめた。本番の workers.dev の URL はその後に止めたので、workers.dev で確かめ直すときはプレビューか版ごとの URL を使う。2章）。
   - 静的アセットを返す Cloudflare のプログラム（workers-sdk の `asset-worker`）は、HTML にも ETag を付け、`If-None-Match` には 304 を返す作りになっている。その手前の `router-worker` も ETag を外さない。外しているのはその後ろ（ソースは公開されていない）。
   - 本番では HTML だけが、圧縮しない（identity）ときも ETag と Content-Length が無い（HTTP/1.1 では chunked）。CSS・JSON・SVG・txt・woff2 は付く。中身は書き換わっていないが、HTML だけ別の処理を通っている。ほかの人の workers.dev のサイトも同じ。
   - [ETag headers](https://developers.cloudflare.com/cache/reference/etag-headers/) が ETag を外す機能に挙げる Replace insecure JavaScript libraries・Email Address Obfuscation・Automatic HTTPS Rewrites を、okinawa-miraima.com のゾーンで全部切っても付かなかった（Bot Fight Mode・AI Labyrinth も切ってある）。

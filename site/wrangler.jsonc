@@ -4,6 +4,12 @@
 {
   "name": "okinawa-pdca",
   "compatibility_date": "2026-09-01",
+  // 本番は okinawa-miraima.com（ダッシュボードで付けたカスタムドメイン）だけで開く。workers.dev の URL（okinawa-pdca.<アカウント>.workers.dev）は止める。
+  // ダッシュボードで切っても、`npx wrangler deploy` のたびにここの値（書かなければ有効）に戻るので、ここで決める
+  "workers_dev": false,
+  // プレビュー（PR）の URL は workers.dev のまま使う（<ブランチ>-okinawa-pdca.<アカウント>.workers.dev）。
+  // 書かないと workers_dev に合わせて止まることがあるので、明示して有効にしておく
+  "preview_urls": true,
   // プレビューの設定。`npx wrangler preview` にはこの枠が要る。本番と分ける設定（変数・バインディング）は無いので空
   "previews": {},
   "assets": {
