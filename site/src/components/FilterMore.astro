@@ -6,7 +6,7 @@
 interface Props { id: string }
 const { id } = Astro.props;
 ---
-<button type="button" class="more-toggle" aria-expanded="false" aria-controls={id} data-filter-toggle>
+<button type="button" class="more-toggle press" aria-expanded="false" aria-controls={id} data-filter-toggle>
   <span>条件で絞り込む</span><span class="mf-n" data-filter-count hidden></span><svg class="chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
 </button>
 <div class="more-body" id={id} hidden><slot /></div>
@@ -42,9 +42,10 @@ const { id } = Astro.props;
   .more-toggle {
     flex: none; align-self: end; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 16px;
     font: inherit; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); background: var(--paper);
-    border: 2px solid var(--line); border-radius: 999px; box-shadow: 2px 2px 0 var(--shadow); cursor: pointer;
+    border: 2px solid var(--line); border-radius: 999px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); cursor: pointer;
   }
   .more-toggle:hover { background: var(--sky); }
+  .more-toggle:active { transform: translate(2px, 2px); box-shadow: none; }
   .more-toggle[aria-expanded="true"] { background: var(--sky); font-weight: 700; }
   .mf-n {
     display: inline-grid; place-items: center; min-width: 1.5em; height: 1.5em; padding: 0 4px; border-radius: 999px;

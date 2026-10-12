@@ -34,12 +34,13 @@ main 以外のブランチ（PR）は `npx wrangler preview` でブランチご�
 
 | 何を | どこで | ねらい |
 |---|---|---|
-| CSP（`default-src 'self'` と、スクリプト・`<style>` のハッシュ） | 各ページの `<meta>`。`site/astro.config.ts` の `security.csp` で Astro が書き出す | このサイトのファイルと、ビルドで書き出したスクリプト（とアクセス解析のスクリプト。6章）しか動かさない。データに何か混ざっても、スクリプトとしては動かない |
+| CSP（`default-src 'self'` と、スクリプトのハッシュ） | 各ページの `<meta>`。`site/astro.config.ts` の `security.csp` で Astro が書き出す | このサイトのファイルと、ビルドで書き出したスクリプト（とアクセス解析のスクリプト。6章）しか動かさない。データに何か混ざっても、スクリプトとしては動かない |
 | `frame-ancestors 'none'`・`X-Frame-Options: DENY` | `site/public/_headers` | ほかのサイトの枠（iframe）の中に表示させない。`frame-ancestors` は `<meta>` では効かないのでヘッダーで出す |
 | `X-Content-Type-Options`・`Referrer-Policy`・`Permissions-Policy` | `site/public/_headers` | ファイルの種類の決めつけをさせない、県などへのリンクでは、どのページから来たかを送らずサイトのドメインだけを送る、カメラなどを使わせない |
 | HSTS（`Strict-Transport-Security: max-age=31536000`） | `site/public/_headers` | 一度 https で開いたブラウザに、この先1年は http で開かせない。http のリンクから来たときなどに、https に移る前の1回目のやりとりを書き換えられないように |
 
 - ページの作り方の決まり（`<script is:inline>` のハッシュなど）は [site.md](site.md) の 3章。
+- CSS は `/_astro/` のファイル（`'self'`）だけで、ページに `<style>` を書き出さない（[site.md](site.md) の 7章）。Astro は、ビルドのどこかに `<style>` があると、ビルド全体の `<style>` のハッシュをどのページの CSP にも入れるので、ページが重くなる（2026-10-12 までは約40個・約2KB）。いま残る `style-src-elem` のハッシュ1つは空の文字列のもの（`sha256-47DEQ…`）で、中身の無い `<style>` にしか当たらない。
 - `_headers` を変えたら、`wrangler dev` で返るヘッダーを確かめられる（Alpine の `site` コンテナでは動かないので `node:24-slim` で動かす。`site/.wrangler/` に作業用のファイルができる）。
 - 依存パッケージを入れるときのスクリプトは `site/.npmrc` の `ignore-scripts=true` で動かさない。ルートディレクトリ（`site`）に置いているので、Cloudflare のビルドで依存を入れるときと `npx wrangler deploy` にも効く（2026-10-12 に wrangler 4.149.0 の `deploy --dry-run` が通ることを確かめた）。
 - http から https への転送（301）は、Cloudflare のダッシュボードの「Always Use HTTPS」で有効にしてある。HSTS は git で追えて `wrangler dev` で確かめられるように `_headers` で出し、ダッシュボードの HSTS（SSL/TLS → Edge Certificates）は切ったままにする（片方だけにする）。プレビューの `workers.dev` は `.dev` なので、ブラウザが初めから https にする。
@@ -72,9 +73,9 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 | 対象 | Cache-Control | 理由 |
 |---|---|---|
 | `/_astro/*` | 1年・immutable | ファイル名に中身のハッシュが付く（CSS・JS・数字のフォント・favicon） |
-| `/torikumi/data-*.json` | 1年・immutable | 取組をさがすの検索用データ。ファイル名に中身のハッシュが付く（`lib/search-data.ts`） |
+| `/torikumi/data-*.json`・`/torikumi/summary-*.json` | 1年・immutable | 取組をさがすの検索用データとやったこと。ファイル名に中身のハッシュが付く（`lib/search-data.ts`） |
 | ページ（`/` と末尾が `/` の URL） | 5分 | HTML にだけ ETag が付かず、304 で済ませられないため（開くたびに全部を取り直していた） |
-| ほか（検索用データの控えの `/torikumi/data.json`・根元の `/favicon.ico` など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
+| ほか（検索用データの控えの `/torikumi/data.json`・`summary.json`、根元の `/favicon.ico` など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
 
 - HTML に ETag が付かないのは、workers.dev でも独自ドメイン（okinawa-miraima.com）でも同じ。Cloudflare の配信の途中で外れていて、ゾーンの設定では直らない（2026-10-12 に確かめた。本番の workers.dev の URL はその後に止めたので、workers.dev で確かめ直すときはプレビューか版ごとの URL を使う。2章）。
   - 静的アセットを返す Cloudflare のプログラム（workers-sdk の `asset-worker`）は、HTML にも ETag を付け、`If-None-Match` には 304 を返す作りになっている。その手前の `router-worker` も ETag を外さない。外しているのはその後ろ（ソースは公開されていない）。

@@ -16,6 +16,7 @@
 // - 書き出し先は tmp/shots/<ページ>[@<セレクタ>][+<押した要素>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
 // - ページ全体の画像は縦に長い。画像を読ませて確かめるときは --top や --selector で範囲をしぼる
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
+// - 端末で動きを減らす設定（prefers-reduced-motion: reduce）にして開き、動き（styles/global.css の「動き」）の途中ではなく動き終わった形を撮る
 // - ページの読み込みに失敗したとき・ブラウザでスクリプトのエラーが出たときは表示して、終了コード1。ただし、Cloudflare が
 //   配信のときに差し込むボット検出のスクリプトがページの CSP に止められたエラーは数えない（--base で本番を撮るときに出る。
 //   docs/deploy.md の 3章）
@@ -158,6 +159,7 @@ try {
       hasTouch: mobile,
       locale: 'ja-JP',
       timezoneId: 'Asia/Tokyo',
+      reducedMotion: 'reduce',
     });
     if (opts.dark) {
       // Base.astro の <head> のスクリプトが読む配色の記憶（site/src/scripts/theme.ts と同じ）

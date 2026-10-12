@@ -2,23 +2,59 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { searchDataJson, searchDataHash, searchDataPath, SEARCH_DATA_FALLBACK, type SearchData } from '../src/lib/search-data.ts';
+import { readFileSync } from 'node:fs';
+import {
+  searchDataJson, searchDataHash, searchDataPath, SEARCH_DATA_FALLBACK,
+  searchSummaryJson, searchSummaryHash, searchSummaryPath, SEARCH_SUMMARY_FALLBACK,
+  type SearchData, type SearchSummary,
+} from '../src/lib/search-data.ts';
 import { getTorikumiGroups } from '../src/lib/data.ts';
 
-test('書き出す場所の名前は、中身の SHA-256 の先頭8桁', () => {
-  const hash = createHash('sha256').update(searchDataJson()).digest('hex').slice(0, 8);
-  assert.equal(searchDataHash(), hash);
-  assert.equal(searchDataPath(), `/torikumi/data-${hash}.json`);
+const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
+const data = () => JSON.parse(searchDataJson()) as SearchData;
+const summary = () => JSON.parse(searchSummaryJson()) as SearchSummary;
+
+test('書き出す場所の名前は、中身の SHA-256 の先頭8桁（やったことは rows の中身）', () => {
+  assert.equal(searchDataHash(), sha8(searchDataJson()));
+  assert.equal(searchDataPath(), `/torikumi/data-${searchDataHash()}.json`);
+  assert.equal(searchSummaryHash(), sha8(JSON.stringify(summary().rows)));
+  assert.equal(summary().hash, searchSummaryHash());
+  assert.equal(searchSummaryPath(), `/torikumi/summary-${searchSummaryHash()}.json`);
 });
 
-test('ハッシュの付いた名前は public/_headers のずっとキャッシュするルール（/torikumi/data-*.json）に当たり、控えは当たらない', () => {
-  const rule = /^\/torikumi\/data-.*\.json$/;
-  assert.match(searchDataPath(), rule);
-  assert.doesNotMatch(SEARCH_DATA_FALLBACK, rule);
+// public/_headers の、ずっとキャッシュする（immutable）ルールのパス
+function immutableRules() {
+  const rules: RegExp[] = [];
+  let path = '';
+  for (const line of readFileSync(new URL('../public/_headers', import.meta.url), 'utf-8').split('\n')) {
+    if (line.startsWith('#') || !line.trim()) continue;
+    if (!/^\s/.test(line)) path = line.trim();
+    else if (/^\s*Cache-Control:.*immutable/.test(line)) rules.push(new RegExp(`^${path.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`));
+  }
+  return rules;
+}
+
+test('ハッシュの付いた名前は public/_headers のずっとキャッシュするルールに当たり、控えは当たらない', () => {
+  const rules = immutableRules();
+  for (const p of [searchDataPath(), searchSummaryPath()]) assert.ok(rules.some((r) => r.test(p)), p);
+  for (const p of [SEARCH_DATA_FALLBACK, SEARCH_SUMMARY_FALLBACK]) assert.ok(!rules.some((r) => r.test(p)), p);
 });
 
 test('JSON はすべての取組を、fields の並びで持つ', () => {
-  const d = JSON.parse(searchDataJson()) as SearchData;
+  const d = data();
   assert.equal(d.rows.length, getTorikumiGroups().length);
   for (const r of d.rows) assert.equal(r.length, d.fields.length);
+});
+
+test('やったことは data の行と同じ並びで、data が同じ版のやったことの hash を持つ', () => {
+  const d = data();
+  const s = summary();
+  assert.equal(d.summary, s.hash);
+  assert.equal(s.rows.length, d.rows.length);
+  const groups = getTorikumiGroups();
+  s.rows.forEach((text, i) => {
+    assert.equal(d.rows[i][9], groups[i].href);
+    assert.equal(text, groups[i].latest.summary || '');
+  });
+  assert.ok(s.rows.filter(Boolean).length > s.rows.length / 2, 'やったことのある取組が半分より少ない');
 });
