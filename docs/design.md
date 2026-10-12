@@ -64,9 +64,7 @@
 
 サイトの名前は「おきなわ、みらい、いま」（縮めて「みらいま」、ハッシュタグ `#okinawa_miraima`）。名前・略称・トップの題名とヒーローの頭に付ける説明（沖縄県PDCAを読みとく非公式サイト）は `site/src/lib/links.ts` の `SITE`、ハッシュタグは `lib/iken.ts` の `HASHTAG` に1か所で決め、画面の文字もここから出す。2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ「沖縄未来提案プロジェクト」（`PROJECT.miraiTeian`）の続きで、そのことは「このサイトについて」の `#naritachi` と `/code-for-okinawa/` に書いている（前のプロジェクトの部会のページは提案・意見の場なので、くらしのテーマなどからはリンクしない）。
 
-Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL は `site/src/lib/links.ts` の `PROJECT`）。
-
-ロゴは、角の丸い四角のステッカーに、淡い紫の星空と丘を描き、まるい子（いま）がみらいの白い星を見上げる絵（ヘッダーの印と favicon）。丸いハンコは施策の判定だけに使うので、印は丸にしない。笑顔などの表情は付けない（順調・遅れのどちらかの気分を足さないため）。色は `styles/global.css` の `--logo-*` で、状態の色と将来像の色は使わない。中の絵はダークでも同じ色にし、ダークで変えるのはステッカーの縁と影だけ（ほかのステッカーと同じ）。絵は `layouts/Base.astro` の SVG と `public/favicon.svg`（ライトの色の値を直接書く）の2か所にあり、変えたら両方を直して `make icons`（`favicon.ico` と iPhone のホーム画面の `apple-touch-icon.png` を書き出す）と `make og-image`（SNS のカードの画像。`favicon.svg` の絵を読む）。
+Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL、制作協力の人の名前は `site/src/lib/links.ts` の `PROJECT`）。
 
 ## 11. ページごとの並び
 

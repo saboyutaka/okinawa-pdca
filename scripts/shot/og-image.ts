@@ -4,7 +4,7 @@
 //
 // - 書き出し先・大きさは site/src/lib/seo.ts の OG_IMAGE（site/public/og-image.png。1200×630）。この画像は git に入れる
 // - 文字はサイトの名前・説明・作り手（site/src/lib/links.ts の SITE・PROJECT）から入れる。名前を変えたら作り直す
-// - ロゴの絵は site/public/favicon.svg を読んで使う（絵を写さない。ロゴを変えたら make icons と一緒に作り直す）。
+// - ロゴの絵は site/src/assets/favicon.svg を読んで使う（絵を写さない。ロゴを変えたら make icons と一緒に作り直す）。
 //   ヘッダーと同じく、ロゴを名前の前に小さく置いて1行に並べる（説明は名前の頭にそろえる）。ヘッダーの印（styles/global.css の .site-title .mark）と同じく、
 //   角の丸い四角に太い線と硬い影を付けて -4° 傾ける
 // - 名前と説明の下に、サイトの成果指標の図（site/src/scripts/charts.ts の seika）と同じ形の線を絵として入れる（データではない）。

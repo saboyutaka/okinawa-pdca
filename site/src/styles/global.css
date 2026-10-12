@@ -50,7 +50,7 @@
   /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
   /* ロゴ（ヘッダーの印）。淡い紫の星空と丘で、まるい子がみらいの白い星を見上げる。中の絵はダークでも同じ色にする
-     （ダークで変わるのはステッカーの縁と影だけ）。favicon（public/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
+     （ダークで変わるのはステッカーの縁と影だけ）。favicon（src/assets/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
   --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
   /* 以前の名前（ページの style から参照しているもの） */
   --page: var(--bg);
@@ -114,7 +114,9 @@ small, .small { font-size: 0.875rem; }
 .secondary { color: var(--ink-2); }
 .num { font-variant-numeric: tabular-nums; }
 .big { font-family: var(--font-num); font-weight: 600; font-variant-numeric: tabular-nums; }
-.lead { max-width: 46em; }
+/* ページや節の頭の説明も、見出しと同じく文節の区切りで折り返す（「進ん / だか」「いま / せん。」のような切れ方を避ける。
+   text-wrap: pretty と違って行の長さはそろえないので、iOS の Safari でも右が空かない。対応していないブラウザでは今までどおり） */
+.lead { word-break: auto-phrase; }
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; }
 /* hidden 属性は、ページの style で display を付けた要素でも必ず隠す（一覧の絞り込みが hidden で隠すため） */
 [hidden] { display: none !important; }

@@ -1,7 +1,7 @@
-// ロゴの絵（site/public/favicon.svg）を、favicon 以外の画像（icons.ts・og-image.ts）でも使うための関数
+// ロゴの絵（site/src/assets/favicon.svg）を、favicon 以外の画像（icons.ts・og-image.ts）でも使うための関数
 import { readFile } from 'node:fs/promises';
 
-export const LOGO_SRC = 'site/public/favicon.svg';
+export const LOGO_SRC = 'site/src/assets/favicon.svg';
 
 export const readLogo = () => readFile(LOGO_SRC, 'utf8');
 

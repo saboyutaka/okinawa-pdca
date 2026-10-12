@@ -1,8 +1,8 @@
-// site/public/favicon.svg から、SVG の favicon を読まないところ向けの画像を書き出す（ロゴを変えたら make icons）。
+// site/src/assets/favicon.svg から、SVG の favicon を読まないところ向けの画像を書き出す（ロゴを変えたら make icons）。
 //
-//   site/public/favicon.ico          … 16・32・48px（古いブラウザ・ブックマーク・Windows のショートカット）
-//   site/public/apple-touch-icon.png … 180px（iPhone のホーム画面）。角は端末が丸めるので、縁（#edge）を消し、
-//                                      四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
+//   site/src/assets/favicon.ico          … 16・32・48px（古いブラウザ・ブックマーク・Windows のショートカット）
+//   site/src/assets/apple-touch-icon.png … 180px（iPhone のホーム画面）。角は端末が丸めるので、縁（#edge）を消し、
+//                                          四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
 //
 // コンテナ shot の Chromium で SVG を描いて撮る（ホストに画像のツールを入れないため）
 import { writeFile } from 'node:fs/promises';
@@ -44,10 +44,10 @@ function ico(images: { size: number; data: Buffer }[]): Buffer {
 const sizes = [16, 32, 48];
 const images = [];
 for (const size of sizes) images.push({ size, data: await png(size, svg) });
-await writeFile('site/public/favicon.ico', ico(images));
+await writeFile('site/src/assets/favicon.ico', ico(images));
 
 // 縁の内側だけを 180px に広げる
-await writeFile('site/public/apple-touch-icon.png', await png(180, fullBleed(svg), tile));
+await writeFile('site/src/assets/apple-touch-icon.png', await png(180, fullBleed(svg), tile));
 
 await browser.close();
 console.log(`favicon.ico（${sizes.join('・')}px）と apple-touch-icon.png（180px）を ${LOGO_SRC} から書き出した`);

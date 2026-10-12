@@ -30,8 +30,8 @@ make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"     # 最初に当たる�
 - 読み込みの失敗とブラウザのスクリプトのエラーは `NG`。ページ全体の画像は縦に長いので、読ませるときは `--top` や `--selector` でしぼる。
 - 一覧の行は画面の外を描かない（`content-visibility`。[site.md](site.md) の 7章）ので、撮るときはそれを外している。画面の外の行が空に写ることはないが、スクロールしたときの見え方はこの画像では確かめられない。
 - 中身は `scripts/shot/shot.ts`。Node が型を取り除いて動かすので `erasableSyntaxOnly` の書き方に限り、変えたら `make shot-typecheck`。TypeScript と `@types/node` の版はサイトにそろえ、Playwright の版は `docker/shot/Dockerfile` の FROM と `package.json` をそろえる。
-- `make icons` も同じコンテナの Chromium で、`site/public/favicon.svg` から `favicon.ico`（16・32・48px）と `apple-touch-icon.png`（180px）を書き出す（`scripts/shot/icons.ts`）。ロゴを変えたら動かしてコミットする。
-- SNS のカードの画像（`site/public/og-image.png`）も同じコンテナで HTML から書き出す（`make og-image`。中身は `scripts/shot/og-image.ts` で、`make shot-typecheck` で一緒に型を確かめる。[site.md](site.md) の6章）。ロゴの絵は、`make icons` と同じく `favicon.svg` から読む（`scripts/shot/logo.ts`）。
+- `make icons` も同じコンテナの Chromium で、`site/src/assets/favicon.svg` から同じフォルダに `favicon.ico`（16・32・48px）と `apple-touch-icon.png`（180px）を書き出す（`scripts/shot/icons.ts`）。ロゴを変えたら動かしてコミットする。
+- SNS のカードの画像（`site/public/og-image.png`）も同じコンテナで HTML から書き出す（`make og-image`。中身は `scripts/shot/og-image.ts` で、`make shot-typecheck` で一緒に型を確かめる。[site.md](site.md) の6章）。ロゴの絵は、`make icons` と同じく `site/src/assets/favicon.svg` から読む（`scripts/shot/logo.ts`）。
 
 ## 4. git worktree での開発
 
