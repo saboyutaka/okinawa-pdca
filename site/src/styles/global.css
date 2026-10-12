@@ -114,7 +114,9 @@ small, .small { font-size: 0.875rem; }
 .secondary { color: var(--ink-2); }
 .num { font-variant-numeric: tabular-nums; }
 .big { font-family: var(--font-num); font-weight: 600; font-variant-numeric: tabular-nums; }
-.lead { max-width: 46em; }
+/* ページや節の頭の説明も、見出しと同じく文節の区切りで折り返す（「進ん / だか」「いま / せん。」のような切れ方を避ける。
+   text-wrap: pretty と違って行の長さはそろえないので、iOS の Safari でも右が空かない。対応していないブラウザでは今までどおり） */
+.lead { word-break: auto-phrase; }
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; }
 /* hidden 属性は、ページの style で display を付けた要素でも必ず隠す（一覧の絞り込みが hidden で隠すため） */
 [hidden] { display: none !important; }

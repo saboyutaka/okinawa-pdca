@@ -63,7 +63,7 @@
 
 サイトの名前は「おきなわ、みらい、いま」（縮めて「みらいま」、ハッシュタグ `#okinawa_miraima`）。名前・略称・トップの題名とヒーローの頭に付ける説明（沖縄県PDCAを読みとく非公式サイト）は `site/src/lib/links.ts` の `SITE`、ハッシュタグは `lib/iken.ts` の `HASHTAG` に1か所で決め、画面の文字もここから出す。2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ「沖縄未来提案プロジェクト」（`PROJECT.miraiTeian`）の続きで、そのことは「このサイトについて」の `#naritachi` と `/code-for-okinawa/` に書いている（前のプロジェクトの部会のページは提案・意見の場なので、くらしのテーマなどからはリンクしない）。
 
-Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL は `site/src/lib/links.ts` の `PROJECT`）。
+Code for Okinawa のプロジェクトとして saboyutaka が管理している（ヘッダーの「by Code for Okinawa」と `/code-for-okinawa/`。団体と管理者の URL、制作協力の人の名前は `site/src/lib/links.ts` の `PROJECT`）。
 
 ## 11. ページごとの並び
 
