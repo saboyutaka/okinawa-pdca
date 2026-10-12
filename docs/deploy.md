@@ -4,7 +4,7 @@
 
 ## 1. 検索エンジンに載せない設定
 
-**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/layouts/Base.astro` の `NOINDEX`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。検索に載せてよくなったら両方を外す。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
+**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/layouts/Base.astro` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出す。検索に載せてよくなったら、`STEALTH` を `false` にし、`X-Robots-Tag` の行を外す。`robots.txt` で巡回を止めると noindex が読まれず URL だけ検索結果に出ることがあるので、`robots.txt` では止めない。`robots.txt`（`site/src/pages/robots.txt.ts`）には sitemap の場所だけを書いている。
 
 ## 2. Cloudflare の設定
 
