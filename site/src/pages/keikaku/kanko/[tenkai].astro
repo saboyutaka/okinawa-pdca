@@ -44,7 +44,6 @@ const next = all[i + 1];
     <div class="toc-links" data-scroll-hint>
       {t.shisaku.map((s) => <a href={`#rm-${s.id}`} title={s.name}>{s.name.length > 14 ? `${s.name.slice(0, 13)}…` : s.name}</a>)}
     </div>
-    <button type="button" class="button" data-open-all="#main" aria-pressed="false" hidden>すべて開く</button>
   </nav>
 
   {t.shisaku.map((s, si) => {

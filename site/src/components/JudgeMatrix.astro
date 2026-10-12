@@ -3,7 +3,9 @@
 // マスの置き方は県の概要版の「施策評価の判定基準」区分表（R4〜R7 とも同じ）どおり。A と B は「順調」の割合40%以上の2段にまたがり、
 // C・D は達成率40%未満の列を「順調」の割合80%で分ける。マスを押すと、その判定の施策の一覧を開く。
 // 判定の意味はマスの短い言い方と縦横の見出しで読めるので、凡例は付けない（C と D の違いは行、E と F の違いは列で分かる）
-// スマホでは縦書きの軸の名前が長くて窮屈なので、横書きにして「よこ」「たて」を付け、マス目の上に2行で並べる
+// スマホでは縦書きの軸の名前が長くて窮屈なので、横書きにして「よこ」「たて」を付け、マス目の上に2行で並べる。
+// マスにマウスを乗せる・フォーカスすると、そのマスが入る行と列の見出し（取組○%・成果○%）を光らせ、なぜその判定かをマス目だけで読めるようにする
+// （見出しの r2〜r4・c2〜c4 と、マスの on-r2〜on-c4。A・B は2行にまたがる）
 import Icon from './Icon.astro';
 import { judgeOf, JUDGE_CELLS } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
@@ -26,15 +28,15 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
     <div class="mx-ytitle" aria-hidden="true"><span class="mx-ax">たて</span><span>主な取組のうち「順調」の割合<span class="nw">（上ほど高い）</span></span></div>
     <div class="matrix">
       <div class="mx-hd" style="grid-row: 1; grid-column: 1;" aria-hidden="true"></div>
-      {AX.map((a, i) => <div class="mx-hd" style={`grid-row: 1; grid-column: ${i + 2};`} aria-hidden="true">成果<br />{a}</div>)}
-      {AX.map((a, i) => <div class="mx-hd" style={`grid-row: ${i + 2}; grid-column: 1;`} aria-hidden="true">取組<br />{a}</div>)}
+      {AX.map((a, i) => <div class={`mx-hd c${i + 2}`} style={`grid-row: 1; grid-column: ${i + 2};`} aria-hidden="true">成果<br />{a}</div>)}
+      {AX.map((a, i) => <div class={`mx-hd r${i + 2}`} style={`grid-row: ${i + 2}; grid-column: 1;`} aria-hidden="true">取組<br />{a}</div>)}
       {CELLS.map(({ k, row, col, span, y, x }) => {
         const j = judgeOf(k)!;
         const ui = JUDGE_UI[k];
         const n = counts[k] || 0;
         return (
           <a
-            class:list={['mcell', `tone-${j.tone}`, ui.hatch && 'hatch']}
+            class:list={['mcell', 'press', `tone-${j.tone}`, ui.hatch && 'hatch', `on-c${col}`, ...Array.from({ length: span }, (_, i) => `on-r${row + i}`)]}
             style={`grid-row: ${row} / span ${span}; grid-column: ${col};`}
             href={hrefOf(k)}
             aria-label={`${k} ${j.label}、${fmt(n)}施策。主な取組の順調の割合 ${y}、成果指標の達成率 ${x}。この判定の施策の一覧を開く`}
@@ -57,12 +59,18 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
   .mx-ytitle { writing-mode: vertical-rl; font-size: 0.875rem; font-weight: 700; color: var(--ink-2); justify-self: center; align-self: center; letter-spacing: 0.08em; }
   .mx-ax { display: none; }
   .matrix { display: grid; grid-template-columns: 5em repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; }
+  .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; border-radius: 10px; }
+  /* 乗せた・フォーカスしたマスの行と列の見出しを光らせる */
+  .matrix:has(.on-r2:is(:hover, :focus-visible)) .r2, .matrix:has(.on-r3:is(:hover, :focus-visible)) .r3, .matrix:has(.on-r4:is(:hover, :focus-visible)) .r4,
+  .matrix:has(.on-c2:is(:hover, :focus-visible)) .c2, .matrix:has(.on-c3:is(:hover, :focus-visible)) .c3, .matrix:has(.on-c4:is(:hover, :focus-visible)) .c4 {
+    color: var(--ink); background: var(--sky); box-shadow: inset 0 0 0 2px var(--line);
+  }
+  @media (prefers-reduced-motion: no-preference) { .mx-hd { transition: background-color 0.12s, color 0.12s, box-shadow 0.12s; } }
   .mcell {
     display: grid; align-content: start; gap: 2px; min-height: 100px; padding: 10px 12px; border-radius: 16px; color: var(--ink); text-decoration: none;
     background-color: color-mix(in oklab, var(--tone) 22%, var(--paper)); border: 2px solid var(--line);
   }
-  a.mcell { box-shadow: 2px 2px 0 var(--shadow); }
+  a.mcell { --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); }
   a.mcell:hover { background-color: color-mix(in oklab, var(--tone) 38%, var(--paper)); }
   a.mcell:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
   .mcell.hatch { background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--tone) 42%, var(--paper)) 0 2px, transparent 2px 7px); }
