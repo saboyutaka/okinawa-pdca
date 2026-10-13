@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouRateText, shouraizouName,
+  shuyouBin, shuyouBinOf, shuyouRateText, shouraizouName,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -334,6 +334,14 @@ test('shuyouBin: 主要指標の達成状況の区分は、概要版の達成率
     [null, '-', 'その他'], [null, '‐', 'その他'], [null, '－', 'その他'],
   ];
   for (const [rate, rate_raw, bin] of cases) assert.equal(shuyouBin({ rate, rate_raw }), bin, rate_raw);
+});
+
+test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果指標の達成率の区分にそろえる', () => {
+  assert.equal(shuyouBinOf('100%以上').tone, 'good');
+  assert.equal(shuyouBinOf('0%超60%未満').tone, 'serious');
+  assert.equal(shuyouBinOf('横ばい').tone, 'none');
+  assert.equal(shuyouBinOf('後退').tone, 'critical');
+  assert.equal(shuyouBinOf('その他').label, '比べられない');
 });
 
 test('shuyouRateText: 主要指標の達成率の札の文字（数はそのまま、比べられないものは —）', () => {

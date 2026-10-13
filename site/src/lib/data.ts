@@ -409,14 +409,15 @@ export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-$
 // 達成率は計画期間の最後（中期はR9、前期はR6）の目標値に対する割合で、成果指標の達成率（その年度の計画値に対する割合）とは違う。
 // 区分は概要版の表の達成率の印字で決める（scripts/check_extracted.py の shuyou_bin と同じ数え方）。目標が数でない指標（「増加」
 // 「可能な限り減少させる」など）は、県が「達成」「後退」と印字している。「-」は統計がまだ出ていないなどで比べられないもの
+// 色と形（tone）は成果指標の達成率の区分（RATE_BINS）にそろえ、横ばいは未着手と同じ灰色の「—」、比べられないものは空の印にする
 export const SHUYOU_BINS = [
-  { key: '100%以上', label: '目標値に到達' },
-  { key: '60%以上100%未満', label: '前進（60%以上）' },
-  { key: '0%超60%未満', label: '前進（60%未満）' },
-  { key: '横ばい', label: '横ばい' },
-  { key: '後退', label: '後退' },
-  { key: 'その他', label: '比べられない' },
-] as const;
+  { key: '100%以上', label: '目標値に到達', tone: 'good' },
+  { key: '60%以上100%未満', label: '前進（60%以上）', tone: 'warning' },
+  { key: '0%超60%未満', label: '前進（60%未満）', tone: 'serious' },
+  { key: '横ばい', label: '横ばい', tone: 'none' },
+  { key: '後退', label: '後退', tone: 'critical' },
+  { key: 'その他', label: '比べられない', tone: 'blank' },
+] as const satisfies readonly { key: string; label: string; tone: Tone }[];
 export type ShuyouBin = (typeof SHUYOU_BINS)[number]['key'];
 type ShuyouRate = Pick<ShuyouGaiyouRow, 'rate' | 'rate_raw'>;
 export function shuyouBin(r: ShuyouRate): ShuyouBin {
@@ -427,6 +428,7 @@ export function shuyouBin(r: ShuyouRate): ShuyouBin {
 }
 // 前進（基準値より良くなった）の区分
 export const SHUYOU_FORWARD: ShuyouBin[] = ['100%以上', '60%以上100%未満', '0%超60%未満'];
+export const shuyouBinOf = (bin: ShuyouBin) => SHUYOU_BINS.find((b) => b.key === bin)!;
 // 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
 export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
 

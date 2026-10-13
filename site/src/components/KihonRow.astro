@@ -2,11 +2,13 @@
 // 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
 // - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前と県の達成率、その下に「スタート → いま → ゴール」の値。
 //   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、どの値にも年・年度を添える（lib/data.ts の eraRef）。
-//   ゴールはほぼ R9 なので、R9 のときは書かず節の文で1回だけ書く。達成率は主な取組の割合と取り違えないよう「達成率」と書く。
-//   年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）
+//   ゴールはほぼ R9 なので、R9 のときは書かず節の文で1回だけ書く。年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）。
+//   達成率はこの行でいちばん大事な数なので、右に大きく、概要版の区分（目標値に到達・前進・横ばい・後退・比べられない）の色と形を付けて置く。
+//   区分の言葉は節の凡例に1回だけ書き、札には数だけ（成果指標の達成率の札と同じ）。主な取組の割合と取り違えないよう「達成率」と添える
 // - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（5つの将来像のページの棒と同じ形）
 import StatusBar from './StatusBar.astro';
-import { STATUSES, shuyouRateText, eraRef, type ShuyouStatus } from '../lib/data.ts';
+import Icon from './Icon.astro';
+import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, type ShuyouStatus } from '../lib/data.ts';
 import { pct } from '../lib/format.ts';
 
 interface Measure { n: number; ok: number; counts: Record<string, number> }
@@ -34,9 +36,10 @@ const vals = (r: ShuyouStatus) => [
           ))}
         </div>
       </div>
-      <div class="k-rate">
+      <div class="k-rate" title={shuyouBinOf(r.bin).label}>
         <span class="k-rl">達成率</span>
-        {shuyouRateText(r) === '—' ? <><b aria-hidden="true">—</b><span class="sr-only">なし</span></> : <b>{shuyouRateText(r)}</b>}
+        <span class="k-rv"><Icon tone={shuyouBinOf(r.bin).tone} size={14} />{shuyouRateText(r) === '—' ? <b aria-hidden="true">—</b> : <b>{shuyouRateText(r)}</b>}</span>
+        <span class="sr-only">（{shuyouBinOf(r.bin).label}）</span>
       </div>
     </div>
   ))}
@@ -66,9 +69,11 @@ const vals = (r: ShuyouStatus) => [
   .nw { display: inline-block; } /* 値と年度はひとまとまりで折り返す（1行に入らないほど長いときだけ中で折り返す） */
   .arrow { margin: 0 6px; color: var(--muted); }
   .ref { font-size: 0.8125rem; }
-  .k-rate { grid-area: rate; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-  .k-rl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
-  .k-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; }
+  /* 達成率は名前と値の2行の右に、言葉を上・数を下にして大きく置く */
+  .k-rate { grid-area: rate; align-self: center; display: grid; justify-items: end; white-space: nowrap; line-height: 1.2; }
+  .k-rl { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+  .k-rv { display: inline-flex; align-items: center; gap: 6px; }
+  .k-rv b { font-family: var(--font-num); font-weight: 600; font-size: 1.6rem; }
   .k-viz { grid-area: viz; min-width: 0; }
   .k-num { grid-area: num; justify-self: end; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; }
   /* 720px 以下は、主要指標のスタート・いま・ゴールを1行ずつ積み、達成率をその下に置く */
@@ -76,7 +81,9 @@ const vals = (r: ShuyouStatus) => [
     .k-item { padding: 12px 14px; }
     .k-name { font-size: 1rem; }
     .k-row { grid-template-columns: 4.2em minmax(0, 1fr); column-gap: 10px; }
-    .k-shuyou { grid-template-areas: "lab main" "lab rate"; row-gap: 2px; }
+    .k-shuyou { grid-template-areas: "lab main" "lab rate"; row-gap: 4px; }
+    .k-rate { display: flex; align-items: baseline; gap: 8px; justify-self: start; }
+    .k-rv b { font-size: 1.35rem; }
     .nw { display: block; }
     .arrow { display: none; }
     .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) 3.8em; }

@@ -20,7 +20,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, SHUYOU_BINS, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
@@ -73,7 +73,8 @@ const kihonRows = kihon.map((k) => {
     tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
   };
 });
-// 棒の凡例はこの節に1回だけ（どれかの基本施策で使っている区分）
+// 凡例はこの節に1回だけ（どれかの基本施策で使っている区分）
+const shuyouLegend = SHUYOU_BINS.filter((b) => shuyou.some((r) => r.bin === b.key));
 const toriLegend = STATUSES.filter((c) => kihonRows.some((k) => (k.tori.counts[c.key] || 0) > 0));
 
 // くらしのテーマ（この将来像の施策が多い順）
@@ -123,10 +124,10 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
     <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
-    {/* 棒の凡例は5つの将来像のページと同じく、線と影のない白い地の小さな箱に1回だけ。棒の右の割合は「順調」の割合 */}
+    {/* 凡例は5つの将来像のページと同じく、線と影のない白い地の小さな箱に1回だけ（主要指標の達成率の札・主な取組の棒の2行）。棒の右の割合は「順調」の割合 */}
     <div class="legend-box">
-      <span class="legend-l">主な取組の<Term word="進捗状況" />:</span>
-      <ul class="legend" aria-label="主な取組の棒の凡例">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul>
+      {shuyouLegend.length > 0 && <div class="lg"><span class="legend-l">主要指標の<Term word="主要指標の達成率" label="達成率" />:</span><ul class="legend" aria-label="主要指標の達成率の札の凡例">{shuyouLegend.map((b) => <li><Chip tone={b.tone} text={b.label} /></li>)}</ul></div>}
+      <div class="lg"><span class="legend-l">主な取組の<Term word="進捗状況" />:</span><ul class="legend" aria-label="主な取組の棒の凡例">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></div>
     </div>
     <ul class="row-list k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
@@ -232,8 +233,9 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .breakdown { margin-top: 16px; }
 
-  /* 棒の凡例（5つの将来像のページの .legend-box と同じ形） */
-  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  /* 凡例（5つの将来像のページの .legend-box と同じ形。主要指標の達成率と主な取組の進捗状況の2行） */
+  .legend-box { display: grid; gap: 4px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  .lg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
   .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
   .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
   @media (max-width: 640px) {
