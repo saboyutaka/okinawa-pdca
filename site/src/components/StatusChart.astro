@@ -8,7 +8,7 @@ import { fmt, pct } from '../lib/format.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
 // id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く
-// total={false} は行の右の件数を出さない（棒の長さで足りるとき。件数は「表で見る」の計にある）
+// total={false} は行の右の件数を出さない（棒の長さで足りるとき。件数は「表で見る」の計にある）。barLabel={false} は棒の中に割合を書かない（同じく「表で見る」と読み上げにある）
 interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
@@ -18,8 +18,9 @@ interface Props {
   unit?: string;
   legend?: boolean;
   total?: boolean;
+  barLabel?: boolean;
 }
-const { title, caption, categories, rows, unit = '件', legend = true, total = true } = Astro.props;
+const { title, caption, categories, rows, unit = '件', legend = true, total = true, barLabel = true } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3);
@@ -42,7 +43,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
           {r.code && <> <span class="code-no">{r.code}</span></>}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
-        <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />
+        <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} labelKey={barLabel ? undefined : ''} />
         {total && <div class="row-total num">{fmt(totalOf(r))}{unit}</div>}
       </div>
     ))}
