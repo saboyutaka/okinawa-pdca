@@ -6,16 +6,15 @@
 // 基本施策のページのカードにもある。読み上げ用の文には残す。
 // 図の凡例は一覧の上に1回だけ（SeikaKey mini）。並びは概要版の表の順（良い・悪いで並べ替えない）。
 // 行を低くするため、図は平たくし（SeikaSpark の h）、スマホでも PC と同じく図を右に置いて、左にいまの値と達成率を重ねる。
-// トップでは将来像ごとに使い、id と more（最初に見せる行の数。scripts/show-more.ts）を渡す
 import SeikaSpark from './SeikaSpark.astro';
 import { SHUYOU_BINS, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
 
-interface Props { rows: ShuyouStatus[]; id?: string; more?: number }
-const { rows, id, more } = Astro.props;
+interface Props { rows: ShuyouStatus[] }
+const { rows } = Astro.props;
 const value = (raw: string, ref: string | null) => (ref ? `${raw}（${ref}）` : raw);
 const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.label;
 ---
-<ul class="row-list trend-list" id={id} data-more={more}>
+<ul class="row-list trend-list">
   {rows.map((r) => (
     <li>
       <div class="r-name">

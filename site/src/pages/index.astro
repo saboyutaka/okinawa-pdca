@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import StatusChart from '../components/StatusChart.astro';
-import StatusBar from '../components/StatusBar.astro';
 import Donut from '../components/Donut.astro';
 import Chunk from '../components/Chunk.astro';
 import Term from '../components/Term.astro';
@@ -9,14 +8,12 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
-import ShuyouTrendTop from '../components/ShuyouTrendTop.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, getShuyouStatus,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
-import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
 import { LINKS, SITE, PROJECT } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
@@ -32,15 +29,8 @@ const toriOk = latestGroups.filter((g) => g.statuses[L] === '順調').length;
 const latestSeika = getSeika(LATEST);
 const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
-const byId = new Map(shisaku.map((s) => [s.id, s]));
 const judgeCounts = countJudges(shisaku);
 
-// くらしのテーマ（このサイト独自の分類）
-const groupKeys = JUDGE_GROUPS.map((g) => g.key);
-const themes = getThemes().map((t) => ({
-  ...t,
-  counts: countBy(t.ids.map((id) => byId.get(id)!), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
-}));
 
 // 将来像ごと
 const visions = getShouraizou().map((v) => {
@@ -48,8 +38,6 @@ const visions = getShouraizou().map((v) => {
   return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
 
-// 主要指標の達成状況（県の概要版の表。読めない年度は空）
-const shuyou = getShuyouStatus();
 
 // 4年間の推移
 const trend = YEARS.map((y) => {
@@ -106,19 +94,17 @@ const boshu = boshuState();
 
   <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
-    <p class="small secondary lead">数字は施策の数、棒は判定の内訳です（<a href="/about/#theme">テーマの決め方</a>）。</p>
     <ul class="themes">
-      {themes.map((t) => (
+      {getThemes().map((t) => (
         <li>
           <a class="theme press" href={`/theme/${t.id}/`}>
-            <span class="ico"><ThemeIcon id={t.id} /></span>
-            <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
-            <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
-            <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
+            <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+            <span class="nm">{t.label}</span>
           </a>
         </li>
       ))}
     </ul>
+    <p class="small more-link"><a href="/theme/">テーマの一覧（数と判定の内訳）<span aria-hidden="true"> →</span></a></p>
   </section>
 
   <section aria-labelledby="vision-h">
@@ -135,15 +121,6 @@ const boshu = boshuState();
       ))}
     </ul>
   </section>
-
-  {shuyou.length > 0 && (
-    <section aria-labelledby="shuyou-h">
-      <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
-      <p class="small secondary lead">平均寿命や観光収入のような、将来像にどこまで近づいたかをはかる大きな数字です。</p>
-      <ShuyouTrendTop rows={shuyou} visions={visions} />
-      <p class="small">県の見通しは、<a href="/shihyou/shuyou/">主要指標の一覧</a>と基本施策のページにあります。</p>
-    </section>
-  )}
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
@@ -254,20 +231,18 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  /* テーマは名前の札だけを折り返して並べる（施策の数と判定の内訳はテーマの一覧 /theme/ に） */
+  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .theme {
-    display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
-    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); padding: 3px 12px 3px 4px;
   }
   .theme:hover { background: var(--sky); }
   .theme:active { transform: translate(2px, 2px); box-shadow: none; }
-  .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
-  .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
-  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す（「くらしの安 / 全」にしない） */
-  .theme :global(.sbar) { grid-area: bar; }
-  .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
-  @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
+  .ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
+  .ico :global(.theme-ic) { width: 17px; height: 17px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; white-space: nowrap; }
+  .more-link { margin: 10px 0 0; }
 
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
   .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 4em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }

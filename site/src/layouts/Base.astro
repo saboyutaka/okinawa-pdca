@@ -27,13 +27,14 @@ const card = canonical ? cardMeta(path) : null;
 const ogImage = card
   ? { url: absUrl(card.image), ...CARD_SIZE, alt: `${card.alt}（${SITE.name}・非公式）` }
   : { url: absUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
-// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。くらしのテーマ（このサイト独自の分類）はナビに置かず、トップの節・施策と取組のテーマの札・フッターから入る。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
+// サイト内のナビ。計画の体系（将来像 → 施策 → 取組 → 成果指標）の順に並べ、その後ろに別の切り口（くらしのテーマ・部局・予算）を置く。くらしのテーマはこのサイト独自の分類で、一覧（/theme/）のページの頭でそう書く。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
   { href: '/', label: 'トップ' },
   { href: '/future/', label: '将来像', also: ['/kihon/'] },
   { href: '/shisaku/', label: '施策' },
   { href: '/torikumi/', label: '取組' },
   { href: '/shihyou/', label: '成果指標' },
+  { href: '/theme/', label: 'テーマ' },
   { href: '/bukyoku/', label: '部局' },
   { href: '/yosan/', label: '予算' },
   { href: '/about/', label: 'このサイトについて' },
@@ -164,7 +165,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
         <p>沖縄県「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
         <ul class="foot-links">
           <li><a href="/iken/">意見を伝えたい人へ</a></li>
-          <li><a href="/#themes">くらしのテーマ</a>（このサイト独自の分類）</li>
+          <li><a href="/theme/">くらしのテーマ</a>（このサイト独自の分類）</li>
           <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
         </ul>
         <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></p>

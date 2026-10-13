@@ -82,7 +82,7 @@ const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜$
     </div>
     <div class="pm-t">
       <span class="pm-tape" aria-hidden="true"></span>
-      <p class="pm-h"><a class="name-link" href="/#themes">くらしのテーマ</a><span class="pm-n">{themes.length}</span><span class="own">このサイト独自の分類</span></p>
+      <p class="pm-h"><a class="name-link" href="/theme/">くらしのテーマ</a><span class="pm-n">{themes.length}</span><span class="own">このサイト独自の分類</span></p>
       <p class="pm-d">施策を、名前に含まれる言葉で分野ごとに集めたもの。その施策の主な取組・成果指標も入る（<a href="#theme">決め方</a>）</p>
       <p class="pm-tags"><ThemeTags ids={themes.slice(0, 4).map((t) => t.id)} label={false} /> など</p>
     </div>
