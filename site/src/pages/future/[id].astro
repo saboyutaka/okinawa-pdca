@@ -11,7 +11,7 @@ import Sz from '../../components/Sz.astro';
 import DonutCard from '../../components/DonutCard.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import Chunk from '../../components/Chunk.astro';
-import Chip from '../../components/Chip.astro';
+import KeyBrief from '../../components/KeyBrief.astro';
 import Term from '../../components/Term.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
@@ -20,7 +20,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLong, STATUSES, SHUYOU_BINS, statusOf, rateBin, countBy,
+  YEARS, LATEST, yearLong, STATUSES, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
@@ -70,10 +70,9 @@ const kihonRows = kihon.map((k) => {
     tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
   };
 });
-// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（<template> を Term の brief で写す。どれかの基本施策で使っている区分。
-// 説明の全文は用語の一覧に任せ、ここでは表を読むのに要ることだけ）
-const shuyouLegend = SHUYOU_BINS.filter((b) => shuyou.some((r) => r.bin === b.key));
-const toriLegend = STATUSES.filter((c) => kihonRows.some((k) => (k.tori.counts[c.key] || 0) > 0));
+// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）
+const shuyouUsed = shuyou.map((r) => r.bin);
+const toriUsed = statusKeys.filter((key) => kihonRows.some((k) => (k.tori.counts[key] || 0) > 0));
 
 // 予算（R7の決算見込額。同じ予算事業の重複を除いたもの）
 const estimate = amountEntries(LATEST, 'estimate');
@@ -117,8 +116,8 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
     <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
-    <template id="key-shuyou"><p>基準値から目標値（R9）までのうち、どこまで進んだかを県が示した割合です。基準値より悪くなるとマイナスになります。</p><ul aria-label="達成率の区分">{shuyouLegend.map((b) => <li><Chip tone={b.tone} text={b.label} /></li>)}</ul></template>
-    <template id="key-status"><p>主な取組がその年度の計画どおりに進んだかの県の判定です。数は「順調」の割合です。</p><ul aria-label="進捗状況の区分">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></template>
+    <KeyBrief kind="shuyou" used={shuyouUsed} />
+    <KeyBrief kind="status" used={toriUsed} />
     <ul class="row-list k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>

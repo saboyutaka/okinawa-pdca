@@ -1,0 +1,34 @@
+---
+// 凡例の代わりに、用語のボタン（Term の brief）で出す短い説明と区分の一覧。ページに1回だけ置く <template>（id は key-種類）。
+// 区分の内訳の細い棒を行ごとに並べる所（トップの将来像の行・5つの将来像のページ・将来像のページの基本施策の行・くらしのテーマの一覧）では
+// 凡例の箱を置かず、行の「順調」「達成率」「判定」を押すとこれを出す（docs/design.md の1章）。
+// used には、どれかの行で使っている区分の key を渡す（使っていない区分は出さない）。
+// 説明の全文は吹き出しの「用語の一覧」に任せ、ここでは図を読むのに要ることだけを書く。何年度の判定かもここに書く（凡例の箱の見出しにあったもの）
+import Chip from './Chip.astro';
+import { LATEST, yearLong, STATUSES, SHUYOU_BINS } from '../lib/data.ts';
+import { JUDGE_GROUPS, type Shape, type Tone } from '../lib/icons.ts';
+
+interface Props { kind: 'status' | 'judge' | 'shuyou'; used: string[] }
+const { kind, used } = Astro.props;
+type Item = { key: string; text: string; tone: Tone; title?: string; shape?: Shape };
+const KINDS: Record<Props['kind'], { text: string; label: string; items: Item[] }> = {
+  status: {
+    text: `主な取組が${yearLong(LATEST)}の計画どおりに進んだかの県の判定です。数は「順調」の割合です。`,
+    label: '進捗状況の区分',
+    items: STATUSES.map((c) => ({ key: c.key, text: c.key, tone: c.tone, title: c.note })),
+  },
+  judge: {
+    text: `${yearLong(LATEST)}の施策の県の判定（A〜G）です。主な取組の「順調」の割合と成果指標の達成率で決まります。`,
+    label: '判定の区分',
+    items: JUDGE_GROUPS.map((g) => ({ key: g.key, text: g.label, tone: g.tone, shape: g.shape })),
+  },
+  shuyou: {
+    text: '基準値から目標値（R9）までのうち、どこまで進んだかを県が示した割合です。基準値より悪くなるとマイナスになります。',
+    label: '達成率の区分',
+    items: SHUYOU_BINS.map((b) => ({ key: b.key, text: b.label, tone: b.tone })),
+  },
+};
+const k = KINDS[kind];
+const items = k.items.filter((c) => used.includes(c.key));
+---
+<template id={`key-${kind}`}><p>{k.text}</p><ul aria-label={k.label}>{items.map((c) => <li><Chip tone={c.tone} text={c.text} title={c.title} shape={c.shape} /></li>)}</ul></template>

@@ -7,15 +7,16 @@
 //   年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）。
 //   達成率はこの行でいちばん大事な数なので、右に大きく、概要版の区分（目標値に到達・前進・横ばい・後退・比べられない）の色と形を付けて置く。
 //   札は数だけにし（成果指標の達成率の札と同じ）、区分の言葉は数にマウスを乗せる・タップすると出す（scripts/tooltip.ts）。
-//   主な取組の割合と取り違えないよう「達成率」と添え、それを押すと達成率の説明と区分の一覧を出す（凡例の代わり。ページの <template id="key-shuyou">）。
+//   主な取組の割合と取り違えないよう「達成率」と添え、それを押すと達成率の説明と区分の一覧を出す（凡例の代わり。ページの KeyBrief kind="shuyou"）。
 //   数でない印字（「達成」「後退」）は、大きな字だと強く見えるので小さくする
-// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（5つの将来像のページの棒と同じ形）。右の列に意味の違う数（達成率）と
-//   縦に並ぶので、5つの将来像のページと違い「順調」と添え、それを押すと進捗状況の説明と区分の一覧を出す（<template id="key-status">）。
+// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（トップ・5つの将来像のページの棒と同じ形）。
+//   「順調」を押すと進捗状況の説明と区分の一覧を出す（components/KeyNum.astro。ページの KeyBrief kind="status"）。
 //   区分ごとの件数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar）
 // 主要指標の名前は、基本施策の名前（太字）の下の項目なので、太字にせず字の色と下線だけでリンクと分かるようにする
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
 import Term from './Term.astro';
+import KeyNum from './KeyNum.astro';
 import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, halfWidth, sameScale, type ShuyouStatus } from '../lib/data.ts';
 import { pct } from '../lib/format.ts';
 
@@ -66,7 +67,7 @@ const rateOf = (r: ShuyouStatus) => {
     <div class="k-row k-bar">
       <span class="k-l">主な取組</span>
       <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /></div>
-      <span class="k-num"><span class="k-nl"><Term word="進捗状況" label="順調" brief="key-status" /></span><span aria-hidden="true">{pct(tori.ok, tori.n)}</span></span>
+      <KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} />
     </div>
   )}
 </li>
@@ -98,8 +99,7 @@ const rateOf = (r: ShuyouStatus) => {
   .k-rv b { font-family: var(--font-num); font-weight: 600; font-size: 1.6rem; }
   .k-rv.word b { font-family: var(--font); font-weight: 700; font-size: 1.05rem; }
   .k-viz { grid-area: viz; min-width: 0; }
-  .k-num { grid-area: num; justify-self: end; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; }
-  .k-nl { font-family: var(--font); font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-right: 6px; }
+  .k-bar :global(.k-num) { grid-area: num; justify-self: end; }
   /* 720px 以下は、主要指標のスタート・いま・ゴール・達成率を「言葉｜値」の2列で1行ずつ積む（言葉の列の幅を決めて、数の左端をそろえる） */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
