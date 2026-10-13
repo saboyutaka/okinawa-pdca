@@ -40,7 +40,7 @@
 
 ## 4. 検索エンジンに載せる
 
-**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 7章）も出す。
+**いまは公開前（ステルス）のため、検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `STEALTH`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。`STEALTH` はヘッダーの上のベータ版の帯（[design.md](design.md) の 4章）も出す。
 
 載せてよくなったら、`STEALTH` を `false` にし、`_headers` の `X-Robots-Tag` の行を外す。`robots.txt`（`site/src/pages/robots.txt.ts`）では巡回を止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
 

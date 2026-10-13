@@ -1,4 +1,4 @@
-// 動きの補助（docs/design.md の12章）。動きの見た目は styles/global.css の「動き」で決め、ここではスクリプトから動かすものだけを受け持つ。
+// 動きの補助（docs/design.md の8章）。動きの見た目は styles/global.css の「動き」で決め、ここではスクリプトから動かすものだけを受け持つ。
 // 端末で動きを減らす設定（prefers-reduced-motion: reduce）にしているときは何もしない
 const motion = matchMedia('(prefers-reduced-motion: no-preference)');
 export const moving = () => motion.matches;
