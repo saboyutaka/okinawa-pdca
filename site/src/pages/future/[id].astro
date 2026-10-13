@@ -132,7 +132,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <ul class="row-list k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
-    {shuyou.length > 0 && <p class="small secondary">主要指標のゴールは{yearLong(2027)}（暦年の統計は令和9年）の目標値です。値と達成率は県の概要版のもので、基本施策のページ（総括報告書の付属資料の値）とは書き方や値が少し違うものがあります。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
+    {shuyou.length > 0 && <p class="small secondary">主要指標の値と達成率は県の概要版のもので、基本施策のページ（総括報告書の付属資料の値）とは書き方や値が少し違うものがあります。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
     <details class="k-table">
       <summary>表で見る</summary>
       <div class="table-wrap">

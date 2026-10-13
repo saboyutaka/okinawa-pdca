@@ -55,11 +55,11 @@ test('withUnit: 数字だけの欄にだけ単位を付ける', () => {
   assert.equal(withUnit(null, '件'), '—');
 });
 
-test('eraRef: 主要指標の値の年・年度は、数字を半角に、元号を R・H にそろえ、「年」「年度」は残す', () => {
-  assert.equal(eraRef('令和5年度'), 'R5年度');
-  assert.equal(eraRef('R３年度'), 'R3年度');
-  assert.equal(eraRef('平成２９年度'), 'H29年度');
-  assert.equal(eraRef('令和6年'), 'R6年');
+test('eraRef: 主要指標の値の年・年度は、数字を半角に、元号を R・H にそろえ、年・年度だけのものは「R3」にする', () => {
+  assert.equal(eraRef('令和5年度'), 'R5');
+  assert.equal(eraRef('R３年度'), 'R3');
+  assert.equal(eraRef('平成２９年度'), 'H29');
+  assert.equal(eraRef('令和6年'), 'R6');
   assert.equal(eraRef('R7.1.1'), 'R7.1.1');
   assert.equal(eraRef('令和３年10月～令和9年9月の累計'), 'R3年10月～R9年9月の累計');
   assert.equal(eraRef(null), '');
