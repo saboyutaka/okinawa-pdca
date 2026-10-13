@@ -8,7 +8,8 @@ import { fmt, pct } from '../lib/format.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
 // id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く
-// total={false} は行の右の件数を出さない（棒の長さで足りるとき。件数は「表で見る」の計にある）。barLabel={false} は棒の中に割合を書かない（同じく「表で見る」と読み上げにある）
+// end は行の右に出すもの: 'total' は件数（初め）、'pct' は最初の区分（順調など）の割合、'none' は出さない（件数・割合は「表で見る」と読み上げにある）。
+// barLabel={false} は棒の中に割合を書かない（end="pct" で棒の外に出すときなど）
 interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
@@ -17,10 +18,10 @@ interface Props {
   rows: Row[];
   unit?: string;
   legend?: boolean;
-  total?: boolean;
+  end?: 'total' | 'pct' | 'none';
   barLabel?: boolean;
 }
-const { title, caption, categories, rows, unit = '件', legend = true, total = true, barLabel = true } = Astro.props;
+const { title, caption, categories, rows, unit = '件', legend = true, end = 'total', barLabel = true } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3);
@@ -35,7 +36,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
       {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
     </ul>
   )}
-  <div class:list={['rows', short && 'short', !total && 'no-total']}>
+  <div class:list={['rows', short && 'short', `end-${end}`]}>
     {rows.map((r) => (
       <div class="row">
         <div class:list={['row-label', r.id && 'anchor']} id={r.id}>
@@ -44,7 +45,8 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
         <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} labelKey={barLabel ? undefined : ''} />
-        {total && <div class="row-total num">{fmt(totalOf(r))}{unit}</div>}
+        {end === 'total' && <div class="row-total num">{fmt(totalOf(r))}{unit}</div>}
+        {end === 'pct' && <div class="row-pct num" aria-hidden="true">{pct(r.counts[categories[0].key] || 0, totalOf(r))}</div>}
       </div>
     ))}
   </div>
@@ -77,19 +79,17 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   figcaption + .rows { margin-top: 12px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }
-  /* 件数の列が無いときは、棒の列の幅を図の幅の割合で決める（名前の長い行があっても棒が細くならないように。長い名前は折り返す） */
-  .no-total { grid-template-columns: minmax(0, 1fr) minmax(160px, 42%); }
-  /* 名前が何行にも折り返す幅では、スマホと同じく名前の下に棒を置く */
-  @media (max-width: 720px) {
-    .no-total:not(.short) { grid-template-columns: 1fr; }
-    .no-total:not(.short) .row { display: grid; gap: 4px; }
-  }
+  /* 右が件数でないときは、棒の列の幅を図の幅の割合で決める（名前の長い行があっても棒が細くならないように。長い名前は折り返す） */
+  .end-none { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%); }
+  .end-pct { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%) auto; }
+  .end-none, .end-pct { row-gap: 16px; } /* 名前が折り返す行もあるので、行のあいだを少し広げてゆとりを持たせる */
   .row { display: contents; }
   .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
   .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
   /* ほかのページから飛んできた行（部局のページの課）は、地の色で示す */
   .row-label:target { background: var(--sky); box-shadow: 0 0 0 4px var(--sky); border-radius: 4px; }
   .row-total { font-size: 0.875rem; color: var(--ink-2); min-width: 4.5em; text-align: right; }
+  .row-pct { font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; min-width: 3.4em; text-align: right; }
   .short .row-label { white-space: nowrap; }
   .short .row-sub { display: inline; margin-left: 0.3em; }
   .table-view { margin-top: 14px; }
@@ -100,5 +100,13 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
     .rows:not(.short) .row :global(.sbar) { grid-column: 1 / -1; grid-row: 2; }
     .short { gap: 8px 10px; }
     .short .row-total { min-width: 0; }
+  }
+  /* 名前が何行にも折り返す幅では、スマホと同じく名前の下に棒を置く（割合は棒の右） */
+  @media (max-width: 720px) {
+    .end-none:not(.short), .end-pct:not(.short) { grid-template-columns: 1fr; row-gap: 18px; }
+    .end-none:not(.short) .row { display: grid; gap: 4px; }
+    .end-pct:not(.short) .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; }
+    .end-pct:not(.short) .row-label { grid-column: 1 / -1; }
+    .end-pct:not(.short) .row :global(.sbar) { grid-column: 1; grid-row: 2; }
   }
 </style>
