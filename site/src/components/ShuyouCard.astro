@@ -7,7 +7,7 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import ExtLink from './ExtLink.astro';
-import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, type Cell, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, sameScale, type Cell, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
 import { oneLine } from '../lib/text.ts';
 
 // id は主要指標の一覧の行から飛ぶ先（lib/data.ts の shuyouAnchor）
@@ -23,7 +23,12 @@ const prev = Boolean(prevRow);
 // 新しくなったのはスタート（基準値）・ゴール（目標値）のどちらか。どちらも同じ指標もある（欄の中の改行・全角半角の違いは同じとみなす）
 const sameText = (a: string | null | undefined, b: string | null | undefined) => (a || '').normalize('NFKC').replace(/\s/g, '') === (b || '').normalize('NFKC').replace(/\s/g, '');
 const renewed = prevRow && [!sameText(prevRow.base_raw, x.base_raw) && 'スタート', !sameText(prevRow.target_raw, x.target_raw) && 'ゴール'].filter(Boolean).join('と');
-// 値は数字を大きく、位と単位を小さく出す（「3兆2,885億円」→ 3 兆 2,885 億円）。単位の書かれていない数には指標の単位を添える。文の値はそのまま
+// 値は数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円）。単位の書かれていない数には指標の単位を添える。文の値はそのまま。
+// スタート・いま・ゴールの位は、印字がまちまち（「3兆2,885億円 → 34,516億円」）なので1つの指標の中でそろえる（lib/data.ts の sameScale）
+const scaled = (cs: Cell[]) => {
+  const ts = sameScale(cs.map((c) => c.text));
+  return cs.map((c, i) => ({ ...c, text: ts[i] }));
+};
 const pieces = (c: Cell, p: ShuyouPart) => {
   if (c.value == null) return [{ t: c.text, n: true }];
   const out = c.text.split(/([-△]?\d[\d,.]*)/).filter(Boolean).map((t) => ({ t, n: /\d/.test(t) }));
@@ -36,6 +41,7 @@ const pieces = (c: Cell, p: ShuyouPart) => {
 
   {row.parts.map((p) => {
     const now = p.latest;
+    const [b, a, t] = scaled([now.b, now.a, now.t]);
     const judges = judgesOf(now.judgement);
     const stack = [now.b, now.a, now.t].some((c) => c.value == null && c.text.length > 10);
     const ref = refText(now.a.note);
@@ -55,15 +61,15 @@ const pieces = (c: Cell, p: ShuyouPart) => {
         <ol class:list={['goal-steps', stack && 'stack']}>
           <li>
             <span class="gs-l">スタート</span>
-            <span class="gs-main"><span class:list={['gs-v', now.b.value == null && 'text']}>{pieces(now.b, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="基準値" />{now.b.note}</span></span>
+            <span class="gs-main"><span class:list={['gs-v', now.b.value == null && 'text']}>{pieces(b, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="基準値" />{now.b.note}</span></span>
           </li>
           <li class="now">
             <span class="gs-l">{x.year === LATEST ? 'いま' : `${yl}の報告`}</span>
-            <span class="gs-main"><span class:list={['gs-v', now.a.value == null && 'text']}>{pieces(now.a, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="実績値" note={ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : undefined} /></span></span>
+            <span class="gs-main"><span class:list={['gs-v', now.a.value == null && 'text']}>{pieces(a, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="実績値" note={ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : undefined} /></span></span>
           </li>
           <li>
             <span class="gs-l">ゴール</span>
-            <span class="gs-main"><span class:list={['gs-v', now.t.value == null && 'text']}>{pieces(now.t, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="目標値" />（{now.target_year}）{now.t.note}</span></span>
+            <span class="gs-main"><span class:list={['gs-v', now.t.value == null && 'text']}>{pieces(t, p).map((q) => (q.n ? q.t : <small>{q.t}</small>))}</span><span class="gs-s"><Term word="目標値" />（{now.target_year}）{now.t.note}</span></span>
           </li>
         </ol>
         <SeikaChart row={p} unit={p.scale === 1 ? p.unit : ''} drawable={p.drawable} />

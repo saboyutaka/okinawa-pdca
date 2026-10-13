@@ -1,8 +1,9 @@
 ---
 // 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
 // - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前と県の達成率、その下に「スタート → いま → ゴール」の値。
-//   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、どの値にも年・年度を添える（lib/data.ts の eraRef。「R3」の形）。
-//   値の全角の数字などは半角にし（halfWidth。「％」もこの行では「%」に）、PC は3つを列にして、どの行でも同じ位置にそろえる（言葉と年度を上、値を下）。
+//   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、どの値にも年・年度を括弧で添える（lib/data.ts の eraRef。「（R3）」）。
+//   値の全角の数字などは半角にし（halfWidth。「％」もこの行では「%」に）、位は1つの指標の中でそろえる（sameScale。「3兆4,517億円」→「34,517億円」）。
+//   PC は3つを列にして、どの行でも同じ位置にそろえる（言葉を上、値と年度を下）。スマホは「言葉｜値」の2列に積み、達成率も同じ2列に入れて数の左端をそろえる。
 //   年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）。
 //   達成率はこの行でいちばん大事な数なので、右に大きく、概要版の区分（目標値に到達・前進・横ばい・後退・比べられない）の色と形を付けて置く。
 //   区分の言葉は節の凡例に1回だけ書き、札には数だけ（成果指標の達成率の札と同じ）。主な取組の割合と取り違えないよう「達成率」と添える。
@@ -12,18 +13,21 @@
 // 主要指標の名前は、基本施策の名前（太字）の下の項目なので、太字にせず字の色と下線だけでリンクと分かるようにする
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, halfWidth, type ShuyouStatus } from '../lib/data.ts';
+import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, halfWidth, sameScale, type ShuyouStatus } from '../lib/data.ts';
 import { pct } from '../lib/format.ts';
 
 interface Measure { n: number; ok: number; counts: Record<string, number> }
 interface Props { kihon: { id: string; name: string; code: string }; shuyou: ShuyouStatus[]; tori: Measure }
 const { kihon: k, shuyou, tori } = Astro.props;
 const half = (raw: string) => halfWidth(raw).replace(/％/g, '%');
-const vals = (r: ShuyouStatus) => [
-  { label: 'スタート', v: half(r.base_raw), y: eraRef(r.base_ref) },
-  { label: 'いま', v: half(r.actual_raw), y: eraRef(r.actual_ref), now: true },
-  { label: 'ゴール', v: half(r.target_raw), y: eraRef(r.target_ref) },
-];
+const vals = (r: ShuyouStatus) => {
+  const [b, a, t] = sameScale([half(r.base_raw), half(r.actual_raw), half(r.target_raw)]);
+  return [
+    { label: 'スタート', v: b, y: eraRef(r.base_ref) },
+    { label: 'いま', v: a, y: eraRef(r.actual_ref), now: true },
+    { label: 'ゴール', v: t, y: eraRef(r.target_ref) },
+  ];
+};
 // 達成率の札の字。数は大きく、数でない印字（達成・後退）と — は小さく
 const rateOf = (r: ShuyouStatus) => {
   const t = shuyouRateText(r);
@@ -41,7 +45,7 @@ const rateOf = (r: ShuyouStatus) => {
           {vals(r).map((x, j) => (
             <>
               {j > 0 && <span class="arrow" aria-hidden="true">→</span>}
-              <div class:list={['v', x.now && 'now']}><span class="v-l">{x.label}{x.y && <span class="v-y">{x.y}</span>}</span><span class="v-n">{x.v}</span></div>
+              <div class:list={['v', x.now && 'now']}><span class="v-l">{x.label}</span><span class="v-n">{x.v}{x.y && <span class="v-y">（{x.y}）</span>}</span></div>
             </>
           ))}
         </div>
@@ -75,10 +79,10 @@ const rateOf = (r: ShuyouStatus) => {
   .s-name { font-size: 0.9375rem; font-weight: 400; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
   /* スタート・いま・ゴールは同じ幅の3列（矢印をはさむ）。どの行でも列の位置がそろうよう、幅は中身の長さによらず決める */
-  .k-vals { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; column-gap: 12px; max-width: 34em; margin-top: 4px; }
+  .k-vals { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; column-gap: 12px; max-width: 40rem; margin-top: 4px; }
   .v { display: grid; min-width: 0; }
   .v-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
-  .v-y { font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .v-y { display: inline-block; font-size: 0.75rem; font-weight: 400; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; } /* 年度は値の後ろにひとまとまりで（入らなければ次の行へ） */
   .v-n { font-size: 0.9375rem; color: var(--ink-2); line-height: 1.4; }
   .now .v-n { color: var(--ink); font-weight: 700; }
   .arrow { color: var(--muted); padding-bottom: 1px; }
@@ -91,20 +95,18 @@ const rateOf = (r: ShuyouStatus) => {
   .k-viz { grid-area: viz; min-width: 0; }
   .k-num { grid-area: num; justify-self: end; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; }
   .k-nl { font-family: var(--font); font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-right: 6px; }
-  /* 720px 以下は、主要指標のスタート・いま・ゴールを1行ずつ積み、達成率をその下に置く */
+  /* 720px 以下は、主要指標のスタート・いま・ゴール・達成率を「言葉｜値」の2列で1行ずつ積む（言葉の列の幅を決めて、数の左端をそろえる） */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
     .k-name { font-size: 1rem; }
     .k-row { grid-template-columns: 4.2em minmax(0, 1fr); column-gap: 10px; }
     .k-shuyou { grid-template-areas: "lab main" "lab rate"; row-gap: 4px; }
-    .k-rate { display: flex; align-items: baseline; gap: 8px; justify-self: start; }
+    .k-rate { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); column-gap: 8px; align-items: center; justify-items: start; }
     .k-rv b { font-size: 1.35rem; }
     .k-rv.word b { font-size: 1rem; }
-    /* スマホは3つを1行ずつ積み、言葉と年度の列・値の列にそろえる */
-    .k-vals { grid-template-columns: auto minmax(0, 1fr); align-items: baseline; row-gap: 2px; }
+    .k-vals { grid-template-columns: 4.5rem minmax(0, 1fr); column-gap: 8px; align-items: baseline; row-gap: 2px; }
     .v { display: contents; }
     .arrow { display: none; }
-    .v-y { margin-left: 4px; }
     .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) auto; }
   }
 </style>
