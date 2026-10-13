@@ -30,9 +30,10 @@
 - `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
 - `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の7章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
-- `src/scripts/`（ブラウザ）:
+- `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。
   - `charts.ts`: `[data-chart]` の JSON から表示幅に合わせて SVG の図を描く（固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため）。一覧の行の小さな図 `components/SeikaSpark.astro` は文字が無いのでビルド時に SVG にする。
-  - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む。
+  - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む（開け閉めは `filter-more.ts`）。
+  - `torikumi-search.ts`: 取組をさがす（`#tf`）の検索と一覧。検索用のデータを読んで一覧を描く（7章）。`shisaku-trend.ts`: 施策の一覧の頭の「判定の移り変わり」のリンクで絞り込みを変える。`like.ts`: いいねのボタン（`components/Like.astro`）。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
   - `motion.ts`: 動き（[design.md](design.md) の12章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
@@ -80,6 +81,9 @@
   - `summary` はキーワードの欄に入ったとき（クエリに `q` があるときは初めから `data` と一緒に）読む。最初の一覧は `summary` を待たない。届くまではキーワードで探さず、件数を「読み込み中…」にする（一覧はそのまま）。読めなかったときは名前などだけで探し、件数の横にそう書く。
   - 片方だけを控え（`data.json`・`summary.json`）から読むと、公開し直した直後に、前の版と新しい版が混ざることがある。行の並びで対応させているので、`data` に同じビルドの `summary` の `hash` を持たせ、合わなければ両方を控えから読み直す。
   - 行の URL（`href`）は施策の番号と重なるが、短くしても gzip で約4KB しか減らない（残りはハッシュの8桁で、縮まない）ので、URL の作り方をブラウザに持たせず、そのまま渡す。
+- ブラウザのスクリプトは `scripts/site.ts` を入口にした1つのファイル（約37KB、gzip で約12KB）にし、`layouts/Base.astro` の `<head>` で読み込む（`type="module"` なので、動くのはページを読み終えてから）。ずっとキャッシュされ、2ページ目からは読まない。
+  - 前はページや部品ごとに `<script>` を書いていて、Astro はそれぞれを別のファイルにし、共通の部分（`motion.ts`・`tip.ts`）もまた別のファイルにしていた（トップで9ファイル）。ブラウザは入口のファイルを読み終えてから共通の部分を取りに行くので、往復が1回ぶん増えていた（本番で約170ms。トップは入口 → `show-more` → `motion` と2回）。
+  - `<body>` の終わりに置いていたときは、CSS が届くまでスクリプトを取りに行かなかった（Chrome は優先度の低い読み込みを後回しにする）。`<head>` に置くと、CSS と並んで取りに行く。
 - CSS はページの `<style>` に埋め込まず（`astro.config.ts` の `build.inlineStylesheets: 'never'`）、全ページで1つのファイル（`vite.build.cssCodeSplit: false`。gzip で約18KB）にして `/_astro/` に書き出す（ずっとキャッシュされる）。
   - 埋め込んでいたときは、ページごとの CSS（中央値 3.2KB）をページを移るたびに送り直していた。また Astro は、ビルド全体の `<style>` のハッシュ（約40個）をどのページの CSP にも入れる（約2KB。ハッシュは圧縮が効かない）。やめると、HTML（gzip）の中央値が 13.7KB から 11.1KB に、CSP が約3KB から約1KB になった（2026-10-12）。
   - CSS のファイルを分けたまま（Astro の既定）だと、ページの種類ごとに初めて開くときに読む CSS が増え（部局のページで15個）、HTML のあとに CSS をもう1往復待つ。手元で HTTP/2・brotli で配り、スマホ幅・Slow 4G・CPU 4倍で測ると（2026-10-12）、1つにしたときは、最初に開くページの LCP が約50ms 遅く（CSS が大きくなるため）、トップから施策・取組のページに移ったときは約1.3秒から約0.65秒になった（CSS をキャッシュから読むため。埋め込んでいたときも、施策・取組のページは別の CSS のファイルを読んでいた）。
