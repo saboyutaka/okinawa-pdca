@@ -197,15 +197,6 @@ test('主要指標の達成状況（概要版）は、最新の年度の49指標
   assert.deepEqual([1, 2, 3, 4, 5].map((v) => rows.filter((r) => r.kihon.shouraizou === v).length), [5, 14, 18, 5, 7]);
 });
 
-test('主要指標の達成状況の49指標は、どれも報告年度ごとの値の折れ線を描ける（付属資料の欄を分けられない指標は概要版で補う）', () => {
-  const rows = getShuyouStatus();
-  none(rows.filter((r) => !r.series.drawable || r.series.years[LATEST]?.actual == null), (r) => `${r.code} ${r.name}`);
-  // 2-(8)・3-(7)・4-(4) は付属資料の欄を年度ごとに分け、分けられない欄を概要版で補って、R4〜R7 の実績値がそろう
-  const filled = rows.filter((r) => ['2-8', '3-7', '4-4'].includes(r.kihon_id));
-  assert.equal(filled.length, 10);
-  none(filled.filter((r) => YEARS.some((y) => r.series.years[y]?.actual == null)), (r) => `${r.code} ${r.name}`);
-});
-
 test('主要指標の達成状況の名前は、基本施策ページのその指標のカードへ向く（基本施策に主要指標が2つあれば名前で選ぶ）', () => {
   for (const r of getShuyouStatus()) {
     const groups = shuyouRows(r.kihon_id);

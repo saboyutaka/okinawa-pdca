@@ -445,48 +445,8 @@ function shuyouCardId(r: ShuyouGaiyouRow) {
   return g ? shuyouAnchor(groups, g) : 'shuyou';
 }
 
-// 概要版の値（「2.5万人」と括弧の中の年「R２年」）を欄にする
-const gaiyouCell = (raw: string, ref: string | null) => cellOf(ref ? `${raw}（${ref}）` : raw);
-const gaiyouCells = (r: ShuyouGaiyouRow): PartCells => ({
-  year: r.year, b: gaiyouCell(r.base_raw, r.base_ref), a: gaiyouCell(r.actual_raw, r.actual_ref), t: gaiyouCell(r.target_raw, r.target_ref), judgement: '',
-});
-
-// 概要版の指標（1指標1行）ごとの、報告年度ごとの値（将来像ページの小さな折れ線 SeikaSpark に渡す主要指標の部分）。
-// 最新の年度は概要版の値（達成率と同じ表。統計の基準改定で試算し直した基準値・目標値（※）もこちら）。それより前の年度は付属資料の値で、
-// 基本施策の主要指標の部分（shuyouRows）と概要版の指標が同じ数なら、表の順に1つずつ対応させて部分の値を使う（基本施策ページの図と同じ値）。
-// 数が違う基本施策（付属資料の欄の男女別などを分けられない 2-(8)・3-(7)・4-(4)）は、年度ごとに付属資料の欄をその年度の見通しの名前で分け、
-// 分けられない欄（名前が値の後ろにある・PDF の欄で文字が切れている）は同じ年度の概要版の値（同じ数なら表の順）で補う。R5 は概要版が読めない
-function shuyouSeries(kihonId: string, rows: ShuyouGaiyouRow[]): ShuyouPart[] {
-  const groups = shuyouRows(kihonId).filter((g) => g.latest.year === LATEST);
-  const parts = groups.flatMap((g) => g.parts);
-  const n = rows.length;
-  const gaiyou = load('shuyou_gaiyou').filter((r) => r.kihon_id === kihonId);
-  const none = cellOf('');
-  return rows.map((row, i) => {
-    const cells: Record<number, PartCells> = {};
-    if (parts.length === n) {
-      for (const [y, c] of Object.entries(parts[i].years)) cells[+y] = c;
-    } else {
-      for (const [y, x] of Object.entries(groups.length === 1 ? groups[0].years : {})) {
-        const labels = (judgesOf(x.judgement) || []).map((j) => j.label);
-        const same = gaiyou.filter((r) => r.year === +y);
-        const g = same.length === n ? same[i] : null;
-        const pick = (raw: string, k: 'base' | 'actual' | 'target') => {
-          const v = labels.length === n ? splitByLabels(raw, labels)?.[i] : null;
-          return v != null ? cellOf(v) : g ? gaiyouCell(g[`${k}_raw`], g[`${k}_ref`]) : null;
-        };
-        const a = pick(x.actual_raw, 'actual');
-        if (a) cells[+y] = { year: +y, b: pick(x.base_raw, 'base') ?? none, a, t: pick(x.target_raw, 'target') ?? none, judgement: '' };
-      }
-    }
-    cells[row.year] = gaiyouCells(row);
-    return partOf('', row.name, cells, row.year);
-  });
-}
-
 export interface ShuyouStatus extends ShuyouGaiyouRow {
   bin: ShuyouBin;
-  series: ShuyouPart; // 報告年度ごとの値（小さな折れ線）
   kihon: { id: string; name: string; code: string; shouraizou: number };
   href: string; // 基本施策ページのその主要指標のカード
 }
@@ -496,15 +456,10 @@ export function getShuyouStatus(): ShuyouStatus[] {
   if (shuyouStatus) return shuyouStatus;
   const kihon = new Map(getKihonList().map((k) => [k.id, k]));
   const latest = load('shuyou_gaiyou').filter((r) => r.year === LATEST);
-  const series = new Map([...new Set(latest.map((r) => r.kihon_id))].flatMap((id) => {
-    const rows = latest.filter((r) => r.kihon_id === id);
-    const parts = shuyouSeries(id, rows);
-    return rows.map((r, i) => [r, parts[i]] as const);
-  }));
   shuyouStatus = latest.map((r) => {
     const k = kihon.get(r.kihon_id)!;
     return {
-      ...r, bin: shuyouBin(r), series: series.get(r)!,
+      ...r, bin: shuyouBin(r),
       kihon: { id: k.id, name: k.name, code: k.code, shouraizou: k.shouraizou },
       href: `/kihon/${k.id}/#${shuyouCardId(r)}`,
     };
