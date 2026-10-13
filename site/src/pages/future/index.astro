@@ -55,7 +55,7 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
           { label: '基本施策', n: v.rows.length, href: `/future/${v.id}/#kihon` },
           { label: '施策', n: v.shisaku, href: `/shisaku/?s=${v.id}` },
         ]} />
-        <span class="v-ok">主な取組のうち「順調」 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
+        <span class="v-ok"><span class="sr-only">主な取組のうち</span>順調 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
       </div>
       <StatusChart title={`基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} legend={false} />
     </section>
@@ -63,9 +63,10 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
 </Base>
 
 <style>
-  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 12px; font-size: 0.9375rem; }
-  .legend-l { font-weight: 700; color: var(--ink-2); }
-  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  /* 棒の凡例は読み方の手がかりなので、小さく右に寄せて目立たせない */
+  .legend-box { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px 12px; margin-top: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
   .vision { margin-top: 24px; background: var(--szw); scroll-margin-top: 16px; }
   .v-h { margin: 0; font-size: 1.15rem; }
   .v-h .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; background: var(--paper); }
