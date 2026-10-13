@@ -1,6 +1,6 @@
 ---
-// 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → 予算 → シェア。
-// 頭はトップのヒーローと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
+// 将来像1つのページ。頭（名前・3つの段の問いと答え）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → 予算 → シェア。
+// 頭はトップのヒーローと同じく、3つの段（主要指標・成果指標・主な取組。components/Ladder.astro）を中に置き、数だけをこの将来像のものにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
 // 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）。
 // 施策の判定と4年間の推移は、トップの節と同じ形（頭の文・マス目に題を付けない・推移の内訳は出さない）にし、数だけをこの将来像のものにする
 import type { InferGetStaticPropsType } from 'astro';
@@ -8,7 +8,7 @@ import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
-import DonutCard from '../../components/DonutCard.astro';
+import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import Chunk from '../../components/Chunk.astro';
 import Chip from '../../components/Chip.astro';
@@ -20,7 +20,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLong, STATUSES, SHUYOU_BINS, statusOf, rateBin, countBy,
+  YEARS, LATEST, yearLong, STATUSES, RATE_BINS, SHUYOU_BINS, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
@@ -42,8 +42,6 @@ const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
 const seika = getSeika(LATEST).filter((s) => s.shisaku_id.startsWith(pre));
 const isOk = (t: TorikumiRow) => t.status === '順調';
 const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
-const toriOk = tori.filter(isOk).length;
-const seikaOk = seika.filter(reached).length;
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = futureHead(v.id);
 const judgeCounts = head.judges;
@@ -92,16 +90,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       { label: '基本施策', n: kihon.length, href: '#kihon' },
       { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
     ]} />
-    <div class="donuts">
-      <DonutCard plain frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`} more={{ href: `/torikumi/?s=${v.id}`, label: '取組をさがす' }}>
-        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
-        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(tori.length)}件</span></Fragment>
-      </DonutCard>
-      <DonutCard plain frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`} more={{ href: `/shihyou/?s=${v.id}`, label: '成果指標をさがす' }}>
-        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
-        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(seika.length)}指標</span></Fragment>
-      </DonutCard>
-    </div>
+    <Ladder shuyou={shuyou} seika={countBy(seika, rateBin, RATE_BINS.map((b) => b.key))} tori={countBy(tori, statusOf, statusKeys)} q={`s=${v.id}`} />
   </header>
 
   <Toc
@@ -174,18 +163,18 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
 <style>
   /* 頭。PC は番号の印を左に大きく置き、右に「将来像」・名前・件数の札。スマホは印を小さくして「将来像」の行に並べ、名前を全幅にする。
-     ドーナツのカードはトップのヒーローと同じく頭の中に置く */
+     3つの段の問いと答え（Ladder）はトップのヒーローと同じく頭の中に置く */
   .v-hero {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "donuts donuts";
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "ladder ladder";
     gap: 0 18px; align-items: center; margin-top: 12px; background: var(--szw);
   }
   .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
   .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .v-hero h1 { grid-area: name; margin: 4px 0 10px; }
   .v-hero :global(.head-stats) { grid-area: stats; }
-  .v-hero .donuts { grid-area: donuts; }
+  .v-hero :global(.ladder) { grid-area: ladder; }
   @media (max-width: 520px) {
-    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "donuts donuts"; column-gap: 10px; }
+    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
     .v-hero :global(.hero-badge) { width: 36px; height: 36px; font-size: 1.15rem; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
     .v-hero h1 { margin-top: 8px; }
   }
