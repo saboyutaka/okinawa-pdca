@@ -10,7 +10,7 @@ import type { Shape, Tone } from '../lib/icons.ts';
 // id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く
 // end は行の右に出すもの: 'total' は件数（初め）、'pct' は最初の区分（順調など）の割合、'none' は出さない（件数・割合は「表で見る」と読み上げにある）。
 // barLabel={false} は棒の中に割合を書かない（end="pct" で棒の外に出すときなど）。
-// table={false} は「表で見る」を付けない（将来像の一覧だけの例外。件数は基本施策のページにある。棒の読み上げには件数と割合がある。docs/design.md の1章）
+// table={false} は「表で見る」を付けない（5つの将来像のページ /future/ だけの例外。件数は基本施策のページにある。棒の読み上げには件数と割合がある。docs/design.md の1章）
 // summary は、行の合計（将来像全体など）を最後の行に、細い線で区切って上の行と同じ列にそろえて置く（label は行の名前。表の合計の行と同じ置き方）
 interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Summary { label: string; context: string; counts: Record<string, number> }

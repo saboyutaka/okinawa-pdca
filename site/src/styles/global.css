@@ -205,7 +205,7 @@ small, .small { font-size: 0.875rem; }
   background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
 .sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
-/* ステッカーの中のステッカー（将来像の一覧の中の図など）は影を付けない */
+/* ステッカーの中のステッカー（5つの将来像のページの中の図など）は影を付けない */
 .sticker .sticker { box-shadow: none; }
 .inset, .kv > div { background: var(--bg); border-radius: 12px; }
 /* 数字の並び（基準値・実績値・計画値・目標値・見通し。成果指標と主要指標の札） */

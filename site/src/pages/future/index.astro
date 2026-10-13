@@ -36,8 +36,8 @@ const visions = getShouraizou().map((v) => {
 // 5つの図の凡例はページの上に1回だけ出す（どれかの将来像で使っている区分）
 const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.counts[c.key] || 0) > 0)));
 ---
-<Base title="将来像の一覧" description="新・沖縄21世紀ビジョン基本計画の5つの将来像と36の基本施策の一覧です。将来像・基本施策ごとの主な取組の進み具合を見られます。">
-  <h1>将来像の一覧</h1>
+<Base title="5つの将来像" description="新・沖縄21世紀ビジョン基本計画の5つの将来像と36の基本施策の一覧です。将来像・基本施策ごとの主な取組の進み具合を見られます。">
+  <h1>5つの将来像</h1>
   <p class="secondary lead">
     <ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>は、めざす沖縄の姿を5つの<Term word="将来像" />に分け、そのもとに36の<Term word="基本施策" />、さらに施策（339）を置いています。施策ごとの成果指標と主な取組は、実施計画で決められています。
   </p>
