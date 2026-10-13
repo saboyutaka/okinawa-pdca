@@ -94,6 +94,7 @@ const boshu = boshuState();
 
   <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
+    <p class="small secondary lead">くらしの{getThemes().length}の分野ごとに、県の施策・取組・成果指標をまとめて見られます。</p>
     <ul class="themes sticker">
       {getThemes().map((t) => (
         <li>
