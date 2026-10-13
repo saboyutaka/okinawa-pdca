@@ -1,7 +1,8 @@
 ---
 // 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → 予算 → シェア。
 // 頭はトップのヒーローと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
-// 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）
+// 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）。
+// 施策の判定と4年間の推移は、トップの節と同じ形（頭の文・マス目に題を付けない・推移の内訳は出さない）にし、数だけをこの将来像のものにする
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
@@ -12,18 +13,19 @@ import HeadStats from '../../components/HeadStats.astro';
 import Chunk from '../../components/Chunk.astro';
 import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
-import StatusChart from '../../components/StatusChart.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
+import ExtLink from '../../components/ExtLink.astro';
 import TrendChart from '../../components/TrendChart.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, SHUYOU_BINS, statusOf, rateBin, countBy,
+  YEARS, LATEST, yearLong, STATUSES, SHUYOU_BINS, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { band, fmt, pct, yen } from '../../lib/format.ts';
+import { LINKS } from '../../lib/links.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
 
@@ -34,7 +36,6 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { v } = Astro.props;
 const pre = `${v.id}-`;
 const statusKeys = STATUSES.map((s) => s.key);
-const binKeys = RATE_BINS.map((b) => b.key);
 const kihon = getKihonList().filter((k) => k.shouraizou === v.id);
 const shisaku = getShisakuList().filter((s) => s.shouraizou === v.id);
 const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
@@ -58,8 +59,6 @@ const trend = YEARS.map((y) => {
   const bOk = s.filter(reached).length;
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
-const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y).filter((x) => x.shisaku_id.startsWith(pre)), statusOf, statusKeys) }));
-const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y).filter((x) => x.shisaku_id.startsWith(pre)), rateBin, binKeys) }));
 
 // 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
 // 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭のドーナツ・施策の判定・4年間の推移・成果指標をさがすにある）
@@ -127,14 +126,14 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h" class="anchor">施策の判定</h2>
-    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに、沖縄県が毎年評価しています。</p>
-    <JudgeMatrix counts={judgeCounts} caption={`将来像${v.id}の${fmt(shisaku.length)}施策`} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
+    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。</p>
+    <JudgeMatrix counts={judgeCounts} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
   </section>
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
     <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
-    <figure class="sticker">
+    <figure class="sticker trend">
       <figcaption>
         <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
       </figcaption>
@@ -157,11 +156,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
         </div>
       </details>
     </figure>
-    <details class="breakdown">
-      <summary>内訳を見る（進捗状況・達成率の区分ごと）</summary>
-      <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={torikumiRows} />
-      <StatusChart title="成果指標の達成状況" categories={RATE_BINS} rows={seikaRows} unit="指標" />
-    </details>
   </section>
 
   <section aria-labelledby="yosan-h">
@@ -197,7 +191,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   }
 
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .breakdown { margin-top: 16px; }
+  .trend { margin-top: 0; }
 
   .k-list { margin-top: 12px; }
 
