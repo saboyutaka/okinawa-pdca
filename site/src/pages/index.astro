@@ -15,7 +15,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, getShuyouStatus,
 } from '../lib/data.ts';
-import { getThemes, unthemed } from '../lib/themes.ts';
+import { getThemes } from '../lib/themes.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
@@ -104,9 +104,7 @@ const boshu = boshuState();
 
   <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
-    <p class="small secondary lead">
-      県の計画の分類ではなく、施策・施策展開・基本施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/about/#theme">テーマの決め方</a>
-    </p>
+    <p class="small secondary lead">数字は施策の数、棒は判定の内訳です（<a href="/about/#theme">テーマの決め方</a>）。</p>
     <ul class="themes">
       {themes.map((t) => (
         <li>
@@ -123,14 +121,14 @@ const boshu = boshuState();
 
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
-    <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
+    <p class="small secondary lead">棒は主な取組のうち「順調」の割合です。</p>
     <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
-          <a class="v-name name-link" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
+          <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
           <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
-          <span class="v-pv"><span class="big">{pct(v.ok, v.n)}</span><small>{fmt(v.ok)}/{fmt(v.n)}件</small></span>
+          <span class="v-pv big" aria-hidden="true">{pct(v.ok, v.n)}</span>
         </li>
       ))}
     </ul>
@@ -139,7 +137,7 @@ const boshu = boshuState();
   {shuyou.length > 0 && (
     <section aria-labelledby="shuyou-h">
       <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
-      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。{yearLong(LATEST)}の報告の{fmt(shuyou.length)}指標を、報告の年度ごとの<Term word="実績値" />の折れ線で並べました。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と値を出します。</p>
+      <p class="small secondary lead">平均寿命や観光収入のような、将来像にどこまで近づいたかをはかる大きな数字です。</p>
       <ShuyouTrendTop rows={shuyou} visions={visions} />
       <p class="small">県の見通しは、<a href="/shihyou/shuyou/">主要指標の一覧</a>と基本施策のページにあります。</p>
     </section>
@@ -148,10 +146,10 @@ const boshu = boshuState();
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
     <p class="lead">
-      県は施策ごとに、①主な取組のうち「順調」の割合と、②成果指標の<Term word="達成率" />の2つを組み合わせて、A〜G の<Term word="推進状況" label="判定" />を付けています。マスを押すと、その判定の施策の一覧を開きます。
+      県は施策ごとに、①主な取組のうち「順調」の割合と、②成果指標の<Term word="達成率" />の2つを組み合わせて、A〜G の<Term word="推進状況" label="判定" />を付けています。
     </p>
-    <JudgeMatrix counts={judgeCounts} caption={`${yearLong(LATEST)}の${fmt(shisaku.length)}施策`} />
-    <p class="small secondary">マスの置き方は県の概要版の「施策評価の判定基準」区分表（境目は40%と80%）のとおりです。件数は施策総括表に印字された判定をそのまま数えていて、概要版の件数とは数件ずれます（<a href="/about/#chuui">注意点</a>）。</p>
+    <JudgeMatrix counts={judgeCounts} caption={`全${fmt(shisaku.length)}施策`} />
+    <p class="small secondary">件数は施策総括表の判定のままで、概要版とは数件ずれます（<a href="/about/#chuui">注意点</a>）。</p>
   </section>
 
   <section aria-labelledby="trend-h">
@@ -159,7 +157,6 @@ const boshu = boshuState();
     <figure class="sticker trend">
       <figcaption>
         <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-        <div class="chart-caption">点を押すと、その年度の値を出します（キーボードでは左右の矢印キー）。</div>
       </figcaption>
       <TrendChart points={trend} />
       <details>
@@ -185,9 +182,7 @@ const boshu = boshuState();
       <StatusChart title="主な取組の進捗状況" caption="各取組の活動実績が、その年度の計画に対してどこまで進んだか（県の判定）。" categories={STATUSES} rows={torikumiRows} />
       <StatusChart title="成果指標の達成状況" caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
-    <p class="small secondary">
-      R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
-    </p>
+    <p class="small secondary">R7からの<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で基準値・目標値・計画値が新しくなったため、成果指標の割合は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（R4〜R6）と単純には比べられません。</p>
   </section>
 
   <section aria-labelledby="iken-h">
@@ -265,22 +260,18 @@ const boshu = boshuState();
   @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
 
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
-  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 4em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
   .v-name { grid-area: name; line-height: 1.5; }
   .vision :global(.chunk) { grid-area: bar; }
-  .v-pv { grid-area: pv; display: grid; justify-items: end; line-height: 1.2; }
-  .v-pv .big { font-size: 1.15rem; }
-  .v-pv small { font-size: 0.75rem; color: var(--ink-2); }
+  .v-pv { grid-area: pv; justify-self: end; font-size: 1.15rem; line-height: 1.2; }
   @media (max-width: 640px) {
     .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
-    .v-pv { grid-auto-flow: column; align-items: baseline; gap: 6px; }
   }
 
   .trend { margin-top: 0; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
 
   .iken { background: var(--lilac); }

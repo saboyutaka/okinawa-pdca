@@ -1,6 +1,7 @@
 ---
 // 将来像ページの主要指標の一覧（県の概要版の49指標のうち、その将来像のもの）。1指標1行で、左に名前といまの値、
 // 右に報告年度ごとの値の小さな折れ線（SeikaSpark。値は lib/data.ts の getShuyouStatus の series）と、県の達成率（目標値に対する割合）。
+// 右の数が達成率であることは、行ごとに書かず一覧の上の凡例（SeikaKey の rate）で1回だけ書く（読み上げ用の文には残す）。
 // スタート・ゴールの値と、いまの値が何年の値かは文に書かず（行がごちゃつくため）、図の点にマウスを乗せる・押すと出す（SeikaSpark）。
 // 基本施策のページのカードにもある。読み上げ用の文には残す。
 // 図の凡例は一覧の上に1回だけ（SeikaKey mini）。並びは概要版の表の順（良い・悪いで並べ替えない）。
@@ -24,7 +25,7 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
         いま <b>{r.actual_raw}</b>
       </div>
       <div class="r-viz" aria-hidden="true"><SeikaSpark part={r.series} h={26} /></div>
-      <div class="r-rate" aria-hidden="true"><small>達成率</small><b>{shuyouRateText(r)}</b></div>
+      <div class="r-rate" aria-hidden="true"><b>{shuyouRateText(r)}</b></div>
       <span class="sr-only">
         {`達成率 ${shuyouRateText(r)}（${binLabel(r)}）。基準値 ${value(r.base_raw, r.base_ref)}、実績値 ${value(r.actual_raw, r.actual_ref)}、目標値 ${value(r.target_raw, r.target_ref)}${r.revised ? '。統計の基準改定にあわせて試算し直した基準値・目標値' : ''}`}
       </span>
@@ -42,7 +43,6 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
   .r-viz { grid-area: viz; }
   .r-viz :global(.spark) { width: 100%; height: auto; }
   .r-rate { grid-area: rate; display: grid; justify-items: end; line-height: 1.2; }
-  .r-rate small { font-size: 0.6875rem; font-weight: 700; color: var(--ink-2); }
   .r-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
   @media (max-width: 640px) {
     .trend-list > li { grid-template-columns: minmax(0, 1fr) 128px; grid-template-areas: "name name" "vals viz" "rate viz"; gap: 0 12px; }
