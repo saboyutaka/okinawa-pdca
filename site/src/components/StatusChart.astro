@@ -86,6 +86,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   .short .row-label { white-space: nowrap; }
   .short .row-sub { display: inline; margin-left: 0.3em; }
   .table-view { margin-top: 14px; }
+  .table-view td small { font-size: 0.75rem; } /* 件数の下の割合は添えるだけなので小さく */
   @media (max-width: 560px) {
     .rows:not(.short) { grid-template-columns: 1fr; }
     .rows:not(.short) .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; }

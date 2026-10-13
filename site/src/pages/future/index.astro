@@ -64,11 +64,17 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
 
 <style>
   /* 棒の凡例は読み方の手がかりなので、小さく右に寄せ、地の色だけの箱（線と影なし）にまとめて本文と分ける。
-     スマホでは見出しを1行目に置き、札はその下に左からそろえる */
+     スマホでは見出しを1行目に置き、札はその下に1行で並べる（文字・印・すき間を小さくする。幅が375px以下の端末では2行になる） */
   .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
   .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
   .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
-  @media (max-width: 640px) { .legend-box { margin-left: 0; } .legend-l { width: 100%; } }
+  @media (max-width: 640px) {
+    .legend-box { margin-left: 0; padding: 6px 10px; }
+    .legend-l { width: 100%; }
+    .legend { gap: 2px 6px; }
+    .legend :global(.chip) { font-size: 0.6875rem; gap: 2px; }
+    .legend :global(.chip svg) { width: 10px; height: 10px; }
+  }
   .vision { margin-top: 24px; background: var(--szw); scroll-margin-top: 16px; }
   .v-h { margin: 0; font-size: 1.15rem; }
   .v-h .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; background: var(--paper); }
