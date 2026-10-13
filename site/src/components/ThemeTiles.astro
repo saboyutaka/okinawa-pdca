@@ -23,7 +23,8 @@ const { items } = Astro.props;
   .theme:hover { background: var(--sky); }
   .ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pink); }
   .ico :global(.theme-ic) { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  /* 名前はくらしのテーマの一覧のカードの名前（.name-link）と同じ角ゴシックの太字（丸ゴシックは太さが1つしかなく、太字にならないため） */
+  .nm { font-family: var(--font); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
   .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す */
   @media (max-width: 520px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; } .nm { font-size: 0.875rem; } }
 </style>

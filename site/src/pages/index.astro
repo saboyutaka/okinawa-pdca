@@ -1,7 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import DonutCard from '../components/DonutCard.astro';
-import Chunk from '../components/Chunk.astro';
+import StatusBar from '../components/StatusBar.astro';
+import KeyBrief from '../components/KeyBrief.astro';
+import KeyNum from '../components/KeyNum.astro';
 import Term from '../components/Term.astro';
 import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
@@ -9,7 +11,7 @@ import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLong, rateBin, countJudges,
+  YEARS, LATEST, yearLong, rateBin, countJudges, STATUSES, statusOf, countBy,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
@@ -30,11 +32,14 @@ const shisaku = getShisakuList();
 const judgeCounts = countJudges(shisaku);
 
 
-// 将来像ごと
+// 将来像ごと。主な取組の進捗状況の内訳の棒と「順調」の割合（5つの将来像のページ・将来像のページの基本施策の行と同じ形）
+const statusKeys = STATUSES.map((s) => s.key);
 const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
+  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length, counts: countBy(t, statusOf, statusKeys) };
 });
+// 区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの将来像で使っている区分）
+const statusUsed = statusKeys.filter((key) => visions.some((v) => (v.counts[key] || 0) > 0));
 
 
 // 4年間の推移
@@ -80,8 +85,9 @@ const boshu = boshuState();
   </form>
 
   <section id="themes" aria-labelledby="themes-h">
-    <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
-    <p class="small secondary lead">くらしの{getThemes().length}の分野ごとに、県の施策・取組・成果指標をまとめて見られます。</p>
+    {/* 「このサイト独自の分類」の印は、くらしのテーマの一覧と同じく、押すと分け方の説明が出る用語のボタン */}
+    <h2 id="themes-h">気になるテーマから見てみよう<Term word="くらしのテーマ" label="このサイト独自の分類" class="own" /></h2>
+    <p class="small secondary lead">くらしの{getThemes().length}のテーマごとに、県の施策・取組・成果指標をまとめて見られます。</p>
     <ThemeTiles items={getThemes().map((t) => ({ id: t.id, label: t.label, href: `/theme/${t.id}/` }))} />
     <p class="small more-link"><a href="/theme/">テーマを一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
@@ -89,16 +95,18 @@ const boshu = boshuState();
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
+    <KeyBrief kind="status" used={statusUsed} />
     <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
-          <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
-          <span class="v-pv big" aria-hidden="true">{pct(v.ok, v.n)}</span>
+          <StatusBar categories={STATUSES} counts={v.counts} context={`${v.name} 主な取組 `} size="mini" />
+          <KeyNum class="v-pv" word="進捗状況" label="順調" brief="key-status" value={pct(v.ok, v.n)} />
         </li>
       ))}
     </ul>
+    <p class="small more-link"><a href="/future/">将来像を一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
   <section aria-labelledby="judge-h">
@@ -186,14 +194,15 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  .more-link { margin: 10px 0 0; }
+  /* 節の終わりの、一覧へ進むリンク（ドーナツのカードの「取組をさがす →」と同じ太字） */
+  .more-link { margin: 10px 0 0; font-weight: 700; }
 
-  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
-  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 4em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う。棒と「順調」の割合は、5つの将来像のページの基本施策の棒と同じ */
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) auto; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
   .v-name { grid-area: name; line-height: 1.5; }
-  .vision :global(.chunk) { grid-area: bar; }
-  .v-pv { grid-area: pv; justify-self: end; font-size: 1.15rem; line-height: 1.2; }
+  .vision :global(.sbar) { grid-area: bar; }
+  .vision :global(.v-pv) { grid-area: pv; justify-self: end; }
   @media (max-width: 640px) {
     .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
