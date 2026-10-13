@@ -7,7 +7,9 @@
 //   達成率はこの行でいちばん大事な数なので、右に大きく、概要版の区分（目標値に到達・前進・横ばい・後退・比べられない）の色と形を付けて置く。
 //   区分の言葉は節の凡例に1回だけ書き、札には数だけ（成果指標の達成率の札と同じ）。主な取組の割合と取り違えないよう「達成率」と添える。
 //   数でない印字（「達成」「後退」）は、大きな字だと強く見えるので小さくする
-// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（5つの将来像のページの棒と同じ形）
+// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（5つの将来像のページの棒と同じ形）。右の列に意味の違う数（達成率）と
+//   縦に並ぶので、5つの将来像のページと違い「順調」と添える
+// 主要指標の名前は、基本施策の名前（太字）の下の項目なので、太字にせず字の色と下線だけでリンクと分かるようにする
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
 import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, halfWidth, type ShuyouStatus } from '../lib/data.ts';
@@ -55,7 +57,7 @@ const rateOf = (r: ShuyouStatus) => {
     <div class="k-row k-bar">
       <span class="k-l">主な取組</span>
       <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /></div>
-      <span class="k-num" aria-hidden="true">{pct(tori.ok, tori.n)}</span>
+      <span class="k-num" aria-hidden="true"><span class="k-nl">順調</span>{pct(tori.ok, tori.n)}</span>
     </div>
   )}
 </li>
@@ -66,11 +68,11 @@ const rateOf = (r: ShuyouStatus) => {
   /* PC は「何の行か | 中身 | 右の数」。主要指標は名前の行に達成率をそろえ、主な取組は棒を中身の列いっぱいに伸ばす */
   .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; column-gap: 16px; }
   .k-shuyou { grid-template-areas: "lab main rate"; align-items: start; }
-  .k-bar { grid-template-columns: 4.6em minmax(0, 1fr) 4.2em; grid-template-areas: "lab viz num"; align-items: center; }
+  .k-bar { grid-template-columns: 4.6em minmax(0, 1fr) auto; grid-template-areas: "lab viz num"; align-items: center; }
   .k-l { grid-area: lab; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
   .k-shuyou .k-l { padding-top: 2px; }
   .k-main { grid-area: main; min-width: 0; line-height: 1.6; }
-  .s-name { font-size: 0.9375rem; }
+  .s-name { font-size: 0.9375rem; font-weight: 400; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
   /* スタート・いま・ゴールは同じ幅の3列（矢印をはさむ）。どの行でも列の位置がそろうよう、幅は中身の長さによらず決める */
   .k-vals { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; column-gap: 12px; max-width: 34em; margin-top: 4px; }
@@ -88,6 +90,7 @@ const rateOf = (r: ShuyouStatus) => {
   .k-rv.word b { font-family: var(--font); font-weight: 700; font-size: 1.05rem; }
   .k-viz { grid-area: viz; min-width: 0; }
   .k-num { grid-area: num; justify-self: end; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; }
+  .k-nl { font-family: var(--font); font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-right: 6px; }
   /* 720px 以下は、主要指標のスタート・いま・ゴールを1行ずつ積み、達成率をその下に置く */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
@@ -102,6 +105,6 @@ const rateOf = (r: ShuyouStatus) => {
     .v { display: contents; }
     .arrow { display: none; }
     .v-y { margin-left: 4px; }
-    .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) 3.8em; }
+    .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) auto; }
   }
 </style>
