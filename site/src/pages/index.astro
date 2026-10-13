@@ -14,7 +14,7 @@ import {
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { fmt, pct } from '../lib/format.ts';
-import { LINKS, SITE, PROJECT } from '../lib/links.ts';
+import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
@@ -54,7 +54,6 @@ const band = (vals: number[]) => {
 const boshu = boshuState();
 ---
 <Base>
-  <p class="made-by"><span class="nw">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の</span><span class="nw"><Term word="シビックテック" />の取り組みとして作っています。</span></p>
   <section class="hero sticker lift" aria-labelledby="hero-h">
     <p class="site-line"><b>{SITE.name}</b><span>{SITE.tagline}</span></p>
     <span class="tag">{yearLong(LATEST)}の結果</span>
@@ -179,10 +178,7 @@ const boshu = boshuState();
 </Base>
 
 <style>
-  /* 作り手の1行。ヒーローの上に右寄せで小さく置く */
-  .made-by { margin: 12px 0 0; text-align: right; font-size: 0.8125rem; color: var(--ink-2); }
-  .made-by .nw { display: inline-block; } /* 狭い画面では「Code for Okinawa の」の後ろでだけ折り返す */
-  .hero { position: relative; overflow: hidden; margin-top: 8px; background: var(--sky); padding: 24px 24px 28px; }
+  .hero { position: relative; overflow: hidden; margin-top: 12px; background: var(--sky); padding: 24px 24px 28px; }
   .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; border: 2.5px solid var(--line); pointer-events: none; }
   .hero::before { width: 170px; height: 170px; right: -50px; top: -60px; background: var(--pink); }
   .hero::after { width: 90px; height: 90px; left: -34px; bottom: -34px; background: var(--lilac); }

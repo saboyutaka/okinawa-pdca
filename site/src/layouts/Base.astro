@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { LINKS, PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
+import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 import { CARD_SIZE, cardMeta } from '../lib/card.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
@@ -168,7 +169,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
           <li><a href="/theme/">くらしのテーマ</a>（このサイト独自の分類）</li>
           <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
         </ul>
-        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></p>
+        <p>このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
       </div>
     </footer>
   </body>
