@@ -33,8 +33,8 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
 </ul>
 
 <style>
-  /* PC は「名前・値 | 小さな折れ線 | 達成率」の3列。スマホは名前の下に「いまの値・達成率 | 折れ線」 */
-  .trend-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 160px 4.2em; grid-template-areas: "name viz rate" "vals viz rate"; gap: 2px 16px; align-items: center; }
+  /* PC は「名前・値 | 小さな折れ線 | 達成率」の3列（折れ線は名前と値の2行の高さに収まる幅まで広げる）。スマホは名前の下に「いまの値・達成率 | 折れ線」 */
+  .trend-list > li { display: grid; grid-template-columns: minmax(0, 1fr) 220px 4.2em; grid-template-areas: "name viz rate" "vals viz rate"; gap: 2px 16px; align-items: center; }
   .r-name { grid-area: name; min-width: 0; }
   .r-vals { grid-area: vals; line-height: 1.5; }
   .r-vals b { color: var(--ink); }
