@@ -54,7 +54,7 @@ const rateOf = (r: ShuyouStatus) => {
         </div>
       </div>
       <div class="k-rate">
-        <span class="k-rl"><Term word="主要指標の達成率" label="達成率" extra="key-shuyou" /></span>
+        <span class="k-rl"><Term word="主要指標の達成率" label="達成率" brief="key-shuyou" /></span>
         <span class:list={['k-rv', rateOf(r).word && 'word']} data-tip-value={shuyouBinOf(r.bin).label} data-tip-label={`達成率 ${rateOf(r).t}`}><Icon tone={shuyouBinOf(r.bin).tone} size={14} />{rateOf(r).t === '—' ? <b aria-hidden="true">—</b> : <b>{rateOf(r).t}</b>}</span>
         <span class="sr-only">（{shuyouBinOf(r.bin).label}）</span>
       </div>
@@ -64,7 +64,7 @@ const rateOf = (r: ShuyouStatus) => {
     <div class="k-row k-bar">
       <span class="k-l">主な取組</span>
       <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /></div>
-      <span class="k-num"><span class="k-nl"><Term word="進捗状況" label="順調" extra="key-status" /></span><span aria-hidden="true">{pct(tori.ok, tori.n)}</span></span>
+      <span class="k-num"><span class="k-nl"><Term word="進捗状況" label="順調" brief="key-status" /></span><span aria-hidden="true">{pct(tori.ok, tori.n)}</span></span>
     </div>
   )}
 </li>

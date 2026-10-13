@@ -71,7 +71,8 @@ const kihonRows = kihon.map((k) => {
     tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
   };
 });
-// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと出す（<template> を Term の extra で写す。どれかの基本施策で使っている区分）
+// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（<template> を Term の brief で写す。どれかの基本施策で使っている区分。
+// 説明の全文は用語の一覧に任せ、ここでは表を読むのに要ることだけ）
 const shuyouLegend = SHUYOU_BINS.filter((b) => shuyou.some((r) => r.bin === b.key));
 const toriLegend = STATUSES.filter((c) => kihonRows.some((k) => (k.tori.counts[c.key] || 0) > 0));
 
@@ -117,8 +118,8 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
     <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
-    <template id="key-shuyou"><ul aria-label="達成率の区分">{shuyouLegend.map((b) => <li><Chip tone={b.tone} text={b.label} /></li>)}</ul></template>
-    <template id="key-status"><ul aria-label="進捗状況の区分">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} /></li>)}</ul></template>
+    <template id="key-shuyou"><p>基準値から目標値（R9）までのうち、どこまで進んだかを県が示した割合です。基準値より悪くなるとマイナスになります。</p><ul aria-label="達成率の区分">{shuyouLegend.map((b) => <li><Chip tone={b.tone} text={b.label} /></li>)}</ul></template>
+    <template id="key-status"><p>主な取組がその年度の計画どおりに進んだかの県の判定です。数は「順調」の割合です。</p><ul aria-label="進捗状況の区分">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></template>
     <ul class="row-list k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
