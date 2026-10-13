@@ -172,6 +172,8 @@ small, .small { font-size: 0.875rem; }
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
+/* 計画の段ごとのまとまり（将来像・主要指標 / 施策・成果指標 など）のあいだの区切り（layouts/Base.astro の NAV） */
+.site-nav .nav-sep { flex: none; align-self: center; width: 2px; height: 18px; margin: 0 2px; border-radius: 1px; background: var(--hair); }
 /* スマホでは「タイトル＋配色のボタン」「（非公式）by …」「ナビ」の3行を、タイトルの行に配色のボタンを並べて詰める */
 @media (max-width: 720px) {
   .theme-label { display: none; }
