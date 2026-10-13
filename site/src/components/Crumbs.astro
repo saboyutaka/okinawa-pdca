@@ -1,6 +1,6 @@
 ---
 // パンくず。計画の体系（将来像 › 施策 › 取組）でたどる。トップはヘッダーのタイトルから戻れるので入れない（上の階層の無いページにはパンくずを置かない）。
-// いまのページ（href なし）は最後に置き、長い名前は1行で省略する。スマホでは折り返さず、長い名前を縮めて1行に収める。
+// いまのページ（href なし）は最後に置き、長い名前は1行で省略する。将来像（sz）は、いまのページでも番号の印の付いた札にする（リンクではないので押せる見た目の変化は付けない）。スマホでは折り返さず、長い名前を縮めて1行に収める。
 // 検索エンジン向けに、同じ項目を構造化データ（BreadcrumbList。lib/seo.ts）でも出す
 import Sz from './Sz.astro';
 import { breadcrumbLd, ldJson } from '../lib/seo.ts';
@@ -16,7 +16,7 @@ const { items } = Astro.props;
         {i > 0 && <span class="sep" aria-hidden="true">›</span>}
         {it.href
           ? <a href={it.href} class:list={[it.sz && ['crumb-sz', `sz-${it.sz}`]]} title={it.sz ? undefined : it.label}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</a>
-          : <span class="here" aria-current="page" title={it.label}>{it.label}</span>}
+          : <span class:list={['here', it.sz && ['crumb-sz', `sz-${it.sz}`]]} aria-current="page" title={it.label}>{it.sz && <Sz id={it.sz} sr={false} />}{it.label}</span>}
       </li>
     ))}
   </ol>
@@ -28,6 +28,7 @@ const { items } = Astro.props;
   li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
   .crumb-sz { display: inline-flex; align-items: center; gap: 4px; padding-left: 3px !important; background: var(--szw) !important; }
   .crumb-sz :global(.badge-sz) { width: 1.45em; height: 1.45em; font-size: 0.75rem; border-width: 1.5px; }
+  span.crumb-sz { padding-right: 10px; border: 2px solid var(--line); border-radius: 999px; color: var(--ink); }
   .here { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(28em, 100%); }
   a:not(.crumb-sz) { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16em; vertical-align: bottom; }
   /* スマホでは、いまのページの名前はすぐ下の見出しと同じなので見せない（読み上げには残す）。

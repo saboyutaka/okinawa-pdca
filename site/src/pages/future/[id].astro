@@ -107,7 +107,7 @@ const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e
 const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 ---
 <Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
-  <Crumbs items={[{ href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}` }]} />
+  <Crumbs items={[{ href: '/future/', label: '将来像の一覧' }, { label: `将来像${v.id}`, sz: v.id }]} />
 
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
