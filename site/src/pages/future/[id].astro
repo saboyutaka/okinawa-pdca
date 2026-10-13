@@ -1,5 +1,7 @@
 ---
-// 将来像1つのページ。ひとめで（取組と成果の割合）→ 主要指標の移り変わり → 施策の判定と前の年度からの変化 → 基本施策ごとの進み → 成果指標の一覧 → 4年間の推移・テーマ・予算 → シェア
+// 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → くらしのテーマ → 予算 → シェア。
+// 頭はトップのヒーローと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
+// 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
@@ -7,27 +9,23 @@ import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
 import DonutCard from '../../components/DonutCard.astro';
 import HeadStats from '../../components/HeadStats.astro';
-import Moves, { type MoveGroup } from '../../components/Moves.astro';
 import Chunk from '../../components/Chunk.astro';
+import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
-import StatusBar from '../../components/StatusBar.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendChart from '../../components/TrendChart.astro';
+import ThemeTiles from '../../components/ThemeTiles.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
-import SeikaRow from '../../components/SeikaRow.astro';
-import SeikaKey from '../../components/SeikaKey.astro';
-import ShuyouTrendList from '../../components/ShuyouTrendList.astro';
+import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, getTorikumiGroups, getSeikaGroups, seikaHref, amountEntries,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, SHUYOU_BINS, statusOf, rateBin, countBy,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { getThemes } from '../../lib/themes.ts';
-import { fmt, pct, yen } from '../../lib/format.ts';
-import { LINKS } from '../../lib/links.ts';
-import ExtLink from '../../components/ExtLink.astro';
+import { band, fmt, pct, yen } from '../../lib/format.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
 
@@ -38,36 +36,20 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { v } = Astro.props;
 const pre = `${v.id}-`;
 const statusKeys = STATUSES.map((s) => s.key);
+const binKeys = RATE_BINS.map((b) => b.key);
 const kihon = getKihonList().filter((k) => k.shouraizou === v.id);
 const shisaku = getShisakuList().filter((s) => s.shouraizou === v.id);
-const allTori = getTorikumi(LATEST);
-const allSeika = getSeika(LATEST);
-const tori = allTori.filter((t) => t.shisaku_id.startsWith(pre));
-const seika = allSeika.filter((s) => s.shisaku_id.startsWith(pre));
+const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
+const seika = getSeika(LATEST).filter((s) => s.shisaku_id.startsWith(pre));
 const isOk = (t: TorikumiRow) => t.status === '順調';
 const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
 const toriOk = tori.filter(isOk).length;
 const seikaOk = seika.filter(reached).length;
-const allToriRate = pct(allTori.filter(isOk).length, allTori.length);
-const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = futureHead(v.id);
 const judgeCounts = head.judges;
 
-// 基本施策ごと
-const kihonCards = kihon.map((k) => {
-  const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
-  const ss = shisaku.filter((s) => s.kihon_id === k.id);
-  return {
-    ...k,
-    n: t.length,
-    ok: t.filter(isOk).length,
-    counts: countBy(t, statusOf, statusKeys),
-    shisaku: ss.length,
-  };
-});
-
-// 主要指標の達成状況（県の概要版の表の順。読めない年度は空）
+// 主要指標の達成状況（県の概要版の表の順。読めない年度は空）。基本施策の行の中に置く
 const shuyou = getShuyouStatus().filter((r) => r.kihon.shouraizou === v.id);
 
 // 4年間の推移
@@ -79,25 +61,21 @@ const trend = YEARS.map((y) => {
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
 const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y).filter((x) => x.shisaku_id.startsWith(pre)), statusOf, statusKeys) }));
-const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y).filter((x) => x.shisaku_id.startsWith(pre)), rateBin, RATE_BINS.map((b) => b.key)) }));
+const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y).filter((x) => x.shisaku_id.startsWith(pre)), rateBin, binKeys) }));
 
-// 前の年度からの変化。施策の判定（lib/data.ts の JUDGE_TRENDS）と、主な取組の進捗状況（PATTERNS）を、良くなったものと悪くなったものの対で並べる
-const groups = getTorikumiGroups().filter((g) => g.shisaku.shouraizou === v.id);
-const moves: MoveGroup[] = [
-  { label: '施策の判定', unit: '施策', items: [
-    { tone: 'good', title: '判定が上がった', n: shisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?s=${v.id}&trend=up` },
-    { tone: 'serious', title: '判定が下がった', n: shisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?s=${v.id}&trend=down` },
-  ] },
-  { label: '主な取組の進捗状況', unit: '件', items: [
-    { tone: 'good', title: '遅れから「順調」に戻った', n: groups.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?s=${v.id}&pat=recover` },
-    { tone: 'serious', title: '新しく遅れが出た', n: groups.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?s=${v.id}&pat=newdelay` },
-  ] },
-];
-
-// 成果指標の一覧（最新の年度の報告にあるもの）。基本施策の見出しの下に報告書の順で並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
-const SEIKA_SHOW = 5;
-const seikaGroups = getSeikaGroups().filter((r) => r.latest.year === LATEST && r.shisaku.shouraizou === v.id);
-const seikaByKihon = kihon.map((k) => ({ ...k, rows: seikaGroups.filter((r) => r.shisaku.kihon_id === k.id) })).filter((k) => k.rows.length);
+// 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
+// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭のドーナツ・施策の判定・4年間の推移・成果指標をさがすにある）
+const kihonRows = kihon.map((k) => {
+  const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
+  return {
+    ...k,
+    shuyou: shuyou.filter((r) => r.kihon.id === k.id),
+    tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
+  };
+});
+// 凡例はこの節に1回だけ（どれかの基本施策で使っている区分）
+const shuyouLegend = SHUYOU_BINS.filter((b) => shuyou.some((r) => r.bin === b.key));
+const toriLegend = STATUSES.filter((c) => kihonRows.some((k) => (k.tori.counts[c.key] || 0) > 0));
 
 // くらしのテーマ（この将来像の施策が多い順）
 const ids = new Set(shisaku.map((s) => s.id));
@@ -113,107 +91,80 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
-    <div>
-      <div class="v-kicker"><Term word="将来像" />{v.id}</div>
-      <h1>{v.name}</h1>
-      <HeadStats items={[
-        { label: '基本施策', n: kihon.length, href: '#kihon' },
-        { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
-        { label: '主な取組', n: tori.length, href: `/torikumi/?s=${v.id}`, note: yearLabel(LATEST) },
-        { label: '成果指標', n: seika.length, href: '#seika-h', note: yearLabel(LATEST) },
-      ]} />
+    {/* 番号は印にあるので「将来像」の後ろの番号は読み上げだけ */}
+    <div class="v-kicker"><span><Term word="将来像" /><span class="sr-only">{v.id}</span></span><span class="tag">{yearLong(LATEST)}の結果</span></div>
+    <h1>{v.name}</h1>
+    <HeadStats items={[
+      { label: '基本施策', n: kihon.length, href: '#kihon' },
+      { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
+    ]} />
+    <div class="donuts">
+      <DonutCard plain frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`} more={{ href: `/torikumi/?s=${v.id}`, label: '取組をさがす' }}>
+        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
+        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(tori.length)}件</span></Fragment>
+      </DonutCard>
+      <DonutCard plain frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`} more={{ href: `/shihyou/?s=${v.id}`, label: '成果指標をさがす' }}>
+        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
+        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(seika.length)}指標</span></Fragment>
+      </DonutCard>
     </div>
   </header>
 
-  <div class="donuts">
-    <DonutCard frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`}>
-      主な取組のうち「順調」
-      <Fragment slot="sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件（{yearLong(LATEST)}）。県全体は{allToriRate}。</Fragment>
-    </DonutCard>
-    <DonutCard frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`}>
-      <Term word="成果指標" />のうち<Term word="計画値" />に到達
-      <Fragment slot="sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標（{yearLong(LATEST)}）。県全体は{allSeikaRate}。</Fragment>
-    </DonutCard>
-  </div>
-
   <Toc
     links={[
-      shuyou.length > 0 && { href: '#shuyou-h', label: '主要指標' },
-      { href: '#judge-h', label: '施策の判定' },
-      { href: '#moves-h', label: '前の年度からの変化' },
       { href: '#kihon', label: '基本施策' },
-      seikaGroups.length > 0 && { href: '#seika-h', label: '成果指標' },
+      { href: '#judge-h', label: '施策の判定' },
       { href: '#trend-h', label: '4年間の推移' },
       { href: '#theme-h', label: 'くらしのテーマ' },
       { href: '#yosan-h', label: '予算' },
     ]}
-    head={{ kind: `将来像${v.id}`, sz: v.id, title: v.name }}
+    head={{ kind: '将来像', sz: v.id, title: v.name }}
   />
-
-  {shuyou.length > 0 && (
-    <section aria-labelledby="shuyou-h">
-      <h2 id="shuyou-h" class="anchor"><Term word="主要指標" />の移り変わり（{fmt(shuyou.length)}）</h2>
-      <p class="small secondary lead">{yearLong(LATEST)}の報告の指標です。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と、その年度の値とスタート・ゴールの値を出します。名前を押すと、基本施策のページの大きな図を開きます。</p>
-      <SeikaKey mini plan={false} goal />
-      <ShuyouTrendList rows={shuyou} />
-      <p class="small secondary">{yearLong(LATEST)}の値と達成率は県の概要版の表、それより前の年度の値は総括報告書の付属資料のものです（基本施策のページの値は付属資料のもので、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>
-    </section>
-  )}
-
-  <section aria-labelledby="judge-h">
-    <h2 id="judge-h" class="anchor">施策の判定（{yearLong(LATEST)}）</h2>
-    <p class="small secondary lead">マスを押すと、将来像{v.id}とその判定で絞り込んだ施策の一覧を開きます。</p>
-    <JudgeMatrix counts={judgeCounts} caption={`将来像${v.id}の${fmt(shisaku.length)}施策`} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
-  </section>
-
-  <section aria-labelledby="moves-h">
-    <h2 id="moves-h" class="anchor">前の年度からの変化</h2>
-    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
-    <Moves groups={moves} />
-  </section>
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">棒は主な取組の<Term word="進捗状況" />（{yearLong(LATEST)}）です。</p>
-    <ul class="kcards">
-      {kihonCards.map((k) => (
-        <li class="sticker kcard">
-          <div class="name-row"><a class="k-name name-link" href={`/kihon/${k.id}/`}>{k.name}</a><span class="code-no">{k.code}</span></div>
-          <div class="k-row">
-            <span class="small">主な取組 <b>{fmt(k.ok)}/{fmt(k.n)}件</b>が順調</span>
-            <span class="big k-pv">{pct(k.ok, k.n)}</span>
-          </div>
-          {k.n > 0 && <StatusBar categories={STATUSES} counts={k.counts} context={`${k.name} 主な取組 `} size="mini" />}
-          <div class="small"><a href={`/shisaku/?q=${encodeURIComponent(k.name)}`}>施策 {fmt(k.shisaku)}</a></div>
-        </li>
-      ))}
+    <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
+    {/* 凡例は5つの将来像のページと同じく、線と影のない白い地の小さな箱に1回だけ（主要指標の達成率の札・主な取組の棒の2行）。棒の右の割合は「順調」の割合 */}
+    <div class="legend-box">
+      {shuyouLegend.length > 0 && <div class="lg"><span class="legend-l">主要指標の<Term word="主要指標の達成率" label="達成率" />:</span><ul class="legend" aria-label="主要指標の達成率の札の凡例">{shuyouLegend.map((b) => <li><Chip tone={b.tone} text={b.label} /></li>)}</ul></div>}
+      <div class="lg"><span class="legend-l">主な取組の<Term word="進捗状況" />:</span><ul class="legend" aria-label="主な取組の棒の凡例">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></div>
+    </div>
+    <ul class="row-list k-list">
+      {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
+    {shuyou.length > 0 && <p class="small secondary">主要指標の値と達成率は県の概要版のもので、基本施策のページ（総括報告書の付属資料の値）とは書き方や値が少し違うものがあります。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
+    <details class="k-table">
+      <summary>表で見る</summary>
+      <div class="table-wrap">
+        <table>
+          <caption>主な取組の進捗状況（件）</caption>
+          <thead><tr><th>基本施策</th>{toriLegend.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
+          <tbody>
+            {kihonRows.map((k) => (
+              <tr>
+                <th class="k-th">{k.name}</th>
+                {toriLegend.map((c) => <td class="num">{fmt(k.tori.counts[c.key] || 0)}<br /><small class="secondary">{pct(k.tori.counts[c.key] || 0, k.tori.n)}</small></td>)}
+                <td class="num">{fmt(k.tori.n)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
   </section>
 
-  {seikaGroups.length > 0 && (
-    <section aria-labelledby="seika-h">
-      <h2 id="seika-h" class="anchor">成果指標（{fmt(seikaGroups.length)}）</h2>
-      <p class="small"><a href={`/shihyou/?s=${v.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
-      <p class="small secondary">{yearLong(LATEST)}の報告にある指標です。右の札は<Term word="達成率" />です。</p>
-      <SeikaKey mini />
-      {seikaByKihon.map((k) => (
-        <>
-          <h3 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a><span class="n">（{fmt(k.rows.length)}）</span> <span class="code-no">{k.code}</span></h3>
-          <ul class="row-list" id={`seika-${k.id}`} data-more={SEIKA_SHOW}>
-            {k.rows.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
-          </ul>
-          {k.rows.length > SEIKA_SHOW + 2 && <p class="more-row"><button type="button" class="button" data-more-btn={`seika-${k.id}`} hidden>さらに表示（残り {fmt(k.rows.length - SEIKA_SHOW)}指標）</button></p>}
-        </>
-      ))}
-    </section>
-  )}
+  <section aria-labelledby="judge-h">
+    <h2 id="judge-h" class="anchor">施策の判定</h2>
+    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに、沖縄県が毎年評価しています。</p>
+    <JudgeMatrix counts={judgeCounts} caption={`将来像${v.id}の${fmt(shisaku.length)}施策`} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
+  </section>
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
+    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
     <figure class="sticker">
       <figcaption>
-        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合（将来像{v.id}）</div>
-        <div class="chart-caption">点を押すと、その年度の値を出します（キーボードでは左右の矢印キー）。</div>
+        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
       </figcaption>
       <TrendChart points={trend} />
       <details>
@@ -239,24 +190,22 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={torikumiRows} />
       <StatusChart title="成果指標の達成状況" categories={RATE_BINS} rows={seikaRows} unit="指標" />
     </details>
-    <p class="small secondary">R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
   </section>
 
   <section aria-labelledby="theme-h">
     <h2 id="theme-h" class="anchor">くらしのテーマで見る<span class="own">このサイト独自の分類</span></h2>
-    <p class="small secondary lead">将来像{v.id}の施策が多いテーマの順です。押すと、将来像{v.id}とそのテーマで絞り込んだ施策の一覧を開きます。</p>
-    <ul class="tlist">
-      {themes.map((t) => <li><a class="ttag t-big" href={`/shisaku/?s=${v.id}&theme=${t.id}`}>{t.label}<b>{fmt(t.n)}</b></a></li>)}
-    </ul>
+    <p class="small secondary lead">将来像{v.id}の施策が、くらしのどの分野にかかわるかを、施策の数で見られます。</p>
+    <ThemeTiles items={themes.map((t) => ({ id: t.id, label: t.label, href: `/shisaku/?s=${v.id}&theme=${t.id}`, n: t.n }))} unit="施策" />
   </section>
 
   <section aria-labelledby="yosan-h">
     <h2 id="yosan-h" class="anchor">予算</h2>
     <div class="sticker budget">
-      <div class="tile-label">将来像{v.id}の主な取組に書かれた予算事業（{yearLong(LATEST)}の決算見込額）</div>
+      <div class="tile-label">将来像{v.id}の主な取組に書かれた予算事業（決算見込額）</div>
       <div class="tile-value">{yen(budget)}</div>
       <Chunk frac={budgetAll ? budget / budgetAll : 0} tone="none" label={`主な取組の予算事業全体の${pct(budget, budgetAll)}`} thin />
-      <div class="tile-sub">主な取組の予算事業全体（{yen(budgetAll)}）の{pct(budget, budgetAll)}。同じ予算事業の重複を除いています。<a href="/yosan/">予算と財源</a></div>
+      <div class="tile-sub">主な取組の予算事業全体（{yen(budgetAll)}）の{pct(budget, budgetAll)}です。同じ予算事業の重複を除いています。</div>
+      <a class="b-more" href="/yosan/">予算と財源を見る<span aria-hidden="true"> →</span></a>
     </div>
   </section>
 
@@ -264,24 +213,46 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 </Base>
 
 <style>
-  .v-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; margin-top: 12px; background: var(--szw); }
-  .v-hero :global(.hero-badge) { width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
-  .v-kicker { font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
-  .v-hero h1 { margin: 2px 0 8px; }
-  @media (max-width: 520px) { .v-hero { grid-template-columns: 1fr; } .v-hero :global(.hero-badge) { width: 56px; height: 56px; font-size: 1.6rem; } }
-  .kcards { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  .kcard { display: grid; gap: 8px; align-content: start; }
-  .k-name { line-height: 1.5; }
-  .k-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .k-pv { font-size: 1.3rem; }
+  /* 頭。PC は番号の印を左に大きく置き、右に「将来像」・名前・件数の札。スマホは印を小さくして「将来像」の行に並べ、名前を全幅にする。
+     ドーナツのカードはトップのヒーローと同じく頭の中に置く */
+  .v-hero {
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "donuts donuts";
+    gap: 0 18px; align-items: center; margin-top: 12px; background: var(--szw);
+  }
+  .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
+  .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
+  .v-hero h1 { grid-area: name; margin: 4px 0 10px; }
+  .v-hero :global(.head-stats) { grid-area: stats; }
+  .v-hero .donuts { grid-area: donuts; }
+  @media (max-width: 520px) {
+    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "donuts donuts"; column-gap: 10px; }
+    .v-hero :global(.hero-badge) { width: 36px; height: 36px; font-size: 1.15rem; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
+    .v-hero h1 { margin-top: 8px; }
+  }
+
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
-  .k-h { font-size: 1rem; margin: 1.4em 0 0.5em; }
-  .k-h .n { white-space: nowrap; }
-  .more-row { margin-top: 12px; }
-  .tlist { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .t-big { font-size: 0.9375rem; padding: 4px 12px; gap: 8px; }
-  .t-big b { font-family: var(--font-num); font-weight: 600; }
-  .budget { display: grid; gap: 6px; max-width: 640px; }
+
+  /* 凡例（5つの将来像のページの .legend-box と同じ形。主要指標の達成率と主な取組の進捗状況の2行） */
+  .legend-box { display: grid; gap: 4px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  .lg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
+  @media (max-width: 640px) {
+    .legend-box { margin-left: 0; padding: 6px 10px; }
+    .legend-l { width: 100%; }
+    .legend { gap: 2px 6px; }
+    .legend :global(.chip) { font-size: 0.6875rem; gap: 2px; }
+    .legend :global(.chip svg) { width: 10px; height: 10px; }
+  }
+
+  .k-list { margin-top: 12px; }
+
+  .k-table { margin-top: 14px; }
+  .k-table caption { text-align: left; font-weight: 700; padding: 12px 0 4px; }
+  .k-table .k-th { white-space: normal; min-width: 12em; } /* 基本施策の名前は長いので折り返す */
+  .k-table td small { font-size: 0.75rem; }
+
+  .budget { display: grid; gap: 6px; }
+  .b-more { justify-self: start; font-size: 0.875rem; font-weight: 700; }
 </style>

@@ -53,6 +53,13 @@ export const refText = (raw: string | null | undefined) => {
   const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
   return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
 };
+// 主要指標（概要版）の値が何年・何年度の値か（base_ref・actual_ref・target_ref）。印字の書き方がまちまち（「令和5年度」「R３年度」「平成２９年度」）なので、
+// 数字を半角に、元号を R・H にそろえる。「R3年」「R3年度」だけのものは「R3」にする（概要版の中でも同じ統計に年と年度が混じるため）。
+// 日付や期間（「R7.1.1」「R6.10～R7.9」）はそのまま。空なら ''
+export const eraRef = (raw: string | null | undefined) => {
+  const s = halfWidth(raw || '').trim().replace(/令和/g, 'R').replace(/平成/g, 'H');
+  return /^[RH]\d+年度?$/.test(s) ? s.replace(/年度?$/, '') : s;
+};
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES: Category[] = [
@@ -405,14 +412,15 @@ export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-$
 // 達成率は計画期間の最後（中期はR9、前期はR6）の目標値に対する割合で、成果指標の達成率（その年度の計画値に対する割合）とは違う。
 // 区分は概要版の表の達成率の印字で決める（scripts/check_extracted.py の shuyou_bin と同じ数え方）。目標が数でない指標（「増加」
 // 「可能な限り減少させる」など）は、県が「達成」「後退」と印字している。「-」は統計がまだ出ていないなどで比べられないもの
+// 色と形（tone）は成果指標の達成率の区分（RATE_BINS）にそろえ、横ばいは未着手と同じ灰色の「—」、比べられないものは空の印にする
 export const SHUYOU_BINS = [
-  { key: '100%以上', label: '目標値に到達' },
-  { key: '60%以上100%未満', label: '前進（60%以上）' },
-  { key: '0%超60%未満', label: '前進（60%未満）' },
-  { key: '横ばい', label: '横ばい' },
-  { key: '後退', label: '後退' },
-  { key: 'その他', label: '比べられない' },
-] as const;
+  { key: '100%以上', label: '目標値に到達', tone: 'good' },
+  { key: '60%以上100%未満', label: '前進（60%以上）', tone: 'warning' },
+  { key: '0%超60%未満', label: '前進（60%未満）', tone: 'serious' },
+  { key: '横ばい', label: '横ばい', tone: 'none' },
+  { key: '後退', label: '後退', tone: 'critical' },
+  { key: 'その他', label: '比べられない', tone: 'blank' },
+] as const satisfies readonly { key: string; label: string; tone: Tone }[];
 export type ShuyouBin = (typeof SHUYOU_BINS)[number]['key'];
 type ShuyouRate = Pick<ShuyouGaiyouRow, 'rate' | 'rate_raw'>;
 export function shuyouBin(r: ShuyouRate): ShuyouBin {
@@ -423,6 +431,7 @@ export function shuyouBin(r: ShuyouRate): ShuyouBin {
 }
 // 前進（基準値より良くなった）の区分
 export const SHUYOU_FORWARD: ShuyouBin[] = ['100%以上', '60%以上100%未満', '0%超60%未満'];
+export const shuyouBinOf = (bin: ShuyouBin) => SHUYOU_BINS.find((b) => b.key === bin)!;
 // 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
 export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
 
@@ -436,48 +445,8 @@ function shuyouCardId(r: ShuyouGaiyouRow) {
   return g ? shuyouAnchor(groups, g) : 'shuyou';
 }
 
-// 概要版の値（「2.5万人」と括弧の中の年「R２年」）を欄にする
-const gaiyouCell = (raw: string, ref: string | null) => cellOf(ref ? `${raw}（${ref}）` : raw);
-const gaiyouCells = (r: ShuyouGaiyouRow): PartCells => ({
-  year: r.year, b: gaiyouCell(r.base_raw, r.base_ref), a: gaiyouCell(r.actual_raw, r.actual_ref), t: gaiyouCell(r.target_raw, r.target_ref), judgement: '',
-});
-
-// 概要版の指標（1指標1行）ごとの、報告年度ごとの値（将来像ページの小さな折れ線 SeikaSpark に渡す主要指標の部分）。
-// 最新の年度は概要版の値（達成率と同じ表。統計の基準改定で試算し直した基準値・目標値（※）もこちら）。それより前の年度は付属資料の値で、
-// 基本施策の主要指標の部分（shuyouRows）と概要版の指標が同じ数なら、表の順に1つずつ対応させて部分の値を使う（基本施策ページの図と同じ値）。
-// 数が違う基本施策（付属資料の欄の男女別などを分けられない 2-(8)・3-(7)・4-(4)）は、年度ごとに付属資料の欄をその年度の見通しの名前で分け、
-// 分けられない欄（名前が値の後ろにある・PDF の欄で文字が切れている）は同じ年度の概要版の値（同じ数なら表の順）で補う。R5 は概要版が読めない
-function shuyouSeries(kihonId: string, rows: ShuyouGaiyouRow[]): ShuyouPart[] {
-  const groups = shuyouRows(kihonId).filter((g) => g.latest.year === LATEST);
-  const parts = groups.flatMap((g) => g.parts);
-  const n = rows.length;
-  const gaiyou = load('shuyou_gaiyou').filter((r) => r.kihon_id === kihonId);
-  const none = cellOf('');
-  return rows.map((row, i) => {
-    const cells: Record<number, PartCells> = {};
-    if (parts.length === n) {
-      for (const [y, c] of Object.entries(parts[i].years)) cells[+y] = c;
-    } else {
-      for (const [y, x] of Object.entries(groups.length === 1 ? groups[0].years : {})) {
-        const labels = (judgesOf(x.judgement) || []).map((j) => j.label);
-        const same = gaiyou.filter((r) => r.year === +y);
-        const g = same.length === n ? same[i] : null;
-        const pick = (raw: string, k: 'base' | 'actual' | 'target') => {
-          const v = labels.length === n ? splitByLabels(raw, labels)?.[i] : null;
-          return v != null ? cellOf(v) : g ? gaiyouCell(g[`${k}_raw`], g[`${k}_ref`]) : null;
-        };
-        const a = pick(x.actual_raw, 'actual');
-        if (a) cells[+y] = { year: +y, b: pick(x.base_raw, 'base') ?? none, a, t: pick(x.target_raw, 'target') ?? none, judgement: '' };
-      }
-    }
-    cells[row.year] = gaiyouCells(row);
-    return partOf('', row.name, cells, row.year);
-  });
-}
-
 export interface ShuyouStatus extends ShuyouGaiyouRow {
   bin: ShuyouBin;
-  series: ShuyouPart; // 報告年度ごとの値（小さな折れ線）
   kihon: { id: string; name: string; code: string; shouraizou: number };
   href: string; // 基本施策ページのその主要指標のカード
 }
@@ -487,15 +456,10 @@ export function getShuyouStatus(): ShuyouStatus[] {
   if (shuyouStatus) return shuyouStatus;
   const kihon = new Map(getKihonList().map((k) => [k.id, k]));
   const latest = load('shuyou_gaiyou').filter((r) => r.year === LATEST);
-  const series = new Map([...new Set(latest.map((r) => r.kihon_id))].flatMap((id) => {
-    const rows = latest.filter((r) => r.kihon_id === id);
-    const parts = shuyouSeries(id, rows);
-    return rows.map((r, i) => [r, parts[i]] as const);
-  }));
   shuyouStatus = latest.map((r) => {
     const k = kihon.get(r.kihon_id)!;
     return {
-      ...r, bin: shuyouBin(r), series: series.get(r)!,
+      ...r, bin: shuyouBin(r),
       kihon: { id: k.id, name: k.name, code: k.code, shouraizou: k.shouraizou },
       href: `/kihon/${k.id}/#${shuyouCardId(r)}`,
     };
@@ -658,7 +622,7 @@ export function seikaGroupOf(row: SeikaRow) {
 export const DELAYS: ReadonlySet<string | null | undefined> = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
 // 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
-// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・将来像と部局の「前の年度からの変化」・トップの文章・テーマと部局の件数で、
+// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・部局の「前の年度からの変化」・トップの文章・テーマと部局の件数で、
 // 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
 type Statuses = (string | null)[];
 const isDelay = (x: string | null | undefined) => DELAYS.has(x);

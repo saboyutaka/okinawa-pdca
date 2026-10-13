@@ -1,22 +1,34 @@
 ---
-// 割合ひとつのドーナツと、その説明のカード（将来像・部局のページの頭の下に2枚並べる。並べる箱は .donuts）。
-// 見出しは中身（Term を入れられる）、説明は sub のスロット
+// 割合ひとつのドーナツと、その説明のカード（トップのヒーロー・将来像・部局・テーマのページの頭の下に2枚並べる。並べる箱は .donuts）。
+// 見出しは中身（Term を入れられる）、説明は sub のスロット。
+// plain は、ページの頭のステッカーの中に置く形（トップ・将来像のページ）。ステッカーの中の箱なので線と影は付けず、白い地だけで分ける。
+// more は、カード全体を押すと開く一覧（良いものだけに絞らず、絞り込む前の一覧。中の用語の説明のボタンは上に出して押せるまま）。
+// 見出しの問いは文節の切れ目（.nw）でだけ折り返し、sub の件数（.dc-n）は1行に置く
 import Donut from './Donut.astro';
 
-interface Props { frac: number; label: string }
-const { frac, label } = Astro.props;
+interface Props { frac: number; label: string; plain?: boolean; more?: { href: string; label: string } }
+const { frac, label, plain = false, more } = Astro.props;
 ---
-<div class="sticker donut-card">
+<div class:list={['donut-card', plain ? 'plain' : 'sticker', more && 'has-more']}>
   <Donut frac={frac} label={label} />
   <div>
     <div class="dc-title"><slot /></div>
     <div class="dc-sub"><slot name="sub" /></div>
+    {more && <a class="dc-more" href={more.href}>{more.label}<span aria-hidden="true"> →</span></a>}
   </div>
 </div>
 
 <style>
   .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
+  .plain { background: var(--paper); border-radius: 16px; padding: 14px 16px; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
+  .dc-title :global(.nw) { display: inline-block; } /* 問いは文節の切れ目でだけ折り返す（「た？」だけが次の行に残らないように） */
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
+  .dc-sub :global(.dc-n) { display: block; font-family: var(--font-num); font-weight: 600; white-space: nowrap; }
+  .has-more { position: relative; }
+  .has-more:has(.dc-more:hover) { background: color-mix(in oklab, var(--sky) 45%, var(--paper)); }
+  .dc-more { display: inline-block; margin-top: 6px; font-size: 0.875rem; font-weight: 700; }
+  .dc-more::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+  .has-more :global(.term) { position: relative; z-index: 1; }
   @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
 </style>

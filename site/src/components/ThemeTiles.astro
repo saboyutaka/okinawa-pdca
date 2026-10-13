@@ -1,0 +1,33 @@
+---
+// くらしのテーマのタイル（トップと将来像のページ）。1つのステッカーに、アイコンと名前だけのタイル（線も影も無い .inset）を同じ幅で並べる。
+// 札ごとに線と影を付けると数が多くて落ち着かないため。施策の数と判定の内訳はテーマの一覧 /theme/ に。
+// n を渡すと名前の右に数を添える（将来像のページの、その将来像の施策の数）。unit は数の読み上げ
+import ThemeIcon from './ThemeIcon.astro';
+import { fmt } from '../lib/format.ts';
+
+interface Props { items: { id: string; label: string; href: string; n?: number }[]; unit?: string }
+const { items, unit = '' } = Astro.props;
+---
+<ul class="themes sticker">
+  {items.map((t) => (
+    <li>
+      <a class="theme inset" href={t.href}>
+        <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+        <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
+        {t.n != null && <b class="n">{unit && <span class="sr-only">{unit}</span>}{fmt(t.n)}</b>}
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .themes { list-style: none; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .theme { display: flex; align-items: center; gap: 8px; height: 100%; padding: 6px 10px 6px 6px; color: var(--ink); text-decoration: none; }
+  .theme:hover { background: var(--sky); }
+  .ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pink); }
+  .ico :global(.theme-ic) { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す */
+  .n { flex: none; margin-left: auto; padding-left: 4px; font-family: var(--font-num); font-weight: 600; font-size: 1rem; white-space: nowrap; }
+  @media (max-width: 520px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; } .nm { font-size: 0.875rem; } }
+</style>

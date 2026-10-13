@@ -4,6 +4,12 @@ export const fmt = (n: number | null | undefined) => (n == null ? '—' : nf.for
 
 export const pct = (n: number, d: number) => (d ? `${(Math.round((n / d) * 1000) / 10).toFixed(1)}%` : '—');
 
+// 割合（%）の幅を「7〜8割台」のように丸めて言う（トップと将来像のページの4年間の推移の頭の文。正確な値は図と表にある。良い・悪いは言わない）
+export function band(vals: number[]) {
+  const [lo, hi] = [Math.floor(Math.min(...vals) / 10), Math.floor(Math.max(...vals) / 10)];
+  return lo === hi ? `${lo}割台` : `${lo}〜${hi}割台`;
+}
+
 const oku = new Intl.NumberFormat('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 // 決算見込額は千円単位で載っている

@@ -2,11 +2,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
+  yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouRateText, shouraizouName,
+  shuyouBin, shuyouBinOf, shuyouRateText, shouraizouName,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -53,6 +53,16 @@ test('withUnit: 数字だけの欄にだけ単位を付ける', () => {
   assert.equal(withUnit('12', ''), '12');
   assert.equal(withUnit('', '件'), '—');
   assert.equal(withUnit(null, '件'), '—');
+});
+
+test('eraRef: 主要指標の値の年・年度は、数字を半角に、元号を R・H にそろえ、年・年度だけのものは「R3」にする', () => {
+  assert.equal(eraRef('令和5年度'), 'R5');
+  assert.equal(eraRef('R３年度'), 'R3');
+  assert.equal(eraRef('平成２９年度'), 'H29');
+  assert.equal(eraRef('令和6年'), 'R6');
+  assert.equal(eraRef('R7.1.1'), 'R7.1.1');
+  assert.equal(eraRef('令和３年10月～令和9年9月の累計'), 'R3年10月～R9年9月の累計');
+  assert.equal(eraRef(null), '');
 });
 
 test('refText: 実績値の年度は、年度で終わるものにだけ「の値」を付ける', () => {
@@ -324,6 +334,14 @@ test('shuyouBin: 主要指標の達成状況の区分は、概要版の達成率
     [null, '-', 'その他'], [null, '‐', 'その他'], [null, '－', 'その他'],
   ];
   for (const [rate, rate_raw, bin] of cases) assert.equal(shuyouBin({ rate, rate_raw }), bin, rate_raw);
+});
+
+test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果指標の達成率の区分にそろえる', () => {
+  assert.equal(shuyouBinOf('100%以上').tone, 'good');
+  assert.equal(shuyouBinOf('0%超60%未満').tone, 'serious');
+  assert.equal(shuyouBinOf('横ばい').tone, 'none');
+  assert.equal(shuyouBinOf('後退').tone, 'critical');
+  assert.equal(shuyouBinOf('その他').label, '比べられない');
 });
 
 test('shuyouRateText: 主要指標の達成率の札の文字（数はそのまま、比べられないものは —）', () => {

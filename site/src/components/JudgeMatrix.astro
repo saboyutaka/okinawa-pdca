@@ -3,6 +3,7 @@
 // マスの置き方は県の概要版の「施策評価の判定基準」区分表（R4〜R7 とも同じ）どおり。A と B は「順調」の割合40%以上の2段にまたがり、
 // C・D は達成率40%未満の列を「順調」の割合80%で分ける。マスを押すと、その判定の施策の一覧を開く。
 // 判定の意味はマスの短い言い方と縦横の見出しで読めるので、凡例は付けない（C と D の違いは行、E と F の違いは列で分かる）
+// PC では縦書きの軸の名前を「（上ほど高い）」の前で2列に折る（1列だとマス目より長く、マスが縦に伸びて間のびするため）。
 // スマホでは縦書きの軸の名前が長くて窮屈なので、横書きにして「よこ」「たて」を付け、マス目の上に2行で並べる。
 // 行と列の見出しは割合だけにし、何の割合かは軸の名前で1回だけ書く。マスの数の単位（施策）は図の題（caption）に任せる。
 // マスにマウスを乗せる・フォーカスすると、そのマスが入る行と列の見出し（○%）を光らせ、なぜその判定かをマス目だけで読めるようにする
@@ -55,9 +56,10 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
 <style>
   .matrix-fig { margin-top: 12px; }
   .mx-cap { font-family: var(--font-display); font-weight: 700; margin-bottom: 6px; }
-  .mx-xtitle { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); text-align: center; margin-left: calc(2em + 5em + 14px); }
-  .mx-body { display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 8px; margin-top: 4px; }
-  .mx-ytitle { writing-mode: vertical-rl; font-size: 0.875rem; font-weight: 700; color: var(--ink-2); justify-self: center; align-self: center; letter-spacing: 0.08em; }
+  .mx-xtitle { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); text-align: center; margin-left: calc(3rem + 5rem + 14px); } /* 縦の軸の名前の列・見出しの列・すき間の分だけ寄せ、マスの3列の上の真ん中に置く */
+  .mx-body { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 8px; margin-top: 4px; }
+  .mx-ytitle { writing-mode: vertical-rl; font-size: 0.875rem; font-weight: 700; color: var(--ink-2); justify-self: center; align-self: center; letter-spacing: 0.08em; line-height: 1.5; }
+  @media (min-width: 601px) { .mx-ytitle .nw { display: block; } }
   .mx-ax { display: none; }
   .matrix { display: grid; grid-template-columns: 5em repeat(3, minmax(0, 1fr)); gap: 6px; }
   .mx-hd { font-size: 0.8125rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.35; font-weight: 700; border-radius: 10px; }
