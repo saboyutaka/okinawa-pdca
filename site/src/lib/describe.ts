@@ -43,7 +43,7 @@ export function shisakuDescription(o: { name: string; judge: string | null | und
 }
 
 // 主な取組の題名。同じ取組が複数の施策に載っている（総括報告書の「再掲」）と施策ごとにページがあるので、題名が同じにならないように施策の番号を足す。
-// 番号は名前より目立たせないので、後ろに置く（docs/design.md の6章）
+// 番号は名前より目立たせないので、後ろに置く（docs/design.md の3章）
 export const torikumiTitle = (o: { name: string; code: string; reposted: boolean }) =>
   `${o.name}（沖縄県の主な取組${o.reposted ? `・施策 ${o.code}` : ''}）`;
 
@@ -97,6 +97,6 @@ export const futureDescription = (id: number, name: string, c: AreaCounts) =>
 export const deptDescription = (name: string, c: AreaCounts) =>
   `${facts([toriText(c.tori), seikaOf(c), judgesText(c.judges, 'かかわる施策')])}沖縄県PDCAで${name}が所管する主な取組・成果指標と、かかわる施策の進み具合。`;
 
-// くらしのテーマはこのサイト独自の分類なので、切れても分かるように頭に書く（docs/design.md の8章）
+// くらしのテーマはこのサイト独自の分類なので、切れても分かるように頭に書く（docs/design.md の5章）
 export const themeDescription = (label: string, c: AreaCounts) =>
   `「${label}」はこのサイト独自の分類。${facts([judgesText(c.judges), toriText(c.tori), seikaOf(c)])}沖縄県PDCAの施策・主な取組・成果指標を、くらしのテーマで分けて見られます。`;
