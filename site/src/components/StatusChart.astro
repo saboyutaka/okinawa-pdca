@@ -9,7 +9,8 @@ import type { Shape, Tone } from '../lib/icons.ts';
 
 // id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く
 // end は行の右に出すもの: 'total' は件数（初め）、'pct' は最初の区分（順調など）の割合、'none' は出さない（件数・割合は「表で見る」と読み上げにある）。
-// barLabel={false} は棒の中に割合を書かない（end="pct" で棒の外に出すときなど）
+// barLabel={false} は棒の中に割合を書かない（end="pct" で棒の外に出すときなど）。
+// table={false} は「表で見る」を付けない（将来像の一覧だけの例外。件数は基本施策のページにある。棒の読み上げには件数と割合がある。docs/design.md の1章）
 interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
@@ -20,8 +21,9 @@ interface Props {
   legend?: boolean;
   end?: 'total' | 'pct' | 'none';
   barLabel?: boolean;
+  table?: boolean;
 }
-const { title, caption, categories, rows, unit = '件', legend = true, end = 'total', barLabel = true } = Astro.props;
+const { title, caption, categories, rows, unit = '件', legend = true, end = 'total', barLabel = true, table = true } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3);
@@ -50,25 +52,27 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
       </div>
     ))}
   </div>
-  <details class="table-view">
-    <summary>表で見る</summary>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr>
-              <th>{r.label}</th>
-              {used.map((c) => <td class="num">{fmt(r.counts[c.key] || 0)}<br /><small class="secondary">{pct(r.counts[c.key] || 0, totalOf(r))}</small></td>)}
-              <td class="num">{fmt(totalOf(r))}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </details>
+  {table && (
+    <details class="table-view">
+      <summary>表で見る</summary>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <th>{r.label}</th>
+                {used.map((c) => <td class="num">{fmt(r.counts[c.key] || 0)}<br /><small class="secondary">{pct(r.counts[c.key] || 0, totalOf(r))}</small></td>)}
+                <td class="num">{fmt(totalOf(r))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )}
 </figure>
 
 <style>
