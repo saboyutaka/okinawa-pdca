@@ -174,10 +174,10 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
 <style>
   /* 頭。PC は番号の印を左に大きく置き、右に「将来像」・名前・件数の札。スマホは印を小さくして「将来像」の行に並べ、名前を全幅にする。
-     ドーナツのカードはトップのヒーローと同じく頭の中に置く */
+     ドーナツのカードはトップのヒーローと同じく頭の中に置き、余白もトップのヒーローと同じにする（カードの位置がそろうように） */
   .v-hero {
     display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "donuts donuts";
-    gap: 0 18px; align-items: center; margin-top: 12px; background: var(--szw);
+    gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px; background: var(--szw);
   }
   .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
   .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }

@@ -86,7 +86,9 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   /* 右が件数でないときは、棒の列の幅を図の幅の割合で決める（名前の長い行があっても棒が細くならないように。長い名前は折り返す） */
   .end-none { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%); }
   .end-pct { grid-template-columns: minmax(0, 1fr) minmax(140px, 24%) auto; }
-  @media (min-width: 721px) { .end-pct .row-label { font-size: 1.0625rem; } } /* PC では棒を細く短くしたぶん、名前を大きくして主役にする */
+  /* 棒を細く短くしたぶん、名前を大きくして主役にする（将来像のページの基本施策の行の名前と同じ大きさ。components/KihonRow.astro） */
+  .end-pct .row-label { font-size: 1rem; }
+  @media (min-width: 721px) { .end-pct .row-label { font-size: 1.0625rem; } }
   /* 右に割合を出す図は、太い棒が目立ちすぎるので StatusBar の mini と同じ細い棒にする（内訳は見せたまま） */
   .end-pct .row :global(.sbar) { height: 14px; padding: 1.5px; border-width: 1.5px; gap: 1.5px; }
   .end-pct .row :global(.seg) { min-width: 2px; padding: 0; }

@@ -1,0 +1,30 @@
+---
+// 棒の凡例の箱。同じ区分の棒を並べる所（トップの将来像の行・5つの将来像のページ・くらしのテーマの一覧）に1回だけ置く。
+// 読み方の手がかりなので、小さく右に寄せ、地の色だけの箱（線と影なし）にまとめて本文と分ける。何の区分かは中身（Term を入れられる）。
+// items には、どれかの棒で使っている区分だけを渡す。
+// スマホでは見出しを1行目に置き、札はその下に並べる（文字・印・すき間を小さくする。進捗状況の6つは、幅が375px以下の端末では2行になる）
+import Chip from './Chip.astro';
+import type { Shape, Tone } from '../lib/icons.ts';
+
+interface Props { items: { text: string; tone: Tone; title?: string; shape?: Shape }[] }
+const { items } = Astro.props;
+---
+<div class="legend-box">
+  <span class="legend-l"><slot /></span>
+  <ul class="legend" aria-label="棒の凡例">
+    {items.map((c) => <li><Chip tone={c.tone} text={c.text} title={c.title} shape={c.shape} /></li>)}
+  </ul>
+</div>
+
+<style>
+  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 14px auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
+  @media (max-width: 640px) {
+    .legend-box { margin-left: 0; padding: 6px 10px; }
+    .legend-l { width: 100%; }
+    .legend { gap: 2px 6px; }
+    .legend :global(.chip) { font-size: 0.6875rem; gap: 2px; }
+    .legend :global(.chip svg) { width: 10px; height: 10px; }
+  }
+</style>
