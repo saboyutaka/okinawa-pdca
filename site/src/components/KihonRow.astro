@@ -23,6 +23,8 @@ interface Measure { n: number; ok: number; counts: Record<string, number> }
 interface Props { kihon: { id: string; name: string; code: string }; shuyou: ShuyouStatus[]; tori: Measure }
 const { kihon: k, shuyou, tori } = Astro.props;
 const half = (raw: string) => halfWidth(raw).replace(/％/g, '%');
+// 「※」（概要版の印。lib/data.ts の revised）の意味は、ページに注意書きを置かず、印にマウスを乗せる・タップすると出す（読み上げでは読む）
+const REVISED = '統計の基準改定にあわせて県が試算し直した基準値・目標値';
 const vals = (r: ShuyouStatus) => {
   const [b, a, t] = sameScale([half(r.base_raw), half(r.actual_raw), half(r.target_raw)]);
   return [
@@ -43,7 +45,7 @@ const rateOf = (r: ShuyouStatus) => {
     <div class="k-row k-shuyou">
       <span class="k-l">{i === 0 && '主要指標'}</span>
       <div class="k-main">
-        <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark">※</span>}
+        <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" data-tip-value={REVISED} data-tip-label="※"><span aria-hidden="true">※</span><span class="sr-only">（{REVISED}）</span></span>}
         <div class="k-vals">
           {vals(r).map((x, j) => (
             <>
@@ -80,7 +82,7 @@ const rateOf = (r: ShuyouStatus) => {
   .k-shuyou .k-l { padding-top: 2px; }
   .k-main { grid-area: main; min-width: 0; line-height: 1.6; }
   .s-name { font-size: 0.9375rem; font-weight: 400; }
-  .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
+  .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; padding: 0 3px; cursor: help; }
   /* スタート・いま・ゴールは同じ幅の3列（矢印をはさむ）。どの行でも列の位置がそろうよう、幅は中身の長さによらず決める */
   .k-vals { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; column-gap: 12px; max-width: 40rem; margin-top: 4px; }
   .v { display: grid; min-width: 0; }

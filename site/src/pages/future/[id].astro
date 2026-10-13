@@ -123,25 +123,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <ul class="row-list k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
-    {shuyou.length > 0 && <p class="small secondary">主要指標の値と達成率は県の概要版のもので、基本施策のページ（総括報告書の付属資料の値）とは書き方や値が少し違うものがあります。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
-    <details class="k-table">
-      <summary>表で見る</summary>
-      <div class="table-wrap">
-        <table>
-          <caption>主な取組の進捗状況（件）</caption>
-          <thead><tr><th>基本施策</th>{toriLegend.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
-          <tbody>
-            {kihonRows.map((k) => (
-              <tr>
-                <th class="k-th">{k.name}</th>
-                {toriLegend.map((c) => <td class="num">{fmt(k.tori.counts[c.key] || 0)}<br /><small class="secondary">{pct(k.tori.counts[c.key] || 0, k.tori.n)}</small></td>)}
-                <td class="num">{fmt(k.tori.n)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
   </section>
 
   <section aria-labelledby="judge-h">
@@ -220,10 +201,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   .k-list { margin-top: 12px; }
 
-  .k-table { margin-top: 14px; }
-  .k-table caption { text-align: left; font-weight: 700; padding: 12px 0 4px; }
-  .k-table .k-th { white-space: normal; min-width: 12em; } /* 基本施策の名前は長いので折り返す */
-  .k-table td small { font-size: 0.75rem; }
 
   .budget { display: grid; gap: 6px; }
   .b-more { justify-self: start; font-size: 0.875rem; font-weight: 700; }
