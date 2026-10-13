@@ -113,20 +113,6 @@ const headTrends = trends.filter((t) => t.key !== 'streak');
   </p>
 </Base>
 
-<script src="../../scripts/list-filter.ts"></script>
-<script>
-  // 頭の「判定の移り変わり」のリンクは、ページを開き直さずに絞り込みの「判定の移り変わり」だけを変える（キーワードなど、いま入っている条件は残す）
-  const trend = document.querySelector<HTMLSelectElement>('form[data-filter] select[name="trend"]');
-  for (const a of document.querySelectorAll<HTMLAnchorElement>('.trends [data-trend]')) {
-    a.addEventListener('click', (e) => {
-      if (!trend) return;
-      e.preventDefault();
-      trend.value = a.dataset.trend!;
-      trend.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  }
-</script>
-
 <style>
   .trends { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin: 4px 0 0; }
   .filters { margin-top: 16px; }

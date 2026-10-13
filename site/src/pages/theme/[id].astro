@@ -140,8 +140,6 @@ const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
   <ShareBox kind="くらしのテーマ" name={t.label} />
 </Base>
 
-<script src="../../scripts/show-more.ts"></script>
-
 <style>
   /* アイコンと名前を1行に並べ、説明はその下に置く（スマホでは説明を全幅に広げる） */
   .t-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: 'ico title' '. desc' '. stats'; gap: 6px 16px; align-items: center; margin-top: 12px; }

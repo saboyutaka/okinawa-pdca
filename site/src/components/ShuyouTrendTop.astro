@@ -50,8 +50,6 @@ const count = (keys: string[]) => rows.filter((r) => keys.includes(r.bin)).lengt
   {rows.some((r) => r.revised) && <p class="small secondary">※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。</p>}
 </details>
 
-<script src="../scripts/show-more.ts"></script>
-
 <style>
   .v-h { display: flex; align-items: flex-start; gap: 8px; margin: 1.4em 0 0.5em; font-size: 1rem; line-height: 1.4; }
   .v-h :global(.badge-sz) { flex: none; width: 26px; height: 26px; font-size: 0.875rem; }

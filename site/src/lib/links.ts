@@ -38,6 +38,6 @@ export const PROJECT = {
   maintainerName: '立花 豊',
   maintainer: 'saboyutaka',
   maintainerX: 'https://x.com/saboyutaka',
-  collaborators: ['石垣綾音'], // 制作協力（/code-for-okinawa/ の運営の欄）
+  collaborators: ['石垣綾音', '日髙春奈'], // 制作協力（/code-for-okinawa/ の運営の欄）
   miraiTeian: 'https://thinkokinawa.studio.site', // 沖縄未来提案プロジェクト（2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ会。このサイトのなりたち）
 };

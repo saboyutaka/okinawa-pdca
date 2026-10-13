@@ -116,6 +116,9 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
     <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
     <script type="speculationrules" is:inline set:html={SPECULATION_RULES} />
+    {/* ブラウザのスクリプトは scripts/site.ts の1つだけ。<head> に置くと CSS と並んで早めに取りに行く（body の終わりに置くと、CSS が届くまで後回しにされていた）。
+        type="module" なので、動くのはこれまでどおりページを読み終えてから */}
+    <script src="../scripts/site.ts"></script>
     <slot name="head" />
   </head>
   <body>
@@ -165,14 +168,5 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
         <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</p>
       </div>
     </footer>
-    <script src="../scripts/tooltip.ts"></script>
-    <script src="../scripts/theme.ts"></script>
-    <script src="../scripts/terms.ts"></script>
-    <script src="../scripts/disclosure.ts"></script>
-    {/* print.ts は charts.ts より前に置く（印刷の直前に、紙の幅にそろえてから図を描き直すため） */}
-    <script src="../scripts/print.ts"></script>
-    <script src="../scripts/charts.ts"></script>
-    <script src="../scripts/scroll-hint.ts"></script>
-    <script src="../scripts/toc.ts"></script>
   </body>
 </html>

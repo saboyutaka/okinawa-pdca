@@ -75,7 +75,7 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 |---|---|---|
 | `/_astro/*` | 1年・immutable | ファイル名に中身のハッシュが付く（CSS・JS・数字のフォント・favicon） |
 | `/torikumi/data-*.json`・`/torikumi/summary-*.json` | 1年・immutable | 取組をさがすの検索用データとやったこと。ファイル名に中身のハッシュが付く（`lib/search-data.ts`） |
-| ページ（`/` と末尾が `/` の URL） | 5分 | HTML にだけ ETag が付かず、304 で済ませられないため（開くたびに全部を取り直していた） |
+| ページ（`/` と末尾が `/` の URL） | 5分。過ぎても1日までは手元のページをすぐ出し、裏で取り直す（`stale-while-revalidate`） | HTML にだけ ETag が付かず、304 で済ませられないため（開くたびに全部を取り直していた） |
 | ほか（検索用データの控えの `/torikumi/data.json`・`summary.json`、根元の `/favicon.ico` など） | 既定のまま | ETag が付くので、変わっていなければ 304 |
 
 - HTML に ETag が付かないのは、workers.dev でも独自ドメイン（okinawa-miraima.com）でも同じ。Cloudflare の配信の途中で外れていて、ゾーンの設定では直らない（2026-10-12 に確かめた。本番の workers.dev の URL はその後に止めたので、workers.dev で確かめ直すときはプレビューか版ごとの URL を使う。2章）。
@@ -83,7 +83,11 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
   - 本番では HTML だけが、圧縮しない（identity）ときも ETag と Content-Length が無い（HTTP/1.1 では chunked）。CSS・JSON・SVG・txt・woff2 は付く。中身は書き換わっていないが、HTML だけ別の処理を通っている。ほかの人の workers.dev のサイトも同じ。
   - [ETag headers](https://developers.cloudflare.com/cache/reference/etag-headers/) が ETag を外す機能に挙げる Replace insecure JavaScript libraries・Email Address Obfuscation・Automatic HTTPS Rewrites を、okinawa-miraima.com のゾーンで全部切っても付かなかった（Bot Fight Mode・AI Labyrinth も切ってある）。
 - なので、ページの5分のキャッシュは外さない。上の3つは切ったままにしておく。このサイトには要らないうえ（外のライブラリを読み込まない・メールアドレスが無い・`http://` で読み込むものが無い）、Email Address Obfuscation が足すスクリプトと Replace insecure JavaScript libraries が書き換えるスクリプトは、各ページの `<meta>` の CSP と合わない。
-- ページを5分キャッシュするので、公開し直してから5分までは、前に開いたページが古いまま見えることがある（再読み込みで新しくなる）。
+- ページを5分キャッシュするので、公開し直してから5分までは、前に開いたページが古いまま見えることがある（再読み込みで新しくなる）。5分を過ぎても1日までは、手元のページを1回出してから裏で取り直す（`stale-while-revalidate`。Chrome・Firefox が読み、Safari は読まずに取り直す）ので、前に開いたページを開き直すとすぐに出るかわりに、公開し直したあとの1回は古いまま見えることがある。ブラウザのキャッシュはサイトの側から消せないので、ページを長くキャッシュさせることはしない。
+- Cloudflare の配信の拠点のキャッシュ（`cf-cache-status`）は、`_headers` の Cache-Control には従っていない（`max-age=0` の `sitemap.xml`・`/torikumi/data.json` も HIT になる。2026-10-13 に確かめた）。静的アセットのキャッシュは Cloudflare が持ち、長さもこちらでは決められない。OCN の回線などからは、リクエストのたびに海外の拠点（SJC・LHR・MIA・AMS など）が変わり、拠点ごとにキャッシュが無い（MISS）ことが多い。MISS のときは配信に 160〜280ms、HIT のときは 25〜40ms かかっていた（`server-timing` の `cfEdge`）。
+- ページの Cache-Control のルールには、ビルドで CSS と数字のフォントの `Link: <…>; rel=preload` を書き足す（`site/astro.config.ts` の `earlyHints`。ファイル名がビルドごとに変わるため）。Cloudflare の [Early Hints](https://developers.cloudflare.com/cache/advanced-configuration/early-hints/)（ダッシュボードの Speed → Settings → Content Optimization で有効にする）は、このヘッダーを覚えておき、次からは HTML を用意しているあいだに 103 で先に送る。ブラウザは HTML を待たずに CSS とフォントを取りに行ける。HTML がすぐ返せる（拠点にキャッシュがある）ときは 103 を送らないので、効くのは上の MISS のとき。無料プランでも使える（HTTP/2・HTTP/3 のときだけ）。
+  - 同じパスのルールを `_headers` の後ろにもう1つ書くと、前のルールの Cache-Control が効かなくなった（wrangler 4.149.0 の `wrangler dev` で確かめた）。なので、もとの `/`・`/*/` のルールの中に書き足す。
+  - 確かめ方: `curl -sI https://okinawa-miraima.com/ | grep -i '^link'` でヘッダーが付いているか。103 が返るかは `curl -sv --http2 https://okinawa-miraima.com/ -o /dev/null 2>&1 | grep -E '< HTTP|< link'` を2回（1回目で Cloudflare が覚える）。
 - `_headers` は同じヘッダーを2つのルールで付けると値をコンマでつなぐ。Cache-Control のルールは対象が重ならないように書く。
 - 確かめ方: `curl -sI https://okinawa-miraima.com/shihyou/ | grep -iE 'cache-control|etag'`
 
