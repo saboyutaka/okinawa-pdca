@@ -56,7 +56,7 @@ const rootFavicon: AstroIntegration = {
 
 // ページ（HTML）を配るときに、CSS と数字のフォントを Link ヘッダーでも知らせる（public/_headers に書き足す）。
 // Cloudflare の Early Hints（ダッシュボードの Speed で有効にする）は、このヘッダーを覚えておき、次からは HTML を用意しているあいだに
-// 103 で先に送るので、ブラウザは HTML を待たずに CSS とフォントを取りに行ける（docs/deploy.md の 5章）。
+// 103 で先に送るので、ブラウザは HTML を待たずに CSS とフォントを取りに行ける。
 // ファイル名には中身のハッシュが付いてビルドごとに変わるので、書き出したページから読む。CSS もフォントも全ページで同じものなので、
 // 全ページが同じかを確かめてから、ページのルール（/ と /*/）に1つずつ書く
 const earlyHints: AstroIntegration = {
@@ -102,7 +102,7 @@ export default defineConfig({
   // frame-ancestors は <meta> では効かないので public/_headers で出す。
   // 外から読み込むのは、Cloudflare が配信のときに差し込むアクセス解析（Web Analytics）のスクリプトだけ。
   // 差し込まれる URL は /beacon.min.js/v… と版で変わるので、ホストで許す。送り先は同じドメインの /cdn-cgi/rum なので 'self' で足りる。
-  // Cloudflare が同じく差し込むボット検出のインラインのスクリプトは、中身がリクエストごとに変わってハッシュで許せないので、ゾーンの設定で切ってある（docs/deploy.md の 3章）
+  // Cloudflare が同じく差し込むボット検出のインラインのスクリプトは、中身がリクエストごとに変わってハッシュで許せないので、ゾーンのボットの設定（enable_js: false）で切ってある
   security: {
     csp: {
       directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],

@@ -19,7 +19,7 @@
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
 // - 端末で動きを減らす設定（prefers-reduced-motion: reduce）にして開き、動き（styles/global.css の「動き」）の途中ではなく動き終わった形を撮る
 // - ページの読み込みに失敗したとき・ブラウザでスクリプトのエラーが出たときは表示して、終了コード1（--base で本番を撮るときも同じ。
-//   Cloudflare が差し込んだスクリプトが CSP に止められたエラーも NG になる。docs/deploy.md の 3章）
+//   Cloudflare が配信のときに差し込んだスクリプトが CSP に止められたエラーも NG になる）
 import { createReadStream } from 'node:fs';
 import { mkdir, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';

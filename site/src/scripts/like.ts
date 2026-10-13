@@ -1,4 +1,4 @@
-// いいねのボタン（components/Like.astro）。押すと /api/like に1回送り、お礼を出す（docs/deploy.md の 7章）。
+// いいねのボタン（components/Like.astro）。押すと /api/like に1回送り、お礼を出す。
 import { LIKE_FROM, LIKE_THANKS, likeUrl } from '../lib/like.ts';
 
 const SHOW_MS = 3500;
