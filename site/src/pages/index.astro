@@ -1,6 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import StatusChart from '../components/StatusChart.astro';
 import Donut from '../components/Donut.astro';
 import Chunk from '../components/Chunk.astro';
 import Term from '../components/Term.astro';
@@ -10,7 +9,7 @@ import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
+  YEARS, LATEST, yearLong, rateBin, countJudges,
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
@@ -19,7 +18,6 @@ import { LINKS, SITE, PROJECT } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
-const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
 // 年度をまたいでまとめた取組（取組をさがすと同じ数え方）
 const groups = getTorikumiGroups();
@@ -47,8 +45,11 @@ const trend = YEARS.map((y) => {
   const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
-const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y), statusOf, statusKeys) }));
-const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y), rateBin, RATE_BINS.map((b) => b.key)) }));
+// 4年間の割合の幅を「7〜8割台」のように丸めて言う（節の頭の文。正確な値は図と表にある。良い・悪いは言わない）
+const band = (vals: number[]) => {
+  const [lo, hi] = [Math.floor(Math.min(...vals) / 10), Math.floor(Math.max(...vals) / 10)];
+  return lo === hi ? `${lo}割台` : `${lo}〜${hi}割台`;
+};
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -132,6 +133,7 @@ const boshu = boshuState();
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h">4年間の推移</h2>
+    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
     <figure class="sticker trend">
       <figcaption>
         <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
@@ -155,12 +157,6 @@ const boshu = boshuState();
         </div>
       </details>
     </figure>
-    <details class="breakdown">
-      <summary>内訳を見る（進捗状況・達成率の区分ごと）</summary>
-      <StatusChart title="主な取組の進捗状況" caption="各取組の活動実績が、その年度の計画に対してどこまで進んだか（県の判定）。" categories={STATUSES} rows={torikumiRows} />
-      <StatusChart title="成果指標の達成状況" caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
-    </details>
-    <p class="small secondary">R7からの<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で基準値・目標値・計画値が新しくなったため、成果指標の割合は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（R4〜R6）と単純には比べられません。</p>
   </section>
 
   <section aria-labelledby="iken-h">
@@ -255,7 +251,6 @@ const boshu = boshuState();
 
   .trend { margin-top: 0; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .breakdown { margin-top: 16px; }
 
   .iken { background: var(--lilac); }
   .iken p { margin-top: 0; max-width: 46em; }
