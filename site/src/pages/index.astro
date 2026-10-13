@@ -162,11 +162,10 @@ const boshu = boshuState();
     <h2 id="iken-h">意見を伝えるには</h2>
     <div class="sticker iken">
       <p>
-        {yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）は、
-        {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
-        {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
-        {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-        県にいつでも意見を送れる窓口や、SNS で <strong>#{HASHTAG}</strong> を付けて話す方法もまとめています。
+        {/* 募集の期間の外はパブリックコメントに触れず、いまできること（県の窓口・SNS）を書く。終わった募集は /iken/ に */}
+        {boshu === 'open' && `${yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）を、${dayText(BOSHU.end)}まで受け付けています。`}
+        {boshu === 'before' && `${yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）を、${dayText(BOSHU.start)}から受け付けます。`}
+        県には、いつでも意見を送れる窓口があります。SNS で <strong>#{HASHTAG}</strong> を付けて話すこともできます。
       </p>
       <div class="iken-actions">
         <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
@@ -249,7 +248,7 @@ const boshu = boshuState();
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
 
   .iken { background: var(--lilac); }
-  .iken p { margin-top: 0; max-width: 46em; }
+  .iken p { margin-top: 0; }
   .iken-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 
 </style>

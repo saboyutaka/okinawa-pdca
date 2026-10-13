@@ -1,7 +1,7 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { LINKS, PROJECT, SITE, STEALTH } from '../lib/links.ts';
+import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
@@ -163,13 +163,13 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>沖縄県「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
+        {/* ナビに無いページへのリンクと、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
         <ul class="foot-links">
           <li><a href="/iken/">意見を伝えたい人へ</a></li>
-          <li><a href="/theme/">くらしのテーマ</a>（このサイト独自の分類）</li>
           <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
+          <li><a href="/about/#shutten">読み取った資料</a></li>
         </ul>
-        <p>このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
+        <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
       </div>
     </footer>
   </body>
