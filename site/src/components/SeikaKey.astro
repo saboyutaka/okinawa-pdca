@@ -5,11 +5,11 @@
 // goal は、計画の道すじを引かずゴールの丸だけを置く図（主要指標）。plan={false} と合わせて使う。図の全体に地を敷き前期の地を濃くするので、
 // 前期の印もその色にし、道すじの頭でないと分かりにくいスタートの点も凡例に出す
 // rm は観光ロードマップの一覧の図（RmSeikaSpark）。横は R4〜R6 で、計画期間が1つなので地の色は無い
-// rate は、行の右の数が何かを、行ごとに書かずにここで1回だけ書く（shuyou は主要指標の達成率）。行の読み上げ用の文に達成率があるので
+// rate は、行の右の数が何かを、行ごとに書かずにここで1回だけ書く（shuyou は主要指標の達成率、seika は成果指標の一覧の行の札の達成率）。行の読み上げ用の文に達成率があるので
 // 読み上げは図の凡例と同じく外し、用語の説明のボタンだけを押せるように残す
 import Term from './Term.astro';
 
-interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; rate?: 'shuyou' }
+interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; rate?: 'shuyou' | 'seika' }
 const { mini = false, plan = true, goal = false, rm = false, rate } = Astro.props;
 ---
 <ul class="chart-key seika-key" aria-hidden={rate ? undefined : 'true'}>
@@ -20,6 +20,7 @@ const { mini = false, plan = true, goal = false, rm = false, rate } = Astro.prop
   {goal && <li aria-hidden={rate && 'true'}><span class="k-ring"></span>ゴール</li>}
   <li aria-hidden={rate && 'true'}><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
   {rate === 'shuyou' && <li class="k-rate">右の数: <Term word="主要指標の達成率" label="達成率" /></li>}
+  {rate === 'seika' && <li class="k-rate">右の札: <Term word="達成率" /></li>}
 </ul>
 
 <style>

@@ -1,18 +1,21 @@
 ---
-// ページの頭のステッカー（将来像・部局）に並べる、件数の丸い札。押すと、その一覧（さがすのページやページの中の節）へ行く
+// ページの頭のステッカー（将来像・部局）に並べる、件数の丸い札。押すと、その一覧（さがすのページやページの中の節）へ行く。
+// asOf は、ページの数が何年度の報告かを頭で1回だけ書く（節の見出しや札ごとに年度を書かないため）
 import { fmt } from '../lib/format.ts';
 
-interface Props { items: { label: string; n: number; href: string; note?: string }[] }
-const { items } = Astro.props;
+interface Props { items: { label: string; n: number; href: string; note?: string }[]; asOf?: string }
+const { items, asOf } = Astro.props;
 ---
 <div class="head-stats">
   {items.map((it) => <a href={it.href}>{it.label} <b class="big">{fmt(it.n)}</b>{it.note && <small>（{it.note}）</small>}</a>)}
+  {asOf && <span class="as-of">{asOf}</span>}
 </div>
 
 <style>
-  .head-stats { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+  .head-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
   a { display: inline-flex; align-items: baseline; gap: 6px; color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 2px 14px; font-size: 0.9375rem; }
   a:hover { background: var(--sky); }
   b { font-size: 1.15rem; }
   small { font-size: 0.8125rem; color: var(--ink-2); }
+  .as-of { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
 </style>
