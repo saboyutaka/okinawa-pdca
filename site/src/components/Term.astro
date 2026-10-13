@@ -4,7 +4,8 @@
 // class は見た目を変えるとき（「このサイト独自の分類」の印 .own を、押すと「くらしのテーマ」の説明が出るボタンにするなど）。
 // brief はページに置いた <template> の id で、用語の説明（lib/terms.ts）の代わりにその中身（短い説明と区分の一覧など）を出す。
 // 将来像のページの、凡例の代わりの「達成率」「順調」（説明の全文は吹き出しの「用語の一覧」から）
+// Tab では止まらない（説明の全文は「用語の一覧」で読める）
 interface Props { word: string; label?: string; note?: string; class?: string; brief?: string }
 const { word, label, note, class: className, brief } = Astro.props;
 ---
-<button type="button" class:list={['term', className]} data-term={word} data-term-note={note || undefined} data-term-brief={brief} aria-expanded="false" aria-controls="termpop">{label ?? word}</button>
+<button type="button" class:list={['term', className]} data-term={word} data-term-note={note || undefined} data-term-brief={brief} aria-expanded="false" aria-controls="termpop" tabindex="-1">{label ?? word}</button>
