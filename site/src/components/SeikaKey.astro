@@ -7,13 +7,14 @@
 // rm は観光ロードマップの一覧の図（RmSeikaSpark）。横は R4〜R6 で、計画期間が1つなので地の色は無い
 // rate は、行の右の数が何かを、行ごとに書かずにここで1回だけ書く（shuyou は主要指標の達成率）。行の読み上げ用の文に達成率があるので
 // 読み上げは図の凡例と同じく外し、用語の説明のボタンだけを押せるように残す
+// of は、一覧の上の「図（R4〜R9）:」の前に何の図かを書く（将来像のページの凡例の箱で、棒の凡例と並べるとき。「主要指標の」）
 import Term from './Term.astro';
 
-interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; rate?: 'shuyou' }
-const { mini = false, plan = true, goal = false, rm = false, rate } = Astro.props;
+interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; rate?: 'shuyou'; of?: string }
+const { mini = false, plan = true, goal = false, rm = false, rate, of = '' } = Astro.props;
 ---
 <ul class="chart-key seika-key" aria-hidden={rate ? undefined : 'true'}>
-  {mini && <li aria-hidden={rate && 'true'}>図（{rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
+  {mini && <li aria-hidden={rate && 'true'}>{of}図（{rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
   {mini && !rm && <li aria-hidden={rate && 'true'}><span class:list={['k-band', goal && 'on-frame']}></span>前期（R4〜R6）</li>}
   {plan && <li aria-hidden={rate && 'true'}><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴール）</li>}
   {goal && <li aria-hidden={rate && 'true'}><span class="k-start"></span>スタート</li>}

@@ -658,7 +658,7 @@ export function seikaGroupOf(row: SeikaRow) {
 export const DELAYS: ReadonlySet<string | null | undefined> = new Set(['やや遅れ', '大幅遅れ', '未着手']);
 
 // 取組の4年間の様子。statuses は年度の順の進捗状況（報告の無い年度は null）。
-// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・将来像と部局の「前の年度からの変化」・トップの文章・テーマと部局の件数で、
+// 取組をさがすの「4年間の様子」（/torikumi/data.json の patterns）・部局の「前の年度からの変化」・トップの文章・テーマと部局の件数で、
 // 同じ数え方を使う（ページごとに書くと、数とリンク先の件数がずれるため）
 type Statuses = (string | null)[];
 const isDelay = (x: string | null | undefined) => DELAYS.has(x);
