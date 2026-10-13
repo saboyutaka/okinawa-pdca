@@ -53,8 +53,7 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
 </figure>
 
 <style>
-  /* 広い画面でマスが横に間延びしないよう、図の幅を抑える */
-  .matrix-fig { margin-top: 12px; max-width: 720px; }
+  .matrix-fig { margin-top: 12px; }
   .mx-cap { font-family: var(--font-display); font-weight: 700; margin-bottom: 6px; }
   .mx-xtitle { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); text-align: center; margin-left: calc(2em + 5em + 14px); }
   .mx-body { display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 8px; margin-top: 4px; }

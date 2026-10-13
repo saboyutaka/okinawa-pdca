@@ -112,6 +112,8 @@ const boshu = boshuState();
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
     <ul class="row-list visions">
+      {/* 右の割合が何かを、表の見出しのように1回だけ書く（行の読み上げは棒の文にある） */}
+      <li class="v-head" aria-hidden="true">順調</li>
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
@@ -240,6 +242,7 @@ const boshu = boshuState();
   .v-name { grid-area: name; line-height: 1.5; }
   .vision :global(.chunk) { grid-area: bar; }
   .v-pv { grid-area: pv; justify-self: end; font-size: 1.15rem; line-height: 1.2; }
+  .visions > .v-head { padding-block: 6px; text-align: right; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
   @media (max-width: 640px) {
     .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
