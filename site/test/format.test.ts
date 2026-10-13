@@ -1,7 +1,7 @@
 // 数・割合・金額の書き方（lib/format.js）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fmt, pct, yen } from '../src/lib/format.ts';
+import { band, fmt, pct, yen } from '../src/lib/format.ts';
 
 test('fmt: 3桁ごとに区切り、値が無ければ —', () => {
   assert.equal(fmt(1234567), '1,234,567');
@@ -16,6 +16,12 @@ test('pct: 小数1桁まで。分母が0なら —', () => {
   assert.equal(pct(1, 1), '100.0%');
   assert.equal(pct(0, 5), '0.0%');
   assert.equal(pct(1, 0), '—');
+});
+
+test('band: 割合の幅を「N割台」「N〜M割台」に丸める', () => {
+  assert.equal(band([82.9, 80.1, 81.5, 79.4]), '7〜8割台');
+  assert.equal(band([55.4, 57.1, 56.0]), '5割台');
+  assert.equal(band([50, 59.9]), '5割台'); // 60%未満は5割台
 });
 
 test('yen: 千円単位の金額を、億円・万円・円で書く', () => {

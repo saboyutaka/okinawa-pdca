@@ -1,9 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
-import Donut from '../components/Donut.astro';
+import DonutCard from '../components/DonutCard.astro';
 import Chunk from '../components/Chunk.astro';
 import Term from '../components/Term.astro';
-import ThemeIcon from '../components/ThemeIcon.astro';
+import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
@@ -13,7 +13,7 @@ import {
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
-import { fmt, pct } from '../lib/format.ts';
+import { band, fmt, pct } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
@@ -45,11 +45,6 @@ const trend = YEARS.map((y) => {
   const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
-// 4年間の割合の幅を「7〜8割台」のように丸めて言う（節の頭の文。正確な値は図と表にある。良い・悪いは言わない）
-const band = (vals: number[]) => {
-  const [lo, hi] = [Math.floor(Math.min(...vals) / 10), Math.floor(Math.max(...vals) / 10)];
-  return lo === hi ? `${lo}割台` : `${lo}〜${hi}割台`;
-};
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -63,22 +58,14 @@ const boshu = boshuState();
       その結果（令和4〜7年度）を、<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
     <div class="donuts">
-      <div class="donut-card">
-        <Donut frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} />
-        <div>
-          <div class="dc-title"><span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span></div>
-          <div class="dc-sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(latestGroups.length)}件</span></div>
-          <a class="dc-more" href="/torikumi/">取組をさがす<span aria-hidden="true"> →</span></a>
-        </div>
-      </div>
-      <div class="donut-card">
-        <Donut frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} />
-        <div>
-          <div class="dc-title"><span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span></div>
-          <div class="dc-sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(latestSeika.length)}指標</span></div>
-          <a class="dc-more" href="/shihyou/">成果指標をさがす<span aria-hidden="true"> →</span></a>
-        </div>
-      </div>
+      <DonutCard plain frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} more={{ href: '/torikumi/', label: '取組をさがす' }}>
+        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
+        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(latestGroups.length)}件</span></Fragment>
+      </DonutCard>
+      <DonutCard plain frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} more={{ href: '/shihyou/', label: '成果指標をさがす' }}>
+        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
+        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(latestSeika.length)}指標</span></Fragment>
+      </DonutCard>
     </div>
   </section>
 
@@ -95,16 +82,7 @@ const boshu = boshuState();
   <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
     <p class="small secondary lead">くらしの{getThemes().length}の分野ごとに、県の施策・取組・成果指標をまとめて見られます。</p>
-    <ul class="themes sticker">
-      {getThemes().map((t) => (
-        <li>
-          <a class="theme inset" href={`/theme/${t.id}/`}>
-            <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-            <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <ThemeTiles items={getThemes().map((t) => ({ id: t.id, label: t.label, href: `/theme/${t.id}/` }))} />
     <p class="small more-link"><a href="/theme/">テーマを一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
@@ -196,20 +174,6 @@ const boshu = boshuState();
   }
   .hero .lead { font-size: 1rem; }
   .pdf-n { font-size: 1.2rem; margin-inline: 1px; }
-  .donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
-  /* ヒーローの中の箱なので線と影は付けず、白い地だけで分ける */
-  .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--paper); border-radius: 16px; padding: 14px 16px; }
-  .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
-  .dc-title .nw { display: inline-block; } /* 問いは文節の切れ目でだけ折り返す（「た？」だけが次の行に残らないように） */
-  .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
-  .dc-n { display: block; font-family: var(--font-num); font-weight: 600; white-space: nowrap; }
-  /* 円グラフの札は全体を押すと一覧を開く（良いものだけに絞らず、絞り込む前の一覧。中の用語の説明のボタンは上に出して押せるまま） */
-  .donut-card { position: relative; }
-  .donut-card:has(.dc-more:hover) { background: color-mix(in oklab, var(--sky) 45%, var(--paper)); }
-  .dc-more { display: inline-block; margin-top: 6px; font-size: 0.875rem; font-weight: 700; }
-  .dc-more::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-  .donut-card :global(.term) { position: relative; z-index: 1; }
-  @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
 
   .search { margin-top: 24px; display: grid; gap: 8px; }
   .search label { font-family: var(--font-display); font-weight: 700; }
@@ -222,16 +186,6 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  /* テーマは1つのステッカーに、アイコンと名前だけのタイル（線も影も無い .inset）を同じ幅で並べる。
-     札ごとに線と影を付けると数が多くて落ち着かないため。施策の数と判定の内訳はテーマの一覧 /theme/ に */
-  .themes { list-style: none; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
-  .theme { display: flex; align-items: center; gap: 8px; height: 100%; padding: 6px 10px 6px 6px; color: var(--ink); text-decoration: none; }
-  .theme:hover { background: var(--sky); }
-  .ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pink); }
-  .ico :global(.theme-ic) { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
-  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す */
-  @media (max-width: 520px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; } .nm { font-size: 0.875rem; } }
   .more-link { margin: 10px 0 0; }
 
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
