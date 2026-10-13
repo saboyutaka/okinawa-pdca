@@ -247,6 +247,22 @@ function jaNum(text: string) {
   return scale == null || /\d/.test(unit) ? null : { value, scale, unit };
 }
 
+// 1つの指標のスタート・いま・ゴールの値の位をそろえる。県の印字は同じ指標の中でも位がまちまち（「32,866億円 → 3兆4,517億円」）なので、
+// 同じ単位の数の値で位が違うときは、いちばん小さい位に書き直す（「3兆4,517億円」→「34,517億円」）。割り切れないもの・文の値は印字のまま。画面に出すときだけ
+const intFmt = new Intl.NumberFormat('ja-JP');
+export function sameScale(texts: string[]): string[] {
+  const ns = texts.map((t) => jaNum(t));
+  const nums = ns.filter((n): n is NonNullable<typeof n> => n != null);
+  if (nums.length < 2 || new Set(nums.map((n) => n.unit.normalize('NFKC'))).size > 1) return texts;
+  const to = Math.min(...nums.map((n) => n.scale));
+  return texts.map((t, i) => {
+    const n = ns[i];
+    if (!n || n.scale === to) return t;
+    const v = n.value / to;
+    return Math.abs(v - Math.round(v)) < 1e-6 ? `${intFmt.format(Math.round(v))}${MULT_NAME[to] ?? ''}${n.unit}` : t;
+  });
+}
+
 // 欄の値。数と単位の後ろが括弧（基準年・「速報値」など。PDF で途中で切れて閉じていないものも）だけなら、括弧を note に分けて数を読む。
 // 文章の値（「可能な限り減少させる」など）や、1つの欄に値が並ぶもの（「1,117億円（R３年）農業922億円…」）は value が null
 type NumCell = { text: string; note: string; value: number; scale: number; unit: string };

@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouBinOf, shuyouRateText, shouraizouName,
+  shuyouBin, shuyouBinOf, shuyouRateText, shouraizouName, sameScale,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -334,6 +334,16 @@ test('shuyouBin: 主要指標の達成状況の区分は、概要版の達成率
     [null, '-', 'その他'], [null, '‐', 'その他'], [null, '－', 'その他'],
   ];
   for (const [rate, rate_raw, bin] of cases) assert.equal(shuyouBin({ rate, rate_raw }), bin, rate_raw);
+});
+
+test('sameScale: 1つの指標の値の位を、いちばん小さい位にそろえる（割り切れないもの・単位の違うもの・文の値は印字のまま）', () => {
+  assert.deepEqual(sameScale(['32,866億円', '3兆4,517億円', '37,335億円']), ['32,866億円', '34,517億円', '37,335億円']);
+  assert.deepEqual(sameScale(['3兆2,885億円', '34,516億円', '3兆9,021億円']), ['32,885億円', '34,516億円', '39,021億円']);
+  assert.deepEqual(sameScale(['8,060億92百万円', '1兆円', '9,000億円']), ['8,060億92百万円', '10,000億円', '9,000億円']);
+  assert.deepEqual(sameScale(['1億2,345.67万人', '9,000万人']), ['1億2,345.67万人', '9,000万人']); // 12,345.67万人は割り切れないので印字のまま
+  assert.deepEqual(sameScale(['1,084.0万人', '2,941.4万人', '2,715.8万人']), ['1,084.0万人', '2,941.4万人', '2,715.8万人']);
+  assert.deepEqual(sameScale(['3兆円', '5,000万t']), ['3兆円', '5,000万t']);
+  assert.deepEqual(sameScale(['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']), ['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']);
 });
 
 test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果指標の達成率の区分にそろえる', () => {
