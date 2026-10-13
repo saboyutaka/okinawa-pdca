@@ -2,14 +2,12 @@
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Sz from '../../components/Sz.astro';
-import Chunk from '../../components/Chunk.astro';
 import Term from '../../components/Term.astro';
 import Chip from '../../components/Chip.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import {
   LATEST, yearLong, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika,
 } from '../../lib/data.ts';
-import { pct } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
@@ -24,7 +22,7 @@ const visions = getShouraizou().map((v) => {
   return {
     ...v,
     n: t.length,
-    ok: t.filter((x) => x.status === '順調').length,
+    counts: countBy(t, statusOf, statusKeys),
     shisaku: ss.length,
     seika: seika.filter((x) => x.shisaku_id.startsWith(`${v.id}-`)).length,
     rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
@@ -52,16 +50,18 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
   {visions.map((v) => (
     <section class:list={['sticker', 'vision', `sz-${v.id}`]} id={`shouraizou-${v.id}`} aria-labelledby={`h-${v.id}`}>
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} /><span class="sr-only">将来像{v.id}　</span>{v.name}</a></h2>
-      <StatusChart title={`基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} legend={false} end="pct" barLabel={false} table={false} />
+      {/* 将来像全体の取組の進捗状況は、図の最後に「全体」の行として、基本施策の行と同じ列にそろえて置く（表の合計の行と同じ置き方） */}
+      <StatusChart title={`基本施策（${v.rows.length}）`} categories={STATUSES} rows={v.rows} legend={false} end="pct" barLabel={false} table={false}
+        summary={{ label: '全体', context: `将来像${v.id}の主な取組 `, counts: v.counts }} />
       <div class="v-stats">
         {/* 計画の階層（将来像 → 基本施策 → 施策・取組・成果指標）に合わせ、基本施策の図の下に置く。基本施策の数は図の見出しにある。
-            札は押すとその将来像で絞った一覧を開く。順調の割合は取組の札のすぐ後ろに置き、何の割合かを並びで読ませる */}
+            札は押すとその将来像で絞った一覧を開くので、何の札かを頭に1回だけ書く */}
+        <span class="v-l">この将来像でさがす:</span>
         <HeadStats items={[
           { label: '施策', n: v.shisaku, href: `/shisaku/?s=${v.id}` },
           { label: '成果指標', n: v.seika, href: `/shihyou/?s=${v.id}` },
           { label: '取組', n: v.n, href: `/torikumi/?s=${v.id}` },
         ]} />
-        <span class="v-ok"><span class="sr-only">主な取組のうち</span>順調 <b class="big">{pct(v.ok, v.n)}</b><Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件`} thin /></span>
       </div>
     </section>
   ))}
@@ -84,11 +84,14 @@ const legend = STATUSES.filter((c) => visions.some((v) => v.rows.some((r) => (r.
   .v-h { margin: 0; font-size: 1.15rem; }
   .v-h .sz-ribbon { display: inline-flex; color: var(--ink); text-decoration: none; background: var(--paper); }
   .v-h .sz-ribbon:hover { text-decoration: underline; }
-  .v-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; font-size: 0.9375rem; }
-  .v-stats b { font-size: 1.15rem; white-space: nowrap; }
-  .v-ok { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-left: 12px; }
-  .v-ok :global(.chunk) { width: 120px; }
-  /* 札と「順調」を1つの並びで折り返す（スマホで取組の札と順調の割合が離れないように） */
+  .v-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; }
+  .v-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
+  /* 言葉と札を1つの並びで折り返す。スマホでは言葉を1行目に置き、札3つを2行目に1行で並べる（札が1つだけ言葉の横に残らないように） */
   .v-stats :global(.head-stats) { display: contents; }
-  @media (max-width: 520px) { .v-ok { margin-left: 0; } .v-ok :global(.chunk) { width: 80px; } }
+  @media (max-width: 520px) {
+    .v-stats { gap: 6px; }
+    .v-l { width: 100%; }
+    .v-stats :global(.head-stats a) { padding: 2px 10px; gap: 4px; font-size: 0.875rem; }
+    .v-stats :global(.head-stats b) { font-size: 1.05rem; }
+  }
 </style>
