@@ -11,7 +11,7 @@
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
   - `JUDGE_CELLS`: 判定の区分表（[data.md](data.md) の 6.3）。判定のマス目（`components/JudgeMatrix.astro`）と、印字された判定が区分表どおりかを確かめるテストが使う。
   - `shisakuDepts`: 部局がかかわる施策（関係部等に名前がある施策と、その部局の取組がある施策）。
-  - `SHUYOU_BINS`・`shuyouBin`: 主要指標の達成状況の区分（概要版の達成率の印字で決める。`scripts/check_extracted.py` の `shuyou_bin` と同じ）。`getShuyouStatus` が最新の年度の概要版の行に、区分・報告年度ごとの値（`series`。最新の年度は概要版、それより前は付属資料の部分の値で、付属資料の欄を分けられない指標は同じ年度の概要版で補う）・基本施策ページのその指標のカードへのリンクを付ける。トップと将来像ページの主要指標の図が使う。
+  - `SHUYOU_BINS`・`shuyouBin`: 主要指標の達成状況の区分（概要版の達成率の印字で決める。`scripts/check_extracted.py` の `shuyou_bin` と同じ）。`getShuyouStatus` が最新の年度の概要版の行に、区分・報告年度ごとの値（`series`。最新の年度は概要版、それより前は付属資料の部分の値で、付属資料の欄を分けられない指標は同じ年度の概要版で補う）・基本施策ページのその指標のカードへのリンクを付ける。将来像ページの主要指標の図が使う。
   - `getShouraizou`: 将来像の名前は語尾の「を目指して」を外して出す（`shouraizouName`。総括報告書の付属資料は章の見出しの形「〜島を目指して」で印字しているが、基本計画の概念図などでは将来像そのものを「〜島」と呼ぶため。`data/extracted` は印字のまま）。
   - `countJudges`: 施策の最新の年度の判定の内訳（A〜G と判定なし）。判定のマス目（トップ・将来像・部局・テーマ）と、ページの説明文（6章）が使う。
   - `lib/heads.ts`: ページの頭に出す最新の年度の数（施策・基本施策・将来像・くらしのテーマ・部局ごとの、施策の判定・主な取組の進捗状況・成果指標の達成率の内訳）。ページの説明文と SNS のカードの画像（6章）が使い、ページの判定のマス目も同じ数を出す。
@@ -24,7 +24,7 @@
 - ページ用の形（`Shisaku`・`TorikumiGroup`・`SeikaGroup`・`KankoShisaku` など）は `lib/data.ts`・`lib/plans.ts` が出す。コンポーネントの `Props` はこれを使い、`any` にしない。状態の色と形は `lib/icons.ts` の `Tone`・`Shape`。
 - 動的なページは `getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。`getStaticPaths` はページに書かず、`lib/routes.ts` の `ROUTES` に書く（8章）。
 - ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図は `scripts/charts.ts` の `SeikaData`・`TrendData`・`KatsudouData`、取組の検索は `lib/search-data.ts` の `SearchData`）。
-- 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。
+- 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。「別のタブで開きます」はリンクの中の文字にせず、`layouts/Base.astro` に1つだけ置いた隠した文を `aria-describedby` で指す（文をコピーしたときに付いてこないように）。リンクのすぐ後ろに「」」「）」が続くときは `after="」"` で渡す（印の後ろで折り返して、閉じかっこが行の頭に来ないように）。
 
 ## 3. lib とスクリプト
 
@@ -44,7 +44,7 @@
 
 ## 4. ページ
 
-トップ、`/theme/<id>/`（くらしのテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。公開した URL は変えない（8章）。
+トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 

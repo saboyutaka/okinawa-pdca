@@ -4,14 +4,16 @@
 // C・D は達成率40%未満の列を「順調」の割合80%で分ける。マスを押すと、その判定の施策の一覧を開く。
 // 判定の意味はマスの短い言い方と縦横の見出しで読めるので、凡例は付けない（C と D の違いは行、E と F の違いは列で分かる）
 // スマホでは縦書きの軸の名前が長くて窮屈なので、横書きにして「よこ」「たて」を付け、マス目の上に2行で並べる。
-// マスにマウスを乗せる・フォーカスすると、そのマスが入る行と列の見出し（取組○%・成果○%）を光らせ、なぜその判定かをマス目だけで読めるようにする
+// 行と列の見出しは割合だけにし、何の割合かは軸の名前で1回だけ書く。マスの数の単位（施策）は図の題（caption）に任せる。
+// マスにマウスを乗せる・フォーカスすると、そのマスが入る行と列の見出し（○%）を光らせ、なぜその判定かをマス目だけで読めるようにする
 // （見出しの r2〜r4・c2〜c4 と、マスの on-r2〜on-c4。A・B は2行にまたがる）
 import Icon from './Icon.astro';
 import { judgeOf, JUDGE_CELLS } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
 import { fmt } from '../lib/format.ts';
 
-interface Props { counts: Record<string, number>; caption: string; hrefOf?: (key: string) => string }
+// caption は図の題（「将来像1の58施策」など。マスの数の単位も兼ねる）。トップは節の頭の文に施策の判定と書くので付けない
+interface Props { counts: Record<string, number>; caption?: string; hrefOf?: (key: string) => string }
 const { counts, caption, hrefOf = (k) => `/shisaku/?judge=${k}` } = Astro.props;
 const AX = ['80%以上', '40〜80%', '40%未満'];
 // マス目の中の位置（行・列は見出しの1行・1列を含めて数える）。範囲と説明は lib/data.ts の JUDGE_CELLS（区分表）
@@ -21,15 +23,15 @@ const PLACE: Record<string, { row: number; col: number; span: number }> = {
 };
 const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x: c.xText }));
 ---
-<figure class="matrix-fig sticker">
-  <figcaption class="mx-cap">{caption}</figcaption>
+<figure class="matrix-fig sticker" aria-label={caption ? undefined : '施策の判定の区分表と件数'}>
+  {caption && <figcaption class="mx-cap">{caption}</figcaption>}
   <div class="mx-xtitle" aria-hidden="true"><span class="mx-ax">よこ</span><span>成果指標の達成率<span class="nw">（左ほど高い）</span></span></div>
   <div class="mx-body">
     <div class="mx-ytitle" aria-hidden="true"><span class="mx-ax">たて</span><span>主な取組のうち「順調」の割合<span class="nw">（上ほど高い）</span></span></div>
     <div class="matrix">
       <div class="mx-hd" style="grid-row: 1; grid-column: 1;" aria-hidden="true"></div>
-      {AX.map((a, i) => <div class={`mx-hd c${i + 2}`} style={`grid-row: 1; grid-column: ${i + 2};`} aria-hidden="true">成果<br />{a}</div>)}
-      {AX.map((a, i) => <div class={`mx-hd r${i + 2}`} style={`grid-row: ${i + 2}; grid-column: 1;`} aria-hidden="true">取組<br />{a}</div>)}
+      {AX.map((a, i) => <div class={`mx-hd c${i + 2}`} style={`grid-row: 1; grid-column: ${i + 2};`} aria-hidden="true">{a}</div>)}
+      {AX.map((a, i) => <div class={`mx-hd r${i + 2}`} style={`grid-row: ${i + 2}; grid-column: 1;`} aria-hidden="true">{a}</div>)}
       {CELLS.map(({ k, row, col, span, y, x }) => {
         const j = judgeOf(k)!;
         const ui = JUDGE_UI[k];
@@ -41,9 +43,8 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
             href={hrefOf(k)}
             aria-label={`${k} ${j.label}、${fmt(n)}施策。主な取組の順調の割合 ${y}、成果指標の達成率 ${x}。この判定の施策の一覧を開く`}
           >
-            <span class="mk"><Icon tone={j.tone} shape={ui.shape} size={16} />{k}</span>
-            <span class="ms">{ui.short}</span>
-            <span class="mn">{fmt(n)}<small>施策</small></span>
+            <span class="mh"><span class="mk"><Icon tone={j.tone} shape={ui.shape} size={14} />{k}</span><span class="ms">{ui.short}</span></span>
+            <span class="mn">{fmt(n)}</span>
           </a>
         );
       })}
@@ -67,28 +68,28 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
   }
   @media (prefers-reduced-motion: no-preference) { .mx-hd { transition: background-color 0.12s, color 0.12s, box-shadow 0.12s; } }
   .mcell {
-    display: grid; align-content: start; gap: 2px; min-height: 100px; padding: 10px 12px; border-radius: 16px; color: var(--ink); text-decoration: none;
+    display: grid; align-content: start; gap: 2px; min-height: 64px; padding: 6px 10px; border-radius: 12px; color: var(--ink); text-decoration: none;
     background-color: color-mix(in oklab, var(--tone) 22%, var(--paper)); border: 2px solid var(--line);
   }
   a.mcell { --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); }
   a.mcell:hover { background-color: color-mix(in oklab, var(--tone) 38%, var(--paper)); }
   a.mcell:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
   .mcell.hatch { background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--tone) 42%, var(--paper)) 0 2px, transparent 2px 7px); }
-  .mk { display: flex; align-items: center; gap: 6px; font-family: var(--font-num); font-size: 1.3rem; font-weight: 600; }
+  .mh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  .mk { display: flex; align-items: center; gap: 5px; font-family: var(--font-num); font-size: 1.1rem; font-weight: 600; }
   .ms { font-family: var(--font-display); font-size: 0.8125rem; line-height: 1.4; font-weight: 700; }
-  .mn { font-family: var(--font-num); font-size: 1.6rem; font-weight: 600; line-height: 1.1; margin-top: auto; white-space: nowrap; }
-  .mn small { font-family: var(--font); font-size: 0.8125rem; font-weight: 700; margin-left: 2px; }
+  .mn { font-family: var(--font-num); font-size: 1.35rem; font-weight: 600; line-height: 1.1; margin-top: auto; white-space: nowrap; }
   @media (max-width: 600px) {
-    .matrix { grid-template-columns: 3.4em repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .matrix { grid-template-columns: 4em repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .mx-hd { white-space: nowrap; font-size: 0.75rem; }
     /* 折り返したときは「よこ」「たて」の札の右にそろえる */
     .mx-xtitle, .mx-ytitle { display: flex; align-items: baseline; writing-mode: horizontal-tb; justify-self: start; text-align: left; margin-left: 0; letter-spacing: 0; line-height: 1.5; }
     .nw { white-space: nowrap; }
     .mx-body { grid-template-columns: minmax(0, 1fr); gap: 2px; margin-top: 0; }
     .matrix { margin-top: 8px; }
     .mx-ax { display: inline-block; flex: none; font-size: 0.75rem; color: var(--ink); background: var(--bg); border-radius: 6px; padding: 0 6px; margin-right: 6px; }
-    .mcell { min-height: 84px; padding: 8px; }
+    .mcell { min-height: 64px; padding: 6px 8px; }
     .ms { font-size: 0.75rem; line-height: 1.35; }
-    .mn { font-size: 1.2rem; }
-    .mn small { margin-left: 1px; font-size: 0.75rem; }
+    .mn { font-size: 1.15rem; }
   }
 </style>

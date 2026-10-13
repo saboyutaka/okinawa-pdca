@@ -166,7 +166,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
     </p>
     <p>
       施策は事業ごとの検証シートに書かれた施策のコードで結び付けています。主な取組とは結び付けていません（同じ事業でも名前や単位が違い、1つの事業が複数の取組にまたがることがあるため）。
-      出典: 沖縄県「<ExtLink href={LINKS.ikkatsu}>{IKKATSU.name}</ExtLink>」（{sources.map((s, i) => <>{i > 0 && '・'}<ExtLink href={s.href}>{yearLabel(s.year)}の総括表</ExtLink></>)}）。
+      出典: 沖縄県「<ExtLink href={LINKS.ikkatsu} after="」">{IKKATSU.name}</ExtLink>（{sources.map((s, i) => <>{i > 0 && '・'}<ExtLink href={s.href}>{yearLabel(s.year)}の総括表</ExtLink></>)}）。
     </p>
   </div>
 </Base>

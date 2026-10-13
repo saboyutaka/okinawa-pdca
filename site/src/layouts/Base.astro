@@ -1,8 +1,9 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { LINKS, PROJECT, SITE, STEALTH } from '../lib/links.ts';
+import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
+import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 import { CARD_SIZE, cardMeta } from '../lib/card.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
@@ -27,9 +28,10 @@ const card = canonical ? cardMeta(path) : null;
 const ogImage = card
   ? { url: absUrl(card.image), ...CARD_SIZE, alt: `${card.alt}（${SITE.name}・非公式）` }
   : { url: absUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
-// サイト内のナビ。計画の体系（将来像 → 施策 → 取組）の順に並べる。くらしのテーマ（このサイト独自の分類）はナビに置かず、トップの節・施策と取組のテーマの札・フッターから入る。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
+// サイト内のナビ。トップはヘッダーのタイトルから戻れるので置かない。県民がふだんの言葉から入れるくらしのテーマ（このサイト独自の分類。一覧 /theme/ のページの頭でそう書く）を先に、
+// 計画の体系（将来像 → 施策 → 取組 → 成果指標）の順に並べ、その後ろに部局・予算を置く。個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV = [
-  { href: '/', label: 'トップ' },
+  { href: '/theme/', label: 'テーマ' },
   { href: '/future/', label: '将来像', also: ['/kihon/'] },
   { href: '/shisaku/', label: '施策' },
   { href: '/torikumi/', label: '取組' },
@@ -38,7 +40,7 @@ const NAV = [
   { href: '/yosan/', label: '予算' },
   { href: '/about/', label: 'このサイトについて' },
 ];
-const inItem = (n: (typeof NAV)[number]) => (n.href === '/' ? path === '/' : [n.href, ...(n.also || [])].some((h) => path.startsWith(h)));
+const inItem = (n: (typeof NAV)[number]) => [n.href, ...(n.also || [])].some((h) => path.startsWith(h));
 // ページの先読み（Speculation Rules）。サイトの中のリンクにマウスを乗せたとき・押し始めたときに、行き先の HTML を先に取っておく。
 // ブラウザが読むだけでスクリプトは要らない（いまは Chrome・Edge が読む。Safari・Firefox は読まず、これまでどおり押してから取る）。
 // 先読みしかしない（行き先のスクリプトまで動かす prerender はしない）。外のサイト（別のタブで開く）と同じページの # は除く。
@@ -123,6 +125,8 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
   </head>
   <body>
     <a class="skip" href="#main">本文へスキップ</a>
+    {/* 外部リンク（components/ExtLink.astro）が aria-describedby で指す、読み上げ用の説明。画面には出さず、コピーにも入らない */}
+    <span id="newtab-note" hidden>別のタブで開きます</span>
     {STEALTH && (
       <aside class="beta-notice" aria-label="ベータ版のお知らせ">
         <p class="wrap"><b>ベータ版</b><span>沖縄県への問い合わせが済むまで、検索エンジンには載せていません。</span></p>
@@ -159,13 +163,13 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
+        {/* ナビに無いページへのリンクと、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
         <ul class="foot-links">
           <li><a href="/iken/">意見を伝えたい人へ</a></li>
-          <li><a href="/#themes">くらしのテーマ</a>（このサイト独自の分類）</li>
           <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
+          <li><a href="/about/#shutten">読み取った資料</a></li>
         </ul>
-        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</p>
+        <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
       </div>
     </footer>
   </body>
