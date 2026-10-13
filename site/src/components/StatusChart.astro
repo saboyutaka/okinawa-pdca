@@ -77,7 +77,13 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   figcaption + .rows { margin-top: 12px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }
-  .no-total { grid-template-columns: minmax(4.5em, max-content) 1fr; }
+  /* 件数の列が無いときは、棒の列の幅を図の幅の割合で決める（名前の長い行があっても棒が細くならないように。長い名前は折り返す） */
+  .no-total { grid-template-columns: minmax(0, 1fr) minmax(160px, 42%); }
+  /* 名前が何行にも折り返す幅では、スマホと同じく名前の下に棒を置く */
+  @media (max-width: 720px) {
+    .no-total:not(.short) { grid-template-columns: 1fr; }
+    .no-total:not(.short) .row { display: grid; gap: 4px; }
+  }
   .row { display: contents; }
   .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
   .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
