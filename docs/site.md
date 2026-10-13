@@ -37,14 +37,14 @@
   - `torikumi-search.ts`: 取組をさがす（`#tf`）の検索と一覧。検索用のデータを読んで一覧を描く（7章）。`shisaku-trend.ts`: 施策の一覧の頭の「判定の移り変わり」のリンクで絞り込みを変える。`like.ts`: いいねのボタン（`components/Like.astro`）。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
-  - `motion.ts`: 動き（[design.md](design.md) の12章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
+  - `motion.ts`: 動き（[design.md](design.md) の8章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
 - CSP（`astro.config.ts` の `security.csp` で各ページの `<meta>` に出す）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
   - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
 ## 4. ページ
 
-トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。ページごとの並びは [design.md](design.md) の 11章。公開した URL は変えない（8章）。
+トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`。`shuyou/` は主要指標の一覧）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 
@@ -76,7 +76,7 @@
 
 - 一覧の行（`.row-list > li`）は `content-visibility: auto` で、画面の外の行を描かない（`styles/global.css`）。成果指標・施策・一括交付金などの一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重いため（スマホ幅でレイアウトのやり直しが 200ms 台から 10〜30ms に減った）。行の中身は行の外へはみ出せないので、吹き出しなどは body に付ける。`make shot` は画面の外まで撮るので、これを外して撮る。
 - ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
-- 動き（[design.md](design.md) の12章）は見た目だけを動かし（transform・opacity などで、レイアウトのやり直しをしない）、読み込んだときの動き（ドーナツ・スタンプ）は CSS だけで動かす（スクリプトの読み込みを待たず、止まっても必ず終わる）。外のライブラリは使わない。足したとき（2026-10）は、CPU を4倍遅くしたスマホ幅と PC 幅で、トップ・施策・将来像・成果指標をさがす・取組をさがすの CLS・LCP・長いタスク・50ms を超えたコマの数を前と比べ、測るたびのぶれの中で変わらないことを確かめた（CLS はどれも 0〜0.012 のまま）。
+- 動き（[design.md](design.md) の8章）は見た目だけを動かし（transform・opacity などで、レイアウトのやり直しをしない）、読み込んだときの動き（ドーナツ・スタンプ）は CSS だけで動かす（スクリプトの読み込みを待たず、止まっても必ず終わる）。外のライブラリは使わない。足したとき（2026-10）は、CPU を4倍遅くしたスマホ幅と PC 幅で、トップ・施策・将来像・成果指標をさがす・取組をさがすの CLS・LCP・長いタスク・50ms を超えたコマの数を前と比べ、測るたびのぶれの中で変わらないことを確かめた（CLS はどれも 0〜0.012 のまま）。
 - ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの検索用データ `data-<ハッシュ>.json` の preload）。
 - 取組をさがすの検索用データは、一覧と絞り込みに使う `data`（gzip で約105KB）と、キーワードで探すときだけ使う「やったこと」の `summary`（約96KB）の2つのファイルに分ける（`lib/search-data.ts`）。1つだったとき（約200KB）は、Slow 4G で読むだけで約1秒かかり、そのあいだ最初の一覧が出なかった。
   - `summary` はキーワードの欄に入ったとき（クエリに `q` があるときは初めから `data` と一緒に）読む。最初の一覧は `summary` を待たない。届くまではキーワードで探さず、件数を「読み込み中…」にする（一覧はそのまま）。読めなかったときは名前などだけで探し、件数の横にそう書く。
