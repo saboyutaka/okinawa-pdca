@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias,
+  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -280,4 +280,11 @@ test('最新の年度の一括交付金の事業の担当部局には、どれ�
   // R4 で終わった事業には、R5 の再編の前の部局（保健医療部など）のものがある
   const latest = ikkatsuGroups().filter((g) => g.years[IKKATSU_LATEST]);
   none(latest.filter((g) => g.latest.dept && !deptHref(ikkatsuDept(g.latest.dept))), (g) => `${g.latest.name}: ${g.latest.dept}`);
+});
+
+test('将来像の名前は、印字の「〜島を目指して」から語尾を外した「〜島」になる（lib/data.ts の shouraizouName）', () => {
+  const printed = load('shouraizou').filter((s) => s.year === LATEST);
+  assert.equal(printed.length, 5);
+  assert.ok(printed.every((s) => s.name.endsWith('島を目指して')), '報告書の印字の形が変わったら shouraizouName を見直す');
+  assert.ok(getShouraizou().every((v) => v.name.endsWith('島')));
 });

@@ -6,10 +6,16 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouRateText,
+  shuyouBin, shuyouRateText, shouraizouName,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
+
+test('shouraizouName: 将来像の名前は語尾の「を目指して」を外す（途中の「目指して」は残す）', () => {
+  assert.equal(shouraizouName('心豊かで、安全・安心に暮らせる島を目指して'), '心豊かで、安全・安心に暮らせる島');
+  assert.equal(shouraizouName('世界に開かれた交流と共生の島'), '世界に開かれた交流と共生の島');
+  assert.equal(shouraizouName('〜を目指して進める島'), '〜を目指して進める島');
+});
 
 test('年度の書き方', () => {
   assert.equal(yearLabel(2025), 'R7');
