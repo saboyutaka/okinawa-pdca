@@ -53,12 +53,13 @@ Cloudflare は、配信のときに各ページの `</body>` の前へスクリ�
 | 何を | CSP では | 理由 |
 |---|---|---|
 | アクセス解析（Web Analytics）の `<script src="https://static.cloudflareinsights.com/…">`（6章） | 許す（`script-src` にホストを足してある） | 外のファイルを読むだけなので、ホストで許せる |
-| ボット検出（[JavaScript detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)）のインラインの `<script>`。隠した iframe を作り、`/cdn-cgi/challenge-platform/scripts/jsd/main.js` を読み込む | 止まる | 中身にリクエストごとの値（`window.__CF$cv$params={r:'…',t:'…'}`）が入るので、ハッシュでは許せない。Cloudflare は CSP の nonce をレスポンスヘッダーからしか読まず、`<meta>` の CSP には対応していない |
+| ボット検出（[JavaScript detections](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/)）のインラインの `<script>`。隠した iframe を作り、`/cdn-cgi/challenge-platform/scripts/jsd/main.js` を読み込む | 許せない（なので、ゾーンの設定で切ってある） | 中身にリクエストごとの値（`window.__CF$cv$params={r:'…',t:'…'}`）が入るので、ハッシュでは許せない。Cloudflare は CSP の nonce をレスポンスヘッダーからしか読まず、`<meta>` の CSP には対応していない |
 
-- ボット検出のスクリプトが止まると、ブラウザのコンソールに `Executing inline script violates the following Content Security Policy directive 'script-src …'` が出る。ボット検出が動かないだけで、ページの表示や動きには影響しない。
-- Cloudflare の docs では、JS detections を切れるのは Super Bot Fight Mode（Pro 以上）と Enterprise の Bot Management で、Bot Fight Mode では常に有効で切れない。このゾーンは Free で、Bot Fight Mode を切ってあっても差し込まれている（2026-10-12 に確かめた。ブラウザでなくても、`curl -s https://okinawa-miraima.com/ | grep -c challenge-platform` が 1）。
-- 許すために `'unsafe-inline'` は足さない（ハッシュがあると無視されるうえ、データに混ざったスクリプトも動いてしまう）。nonce を使うには、ページを Worker で配ってリクエストごとに CSP のヘッダーを作ることになるので、そこまではしない。
-- `make shot` で `--base` を付けて本番を撮るとこのエラーが出るので、差し込まれたスクリプトのハッシュを名指しした CSP のエラーだけは NG に数えない（`scripts/shot/shot.ts`）。ほかの CSP のエラーは NG のまま。
+- ボット検出は、ゾーンのボットの設定の `enable_js` を `false` にして切ってある（2026-10-13）。ダッシュボードには切るスイッチが無く（Cloudflare の docs でも、切れるのは Super Bot Fight Mode と Enterprise とされている）、Free のゾーンでは Bot Fight Mode を切っても `enable_js` が `true` のまま残って差し込まれていた。API なら Free でも切れる。`cf`（Cloudflare の CLI）で `cf bot-management get -z okinawa-miraima.com` で見て、`cf bot-management update -z okinawa-miraima.com --enable-js=false` で切る（送るのは `enable_js` だけで、ほかの項目は変わらない）。
+- このゾーンはボットを止めるルール（Bot Fight Mode・WAF）を使っていないので、ボット検出を切っても守りはほぼ変わらない。
+- 差し込まれていると、ブラウザのコンソールに `Executing inline script violates the following Content Security Policy directive 'script-src …'` が出る（ボット検出が動かないだけで、ページの表示や動きには影響しない）。Bot Fight Mode を入れるなどで `enable_js` が `true` に戻ると、また出る。
+- 許すために `'unsafe-inline'` は足さない（ハッシュがあると無視されるうえ、データに混ざったスクリプトも動いてしまう）。nonce を使うには、ページを Worker で配ってリクエストごとに CSP のヘッダーを作ることになり、全ページが Worker の無料の上限に数えられるので、そうはしない。
+- `make shot` で `--base` を付けて本番を撮ると、CSP のエラーはどれも NG になる（差し込まれたスクリプトのものも）。確かめ方: `curl -s -H 'Accept: text/html' https://okinawa-miraima.com/ | grep -c challenge-platform` が 0。
 
 ## 4. ドメイン
 
@@ -91,7 +92,7 @@ Cloudflare の静的アセットは、何も書かなければ `Cache-Control: p
 ページの閲覧数（PV）・訪問・よく見られるページ・どこから来たかは、[Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/)（無料・Cookie を使わない）で見る。ダッシュボードの「Web Analytics」で okinawa-miraima.com を自動で差し込む設定（automatic setup）にしてあり、Cloudflare が配信のときに各ページの `</body>` の前へ計測のスクリプト（`https://static.cloudflareinsights.com/beacon.min.js/v…`）を足す。サイトのコードには入れていない。
 
 - CSP の `script-src` に `https://static.cloudflareinsights.com` を足してある（`site/astro.config.ts`）。差し込まれる URL は版で変わるので、ホストで許す。計測の送り先は同じドメインの `/cdn-cgi/rum` なので、`default-src 'self'` で足りる。
-- 同じところに、ボット検出のインラインのスクリプトも差し込まれる。こちらは CSP に止められ、コンソールにエラーが出る（3章）。計測には関わらない。
+- 同じ仕組みで差し込まれるボット検出のスクリプトは、CSP と合わないのでゾーンの設定で切ってある（3章）。計測には関わらない。
 - 差し込まれるのは `Accept: text/html` を付けたリクエスト（ブラウザ）のときだけ。`curl` の既定（`Accept: */*`）では入らない。手元（`make dev`・`make build`）でも入らないので、計測されない。
 - ゾーンの「Analytics & Logs」→「HTTP Traffic」の数（リクエスト・Unique Visitors）は CSS・JS・ボットも含み、Unique Visitors は IP で数えるので多めに出る。人がどのページを見たかは Web Analytics で見る。
 - 確かめ方: `curl -s -H 'Accept: text/html' https://okinawa-miraima.com/ | grep -c cloudflareinsights` が 1。ブラウザの開発者ツールでは、コンソールに CSP の違反が出ず、ネットワークに `/cdn-cgi/rum` への送信があること。

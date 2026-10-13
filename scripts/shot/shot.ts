@@ -18,17 +18,15 @@
 // - ページ全体の画像は縦に長い。画像を読ませて確かめるときは --top や --selector で範囲をしぼる
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
 // - 端末で動きを減らす設定（prefers-reduced-motion: reduce）にして開き、動き（styles/global.css の「動き」）の途中ではなく動き終わった形を撮る
-// - ページの読み込みに失敗したとき・ブラウザでスクリプトのエラーが出たときは表示して、終了コード1。ただし、Cloudflare が
-//   配信のときに差し込むボット検出のスクリプトがページの CSP に止められたエラーは数えない（--base で本番を撮るときに出る。
-//   docs/deploy.md の 3章）
-import { createHash } from 'node:crypto';
+// - ページの読み込みに失敗したとき・ブラウザでスクリプトのエラーが出たときは表示して、終了コード1（--base で本番を撮るときも同じ。
+//   Cloudflare が差し込んだスクリプトが CSP に止められたエラーも NG になる。docs/deploy.md の 3章）
 import { createReadStream } from 'node:fs';
 import { mkdir, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { extname, join, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
-import { chromium, type Page } from 'playwright';
+import { chromium } from 'playwright';
 
 const HELP = `使い方: node scripts/shot/shot.ts [ページのパス ...] [オプション]
   --width <px>       画面の幅（何度でも。初めは 1280 と 390）
@@ -93,15 +91,6 @@ async function serve(dist: string): Promise<{ base: string; close: () => void }>
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   const { port } = server.address() as AddressInfo;
   return { base: `http://127.0.0.1:${port}`, close: () => server.close() };
-}
-
-// Cloudflare のボット検出（JavaScript detections）が差し込むインラインのスクリプトの CSP のハッシュ（'sha256-…'）。
-// 中身にリクエストごとの値が入るのでページの CSP では許せず、止められる。そのスクリプトを名指ししたエラーだけを見分けるのに使う
-async function cloudflareScriptHashes(page: Page): Promise<string[]> {
-  const texts = await page.evaluate(() =>
-    [...document.scripts].filter((s) => !s.src && s.text.includes('/cdn-cgi/challenge-platform/')).map((s) => s.text),
-  );
-  return texts.map((t) => `'sha256-${createHash('sha256').update(t).digest('base64')}'`);
 }
 
 // ページのパスをファイル名にする（/ → top、/shisaku/1-1-a-1/ → shisaku_1-1-a-1）
@@ -225,16 +214,13 @@ try {
       } else {
         await page.screenshot({ path, fullPage: !opts.top });
       }
-      const cf = await cloudflareScriptHashes(page);
-      const real = errors.filter((e) => !(e.includes('Content Security Policy') && cf.some((h) => e.includes(h))));
-      if (real.length) {
+      if (errors.length) {
         failed = true;
         console.error(`NG ${url}（幅 ${width}）`);
-        for (const e of real) console.error(`   ${e}`);
+        for (const e of errors) console.error(`   ${e}`);
       } else {
         console.log(path);
       }
-      if (real.length < errors.length) console.log('   （Cloudflare が差し込んだボット検出のスクリプトが CSP に止められた。NG に数えない）');
       await page.close();
     }
     await context.close();

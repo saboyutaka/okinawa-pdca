@@ -69,7 +69,7 @@ export default defineConfig({
   // frame-ancestors は <meta> では効かないので public/_headers で出す。
   // 外から読み込むのは、Cloudflare が配信のときに差し込むアクセス解析（Web Analytics）のスクリプトだけ。
   // 差し込まれる URL は /beacon.min.js/v… と版で変わるので、ホストで許す。送り先は同じドメインの /cdn-cgi/rum なので 'self' で足りる。
-  // Cloudflare が同じく差し込むボット検出のインラインのスクリプトは、中身がリクエストごとに変わってハッシュで許せないので、止まる（docs/deploy.md の 3章）
+  // Cloudflare が同じく差し込むボット検出のインラインのスクリプトは、中身がリクエストごとに変わってハッシュで許せないので、ゾーンの設定で切ってある（docs/deploy.md の 3章）
   security: {
     csp: {
       directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],
