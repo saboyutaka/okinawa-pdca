@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
-- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（[deploy.md](deploy.md) の 5章）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
+- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。将来像・部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、将来像・部局の「前の年度からの変化」が使う。
@@ -28,7 +28,7 @@
 ## 3. lib とスクリプト
 
 - `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
-- `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の7章）。
+- `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の1章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
 - `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。
   - `charts.ts`: `[data-chart]` の JSON から表示幅に合わせて SVG の図を描く（固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため）。一覧の行の小さな図 `components/SeikaSpark.astro` は文字が無いのでビルド時に SVG にする。
@@ -37,7 +37,7 @@
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
   - `motion.ts`: 動き（[design.md](design.md) の12章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
-- CSP（[deploy.md](deploy.md) の 3章）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ。[deploy.md](deploy.md) の 6章）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
+- CSP（`astro.config.ts` の `security.csp` で各ページの `<meta>` に出す）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
   - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
 
@@ -53,8 +53,8 @@
 
 本番のドメインは `lib/links.ts` の `SITE.url`（https://okinawa-miraima.com/）に1か所で決め、`astro.config.ts` の `site` もこれを使う。URL・sitemap・robots.txt・構造化データを作る関数は `lib/seo.ts`。
 
-- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。プレビューと版ごとの URL（workers.dev。[deploy.md](deploy.md) の2章）・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
-- `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の1章）。
+- 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。プレビューと版ごとの URL（workers.dev。[deploy.md](deploy.md) の3章）・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
+- `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の4章）。
 - 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のカードは、全ページの head に `og:image`（大きさと説明の文も `og:image:width`・`og:image:height`・`og:image:alt` で書く）・`twitter:card`（`summary_large_image`）・`og:locale`（`ja_JP`）を出す。カードの題名と説明の文は、ページの題名と説明文（下の `lib/describe.ts`）をそのまま `og:title`・`og:description` に出す。
 - カードの画像は、施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページ（約2,600）はページごとの画像、ほかのページはサイト共通の画像（`layouts/Base.astro` がページの URL で選ぶ。`lib/card.ts` の `cardMeta`）。
@@ -89,7 +89,7 @@
   - 埋め込んでいたときは、ページごとの CSS（中央値 3.2KB）をページを移るたびに送り直していた。また Astro は、ビルド全体の `<style>` のハッシュ（約40個）をどのページの CSP にも入れる（約2KB。ハッシュは圧縮が効かない）。やめると、HTML（gzip）の中央値が 13.7KB から 11.1KB に、CSP が約3KB から約1KB になった（2026-10-12）。
   - CSS のファイルを分けたまま（Astro の既定）だと、ページの種類ごとに初めて開くときに読む CSS が増え（部局のページで15個）、HTML のあとに CSS をもう1往復待つ。手元で HTTP/2・brotli で配り、スマホ幅・Slow 4G・CPU 4倍で測ると（2026-10-12）、1つにしたときは、最初に開くページの LCP が約50ms 遅く（CSS が大きくなるため）、トップから施策・取組のページに移ったときは約1.3秒から約0.65秒になった（CSS をキャッシュから読むため。埋め込んでいたときも、施策・取組のページは別の CSS のファイルを読んでいた）。
   - CSS が1つなので、部品やページの `<style>` もどのページにも届く。Astro の `<style>` は部品ごとに範囲をしぼる（scoped）ので混ざらないが、`:global()` を単独で書くと全ページに効く。`.x :global(.y)` のように、範囲をしぼった要素の中に書く。
-- 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは [deploy.md](deploy.md) の 5章。
+- 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは `public/_headers`。
 - ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
   - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
   - ナビの横の位置は、前のページの位置を引き継ぐ（`layouts/Base.astro` の `NAV_SCROLL`。sessionStorage の `nav-x`）。端のぼかしもそこで付ける。
@@ -108,9 +108,9 @@ SNS で共有されたリンクや検索エンジンの評価が切れないよ�
 
 URL を変えるとき（テストが落ちたとき）:
 
-1. 公開前（[deploy.md](deploy.md) の1章の noindex を外す前）は、転送は要らない。`make urls PRUNE=1` で、ページも転送も無くなった URL を一覧から消す。
+1. 公開前（[deploy.md](deploy.md) の4章の noindex を外す前）は、転送は要らない。`make urls PRUNE=1` で、ページも転送も無くなった URL を一覧から消す。
 2. 公開した後は、テストが挙げた古い URL ごとに、`site/public/_redirects` に「古い URL 新しい URL 301」の行を足す（Cloudflare の [_redirects](https://developers.cloudflare.com/workers/static-assets/redirects/)）。古い URL は一覧に残し、`make urls` で新しい URL を足す。`PRUNE=1` は使わない。
    - 新しい URL は、同じ取組・指標などの新しいページ。行き先の無くなったページ（取組の終了など）も、近いページ（施策のページなど）へ転送する。
    - `make test` は、状態コードが 301 であること（書かないと 302 になり、検索エンジンが新しい URL に評価を移さない）・新しい URL のページがあること・古い URL にページが無いこと（Cloudflare は転送をページより先に効かせるので、そのページが見えなくなる）も確かめる。`*` や `:name` は使わず、完全なパスで書く。
    - Cloudflare の `_redirects` に書ける転送は 2,000 行まで。データの入れ直しで何百もの URL が変わるときは、転送を足す前に URL の決め方を見直す。
-   - 確かめ方: `make build` のあと、`site` で `npx wrangler dev` を動かし（[deploy.md](deploy.md) の3章と同じく `node:24-slim` で）、古い URL が 301 と新しい URL の `Location` を返すか。2026-10-12 に wrangler 4.149.0 で、転送が効くことと `_redirects` そのものは配られないことを確かめた。
+   - 確かめ方: `make build` のあと、`site` で `npx wrangler dev` を動かし（[deploy.md](deploy.md) の5章と同じく `node:24-slim` で）、古い URL が 301 と新しい URL の `Location` を返すか。2026-10-12 に wrangler 4.149.0 で、転送が効くことと `_redirects` そのものは配られないことを確かめた。

@@ -1,4 +1,4 @@
-// Cloudflare Workers の静的アセットとして site/dist をそのまま置く。Worker のコードは、/api/ を受ける worker/api.ts だけ（いまは、いいねだけ。docs/deploy.md の7章）。
+// Cloudflare Workers の静的アセットとして site/dist をそのまま置く。Worker のコードは、/api/ を受ける worker/api.ts だけ（いまは、いいねだけ。docs/deploy.md の1章）。
 // GitHub 連携（Workers Builds）で main に push するたびに、ビルド後に `npx wrangler deploy` で公開される。
 // main 以外のブランチ（PR）は `npx wrangler preview` でブランチごとのプレビューになる
 {

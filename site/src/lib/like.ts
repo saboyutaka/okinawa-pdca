@@ -1,6 +1,6 @@
 // いいねのボタン（components/Like.astro）の送り先と、押したときに出す運営からのお礼の言葉。
 // 送り先は /api/like で、どのページかはクエリの page に入れる（/shisaku/1-1-a-1/ なら /api/like?page=/shisaku/1-1-a-1/）。
-// 受けるのは worker/api.ts で、204 を返すだけで何も残さない。件数は Cloudflare が残す Worker のログで、この URL を数えて見る（docs/deploy.md の7章）
+// 受けるのは worker/api.ts で、204 を返すだけで何も残さない。件数は Cloudflare が残す Worker のログで、この URL を数えて見る
 import { PROJECT } from './links.ts';
 
 export const LIKE_PATH = '/api/like';

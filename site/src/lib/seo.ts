@@ -45,7 +45,7 @@ export const sitemapXml = (paths: string[]) =>
     '',
   ].join('\n');
 
-// 巡回は止めず、sitemap の場所だけを書く（noindex のページの巡回を止めると noindex が読まれず、URL だけ検索結果に出ることがあるため。docs/deploy.md）
+// 巡回は止めず、sitemap の場所だけを書く（noindex のページの巡回を止めると noindex が読まれず、URL だけ検索結果に出ることがあるため。docs/deploy.md の4章）
 export const robotsTxt = () => ['User-agent: *', 'Allow: /', '', `Sitemap: ${absUrl('/sitemap.xml')}`, ''].join('\n');
 
 // <script type="application/ld+json"> に入れる文字列。名前に </script> のような文字が入っても閉じないように < を逃がす

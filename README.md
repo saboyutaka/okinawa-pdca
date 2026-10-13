@@ -53,7 +53,7 @@ make extract       # PDF を読んで data/extracted を作り直し、公表値
 | [docs/site.md](docs/site.md) | サイトの作り（データの読み込みと数え方・型・lib・ブラウザのスクリプト・ページ・表示の速さ） |
 | [docs/dev.md](docs/dev.md) | 開発の手順（コンテナ・テスト・画面の確認・worktree） |
 | [docs/design.md](docs/design.md) | サイトの見た目と見せ方の決まり |
-| [docs/deploy.md](docs/deploy.md) | Cloudflare での公開の設定 |
+| [docs/deploy.md](docs/deploy.md) | Cloudflare への公開の手順 |
 | [docs/new-pc.md](docs/new-pc.md) | 別の PC で開発するときの `data/raw` の移し方 |
 
 ## 公開
