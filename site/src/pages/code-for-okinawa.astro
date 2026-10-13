@@ -10,7 +10,7 @@ import { LINKS, PROJECT, SITE } from '../lib/links.ts';
     このサイト「{SITE.name}」は、<strong>{PROJECT.org}</strong> の取り組みとして作っている非公式のサイトです。沖縄県が作ったものではありません。
   </p>
   <p>
-    2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ「<ExtLink href={PROJECT.miraiTeian}>沖縄未来提案プロジェクト</ExtLink>」の続きとして、その計画のいまを振り返るために作りました（<a href="/about/#naritachi">このサイトのなりたち</a>）。
+    2021年に新・沖縄21世紀ビジョン基本計画の骨子案を読んだ「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>の続きとして、その計画のいまを振り返るために作りました（<a href="/about/#naritachi">このサイトのなりたち</a>）。
   </p>
 
   <h2>Code for Okinawa</h2>
@@ -34,12 +34,12 @@ import { LINKS, PROJECT, SITE } from '../lib/links.ts';
   <h2>このサイトの運営</h2>
   <dl class="facts sticker">
     <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
-    <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</dd></div>
+    <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></dd></div>
     <div><dt>制作協力</dt><dd>{PROJECT.collaborators.join('、')}</dd></div>
   </dl>
   <p>まちがいの報告やご意見は、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください。</p>
   <p>
-    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<ExtLink href={LINKS.kikakuChousei}>企画部企画調整課</ExtLink>）へお問い合わせください。
+    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<ExtLink href={LINKS.kikakuChousei} after="）">企画部企画調整課</ExtLink>へお問い合わせください。
   </p>
 </Base>
 

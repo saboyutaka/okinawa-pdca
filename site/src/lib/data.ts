@@ -438,7 +438,7 @@ const gaiyouCells = (r: ShuyouGaiyouRow): PartCells => ({
   year: r.year, b: gaiyouCell(r.base_raw, r.base_ref), a: gaiyouCell(r.actual_raw, r.actual_ref), t: gaiyouCell(r.target_raw, r.target_ref), judgement: '',
 });
 
-// 概要版の指標（1指標1行）ごとの、報告年度ごとの値（トップと将来像ページの小さな折れ線 SeikaSpark に渡す主要指標の部分）。
+// 概要版の指標（1指標1行）ごとの、報告年度ごとの値（将来像ページの小さな折れ線 SeikaSpark に渡す主要指標の部分）。
 // 最新の年度は概要版の値（達成率と同じ表。統計の基準改定で試算し直した基準値・目標値（※）もこちら）。それより前の年度は付属資料の値で、
 // 基本施策の主要指標の部分（shuyouRows）と概要版の指標が同じ数なら、表の順に1つずつ対応させて部分の値を使う（基本施策ページの図と同じ値）。
 // 数が違う基本施策（付属資料の欄の男女別などを分けられない 2-(8)・3-(7)・4-(4)）は、年度ごとに付属資料の欄をその年度の見通しの名前で分け、

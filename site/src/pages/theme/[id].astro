@@ -59,7 +59,7 @@ const visions = getShouraizou()
 const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
-  <Crumbs items={[{ href: '/#themes', label: 'くらしのテーマ' }, { label: t.label }]} />
+  <Crumbs items={[{ href: '/theme/', label: 'くらしのテーマ' }, { label: t.label }]} />
   <header class="sticker lift t-head">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <div class="t-title">

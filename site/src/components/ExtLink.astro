@@ -1,13 +1,30 @@
 ---
 // 外のサイトへのリンク。別のタブで開き、外部リンクの印（箱から出る矢印）と、読み上げ用の「別のタブで開きます」を付ける。
+// 「別のタブで開きます」はリンクの中の文字にせず、レイアウト（layouts/Base.astro）に1つだけ置いた隠した文を aria-describedby で指す
+// （中の文字にすると、文をコピーしたときに「（別のタブで開きます）」が付いてくるため）。
 // 県の報告書の PDF・県のページ・外部のサービスへのリンクはすべてこれを使う（サイトの中のリンクは素の <a>）
+//
+// 印（SVG）の前後で折り返さないようにする。印だけが次の行の頭に来たり、後ろの「」」が行の頭に来たりしないように。
+// - リンクの字の最後の1字と印は、折り返さない箱（.ext-last）に入れる（Chrome は、字や印の後ろで折り返すかをその親の white-space で決める）
+// - after はリンクのすぐ後ろの字（「」」「）」）。リンクごと折り返さない箱（.ext-keep）に入れ、リンクの中の字（.ext-text）だけ折り返せるようにする
+//   （仕様どおりの、2つの字をどちらも含む箱の white-space で決めるブラウザのため。つなぐ字 U+2060 は印の後ろでは効かない）
 import type { HTMLAttributes } from 'astro/types';
 
-interface Props extends HTMLAttributes<'a'> { href: string }
-const { href, class: cls, ...rest } = Astro.props;
+interface Props extends HTMLAttributes<'a'> { href: string; after?: string }
+const { href, class: cls, after, ...rest } = Astro.props;
+// 中身の HTML を、最後の1字（文字参照も1字）とそれより前に分ける。最後がタグなら分けない
+const html = Astro.slots.has('default') ? await Astro.slots.render('default') : '';
+const m = html.match(/^([\s\S]*?)(&#?\w+;|[^<>&\s])$/u);
+const [head, last] = m ? [m[1], m[2]] : [html, ''];
 ---
-<a href={href} class={cls} target="_blank" rel="noopener" {...rest}><slot /><svg class="ext" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M9.5 7v2.5a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5H5M7.5 1.5h3v3M10.5 1.5 6 6" /></svg><span class="sr-only">（別のタブで開きます）</span></a>
+{after ? (
+  <span class="ext-keep"><a href={href} class={cls} target="_blank" rel="noopener" aria-describedby="newtab-note" {...rest}><span class="ext-text" set:html={head} /><span class="ext-last"><Fragment set:html={last} /><svg class="ext" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M9.5 7v2.5a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5H5M7.5 1.5h3v3M10.5 1.5 6 6" /></svg></span></a>{after}</span>
+) : (
+  <a href={href} class={cls} target="_blank" rel="noopener" aria-describedby="newtab-note" {...rest}><Fragment set:html={head} /><span class="ext-last"><Fragment set:html={last} /><svg class="ext" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false"><path d="M9.5 7v2.5a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5H5M7.5 1.5h3v3M10.5 1.5 6 6" /></svg></span></a>
+)}
 
 <style>
   .ext { display: inline-block; width: 0.8em; height: 0.8em; margin-left: 0.2em; vertical-align: -0.05em; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ext-last, .ext-keep, .ext-keep > a { white-space: nowrap; }
+  .ext-text { white-space: normal; }
 </style>

@@ -1,0 +1,79 @@
+---
+// くらしのテーマ（このサイト独自の分類）の一覧。ヘッダーのナビの「テーマ」から入る。トップの節（/#themes）はテーマの名前の札だけにし、
+// テーマごとの施策・主な取組・成果指標の数と、施策の判定の内訳の棒、決め方の言葉はここに置く。
+// 数はテーマのページの頭と同じ（lib/heads.ts の themeHead）。並びは themes.json の順（良い・悪いで並べ替えない）
+import Base from '../../layouts/Base.astro';
+import StatusBar from '../../components/StatusBar.astro';
+import ThemeIcon from '../../components/ThemeIcon.astro';
+import Chip from '../../components/Chip.astro';
+import Term from '../../components/Term.astro';
+import { LATEST, countBy } from '../../lib/data.ts';
+import { getThemes, unthemed } from '../../lib/themes.ts';
+import { themeHead, total } from '../../lib/heads.ts';
+import { JUDGE_GROUPS, judgeGroupOf } from '../../lib/icons.ts';
+import { fmt } from '../../lib/format.ts';
+
+const keys = JUDGE_GROUPS.map((g) => g.key);
+const themes = getThemes().map((t) => {
+  const head = themeHead(t);
+  return {
+    ...t,
+    judges: countBy(head.shisaku, (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', keys),
+    tori: total(head.tori),
+    seika: head.seika,
+    // 決め方の言葉は、全角・半角の違いだけのもの（ＤＸ と DX など）を1つにまとめる
+    rule: [...new Set(t.words.map((w) => w.normalize('NFKC')))].join('、'),
+  };
+});
+const rest = unthemed();
+---
+<Base title="くらしのテーマ" description="子ども・子育て、観光、交通など、くらしのテーマごとに沖縄県PDCAの施策・取組・成果指標を見られます（このサイト独自の分類）。">
+  <h1>くらしのテーマ<span class="own">このサイト独自の分類</span></h1>
+  <p class="secondary lead">施策・施策展開・基本施策の名前に、それぞれの「決め方」の言葉を含む施策をそのテーマに入れています（<a href="/about/#theme">くわしく</a>）。</p>
+  <div class="legend-box">
+    <span class="legend-l">棒は施策の<Term word="推進状況" label="判定" /></span>
+    <ul class="legend" aria-label="棒の凡例">
+      {JUDGE_GROUPS.map((g) => <li><Chip tone={g.tone} shape={g.shape} text={g.label} /></li>)}
+    </ul>
+  </div>
+
+  <ul class="themes">
+    {themes.map((t) => (
+      <li class="sticker theme-row" id={t.id}>
+        <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+        <div class="body">
+          <h2><a class="name-link" href={`/theme/${t.id}/`}>{t.label}</a></h2>
+          <div class="nums small"><span>施策 <b>{fmt(t.ids.length)}</b></span>・<a href={`/torikumi/?theme=${t.id}`}>取組 <b>{fmt(t.tori)}</b></a>・<a href={`/shihyou/?theme=${t.id}`}>成果指標 <b>{fmt(t.seika)}</b></a></div>
+          <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
+          <p class="rule small"><span class="secondary">決め方: </span>{t.rule}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+
+  {rest.length > 0 && (
+    <details class="rest">
+      <summary>どのテーマにも入らない施策（{fmt(rest.length)}）</summary>
+      <ul>
+        {rest.map((s) => <li><a class="name-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></li>)}
+      </ul>
+    </details>
+  )}
+</Base>
+
+<style>
+  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 12px 0 16px; font-size: 0.9375rem; }
+  .legend-l { font-weight: 700; color: var(--ink-2); }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .theme-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: start; scroll-margin-top: 16px; }
+  .ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--pink); border: 2.5px solid var(--line); }
+  .ico :global(.theme-ic) { width: 30px; height: 30px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .body { display: grid; gap: 6px; min-width: 0; }
+  h2 { font-size: 1.15rem; margin: 0; }
+  .nums > * { white-space: nowrap; }
+  .nums b { font-family: var(--font-num); font-weight: 600; font-size: 1rem; }
+  .rule { margin: 0; line-height: 1.6; }
+  .rest { margin-top: 24px; }
+  .rest ul { columns: 2 20em; font-size: 0.9375rem; }
+</style>

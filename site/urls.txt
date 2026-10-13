@@ -914,6 +914,7 @@
 /shisaku/5-5-b-2/
 /shisaku/5-5-b-3/
 /shisaku/5-5-b-4/
+/theme/
 /theme/anzen/
 /theme/bunka/
 /theme/butsuryu/

@@ -1,7 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import StatusChart from '../components/StatusChart.astro';
-import StatusBar from '../components/StatusBar.astro';
 import Donut from '../components/Donut.astro';
 import Chunk from '../components/Chunk.astro';
 import Term from '../components/Term.astro';
@@ -9,20 +7,17 @@ import ThemeIcon from '../components/ThemeIcon.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
 import TrendChart from '../components/TrendChart.astro';
-import ShuyouTrendTop from '../components/ShuyouTrendTop.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy, countJudges,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, getShuyouStatus,
+  YEARS, LATEST, yearLong, rateBin, countJudges,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
 } from '../lib/data.ts';
-import { getThemes, unthemed } from '../lib/themes.ts';
-import { JUDGE_GROUPS, judgeGroupOf } from '../lib/icons.ts';
+import { getThemes } from '../lib/themes.ts';
 import { fmt, pct } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
-const statusKeys = STATUSES.map((s) => s.key);
 const latestTori = getTorikumi(LATEST);
 // 年度をまたいでまとめた取組（取組をさがすと同じ数え方）
 const groups = getTorikumiGroups();
@@ -32,15 +27,8 @@ const toriOk = latestGroups.filter((g) => g.statuses[L] === '順調').length;
 const latestSeika = getSeika(LATEST);
 const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
 const shisaku = getShisakuList();
-const byId = new Map(shisaku.map((s) => [s.id, s]));
 const judgeCounts = countJudges(shisaku);
 
-// くらしのテーマ（このサイト独自の分類）
-const groupKeys = JUDGE_GROUPS.map((g) => g.key);
-const themes = getThemes().map((t) => ({
-  ...t,
-  counts: countBy(t.ids.map((id) => byId.get(id)!), (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', groupKeys),
-}));
 
 // 将来像ごと
 const visions = getShouraizou().map((v) => {
@@ -48,8 +36,6 @@ const visions = getShouraizou().map((v) => {
   return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length };
 });
 
-// 主要指標の達成状況（県の概要版の表。読めない年度は空）
-const shuyou = getShuyouStatus();
 
 // 4年間の推移
 const trend = YEARS.map((y) => {
@@ -59,8 +45,11 @@ const trend = YEARS.map((y) => {
   const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
-const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y), statusOf, statusKeys) }));
-const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y), rateBin, RATE_BINS.map((b) => b.key)) }));
+// 4年間の割合の幅を「7〜8割台」のように丸めて言う（節の頭の文。正確な値は図と表にある。良い・悪いは言わない）
+const band = (vals: number[]) => {
+  const [lo, hi] = [Math.floor(Math.min(...vals) / 10), Math.floor(Math.max(...vals) / 10)];
+  return lo === hi ? `${lo}割台` : `${lo}〜${hi}割台`;
+};
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -70,22 +59,23 @@ const boshu = boshuState();
     <span class="tag">{yearLong(LATEST)}の結果</span>
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
-      沖縄県は毎年、「<ExtLink href={LINKS.jisshiKeikaku}>新・沖縄21世紀ビジョン実施計画</ExtLink>」に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを自分で点検し、「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」として公表しています。その結果（令和4〜7年度）を、県が公開している<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件を読み込んで</a>、見やすくまとめました。
+      沖縄県は毎年、「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを点検し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>として公表しています。<br />
+      その結果（令和4〜7年度）を、<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
     <div class="donuts">
       <div class="donut-card">
         <Donut frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} />
         <div>
-          <div class="dc-title">県の主な取組のうち「順調」</div>
-          <div class="dc-sub">{fmt(latestGroups.length)}件のうち{fmt(toriOk)}件。県の活動は、計画どおりに進んだ？</div>
+          <div class="dc-title"><span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span></div>
+          <div class="dc-sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(latestGroups.length)}件</span></div>
           <a class="dc-more" href="/torikumi/">取組をさがす<span aria-hidden="true"> →</span></a>
         </div>
       </div>
       <div class="donut-card">
         <Donut frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} />
         <div>
-          <div class="dc-title"><Term word="成果指標" />のうち<Term word="計画値" />に到達</div>
-          <div class="dc-sub">{fmt(latestSeika.length)}指標のうち{fmt(seikaOk)}指標。くらしや地域は、計画どおりに変わった？</div>
+          <div class="dc-title"><span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span></div>
+          <div class="dc-sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(latestSeika.length)}指標</span></div>
           <a class="dc-more" href="/shihyou/">成果指標をさがす<span aria-hidden="true"> →</span></a>
         </div>
       </div>
@@ -95,7 +85,7 @@ const boshu = boshuState();
   <form class="search sticker" action="/shisaku/" method="get" role="search" aria-label="さがす">
     <label for="top-q">気になる言葉でさがす</label>
     <div class="search-row">
-      <input id="top-q" type="search" name="q" placeholder="例: 離島、子ども、観光、赤土" />
+      <input id="top-q" type="search" name="q" placeholder="例: 子ども、観光、サンゴ、しまくとぅば" />
       <button type="submit" class="button">施策</button>
       <button type="submit" class="button" formaction="/torikumi/">取組</button>
       <button type="submit" class="button" formaction="/shihyou/">成果指標</button>
@@ -104,62 +94,51 @@ const boshu = boshuState();
 
   <section id="themes" aria-labelledby="themes-h">
     <h2 id="themes-h">気になるテーマから見てみよう<span class="own">このサイト独自の分類</span></h2>
-    <p class="small secondary lead">
-      県の計画の分類ではなく、施策・施策展開・基本施策の名前に含まれる言葉で、このサイトがまとめたものです{unthemed().length > 0 && `（どれにも入らない施策 ${fmt(unthemed().length)}）`}。数字は施策の数、棒は{yearLong(LATEST)}の判定の内訳です。<a href="/about/#theme">テーマの決め方</a>
-    </p>
-    <ul class="themes">
-      {themes.map((t) => (
+    <p class="small secondary lead">くらしの{getThemes().length}の分野ごとに、県の施策・取組・成果指標をまとめて見られます。</p>
+    <ul class="themes sticker">
+      {getThemes().map((t) => (
         <li>
-          <a class="theme press" href={`/theme/${t.id}/`}>
-            <span class="ico"><ThemeIcon id={t.id} /></span>
+          <a class="theme inset" href={`/theme/${t.id}/`}>
+            <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
             <span class="nm">{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</span>
-            <span class="n">{fmt(t.ids.length)}<span class="sr-only">施策</span></span>
-            <StatusBar categories={JUDGE_GROUPS} counts={t.counts} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
           </a>
         </li>
       ))}
     </ul>
+    <p class="small more-link"><a href="/theme/">テーマを一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
-    <p class="small secondary lead">棒は{yearLong(LATEST)}の主な取組のうち「順調」の割合です。</p>
+    <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
     <ul class="row-list visions">
+      {/* 右の割合が何かを、表の見出しのように1回だけ書く（行の読み上げは棒の文にある） */}
+      <li class="v-head" aria-hidden="true">順調</li>
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
-          <a class="v-name name-link" href={`/future/${v.id}/`}>将来像{v.id}　{v.name}</a>
+          <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
           <Chunk frac={v.ok / v.n} label={`主な取組 ${v.n}件のうち順調 ${v.ok}件（${pct(v.ok, v.n)}）`} thin />
-          <span class="v-pv"><span class="big">{pct(v.ok, v.n)}</span><small>{fmt(v.ok)}/{fmt(v.n)}件</small></span>
+          <span class="v-pv big" aria-hidden="true">{pct(v.ok, v.n)}</span>
         </li>
       ))}
     </ul>
   </section>
 
-  {shuyou.length > 0 && (
-    <section aria-labelledby="shuyou-h">
-      <h2 id="shuyou-h"><Term word="主要指標" />で見る、くらしの大きな数字</h2>
-      <p class="small secondary lead">主要指標は、基本施策ごとに平均寿命や観光収入のような大きな数字で、将来像にどこまで近づいたかをはかる指標です。{yearLong(LATEST)}の報告の{fmt(shuyou.length)}指標を、報告の年度ごとの<Term word="実績値" />の折れ線で並べました。右の数は県の<Term word="主要指標の達成率" label="達成率" />（R9年度の<Term word="目標値" />に対する割合）です。図の点にマウスを乗せる（スマホでは押す）と値を出します。</p>
-      <ShuyouTrendTop rows={shuyou} visions={visions} />
-      <p class="small">県の見通しは、<a href="/shihyou/shuyou/">主要指標の一覧</a>と基本施策のページにあります。</p>
-    </section>
-  )}
-
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
-    <p class="lead">
-      県は施策ごとに、①主な取組のうち「順調」の割合と、②成果指標の<Term word="達成率" />の2つを組み合わせて、A〜G の<Term word="推進状況" label="判定" />を付けています。マスを押すと、その判定の施策の一覧を開きます。
+    <p class="small secondary lead">
+      施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。
     </p>
-    <JudgeMatrix counts={judgeCounts} caption={`${yearLong(LATEST)}の${fmt(shisaku.length)}施策`} />
-    <p class="small secondary">マスの置き方は県の概要版の「施策評価の判定基準」区分表（境目は40%と80%）のとおりです。件数は施策総括表に印字された判定をそのまま数えていて、概要版の件数とは数件ずれます（<a href="/about/#chuui">注意点</a>）。</p>
+    <JudgeMatrix counts={judgeCounts} />
   </section>
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h">4年間の推移</h2>
+    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
     <figure class="sticker trend">
       <figcaption>
         <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-        <div class="chart-caption">点を押すと、その年度の値を出します（キーボードでは左右の矢印キー）。</div>
       </figcaption>
       <TrendChart points={trend} />
       <details>
@@ -180,25 +159,16 @@ const boshu = boshuState();
         </div>
       </details>
     </figure>
-    <details class="breakdown">
-      <summary>内訳を見る（進捗状況・達成率の区分ごと）</summary>
-      <StatusChart title="主な取組の進捗状況" caption="各取組の活動実績が、その年度の計画に対してどこまで進んだか（県の判定）。" categories={STATUSES} rows={torikumiRows} />
-      <StatusChart title="成果指標の達成状況" caption="各施策の成果指標が、その年度の計画値に対してどこまで達成したか（達成率）。" categories={RATE_BINS} rows={seikaRows} unit="指標" />
-    </details>
-    <p class="small secondary">
-      R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9）です。R7で基準値・目標値・計画値が新しく設定されたため、成果指標の割合は計画期間をまたいで単純には比べられません（<Term word="実施計画" label="くわしく" />）。
-    </p>
   </section>
 
   <section aria-labelledby="iken-h">
     <h2 id="iken-h">意見を伝えるには</h2>
     <div class="sticker iken">
       <p>
-        {yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）は、
-        {boshu === 'closed' && `${dayText(BOSHU.end)}で終了しました。`}
-        {boshu === 'open' && `${dayText(BOSHU.end)}まで受け付けています。`}
-        {boshu === 'before' && `${dayText(BOSHU.start)}から受け付けます。`}
-        県にいつでも意見を送れる窓口や、SNS で <strong>#{HASHTAG}</strong> を付けて話す方法もまとめています。
+        {/* 募集の期間の外はパブリックコメントに触れず、いまできること（県の窓口・SNS）を書く。終わった募集は /iken/ に */}
+        {boshu === 'open' && `${yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）を、${dayText(BOSHU.end)}まで受け付けています。`}
+        {boshu === 'before' && `${yearLong(BOSHU.year)}の結果への県民意見募集（パブリックコメント）を、${dayText(BOSHU.start)}から受け付けます。`}
+        県には、いつでも意見を送れる窓口があります。SNS で <strong>#{HASHTAG}</strong> を付けて話すこともできます。
       </p>
       <div class="iken-actions">
         <a class="pill-btn" href="/iken/">意見を伝えたい人へ<span aria-hidden="true">→</span></a>
@@ -232,7 +202,9 @@ const boshu = boshuState();
   /* ヒーローの中の箱なので線と影は付けず、白い地だけで分ける */
   .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; background: var(--paper); border-radius: 16px; padding: 14px 16px; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
+  .dc-title .nw { display: inline-block; } /* 問いは文節の切れ目でだけ折り返す（「た？」だけが次の行に残らないように） */
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
+  .dc-n { display: block; font-family: var(--font-num); font-weight: 600; white-space: nowrap; }
   /* 円グラフの札は全体を押すと一覧を開く（良いものだけに絞らず、絞り込む前の一覧。中の用語の説明のボタンは上に出して押せるまま） */
   .donut-card { position: relative; }
   .donut-card:has(.dc-more:hover) { background: color-mix(in oklab, var(--sky) 45%, var(--paper)); }
@@ -248,43 +220,39 @@ const boshu = boshuState();
     flex: 1 1 14em; min-width: 0; font: inherit; color: var(--ink); background: var(--paper);
     border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; min-height: 46px;
   }
+  /* スマホでは入力欄を1行まるごとにして（ボタンは下の1行に並べる）、例の言葉の字を少し小さくし、切れないようにする。
+     入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
+  @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  .themes { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-  .theme {
-    display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "ico nm nm" "ico bar n"; gap: 4px 8px; align-items: center; height: 100%;
-    color: var(--ink); text-decoration: none; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; --sh: 2px; box-shadow: 2px 2px 0 var(--shadow); padding: 8px 12px;
-  }
+  /* テーマは1つのステッカーに、アイコンと名前だけのタイル（線も影も無い .inset）を同じ幅で並べる。
+     札ごとに線と影を付けると数が多くて落ち着かないため。施策の数と判定の内訳はテーマの一覧 /theme/ に */
+  .themes { list-style: none; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .theme { display: flex; align-items: center; gap: 8px; height: 100%; padding: 6px 10px 6px 6px; color: var(--ink); text-decoration: none; }
   .theme:hover { background: var(--sky); }
-  .theme:active { transform: translate(2px, 2px); box-shadow: none; }
-  .ico { grid-area: ico; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--pink); border: 1.5px solid var(--line); }
-  .ico :global(.theme-ic) { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .nm { grid-area: nm; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
-  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す（「くらしの安 / 全」にしない） */
-  .theme :global(.sbar) { grid-area: bar; }
-  .n { grid-area: n; font-family: var(--font-num); font-weight: 600; font-size: 0.8125rem; color: var(--ink-2); min-width: 1.6em; text-align: right; }
-  @media (max-width: 420px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .theme { padding: 8px 10px; gap: 4px 6px; grid-template-columns: 28px minmax(0, 1fr) auto; } .nm { font-size: 0.875rem; } .ico { width: 28px; height: 28px; } .ico :global(.theme-ic) { width: 17px; height: 17px; } }
+  .ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--pink); }
+  .ico :global(.theme-ic) { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.35; }
+  .nm .nw { white-space: nowrap; } /* 名前は「・」の後ろでだけ折り返す */
+  @media (max-width: 520px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; } .nm { font-size: 0.875rem; } }
+  .more-link { margin: 10px 0 0; }
 
   /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う */
-  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 5.5em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) 4em; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
   .v-name { grid-area: name; line-height: 1.5; }
   .vision :global(.chunk) { grid-area: bar; }
-  .v-pv { grid-area: pv; display: grid; justify-items: end; line-height: 1.2; }
-  .v-pv .big { font-size: 1.15rem; }
-  .v-pv small { font-size: 0.75rem; color: var(--ink-2); }
+  .v-pv { grid-area: pv; justify-self: end; font-size: 1.15rem; line-height: 1.2; }
+  .visions > .v-head { padding-block: 6px; text-align: right; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
   @media (max-width: 640px) {
     .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
-    .v-pv { grid-auto-flow: column; align-items: baseline; gap: 6px; }
   }
 
   .trend { margin-top: 0; }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
-  .breakdown { margin-top: 16px; }
 
   .iken { background: var(--lilac); }
-  .iken p { margin-top: 0; max-width: 46em; }
+  .iken p { margin-top: 0; }
   .iken-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
 
 </style>
