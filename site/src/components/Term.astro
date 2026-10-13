@@ -1,7 +1,8 @@
 ---
 // 用語。押すと短い説明を出す（説明は lib/terms.ts、動きは scripts/terms.ts）。
-// note はその場所だけの一言（例: この指標の実績値が何年度の値か）で、説明の下に足す
-interface Props { word: string; label?: string; note?: string }
-const { word, label, note } = Astro.props;
+// note はその場所だけの一言（例: この指標の実績値が何年度の値か）で、説明の下に足す。
+// class は見た目を変えるとき（「このサイト独自の分類」の印 .own を、押すと「くらしのテーマ」の説明が出るボタンにするなど）
+interface Props { word: string; label?: string; note?: string; class?: string }
+const { word, label, note, class: className } = Astro.props;
 ---
-<button type="button" class="term" data-term={word} data-term-note={note || undefined} aria-expanded="false" aria-controls="termpop">{label ?? word}</button>
+<button type="button" class:list={['term', className]} data-term={word} data-term-note={note || undefined} aria-expanded="false" aria-controls="termpop">{label ?? word}</button>
