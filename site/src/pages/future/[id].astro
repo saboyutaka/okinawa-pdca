@@ -1,5 +1,5 @@
 ---
-// 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組・成果指標。成果指標の一覧は畳む）→ 施策の判定 → 4年間の推移 → くらしのテーマ → 予算 → シェア。
+// 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → くらしのテーマ → 予算 → シェア。
 // 頭はトップのヒーローと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
 // 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）
 import type { InferGetStaticPropsType } from 'astro';
@@ -18,11 +18,10 @@ import TrendChart from '../../components/TrendChart.astro';
 import ThemeTiles from '../../components/ThemeTiles.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
-import SeikaKey from '../../components/SeikaKey.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, getSeikaGroups, amountEntries,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
 } from '../../lib/data.ts';
 import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
 import { getThemes } from '../../lib/themes.ts';
@@ -64,29 +63,18 @@ const trend = YEARS.map((y) => {
 const torikumiRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getTorikumi(y).filter((x) => x.shisaku_id.startsWith(pre)), statusOf, statusKeys) }));
 const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前期' : '中期', counts: countBy(getSeika(y).filter((x) => x.shisaku_id.startsWith(pre)), rateBin, binKeys) }));
 
-// 基本施策ごと。主要指標と、主な取組の進捗状況・成果指標の達成率の区分の棒を基本施策の名前の下に並べ、その基本施策の成果指標
-// （最新の年度の報告にあるもの）の一覧は成果指標の行の下に畳む（components/KihonRow.astro）。
-// 成果指標の棒と一覧は同じ行（年度をまたいだまとまりの最新の年度の行）から数える
-const seikaGroups = getSeikaGroups().filter((r) => r.latest.year === LATEST && r.shisaku.shouraizou === v.id);
+// 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
+// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭のドーナツ・施策の判定・4年間の推移・成果指標をさがすにある）
 const kihonRows = kihon.map((k) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
-  const rows = seikaGroups.filter((r) => r.shisaku.kihon_id === k.id);
   return {
     ...k,
     shuyou: shuyou.filter((r) => r.kihon.id === k.id),
     tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
-    seika: { n: rows.length, ok: rows.filter((r) => reached(r.latest)).length, counts: countBy(rows.map((r) => r.latest), rateBin, binKeys) },
-    rows,
   };
 });
 // 棒の凡例はこの節に1回だけ（どれかの基本施策で使っている区分）
 const toriLegend = STATUSES.filter((c) => kihonRows.some((k) => (k.tori.counts[c.key] || 0) > 0));
-const seikaLegend = RATE_BINS.filter((c) => kihonRows.some((k) => (k.seika.counts[c.key] || 0) > 0));
-// 「表で見る」は棒ごとに1つ（行は基本施策、列は区分）
-const kihonTables = [
-  { title: '主な取組の進捗状況', key: 'tori' as const, cats: toriLegend, unit: '件' },
-  { title: '成果指標の達成率', key: 'seika' as const, cats: seikaLegend, unit: '指標' },
-];
 
 // くらしのテーマ（この将来像の施策が多い順）
 const ids = new Set(shisaku.map((s) => s.id));
@@ -134,36 +122,33 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <section aria-labelledby="kihon">
     <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）・成果指標の進み具合を見られます。</p>
-    {/* 凡例は5つの将来像のページと同じく、線と影のない白い地の小さな箱に1回だけ。棒の右の割合は、凡例の最初の区分（順調・100%以上）の割合 */}
+    <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
+    {/* 棒の凡例は5つの将来像のページと同じく、線と影のない白い地の小さな箱に1回だけ。棒の右の割合は「順調」の割合 */}
     <div class="legend-box">
-      {shuyou.length > 0 && <SeikaKey mini plan={false} goal rate="shuyou" of="主要指標の" />}
-      <div class="lg"><span class="legend-l">主な取組の<Term word="進捗状況" />:</span><ul class="legend" aria-label="主な取組の棒の凡例">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></div>
-      <div class="lg"><span class="legend-l">成果指標の<Term word="達成率" />:</span><ul class="legend" aria-label="成果指標の棒の凡例">{seikaLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul></div>
+      <span class="legend-l">主な取組の<Term word="進捗状況" />:</span>
+      <ul class="legend" aria-label="主な取組の棒の凡例">{toriLegend.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} /></li>)}</ul>
     </div>
     <ul class="row-list k-list">
-      {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} seika={k.seika} seikaRows={k.rows} />)}
+      {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
-    {shuyou.length > 0 && <p class="small secondary">主要指標の{yearLabel(LATEST)}の値と達成率は県の概要版、それより前の値は総括報告書の付属資料のものです（基本施策のページは付属資料の値で、書き方や値が少し違うものがあります）。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
+    {shuyou.length > 0 && <p class="small secondary">主要指標のゴールは{yearLong(2027)}（暦年の統計は令和9年）の目標値です。値と達成率は県の概要版のもので、基本施策のページ（総括報告書の付属資料の値）とは書き方や値が少し違うものがあります。{shuyou.some((r) => r.revised) && '※は、統計の基準改定にあわせて県が試算し直した基準値・目標値です。'}<a href="/shihyou/shuyou/">主要指標の一覧</a>で、ほかの将来像の指標も見られます。</p>}
     <details class="k-table">
       <summary>表で見る</summary>
-      {kihonTables.map((t) => (
-        <div class="table-wrap">
-          <table>
-            <caption>{t.title}（{t.unit}）</caption>
-            <thead><tr><th>基本施策</th>{t.cats.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
-            <tbody>
-              {kihonRows.map((k) => (
-                <tr>
-                  <th class="k-th">{k.name}</th>
-                  {t.cats.map((c) => <td class="num">{fmt(k[t.key].counts[c.key] || 0)}<br /><small class="secondary">{pct(k[t.key].counts[c.key] || 0, k[t.key].n)}</small></td>)}
-                  <td class="num">{fmt(k[t.key].n)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+      <div class="table-wrap">
+        <table>
+          <caption>主な取組の進捗状況（件）</caption>
+          <thead><tr><th>基本施策</th>{toriLegend.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
+          <tbody>
+            {kihonRows.map((k) => (
+              <tr>
+                <th class="k-th">{k.name}</th>
+                {toriLegend.map((c) => <td class="num">{fmt(k.tori.counts[c.key] || 0)}<br /><small class="secondary">{pct(k.tori.counts[c.key] || 0, k.tori.n)}</small></td>)}
+                <td class="num">{fmt(k.tori.n)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </details>
   </section>
 
@@ -247,10 +232,8 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .breakdown { margin-top: 16px; }
 
-  /* 凡例（5つの将来像のページの .legend-box と同じ形。主要指標の図・主な取組の棒・成果指標の棒の3行） */
-  .legend-box { display: grid; gap: 4px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
-  .legend-box :global(.chart-key) { margin: 0; gap: 2px 12px; }
-  .lg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+  /* 棒の凡例（5つの将来像のページの .legend-box と同じ形） */
+  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 0 auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
   .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
   .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
   @media (max-width: 640px) {

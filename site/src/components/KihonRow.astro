@@ -1,36 +1,43 @@
 ---
-// 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標・主な取組・成果指標の3種類の行を、
-// 左に何の行かを書いて並べる。右の列（図・棒と、その右の数）はどの行も同じ幅にしてそろえる。
-// - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前といまの値、報告年度ごとの値の小さな折れ線
-//   （SeikaSpark。点にマウスを乗せる・押すと値を出す）、県の達成率（目標値に対する割合）。右の数が達成率であることは、
-//   行ごとに書かず節の凡例（SeikaKey の rate）で1回だけ書く（読み上げ用の文には残す）。いまの値が何年の値かとスタート・ゴールの値は図の点に任せる
-// - 主な取組・成果指標: 区分の内訳の細い棒と、最初の区分（順調・100%以上）の割合（5つの将来像のページの棒と同じ形）
-// 成果指標の行は押すと、その基本施策の成果指標（最新の年度の報告にあるもの）の一覧を行の下に開く
-import SeikaSpark from './SeikaSpark.astro';
+// 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
+// - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前と県の達成率、その下に「スタート → いま → ゴール」の値。
+//   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、どの値にも年・年度を添える（lib/data.ts の eraRef）。
+//   ゴールはほぼ R9 なので、R9 のときは書かず節の文で1回だけ書く。達成率は主な取組の割合と取り違えないよう「達成率」と書く。
+//   年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）
+// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（5つの将来像のページの棒と同じ形）
 import StatusBar from './StatusBar.astro';
-import SeikaRow from './SeikaRow.astro';
-import SeikaKey from './SeikaKey.astro';
-import { STATUSES, RATE_BINS, SHUYOU_BINS, shuyouRateText, seikaHref, type ShuyouStatus, type SeikaGroupOfShisaku } from '../lib/data.ts';
-import { fmt, pct } from '../lib/format.ts';
+import { STATUSES, shuyouRateText, eraRef, type ShuyouStatus } from '../lib/data.ts';
+import { pct } from '../lib/format.ts';
 
 interface Measure { n: number; ok: number; counts: Record<string, number> }
-interface Props { kihon: { id: string; name: string; code: string }; shuyou: ShuyouStatus[]; tori: Measure; seika: Measure; seikaRows: SeikaGroupOfShisaku[] }
-const { kihon: k, shuyou, tori, seika, seikaRows } = Astro.props;
-const value = (raw: string, ref: string | null) => (ref ? `${raw}（${ref}）` : raw);
-const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.label;
+interface Props { kihon: { id: string; name: string; code: string }; shuyou: ShuyouStatus[]; tori: Measure }
+const { kihon: k, shuyou, tori } = Astro.props;
+const vals = (r: ShuyouStatus) => [
+  { label: 'スタート', raw: r.base_raw, ref: eraRef(r.base_ref) },
+  { label: 'いま', raw: r.actual_raw, ref: eraRef(r.actual_ref), now: true },
+  { label: 'ゴール', raw: r.target_raw, ref: /^R9年度?$/.test(eraRef(r.target_ref)) ? '' : eraRef(r.target_ref) },
+];
 ---
 <li class="k-item">
   <div class="k-name"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
   {shuyou.map((r, i) => (
     <div class="k-row k-shuyou">
       <span class="k-l">{i === 0 && '主要指標'}</span>
-      <div class="k-main"><a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" aria-hidden="true">※</span>}</div>
-      <div class="k-now small secondary" aria-hidden="true">いま <b>{r.actual_raw}</b></div>
-      <div class="k-viz" aria-hidden="true"><SeikaSpark part={r.series} h={26} /></div>
-      <b class="k-num" aria-hidden="true">{shuyouRateText(r)}</b>
-      <span class="sr-only">
-        {`達成率 ${shuyouRateText(r)}（${binLabel(r)}）。基準値 ${value(r.base_raw, r.base_ref)}、実績値 ${value(r.actual_raw, r.actual_ref)}、目標値 ${value(r.target_raw, r.target_ref)}${r.revised ? '。統計の基準改定にあわせて試算し直した基準値・目標値' : ''}`}
-      </span>
+      <div class="k-main">
+        <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark">※</span>}
+        <div class="k-vals small secondary">
+          {vals(r).map((x, j) => (
+            <>
+              {j > 0 && <span class="arrow" aria-hidden="true">→</span>}
+              <span class="nw">{x.label} {x.now ? <b>{x.raw}</b> : x.raw}{x.ref && <span class="ref">（{x.ref}）</span>}</span>
+            </>
+          ))}
+        </div>
+      </div>
+      <div class="k-rate">
+        <span class="k-rl">達成率</span>
+        {shuyouRateText(r) === '—' ? <><b aria-hidden="true">—</b><span class="sr-only">なし</span></> : <b>{shuyouRateText(r)}</b>}
+      </div>
     </div>
   ))}
   {tori.n > 0 && (
@@ -40,64 +47,38 @@ const binLabel = (r: ShuyouStatus) => SHUYOU_BINS.find((b) => b.key === r.bin)!.
       <span class="k-num" aria-hidden="true">{pct(tori.ok, tori.n)}</span>
     </div>
   )}
-  {seika.n > 0 && (
-    <details class="k-seika">
-      <summary class="k-row k-bar k-sum">
-        <span class="k-l">成果指標</span>
-        <span class="k-main k-open"><span class="k-tri" aria-hidden="true">▶</span><span class="k-open-t">一覧（{fmt(seikaRows.length)}）</span></span>
-        <div class="k-viz"><StatusBar categories={RATE_BINS} counts={seika.counts} unit="指標" context={`${k.name} 成果指標の達成率 `} size="mini" /></div>
-        <span class="k-num" aria-hidden="true">{pct(seika.ok, seika.n)}</span>
-      </summary>
-      <div class="k-seika-in inset">
-        <SeikaKey mini />
-        <ul class="k-seika-list">
-          {seikaRows.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
-        </ul>
-      </div>
-    </details>
-  )}
 </li>
 
 <style>
-  .k-item { display: grid; gap: 8px; padding: 14px 18px; }
-  .row-list > li.k-item { content-visibility: visible; } /* 5〜13行と少なく、中の一覧を開くので、画面の外も描く */
+  .k-item { display: grid; gap: 10px; padding: 14px 18px; }
   .k-name { font-size: 1.0625rem; line-height: 1.5; }
-  /* PC は「何の行か | 名前・いまの値 | 図・棒 | 数」の4列 */
-  .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 220px 4.2em; grid-template-areas: "lab main viz num"; column-gap: 16px; align-items: center; }
-  .k-shuyou { grid-template-areas: "lab main viz num" "lab now viz num"; }
-  .k-l { grid-area: lab; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
-  .k-shuyou .k-l { align-self: start; padding-top: 2px; }
-  .k-main { grid-area: main; min-width: 0; line-height: 1.5; }
+  /* PC は「何の行か | 中身 | 右の数」。主要指標は名前の行に達成率をそろえ、主な取組は棒を中身の列いっぱいに伸ばす */
+  .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; column-gap: 16px; }
+  .k-shuyou { grid-template-areas: "lab main rate"; align-items: start; }
+  .k-bar { grid-template-columns: 4.6em minmax(0, 1fr) 4.2em; grid-template-areas: "lab viz num"; align-items: center; }
+  .k-l { grid-area: lab; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
+  .k-shuyou .k-l { padding-top: 2px; }
+  .k-main { grid-area: main; min-width: 0; line-height: 1.6; }
   .s-name { font-size: 0.9375rem; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; }
-  .k-now { grid-area: now; line-height: 1.5; }
-  .k-now b { color: var(--ink); }
+  .k-vals { margin-top: 2px; }
+  .k-vals b { color: var(--ink); }
+  .nw { display: inline-block; } /* 値と年度はひとまとまりで折り返す（1行に入らないほど長いときだけ中で折り返す） */
+  .arrow { margin: 0 6px; color: var(--muted); }
+  .ref { font-size: 0.8125rem; }
+  .k-rate { grid-area: rate; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+  .k-rl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .k-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; }
   .k-viz { grid-area: viz; min-width: 0; }
-  .k-viz :global(.spark) { display: block; width: 100%; height: auto; }
   .k-num { grid-area: num; justify-self: end; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; white-space: nowrap; }
-  .k-shuyou .k-num { font-size: 1.05rem; }
-  /* 成果指標の行は押すと一覧を開く。行の見た目はほかの行と同じにし、「一覧（N）」だけをリンクの色にする */
-  .k-sum { list-style: none; cursor: pointer; color: var(--ink); font-weight: 400; font-size: inherit; padding: 0; }
-  .k-sum::-webkit-details-marker { display: none; }
-  .k-open { font-size: 0.875rem; font-weight: 700; color: var(--link); }
-  .k-open-t { text-decoration: underline; text-underline-offset: 0.2em; }
-  .k-tri { display: inline-block; margin-right: 6px; font-size: 0.7em; vertical-align: 0.1em; }
-  .k-seika[open] .k-tri { transform: rotate(90deg); }
-  .k-sum:hover .k-open-t { text-decoration-thickness: 2px; }
-  /* 開いた一覧は地の色の箱（.inset）に凡例と行を入れる。小さな図の前期の地が箱の地と同じ色で見えなくなるので、行は白い地にして細い線で区切る */
-  .k-seika-in { padding: 8px 10px 10px; }
-  .k-seika-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 1.5px; background: var(--grid); border-radius: 10px; overflow: hidden; }
-  .k-seika-list > :global(li) { padding: 10px 12px; background: var(--paper); }
-  /* 720px 以下は右の列を細くする。主要指標は名前を1行に置き、その下に「いまの値と達成率 | 図」。
-     棒の行は「何の行か | 棒 | 数」の1行にし、成果指標の「一覧（N）」は棒の下に置く */
+  /* 720px 以下は、主要指標のスタート・いま・ゴールを1行ずつ積み、達成率をその下に置く */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
     .k-name { font-size: 1rem; }
-    .k-row { grid-template-columns: 4.2em minmax(0, 1fr) 3.8em; grid-template-areas: "lab viz num"; column-gap: 10px; }
-    .k-shuyou { grid-template-columns: 4.2em minmax(0, 1fr) 128px; grid-template-areas: "lab main main" "lab now viz" "lab num viz"; }
-    .k-shuyou .k-num { justify-self: start; }
-    .k-sum { grid-template-areas: "lab viz num" ". main main"; row-gap: 2px; }
-    .k-seika-in { padding: 6px; }
-    .k-seika-list > :global(li) { padding: 10px; }
+    .k-row { grid-template-columns: 4.2em minmax(0, 1fr); column-gap: 10px; }
+    .k-shuyou { grid-template-areas: "lab main" "lab rate"; row-gap: 2px; }
+    .nw { display: block; }
+    .arrow { display: none; }
+    .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) 3.8em; }
   }
 </style>

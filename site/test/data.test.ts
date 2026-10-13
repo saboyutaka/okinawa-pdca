@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, planLabel, planIndex, withUnit, refText,
+  yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
@@ -53,6 +53,16 @@ test('withUnit: 数字だけの欄にだけ単位を付ける', () => {
   assert.equal(withUnit('12', ''), '12');
   assert.equal(withUnit('', '件'), '—');
   assert.equal(withUnit(null, '件'), '—');
+});
+
+test('eraRef: 主要指標の値の年・年度は、数字を半角に、元号を R・H にそろえ、「年」「年度」は残す', () => {
+  assert.equal(eraRef('令和5年度'), 'R5年度');
+  assert.equal(eraRef('R３年度'), 'R3年度');
+  assert.equal(eraRef('平成２９年度'), 'H29年度');
+  assert.equal(eraRef('令和6年'), 'R6年');
+  assert.equal(eraRef('R7.1.1'), 'R7.1.1');
+  assert.equal(eraRef('令和３年10月～令和9年9月の累計'), 'R3年10月～R9年9月の累計');
+  assert.equal(eraRef(null), '');
 });
 
 test('refText: 実績値の年度は、年度で終わるものにだけ「の値」を付ける', () => {

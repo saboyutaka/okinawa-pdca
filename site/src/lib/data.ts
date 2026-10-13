@@ -53,6 +53,10 @@ export const refText = (raw: string | null | undefined) => {
   const s = (raw || '').trim().replace(/^[（(]\s*|\s*[）)]$/g, '');
   return s && (/(年度?|R\s*[\d０-９元]+)$/.test(s) ? `${s}の値` : s);
 };
+// 主要指標（概要版）の値が何年・何年度の値か（base_ref・actual_ref・target_ref）。印字の書き方がまちまち（「令和5年度」「R３年度」「平成２９年度」）なので、
+// 全角の数字を半角に、元号を R・H にそろえる。「年」と「年度」は暦年と年度の違いなので残す。空なら ''
+export const eraRef = (raw: string | null | undefined) =>
+  (raw || '').trim().replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/令和/g, 'R').replace(/平成/g, 'H');
 
 // 主な取組の進捗状況。「記載なし」は PDF の欄が空欄・「-」のもの
 export const STATUSES: Category[] = [
