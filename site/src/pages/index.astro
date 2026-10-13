@@ -124,11 +124,10 @@ const boshu = boshuState();
 
   <section aria-labelledby="judge-h">
     <h2 id="judge-h">県の「判定」はこう決まる</h2>
-    <p class="lead">
-      県は施策ごとに、①主な取組のうち「順調」の割合と、②成果指標の<Term word="達成率" />の2つを組み合わせて、A〜G の<Term word="推進状況" label="判定" />を付けています。
+    <p class="small secondary lead">
+      施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。
     </p>
-    <JudgeMatrix counts={judgeCounts} caption={`全${fmt(shisaku.length)}施策`} />
-    <p class="small secondary">件数は施策総括表の判定のままで、概要版とは数件ずれます（<a href="/about/#chuui">注意点</a>）。</p>
+    <JudgeMatrix counts={judgeCounts} />
   </section>
 
   <section aria-labelledby="trend-h">
