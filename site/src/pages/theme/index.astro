@@ -1,15 +1,17 @@
 ---
-// くらしのテーマ（このサイト独自の分類）の一覧。ヘッダーのナビの「テーマ」から入る。トップの節（/#themes）はテーマの名前の札だけにし、
-// テーマごとの施策・主な取組・成果指標の数と、施策の判定の内訳の棒、決め方の言葉はここに置く。
-// 数はテーマのページの頭と同じ（lib/heads.ts の themeHead）。並びは themes.json の順（良い・悪いで並べ替えない）
+// くらしのテーマ（このサイト独自の分類）の一覧。ヘッダーのナビの「テーマ」から入る。トップの節（/#themes）はテーマを選んで入るための名前の札だけにし、
+// ここはテーマどうしを見比べるための一覧にする: テーマごとのカードに、名前と施策の数（棒の分母。テーマの大きさが分かるように）、その下に施策の判定の内訳の棒を置く。
+// 成果指標・取組の数はテーマのページの頭にあるので出さない（5つの将来像のページの行と同じ考え方）。施策の数はテーマのページの頭と同じ（lib/heads.ts の themeHead）。
+// 並びは themes.json の順（良い・悪いで並べ替えない）。決め方の言葉も各テーマのページの頭にあるので、ここには出さない。
+// 「表で見る」は付けない（判定の内訳はテーマのページにあり、棒の読み上げには件数と割合がある）
 import Base from '../../layouts/Base.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
 import Chip from '../../components/Chip.astro';
 import Term from '../../components/Term.astro';
-import { LATEST, countBy } from '../../lib/data.ts';
+import { LATEST, yearLong, countBy } from '../../lib/data.ts';
 import { getThemes, unthemed } from '../../lib/themes.ts';
-import { themeHead, total } from '../../lib/heads.ts';
+import { themeHead } from '../../lib/heads.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../../lib/icons.ts';
 import { fmt } from '../../lib/format.ts';
 
@@ -19,34 +21,29 @@ const themes = getThemes().map((t) => {
   return {
     ...t,
     judges: countBy(head.shisaku, (s) => judgeGroupOf(s.judges[LATEST])?.key ?? 'なし', keys),
-    tori: total(head.tori),
-    seika: head.seika,
-    // 決め方の言葉は、全角・半角の違いだけのもの（ＤＸ と DX など）を1つにまとめる
-    rule: [...new Set(t.words.map((w) => w.normalize('NFKC')))].join('、'),
   };
 });
 const rest = unthemed();
 ---
 <Base title="くらしのテーマ" description="子ども・子育て、観光、交通など、くらしのテーマごとに沖縄県PDCAの施策・取組・成果指標を見られます（このサイト独自の分類）。">
-  <h1>くらしのテーマ<span class="own">このサイト独自の分類</span></h1>
-  <p class="secondary lead">施策・施策展開・基本施策の名前に、それぞれの「決め方」の言葉を含む施策をそのテーマに入れています（<a href="/about/#theme">くわしく</a>）。</p>
+  {/* 「このサイト独自の分類」の印は、押すと分け方の説明（lib/terms.ts の「くらしのテーマ」）が出る用語のボタンにし、リード文では分け方を説明しない */}
+  <h1>くらしのテーマ<Term word="くらしのテーマ" label="このサイト独自の分類" note="テーマごとの言葉は、各テーマのページの頭にあります。" class="own" /></h1>
+  {/* 何が分かるか → どう進むかを書く */}
+  <p class="secondary lead">くらしに身近な{fmt(themes.length)}のテーマごとに、県の施策が計画どおりに進んでいるかを見比べられます。気になるテーマを押すと、そのテーマの施策・取組・成果指標をくわしく見られます。</p>
   <div class="legend-box">
-    <span class="legend-l">棒は施策の<Term word="推進状況" label="判定" /></span>
+    <span class="legend-l">{yearLong(LATEST)}の施策の<Term word="推進状況" label="判定" />:</span>
     <ul class="legend" aria-label="棒の凡例">
       {JUDGE_GROUPS.map((g) => <li><Chip tone={g.tone} shape={g.shape} text={g.label} /></li>)}
     </ul>
   </div>
 
+  {/* カードの中は、1行目に名前と施策の数、2行目に棒。名前はどれも1行に入る幅にして、どのカードでも棒が同じ高さに来るようにする（目線がばらつかないように） */}
   <ul class="themes">
     {themes.map((t) => (
-      <li class="sticker theme-row" id={t.id}>
-        <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-        <div class="body">
-          <h2><a class="name-link" href={`/theme/${t.id}/`}>{t.label}</a></h2>
-          <div class="nums small"><span>施策 <b>{fmt(t.ids.length)}</b></span>・<a href={`/torikumi/?theme=${t.id}`}>取組 <b>{fmt(t.tori)}</b></a>・<a href={`/shihyou/?theme=${t.id}`}>成果指標 <b>{fmt(t.seika)}</b></a></div>
-          <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
-          <p class="rule small"><span class="secondary">決め方: </span>{t.rule}</p>
-        </div>
+      <li class="sticker theme-card" id={t.id}>
+        <div class="nm"><span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span><a class="name-link" href={`/theme/${t.id}/`}>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</a></div>
+        <span class="cnt num">{fmt(t.ids.length)}施策</span>
+        <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
       </li>
     ))}
   </ul>
@@ -62,18 +59,28 @@ const rest = unthemed();
 </Base>
 
 <style>
-  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 12px 0 16px; font-size: 0.9375rem; }
-  .legend-l { font-weight: 700; color: var(--ink-2); }
-  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
-  .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-  .theme-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: start; scroll-margin-top: 16px; }
-  .ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--pink); border: 2.5px solid var(--line); }
-  .ico :global(.theme-ic) { width: 30px; height: 30px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .body { display: grid; gap: 6px; min-width: 0; }
-  h2 { font-size: 1.15rem; margin: 0; }
-  .nums > * { white-space: nowrap; }
-  .nums b { font-family: var(--font-num); font-weight: 600; font-size: 1rem; }
-  .rule { margin: 0; line-height: 1.6; }
+  /* 棒の凡例は読み方の手がかりなので、5つの将来像のページと同じく、小さく右に寄せ、地の色だけの箱（線と影なし）にまとめて本文と分ける。
+     スマホでは見出しを1行目に置き、札はその下に並べる */
+  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 14px auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
+  @media (max-width: 640px) {
+    .legend-box { margin-left: 0; padding: 6px 10px; }
+    .legend-l { width: 100%; }
+    .legend { gap: 2px 8px; }
+    .legend :global(.chip) { font-size: 0.6875rem; gap: 2px; }
+    .legend :global(.chip svg) { width: 10px; height: 10px; }
+  }
+  /* カードは、一番長い名前（スタートアップ・起業）と施策の数が1行に入る幅（310px）より狭くしない（画面がそれより狭いときは画面の幅）。PC では3列 */
+  .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr)); }
+  .theme-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 12px; padding: 12px 16px 14px; scroll-margin-top: 16px; }
+  .theme-card :global(.sbar) { grid-column: 1 / -1; }
+  .nm { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 1.05rem; line-height: 1.35; }
+  .nw { white-space: nowrap; } /* 名前は、入りきらない狭い画面でだけ「・」の後ろで折り返す（トップのテーマの札と同じ） */
+  .ico { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--pink); }
+  .ico :global(.theme-ic) { width: 21px; height: 21px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* 施策の数は棒の分母として添えるだけなので、棒の図の右の件数（StatusChart）と同じく小さな灰色の字 */
+  .cnt { font-size: 0.875rem; color: var(--ink-2); white-space: nowrap; }
   .rest { margin-top: 24px; }
   .rest ul { columns: 2 20em; font-size: 0.9375rem; }
 </style>
