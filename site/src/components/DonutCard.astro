@@ -1,18 +1,16 @@
 ---
 // 割合ひとつのドーナツと、その説明のカード（将来像・部局のページの頭の下に2枚並べる。並べる箱は .donuts）。
-// 見出しは中身（Term を入れられる）、説明は sub のスロット。
-// more は、その一覧（取組をさがすなど）へのリンク。トップのヒーローと同じく、カード全体を押せるようにする（中の用語の説明のボタンは上に出して押せるまま）
+// 見出しは中身（Term を入れられる）、説明は sub のスロット
 import Donut from './Donut.astro';
 
-interface Props { frac: number; label: string; more?: { href: string; label: string } }
-const { frac, label, more } = Astro.props;
+interface Props { frac: number; label: string }
+const { frac, label } = Astro.props;
 ---
-<div class:list={['sticker', 'donut-card', more && 'has-more']}>
+<div class="sticker donut-card">
   <Donut frac={frac} label={label} />
   <div>
     <div class="dc-title"><slot /></div>
     <div class="dc-sub"><slot name="sub" /></div>
-    {more && <a class="dc-more" href={more.href}>{more.label}<span aria-hidden="true"> →</span></a>}
   </div>
 </div>
 
@@ -20,10 +18,5 @@ const { frac, label, more } = Astro.props;
   .donut-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 14px; align-items: center; }
   .dc-title { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .dc-sub { font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; margin-top: 4px; }
-  .has-more { position: relative; }
-  .has-more:has(.dc-more:hover) { background: var(--sky); }
-  .dc-more { display: inline-block; margin-top: 6px; font-size: 0.875rem; font-weight: 700; }
-  .dc-more::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-  .has-more :global(.term) { position: relative; z-index: 1; }
   @media (max-width: 420px) { .donut-card { grid-template-columns: 100px minmax(0, 1fr); } .donut-card :global(.donut) { --size: 100px !important; } }
 </style>

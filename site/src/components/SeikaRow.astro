@@ -1,6 +1,6 @@
 ---
 // 成果指標の一覧の1行（成果指標をさがす・部局のページ・くらしのテーマのページ。親は ul.row-list）。
-// 左に名前と施策の2行（施策の行の頭の「施策」は読み上げだけ）、右に達成率の札とゴールまでの道のりの小さな図（SeikaSpark）。札は施策の一覧の行の成果指標の札と同じ形（数字だけ）で、
+// 左に名前と施策の2行、右に達成率の札とゴールまでの道のりの小さな図（SeikaSpark）。札は施策の一覧の行の成果指標の札と同じ形（数字だけ）で、
 // 「達成率」「何年度か」と図の凡例は一覧の上に1回だけ書く（SeikaKey）。
 // 見通し（県の見立て）は達成率の区分とほぼ重なるので行に出さず、絞り込みと成果指標のページに任せる。基準値・実績値・目標値は図に任せ、読み上げ用の文にだけ残す。
 // 担当・くらしのテーマも絞り込みと成果指標のページに任せる。名前は成果指標のページ（href）へのリンク
@@ -22,7 +22,7 @@ const srText = `${rateLabel} ${rateText(x)}。基準値 ${withUnit(x.base_raw, x
     <a class="name-link" href={href}>{row.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
     {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
   </div>
-  {s && <div class="sub small secondary"><span class="sr-only">施策 </span><a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  {s && <div class="sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
   <div class="m-viz" aria-hidden="true">
     <Chip tone={rateTone(x)} text={rateText(x)} title={rateLabel} />
     <SeikaSpark row={row} />
