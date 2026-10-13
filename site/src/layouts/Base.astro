@@ -123,6 +123,8 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
   </head>
   <body>
     <a class="skip" href="#main">本文へスキップ</a>
+    {/* 外部リンク（components/ExtLink.astro）が aria-describedby で指す、読み上げ用の説明。画面には出さず、コピーにも入らない */}
+    <span id="newtab-note" hidden>別のタブで開きます</span>
     {STEALTH && (
       <aside class="beta-notice" aria-label="ベータ版のお知らせ">
         <p class="wrap"><b>ベータ版</b><span>沖縄県への問い合わせが済むまで、検索エンジンには載せていません。</span></p>
@@ -159,13 +161,13 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
+        <p>沖縄県「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>（令和4〜7年度対象）などの報告書から読み取ってまとめた、非公式のサイトです。数値は各ページの出典から元の報告書で確かめてください（<a href="/about/#shutten">読み取った資料</a>）。</p>
         <ul class="foot-links">
           <li><a href="/iken/">意見を伝えたい人へ</a></li>
           <li><a href="/#themes">くらしのテーマ</a>（このサイト独自の分類）</li>
           <li><a href="/keikaku/">個別計画（観光ロードマップ）</a></li>
         </ul>
-        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink>）</p>
+        <p>制作: <a href="/code-for-okinawa/">{PROJECT.org}</a>（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></p>
       </div>
     </footer>
   </body>

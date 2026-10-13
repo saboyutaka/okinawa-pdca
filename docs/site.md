@@ -23,7 +23,7 @@
 - ページ用の形（`Shisaku`・`TorikumiGroup`・`SeikaGroup`・`KankoShisaku` など）は `lib/data.ts`・`lib/plans.ts` が出す。コンポーネントの `Props` はこれを使い、`any` にしない。状態の色と形は `lib/icons.ts` の `Tone`・`Shape`。
 - 動的なページは `getStaticPaths` の `props` でデータを渡し、`InferGetStaticPropsType` で型を付ける（`Astro.params` から探し直さない）。`getStaticPaths` はページに書かず、`lib/routes.ts` の `ROUTES` に書く（8章）。
 - ブラウザに渡す JSON は、書き出す側と読む側で同じ型を使う（図は `scripts/charts.ts` の `SeikaData`・`TrendData`・`KatsudouData`、取組の検索は `lib/search-data.ts` の `SearchData`）。
-- 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。
+- 外のサイトへのリンクは、すべて `components/ExtLink.astro` で書く（別のタブで開き、外部リンクの印と読み上げ用の「別のタブで開きます」を付ける）。素の `<a>` はサイトの中のリンクだけ。「別のタブで開きます」はリンクの中の文字にせず、`layouts/Base.astro` に1つだけ置いた隠した文を `aria-describedby` で指す（文をコピーしたときに付いてこないように）。リンクのすぐ後ろに「」」「）」が続くときは `after="」"` で渡す（印の後ろで折り返して、閉じかっこが行の頭に来ないように）。
 
 ## 3. lib とスクリプト
 

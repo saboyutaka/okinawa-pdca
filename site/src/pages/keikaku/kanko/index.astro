@@ -140,7 +140,7 @@ const SEIKA_SHOW = 10;
   <section aria-labelledby="pdca">
     <h2 id="pdca" class="anchor">沖縄県PDCAとの関係</h2>
     <ul class="small">
-      <li>観光ロードマップは、新・沖縄21世紀ビジョン基本計画を上位の計画とする「<ExtLink href={LINKS.kankoPlan}>{KANKO.basis}</ExtLink>」の施策を具体化した実施計画です。沖縄県PDCAの施策（339）とは別に、観光の施策（85）を立てています。</li>
+      <li>観光ロードマップは、新・沖縄21世紀ビジョン基本計画を上位の計画とする「<ExtLink href={LINKS.kankoPlan} after="」">{KANKO.basis}</ExtLink>の施策を具体化した実施計画です。沖縄県PDCAの施策（339）とは別に、観光の施策（85）を立てています。</li>
       <li>主な取組は、同じ年度に同じ名前の取組が沖縄県PDCAにもあれば、取組のページへのリンクを付けています（名前が少し違っても、よく似ていて決算見込額が同じものを含みます）。沖縄県PDCAの取組のページからも、観光ロードマップの施策をたどれます。</li>
       <li>主な取組の多くは、沖縄県PDCAでも主な取組として評価されている同じ事業で、進捗状況も同じです。成果指標は、観光の計画にしか無いもの（観光客の満足度、県民の観光への理解など）が多くあります。</li>
       <li>観光ロードマップにしか無い取組は、観光統計の調査の項目ごとの活動など、沖縄県PDCAより細かい単位のものが多くあります。</li>
@@ -150,9 +150,9 @@ const SEIKA_SHOW = 10;
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>
-    <p class="small">沖縄県「<ExtLink href={LINKS.kankoRm}>{KANKO.name}</ExtLink>」の年度別の「沖縄観光推進ロードマップPDCA実施結果」のページ。</p>
+    <p class="small">沖縄県「<ExtLink href={LINKS.kankoRm} after="」">{KANKO.name}</ExtLink>の年度別の「沖縄観光推進ロードマップPDCA実施結果」のページ。</p>
     <ul class="small">
-      {RM_YEARS.map((y) => sources.filter((s) => s.year === y).map((s) => <li>{yearLong(y)}: <ExtLink href={s.file_url}>{s.link_text.replace(/\s*（\s*PDF[^）]*）\s*$/, '')}</ExtLink>（<ExtLink href={s.page_url}>掲載ページ</ExtLink>）</li>))}
+      {RM_YEARS.map((y) => sources.filter((s) => s.year === y).map((s) => <li>{yearLong(y)}: <ExtLink href={s.file_url}>{s.link_text.replace(/\s*（\s*PDF[^）]*）\s*$/, '')}</ExtLink>（<ExtLink href={s.page_url} after="）">掲載ページ</ExtLink></li>))}
     </ul>
   </section>
 </Base>

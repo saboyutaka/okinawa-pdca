@@ -45,12 +45,12 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
 <Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・使っている技術・注意点">
   <h1>このサイトについて</h1>
   <p class="lead">
-    沖縄県が公表している「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
+    沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
   </p>
 
   <h2 id="naritachi">このサイトのなりたち</h2>
   <p>
-    私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian}>沖縄未来提案プロジェクト</ExtLink>」を行いました。
+    私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>を行いました。
     貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読み、パブリックコメントを提出しました。
   </p>
   <p>
@@ -64,8 +64,8 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
 
   <h2>沖縄県PDCAとは</h2>
   <p>
-    沖縄県は「<ExtLink href={LINKS.kihonKeikaku}>新・沖縄21世紀ビジョン基本計画</ExtLink>」を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
-    その検証結果が「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」で、毎年度、前の年度の分が公表されます（公表の時期は年度によって違い、令和4年度対象は令和6年3月、令和5年度対象は令和6年11月、令和6年度対象は令和7年8月、令和7年度対象は令和8年8月）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou}>沖縄県PDCAの概要</ExtLink>」で説明されています。
+    沖縄県は「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン基本計画</ExtLink>を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
+    その検証結果が「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で、毎年度、前の年度の分が公表されます（公表の時期は年度によって違い、令和4年度対象は令和6年3月、令和5年度対象は令和6年11月、令和6年度対象は令和7年8月、令和7年度対象は令和8年8月）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou} after="」">沖縄県PDCAの概要</ExtLink>で説明されています。
   </p>
 
   <h3 id="kaisou">計画の階層と指標のつながり</h3>
@@ -98,7 +98,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
   </p>
 
   <h2 id="shutten">出典</h2>
-  <p>沖縄県「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
+  <p>沖縄県「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
   <ul>
     {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink>のPDF {fmt(p.pdf)}件{p.zip > 0 && `（うち${fmt(p.zip)}件はzipの中）`}</li>)}
   </ul>
@@ -106,9 +106,9 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
   <p>各施策・各取組のページの「出典」から、元のPDFの該当ページを開けます（zipで公開されている年度はzipへのリンクです）。</p>
   <p id="others">沖縄県PDCAのほかに、次の県の公表資料も読み取っています。</p>
   <ul>
-    <li><a href="/keikaku/kanko/">観光ロードマップ</a>: 沖縄県「<ExtLink href={LINKS.kankoRm}>沖縄観光推進ロードマップ</ExtLink>」の年度別の「沖縄観光推進ロードマップPDCA実施報告書」（R4〜R6、PDF {fmt(kankoPdf)}件）。第6次沖縄県観光振興基本計画の実施計画の評価です。</li>
-    <li>施策のページの「一括交付金（ソフト）の事業」と<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>: 沖縄県「<ExtLink href={LINKS.ikkatsu}>沖縄振興特別推進交付金の事後評価</ExtLink>」の総括表（成果目標・評価）と検証シート（施策のコード・予算の執行・今後の方針）（R4〜R6、PDF {fmt(ikkatsuPdf)}件）。沖縄県PDCAとは別の評価で、主な取組とは結び付けていません。</li>
-    <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka}>新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>」の本文の第2章（基本施策の推進による成果と課題。PDF {fmt(hyokaPdf)}件）。</li>
+    <li><a href="/keikaku/kanko/">観光ロードマップ</a>: 沖縄県「<ExtLink href={LINKS.kankoRm} after="」">沖縄観光推進ロードマップ</ExtLink>の年度別の「沖縄観光推進ロードマップPDCA実施報告書」（R4〜R6、PDF {fmt(kankoPdf)}件）。第6次沖縄県観光振興基本計画の実施計画の評価です。</li>
+    <li>施策のページの「一括交付金（ソフト）の事業」と<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>: 沖縄県「<ExtLink href={LINKS.ikkatsu} after="」">沖縄振興特別推進交付金の事後評価</ExtLink>の総括表（成果目標・評価）と検証シート（施策のコード・予算の執行・今後の方針）（R4〜R6、PDF {fmt(ikkatsuPdf)}件）。沖縄県PDCAとは別の評価で、主な取組とは結び付けていません。</li>
+    <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka} after="」">新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>の本文の第2章（基本施策の推進による成果と課題。PDF {fmt(hyokaPdf)}件）。</li>
   </ul>
 
   <h2 id="tsukurikata">作り方</h2>
@@ -147,7 +147,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     </div>
     <div>
       <dt>AI</dt>
-      <dd>読み取りのプログラムやサイトの多くは、AI（Anthropic の <ExtLink href="https://claude.com/product/claude-code">Claude Code</ExtLink>）と一緒に書いています。AI と一緒に書いたものも、上の作り方のとおり、公表値との突き合わせ・別のプログラムでの読み直し・テストで確かめています。</dd>
+      <dd>読み取りのプログラムやサイトの多くは、AI（Anthropic の <ExtLink href="https://claude.com/product/claude-code" after="）">Claude Code</ExtLink>と一緒に書いています。AI と一緒に書いたものも、上の作り方のとおり、公表値との突き合わせ・別のプログラムでの読み直し・テストで確かめています。</dd>
     </div>
   </dl>
   <p>

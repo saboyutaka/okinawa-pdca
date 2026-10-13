@@ -65,12 +65,14 @@ const seikaRows = YEARS.map((y) => ({ label: yearLabel(y), sub: y <= 2024 ? '前
 const boshu = boshuState();
 ---
 <Base>
+  <p class="made-by"><span class="nw">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の</span><span class="nw"><Term word="シビックテック" />の取り組みとして作っています。</span></p>
   <section class="hero sticker lift" aria-labelledby="hero-h">
     <p class="site-line"><b>{SITE.name}</b><span>{SITE.tagline}</span></p>
     <span class="tag">{yearLong(LATEST)}の結果</span>
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
-      沖縄県が毎年公表している「<ExtLink href={LINKS.kekka}>沖縄県PDCA実施結果</ExtLink>」（令和4〜7年度）を、県の<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件から読み込んで</a>、見やすくまとめました。このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています。
+      沖縄県は毎年、「<ExtLink href={LINKS.jisshiKeikaku} after="」">新・沖縄21世紀ビジョン実施計画</ExtLink>に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを点検し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>として公表しています。<br />
+      その結果（令和4〜7年度）を、<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
     <div class="donuts">
       <div class="donut-card">
@@ -205,7 +207,10 @@ const boshu = boshuState();
 </Base>
 
 <style>
-  .hero { position: relative; overflow: hidden; margin-top: 12px; background: var(--sky); padding: 24px 24px 28px; }
+  /* 作り手の1行。ヒーローの上に右寄せで小さく置く */
+  .made-by { margin: 12px 0 0; text-align: right; font-size: 0.8125rem; color: var(--ink-2); }
+  .made-by .nw { display: inline-block; } /* 狭い画面では「Code for Okinawa の」の後ろでだけ折り返す */
+  .hero { position: relative; overflow: hidden; margin-top: 8px; background: var(--sky); padding: 24px 24px 28px; }
   .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; border: 2.5px solid var(--line); pointer-events: none; }
   .hero::before { width: 170px; height: 170px; right: -50px; top: -60px; background: var(--pink); }
   .hero::after { width: 90px; height: 90px; left: -34px; bottom: -34px; background: var(--lilac); }
