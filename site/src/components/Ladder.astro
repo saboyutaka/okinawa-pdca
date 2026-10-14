@@ -2,7 +2,7 @@
 // トップのヒーローと将来像のページの頭に置く、3つの段の問いと答え（docs/design.md の1章「3つの段」）。
 // 計画の階層と同じ向きに上から「沖縄の姿（基本施策の主要指標）→ 施策の成果（成果指標）→ 県の活動（主な取組の進捗状況）」と並べ、
 // どの段も、問い・何をいくつ数えたか・県の区分の内訳の棒1本を同じ形で出す（1つの割合だけを大きくしない。区分は県の並びのまま）。
-// 主要指標は1指標を1マスにした「マス目の棒」にする（StatusBar の cells。何個のうち何個かを見せ、ほかの段のつながった棒と見た目を分ける）。
+// 主要指標も、ほかの段と同じつながった棒にする（49指標を1マスずつにすると、スマホで細かすぎるため）。
 // 3つの段の割合は意味が違う（主要指標は R9 のゴールに対して、成果指標と取組はその年度の計画に対して）ので、1つの図や目盛りにまとめず、差も書かない。
 // すっきり見せるため、凡例と区分ごとの数は並べない。区分の名前と数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar。読み上げは棒全体で読む）。
 // 「主要指標の49指標」のような何をいくつ数えたかの言葉が、その一覧へのリンク（q は将来像のページの「s=1」のような一覧の条件）。
@@ -49,7 +49,7 @@ const rungs: { id: string; q: string[]; term: string; n: number; unit: string; h
         <p class="r-title">{r.q.map((w) => <span class="nw">{w}</span>)}</p>
         <a class="r-link" href={r.href}>{r.term}の<b>{fmt(r.n)}</b>{r.unit}<span aria-hidden="true"> →</span></a>
       </div>
-      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey="" cells={r.id === 'shuyou'} />
+      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey="" />
     </li>
   ))}
 </ul>

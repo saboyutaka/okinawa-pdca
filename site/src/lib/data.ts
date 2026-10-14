@@ -451,7 +451,7 @@ export const shuyouBinOf = (bin: ShuyouBin) => SHUYOU_BINS.find((b) => b.key ===
 // 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
 export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
 // 主要指標の達成状況の区分の内訳の棒（components/StatusBar.astro）に渡す区分と、区分ごとの数。棒の区間と読み上げは概要版の言葉（「目標値に到達」など）で出す。
-// トップと将来像のページの頭の3つの段（Ladder）と、トップの将来像の行（Tiers）が使う
+// トップと将来像のページの頭の3つの段（Ladder。つながった棒）と、トップの将来像の行（Tiers。1指標1マスのマス目の棒）が使う
 export const SHUYOU_CATS = SHUYOU_BINS.map((b) => ({ key: b.label, tone: b.tone }));
 export const shuyouCounts = (rows: { bin: ShuyouBin }[]) => countBy(rows, (r) => shuyouBinOf(r.bin).label, SHUYOU_CATS.map((c) => c.key));
 
