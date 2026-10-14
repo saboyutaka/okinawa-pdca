@@ -1,13 +1,12 @@
 ---
 // 成果指標1つのページ。年度をまたいで同じ名前の成果指標をまとめる（施策ページのカードと同じまとまり）。シェアや画面の共有で、この指標だけを見せられるようにする。
-// 頭は親の施策の札の下にぶら下げる。①計画値に届いたかとスタート → いま → ゴールの数字（施策ページのカードと同じ部品） ②道のりの図と表
+// 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①計画値に届いたかとスタート → いま → ゴールの数字（施策ページのカードと同じ部品） ②道のりの図と表
 // ③県による説明（最新の年度は畳まず、前の年度は畳む） ④この指標の施策の主な取組（進捗状況の内訳と一覧） ⑤観光ロードマップの同じ指標 ⑥出典
 // 達成率は計画期間（前期・中期）をまたいで比べない。図の地の色と表の「前期・中期」で分ける
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
-import Crumbs from '../../../components/Crumbs.astro';
-import ParentShisaku from '../../../components/ParentShisaku.astro';
+import Hierarchy from '../../../components/Hierarchy.astro';
 import Term from '../../../components/Term.astro';
 import ThemeTags from '../../../components/ThemeTags.astro';
 import SeikaGoal from '../../../components/SeikaGoal.astro';
@@ -24,7 +23,7 @@ import ExtLink from '../../../components/ExtLink.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, STATUSES, yearLabel, yearLong, sectionHref, sourceLink, statusOf, toneOfStatus, countBy, textGoalChartRow,
-  torikumiOfSeika, seikaAlias, seikaVerdict, type TorikumiGroup,
+  torikumiOfSeika, seikaAlias, seikaVerdict, planPath, type TorikumiGroup,
 } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, kankoOfSeika } from '../../../lib/plans.ts';
 import { seikaHead } from '../../../lib/describe.ts';
@@ -68,11 +67,8 @@ const alias = aliased.length > 0 ? { printed: g.years[aliased[0]].name, from: se
 const verdict = seikaVerdict(x);
 ---
 <Base {...seikaHead(g)} ogType="article">
-  <Crumbs items={[{ href: `/future/${s.shouraizou}/`, label: `将来像${s.shouraizou}`, sz: s.shouraizou }, { href: `/shisaku/${s.id}/`, label: s.name }, { label: g.name }]} />
-
-  <ParentShisaku s={s} kind="この指標が入っている施策" />
-
-  <header class="sticker lift head hang">
+  <Hierarchy items={planPath({ shisaku: s.id })} page={g.name} />
+  <header class="sticker lift head">
     <div class="kind"><Term word="成果指標" /></div>
     <h1>{g.name}{u && <span class="unit secondary">（{u}）</span>}</h1>
     <div class="meta">

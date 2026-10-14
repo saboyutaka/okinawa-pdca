@@ -16,7 +16,6 @@ import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
@@ -60,7 +59,6 @@ const visions = getShouraizou()
 const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`).join('')}です。`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
-  <Crumbs items={[{ href: '/theme/', label: 'くらしのテーマ' }, { label: t.label }]} />
   <header class="sticker lift t-hero">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <div class="t-kicker">くらしのテーマ</div>

@@ -8,6 +8,7 @@ import './list-filter.ts';
 import './shisaku-trend.ts';
 import './torikumi-search.ts';
 import './show-more.ts';
+import './tree.ts';
 import './like.ts';
 import './tooltip.ts';
 import './theme.ts';
