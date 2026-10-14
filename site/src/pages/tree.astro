@@ -1,22 +1,23 @@
 ---
 import Base from '../layouts/Base.astro';
-import Sz from '../components/Sz.astro';
 import Term from '../components/Term.astro';
 import ExtLink from '../components/ExtLink.astro';
-import { LATEST, yearLong, getPlanTree, type PlanTreeKihon, type PlanTreeShisaku, type PlanTreeTenkai } from '../lib/data.ts';
+import { LATEST, yearLong, getPlanTree } from '../lib/data.ts';
+import { TREE_DATA_FALLBACK, treeDataPath } from '../lib/tree-data.ts';
 import { LINKS } from '../lib/links.ts';
 import { fmt } from '../lib/format.ts';
-import { createHash } from 'node:crypto';
 
-// 計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組を、開け閉めできる木（<details> の入れ子）で並べる（木の中身は lib/data.ts の getPlanTree）。
+// 計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組を、開け閉めできる木（<details> の入れ子）で並べる。
+// 木は HTML に書かず、ブラウザのスクリプト（scripts/tree.ts）が JSON（lib/tree-data.ts。名前とリンクだけ）から描く（約2,500行あり、HTML に書くと
+// 750KB ほどになって、戻る・進むで読み直したときに、読み終えるまで絞り込む前の目次と空の欄が見えていたため）。
 // 基本施策には主要指標、施策には成果指標を付ける。PC の幅では名前の横に並べ、スマホでは開いた中に主な取組より先に並べる（同じ指標を2か所に書き、幅で片方だけを出す）。
 // 指標は名前だけで、値や達成率は出さない（形を見るページにし、良い・悪いの一覧にしない）。
-// 開け閉めはスクリプトが無くても動く。名前はそれぞれのページへのリンクで、▶ の丸（summary）を押すと開け閉めする。
+// 名前はそれぞれのページへのリンクで、▶ の丸（summary）を押すと開け閉めする。
 // summary の中にリンクを置くと押せるものが入れ子になるので、名前は summary の外に置き、summary は丸だけにする。施策展開にはページが無いので、行ごと summary にする。
 // 番号は、通しの番号（1-(2)-イ）ではなく、その階層の中の番号（基本施策 (2)・施策展開 イ・施策 ①・主な取組は施策の中の報告書の番号 1, 2, …）を名前の頭に置く（木の形で上の階層が分かるため）。
 // 閉じている行にだけ、すぐ下に並ぶものの数（「取組 6・成果指標 2」）を名前の後ろに出す（開いたら下に並ぶので出さない。CSS で切り替える。指標の数は、指標を名前の横に出す PC では出さない）。
-// 頭の「開く深さ」（scripts/tree.ts）は、押した階層まで一度に開く。はじめは将来像だけを開いて、基本施策まで見せる。
-// キーワード（scripts/tree.ts）は、施策・取組・成果指標の名前（li[data-q] の中の .qn）を部分一致でさがし、当たった行とその親だけを残して開く
+// 頭の「開く深さ」は、押した階層まで一度に開く。はじめは将来像だけを開いて、基本施策まで見せる（はじめに押してあるボタン）。
+// キーワードは、施策・取組・成果指標の名前（li[data-q] の中の .qn）を部分一致でさがし、当たった行とその親だけを残して開く
 const tree = getPlanTree();
 const kihonAll = tree.flatMap((v) => v.kihon);
 const tenkaiAll = kihonAll.flatMap((k) => k.tenkai);
@@ -25,39 +26,15 @@ const total = (xs: { length: number }[]) => xs.reduce((n, x) => n + x.length, 0)
 const nTorikumi = total(shisakuAll.map((s) => s.torikumi));
 const nShuyou = total(kihonAll.map((k) => k.shuyou));
 const nSeika = total(shisakuAll.map((s) => s.seika));
-// その階層の中の番号（1-(2)-イ-③ → ③、1-(2)-イ → イ、1-(2) → (2)）
-const localNo = (code: string) => code.split('-').at(-1);
-// すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数（PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
-// ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）
-type Count = [label: string, n: number, ind?: boolean];
-const ofVision = (ks: PlanTreeKihon[]): Count[] => [['基本施策', ks.length]];
-const ofKihon = (k: PlanTreeKihon): Count[] => [['施策展開', k.tenkai.length], ['主要指標', k.shuyou.length, true]];
-const ofTenkai = (t: PlanTreeTenkai): Count[] => [['施策', t.shisaku.length]];
-const ofShisaku = (s: PlanTreeShisaku): Count[] => [['取組', s.torikumi.length], ['成果指標', s.seika.length, true]];
-const shown = (cs: Count[]) => cs.filter(([, n]) => n > 0);
-const said = (cs: Count[]) => shown(cs).filter(([, , ind]) => !ind).map(([l, n]) => `${l} ${n}`).join('・');
 // 「開く深さ」のボタン。i 番目は、i より上の階層（details の data-level が i 未満）を開き、その下は閉じる
 const DEPTHS = ['将来像だけ', '基本施策まで', '施策展開まで', '施策まで', '主な取組まで'];
 const START = 1;
-// URL に q があるときに、読み込みの途中で（目次を描く前に）言葉の欄を埋め、さがし終わるまで目次を隠す（html.tree-q。scripts/tree.ts が外す）。
-// このページは行が多く、ブラウザのスクリプト（scripts/site.ts）が動くのはページを読み終えてから（スマホで1秒近く）なので、
-// それまでは空の欄と絞り込む前の目次が見え、戻る・進むで読み直したときに言葉が消えて描き直したように見えるため。
-// スクリプトが読めなかったときに目次が出ないままにならないよう、5秒たったら隠すのをやめる。
-// CSP（astro.config.ts）はハッシュの合うものしか動かさないので、layouts/Base.astro と同じく中身のハッシュを足す
-const TREE_Q = `(() => {
-  const q = new URLSearchParams(location.search).get('q');
-  if (!q) return;
-  const hits = document.currentScript.previousElementSibling;
-  const input = hits.previousElementSibling.querySelector('input[name="q"]');
-  if (input) input.value = q;
-  hits.firstElementChild.textContent = 'さがしています…';
-  const html = document.documentElement;
-  html.classList.add('tree-q');
-  setTimeout(() => html.classList.remove('tree-q'), 5000);
-})();`;
-Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(TREE_Q).digest('base64')}`);
+// 目次のデータ。名前に中身のハッシュが付く（lib/tree-data.ts）
+const dataPath = treeDataPath();
 ---
 <Base title="計画の目次" description={`新・沖縄21世紀ビジョンの5つの将来像・${kihonAll.length}の基本施策・${tenkaiAll.length}の施策展開・${shisakuAll.length}の施策・${fmt(nTorikumi)}件の主な取組（${yearLong(LATEST)}）を、主要指標・成果指標と一緒に、開け閉めできる目次の形で一覧できます。`}>
+  {/* 目次のデータを、ページのスクリプトが届くのを待たずに読み始める（scripts/tree.ts の fetch がこれを使う。crossorigin は fetch の既定に合わせる） */}
+  <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <h1>計画の目次</h1>
   <p class="secondary lead">
     「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>の{tree.length}つの<Term word="将来像" />から、{kihonAll.length}の<Term word="基本施策" />、{tenkaiAll.length}の<Term word="施策展開" />、{shisakuAll.length}の<Term word="施策" />、{fmt(nTorikumi)}件の<Term word="主な取組" />までを、成果をはかる<Term word="主要指標" />（{nShuyou}）・<Term word="成果指標" />（{nSeika}）と一緒にたどれます。
@@ -68,70 +45,15 @@ Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(TREE_Q).digest
     </label>
   </form>
   <p class="result-count tree-hits" data-tree-hits="plan-tree" aria-live="polite"><span id="tree-hits"></span></p>
-  <script is:inline set:html={TREE_Q}></script>
   <div class="tree-depth" role="group" aria-labelledby="tree-depth-l">
     <span class="td-l" id="tree-depth-l">開く深さ</span>
     {DEPTHS.map((d, i) => <button type="button" data-tree-depth={i} aria-controls="plan-tree" aria-pressed={i === START ? 'true' : 'false'}>{d}</button>)}
   </div>
   <div class="tree-box sticker">
     <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span></p>
-    <ul class="tree" id="plan-tree" data-tree>
-      {tree.map(({ vision: v, kihon }) => (
-        <li class="nd lv0" id={`v-${v.id}`}>
-          <div class="tb">
-            <span class="nm"><span class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><a class="name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a></span> <span class="cnt">{shown(ofVision(kihon)).map(([l, n]) => <span>{l} <b>{n}</b></span>)}</span></span>
-          </div>
-          <details open={START > 0} data-level="0">
-            <summary class="tg"><span class="tw" aria-hidden="true"></span><span class="sr-only">{said(ofVision(kihon))}</span></summary>
-            <ul>
-              {kihon.map((k) => (
-                <li class="nd lv1" id={`k-${k.kihon.id}`}>
-                  <div class="tb">
-                    <span class="no">{localNo(k.kihon.code)}</span><span class="nm"><a class="name-link" href={`/kihon/${k.kihon.id}/`}>{k.kihon.name}</a>{k.shuyou.length > 0 && <span class="inds">{k.shuyou.map((r) => <span class="ind-i"><span class="ind">指標</span><a class="sub-link" href={r.href}>{r.name}</a></span>)}</span>} <span class="cnt">{shown(ofKihon(k)).map(([l, n, ind]) => <span class:list={[ind && 'c-ind']}>{l} <b>{n}</b></span>)}</span></span>
-                  </div>
-                  <details data-level="1">
-                    <summary class="tg"><span class="tw" aria-hidden="true"></span><span class="sr-only">{said(ofKihon(k))}</span></summary>
-                    <ul>
-                      {k.shuyou.map((r) => <li class="leaf leaf-ind"><div class="tb"><span class="no ind">指標</span><a class="name-link" href={r.href}>{r.name}</a></div></li>)}
-                      {k.tenkai.map((t) => (
-                        <li class="lv2" id={`t-${t.id}`}>
-                          <details data-level="2">
-                            <summary class="sum">
-                              <span class="tw" aria-hidden="true"></span>
-                              <span class="tb"><span class="no">{localNo(t.code)}</span><span class="nm"><span class="tk-name">{t.name}</span> <span class="cnt">{shown(ofTenkai(t)).map(([l, n]) => <span>{l} <b>{n}</b></span>)}</span></span></span>
-                            </summary>
-                            <ul>
-                              {t.shisaku.map((s) => (
-                                <li class="nd lv3" id={`s-${s.shisaku.id}`} data-q="施策">
-                                  <div class="tb">
-                                    <span class="no">{localNo(s.shisaku.code)}</span><span class="nm"><a class="name-link qn" href={`/shisaku/${s.shisaku.id}/`}>{s.shisaku.name}</a>{s.seika.length > 0 && <span class="inds">{s.seika.map((g) => <span class="ind-i"><span class="ind">指標</span><a class="sub-link qn" href={g.href} data-qk={g.href}>{g.name}</a></span>)}</span>} <span class="cnt">{shown(ofShisaku(s)).map(([l, n, ind]) => <span class:list={[ind && 'c-ind']}>{l} <b>{n}</b></span>)}</span></span>
-                                  </div>
-                                  {shown(ofShisaku(s)).length ? (
-                                    <details data-level="3">
-                                      <summary class="tg"><span class="tw" aria-hidden="true"></span><span class="sr-only">{said(ofShisaku(s))}</span></summary>
-                                      <ul>
-                                        {s.seika.map((g) => <li class="leaf leaf-ind" data-q="成果指標"><div class="tb"><span class="no ind">指標</span><a class="name-link qn" href={g.href} data-qk={g.href}>{g.name}</a></div></li>)}
-                                        {s.torikumi.map((g) => <li class="leaf" data-q="取組"><div class="tb"><span class="no">{g.latest.no}</span><a class="name-link qn" href={g.href}>{g.latest.name}</a></div></li>)}
-                                      </ul>
-                                    </details>
-                                  ) : (
-                                    <span class="tg" aria-hidden="true"><span class="tw tw-none"></span></span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          </details>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </li>
-      ))}
-    </ul>
+    <p class="tree-msg small secondary" role="status">目次を読み込んでいます…</p>
+    <ul class="tree" id="plan-tree" data-tree aria-busy="true" data-src={dataPath} data-fallback={TREE_DATA_FALLBACK}></ul>
+    <noscript><p class="small">目次の表示には JavaScript が必要です。<a href="/shisaku/">施策をさがす</a>・<a href="/future/">5つの将来像</a>から、それぞれの施策・取組を見られます。</p></noscript>
   </div>
   <p class="small secondary">施策・指標・主な取組は{yearLong(LATEST)}の報告にあるものです。主要指標は、県の概要版の数え方（男女別などを分けて数える）です。主な取組は延べ件数で、いくつかの施策に載る取組は、それぞれの施策の下に出ます。</p>
 </Base>
@@ -148,8 +70,11 @@ Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(TREE_Q).digest
   .tree-hits > span:empty { display: none; }
   .tree-depth { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; }
   :root:not(.js) :is(.tree-search, .tree-depth) { display: none; }
-  /* URL に q があるときは、さがし終わるまで目次を出さない（下の TREE_Q。絞り込む前の目次が一度見えてから変わらないように） */
-  html.tree-q #plan-tree { display: none; }
+  /* 目次のデータが届くまで（scripts/tree.ts が描くまで）、目次の場所を画面の高さぶん取っておく。空のままだと下の注記が最初の画面に見え、
+     描くと押し出されてずれるため（取組をさがすと同じ。docs/site.md の 7章）。スクリプトが動かないときは「読み込んでいます」を出さず、場所も取らない */
+  :root.js .tree-box .tree[aria-busy='true'] { min-height: 100vh; }
+  :root:not(.js) .tree-box .tree-msg { display: none; }
+  .tree-box .tree-msg { margin: 4px 0 4px calc(var(--tw) + 8px); }
   .tree-depth .td-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); margin-right: 4px; }
   .tree-depth button {
     display: inline-flex; align-items: center; gap: 4px; font: inherit; font-family: var(--font-display); font-size: 0.875rem; color: var(--ink);

@@ -9,6 +9,7 @@ import {
   type SearchData, type SearchSummary,
 } from '../src/lib/search-data.ts';
 import { getTorikumiGroups } from '../src/lib/data.ts';
+import { treeDataPath, TREE_DATA_FALLBACK } from '../src/lib/tree-data.ts';
 
 const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
 const data = () => JSON.parse(searchDataJson()) as SearchData;
@@ -36,8 +37,8 @@ function immutableRules() {
 
 test('ハッシュの付いた名前は public/_headers のずっとキャッシュするルールに当たり、控えは当たらない', () => {
   const rules = immutableRules();
-  for (const p of [searchDataPath(), searchSummaryPath()]) assert.ok(rules.some((r) => r.test(p)), p);
-  for (const p of [SEARCH_DATA_FALLBACK, SEARCH_SUMMARY_FALLBACK]) assert.ok(!rules.some((r) => r.test(p)), p);
+  for (const p of [searchDataPath(), searchSummaryPath(), treeDataPath()]) assert.ok(rules.some((r) => r.test(p)), p);
+  for (const p of [SEARCH_DATA_FALLBACK, SEARCH_SUMMARY_FALLBACK, TREE_DATA_FALLBACK]) assert.ok(!rules.some((r) => r.test(p)), p);
 });
 
 test('JSON はすべての取組を、fields の並びで持つ', () => {
