@@ -1,7 +1,7 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
+import { NOINDEX, PROJECT, SITE } from '../lib/links.ts';
 import { LATEST, yearLong } from '../lib/data.ts';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
@@ -95,7 +95,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
-    {STEALTH && <meta name="robots" content="noindex, nofollow" />}
+    {NOINDEX && <meta name="robots" content="noindex, nofollow" />}
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -130,11 +130,6 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <a class="skip" href="#main">本文へスキップ</a>
     {/* 外部リンク（components/ExtLink.astro）が aria-describedby で指す、読み上げ用の説明。画面には出さず、コピーにも入らない */}
     <span id="newtab-note" hidden>別のタブで開きます</span>
-    {STEALTH && (
-      <aside class="beta-notice" aria-label="ベータ版のお知らせ">
-        <p class="wrap"><b>ベータ版</b><span>沖縄県への問い合わせが済むまで、検索エンジンには載せていません。</span></p>
-      </aside>
-    )}
     <header class="site-header">
       <div class="wrap">
         <div class="site-id">

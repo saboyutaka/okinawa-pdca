@@ -24,7 +24,7 @@
 /*/
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
-# まだ公開前（ステルス）なので、検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったら X-Robots-Tag の行を外し、src/lib/links.ts の STEALTH を false にする（ベータ版の帯が消え、シェアボタンが出る）。
+# まだ検索エンジンに載せない（HTML の robots の meta と同じ）。載せてよくなったら X-Robots-Tag の行を外し、src/lib/links.ts の NOINDEX を false にする。
 # ほかは守りのヘッダー。読み込んでよいもの（CSP）は各ページの <meta>（astro.config.ts の security.csp）で出し、
 # <meta> では効かない frame-ancestors（ほかのサイトの枠の中に表示させない）だけここで出す。
 # HSTS（一度 https で開いたブラウザに、この先1年は http で開かせない）もここで出す。ダッシュボードの HSTS は切ったままにする（片方だけにする）
