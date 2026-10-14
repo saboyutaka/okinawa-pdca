@@ -18,10 +18,11 @@ import { bump } from './motion.ts';
 
 const esc = (s: string | number) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 // すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数（PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
-// ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）
+// ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）。
+// 名前のある行（将来像・基本施策・施策）では、▶ の丸の読み上げの名前に同じ数があるので、画面の数は読ませない（hide。施策展開は行ごと summary で、数はそこでしか読まれないので読ませる。docs/design.md の9章）
 type Count = [label: string, n: number, ind?: boolean];
-const counts = (cs: Count[]) =>
-  `<span class="cnt">${cs.filter(([, n]) => n > 0).map(([l, n, ind]) => `<span${ind ? ' class="c-ind"' : ''}>${l} <b>${n}</b></span>`).join('')}</span>`;
+const counts = (cs: Count[], hide = true) =>
+  `<span class="cnt"${hide ? ' aria-hidden="true"' : ''}>${cs.filter(([, n]) => n > 0).map(([l, n, ind]) => `<span${ind ? ' class="c-ind"' : ''}>${l} <b>${n}</b></span>`).join('')}</span>`;
 const said = (cs: Count[]) => cs.filter(([, n, ind]) => n > 0 && !ind).map(([l, n]) => `${l} ${n}`).join('・');
 // 開け閉めの丸（名前のある行の summary）
 const toggle = (level: number, cs: Count[]) =>
@@ -47,7 +48,7 @@ function shisakuRow(s: TreeShisaku) {
 }
 // 施策展開にはページが無いので、名前はリンクにせず、行ごと summary にする
 const tenkaiRow = (t: TreeTenkai) =>
-  `<li class="lv2" id="t-${esc(t.id)}"><details data-level="2"><summary class="sum"><span class="tw" aria-hidden="true"></span><span class="tb"><span class="no">${esc(t.no)}</span><span class="nm"><span class="tk-name">${esc(t.name)}</span> ${counts([['施策', t.shisaku.length]])}</span></span></summary><ul>${t.shisaku.map(shisakuRow).join('')}</ul></details></li>`;
+  `<li class="lv2" id="t-${esc(t.id)}"><details data-level="2"><summary class="sum"><span class="tw" aria-hidden="true"></span><span class="tb"><span class="no">${esc(t.no)}</span><span class="nm"><span class="tk-name">${esc(t.name)}</span> ${counts([['施策', t.shisaku.length]], false)}</span></span></summary><ul>${t.shisaku.map(shisakuRow).join('')}</ul></details></li>`;
 function kihonRow(k: TreeKihon) {
   const cs: Count[] = [['施策展開', k.tenkai.length], ['主要指標', k.shuyou.length, true]];
   return `<li class="nd lv1" id="k-${esc(k.id)}"><div class="tb"><span class="no">${esc(k.no)}</span><span class="nm"><a class="name-link" href="/kihon/${esc(k.id)}/">${esc(k.name)}</a>${inds(k.shuyou, false)} ${counts(cs)}</span></div>${toggle(1, cs)}<ul>${k.shuyou.map((l) => indRow(l, false)).join('')}${k.tenkai.map(tenkaiRow).join('')}</ul></details></li>`;
