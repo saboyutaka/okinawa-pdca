@@ -3,41 +3,31 @@
 // 横は報告年度 R4〜R9 の6枠で、どの行も同じ位置にそろえる（地の色の左半分が前期、右半分が中期）。点線が計画の道すじ（スタートの基準値 → 各年度の計画値。最後の○がゴールの目標値）、
 // 青い点が実績値で、最新を大きくする。最新の報告の計画期間でない方の道すじは灰色の点線だけにする。
 // 目標値が文の指標（「跡地における〜を目指す」など）は、施策ページの図と同じく基準値・実績値を読み（textGoalChartRow）、スタートと実績値だけを描く。
-// 主要指標の一覧（part）では、主要指標に年度ごとの計画値がないので、基本施策ページの図と同じく計画の道すじを引かず、ゴールの丸だけを置く。
-// 道すじが無いと、白い地の行では図が前期の地の右端で終わったように見え、ゴールの丸が図の外に浮くので、主要指標は R4〜R9 の全体に地を敷き、
-// 前期の地を少し濃くする（styles/global.css の .spark-goal）。
-// 主要指標では、点（各年度の実績値・スタートの基準値・ゴールの目標値）にマウスを乗せる・押すと値を出す（scripts/tooltip.ts の data-tip-*）。
-// 点は小さくて押しにくいので、点より大きい透明な円（.sp-hit）に付ける。スタートの円は小さくして、いまの点の円の上に重ねる。
-// 成果指標の一覧は行が多いので付けない（値は施策ページ・成果指標のページの図にある）。
+// 点に値は出さない（行が多いので。値は施策ページ・成果指標のページの図にある）。
 // 図の中に文字を入れないので、表示幅で描き直さずビルド時に SVG にする（数字は行の文にあるので読み上げない）。
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
-import { YEARS, textGoalChartRow, yearLabel, refText, type ChartRow, type ChartYear, type SeikaGroup, type ShuyouPart } from '../lib/data.ts';
+import { YEARS, textGoalChartRow, type ChartRow, type ChartYear, type SeikaGroup } from '../lib/data.ts';
 
-// row は成果指標、part は主要指標の部分（男性・女性など。分けない指標は1つ）
-type Props = { row: SeikaGroup; part?: never } | { part: ShuyouPart; row?: never };
+interface Props { row: SeikaGroup }
 type Pt = [x: number, y: number];
-const { row, part } = Astro.props;
+const { row } = Astro.props;
 const W = 120;
 const H = 40;
 const PAD = 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = [2022, 2023, 2024, 2025, 2026, 2027];
 const sw = W / SLOTS.length;
 const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
-const textGoal = row ? textGoalChartRow(row) : null;
-const chart: ChartRow = part ?? textGoal ?? row!;
+const textGoal = textGoalChartRow(row);
+const chart: ChartRow = textGoal ?? row;
 const years = YEARS.map((y) => chart.years[y]).filter(Boolean);
 const last = years[years.length - 1];
 const act = years.filter((r): r is ChartYear & { actual: number } => num(r.actual));
-const drawable = act.length > 0 && (part ? part.drawable : !!textGoal || years.some((r) => num(r.target)));
+const drawable = act.length > 0 && (!!textGoal || years.some((r) => num(r.target)));
 
 let band: number | null = null;
 let plans: { cur: boolean; start: Pt | null; rings: Pt[]; path: string | null }[] = [];
 let dots: Pt[] = [];
 let actPath: string | null = null;
-// 主要指標の点の値（ツールチップ）。r は透明な円の半径
-type Hit = { at: Pt; r: number; value: string; label: string };
-let hits: Hit[] = [];
-const withRef = (label: string, note: string | null | undefined) => (refText(note) ? `${label}（${refText(note)}）` : label);
 if (drawable) {
   // 計画期間ごとの最後の報告（基準値・計画値・目標値はこれを使う）
   const periods = [SLOTS.slice(0, 3), SLOTS.slice(3)].flatMap((ys) => {
@@ -54,29 +44,16 @@ if (drawable) {
   band = W / 2;
   plans = periods.map(({ ys, r, cur }) => {
     const start: Pt | null = num(r.base) ? [f(SLOTS.indexOf(ys[0]) * sw + 2), y(r.base)] : null;
-    // 主要指標は、計画期間の最後の枠にゴールの目標値の丸だけを置く（道すじは引かない）
-    if (part) return { cur, start, rings: num(r.target) ? [[x(ys[ys.length - 1]), y(r.target)] as Pt] : [], path: null };
     const rings = (r.plan || []).flatMap((v, i): Pt[] => (num(v) ? [[x(ys[i]), y(v)]] : []));
     const pts = [...(start ? [start] : []), ...rings];
     return { cur, start, rings, path: pts.length > 1 ? d(pts) : null };
   });
   dots = act.map((r): Pt => [x(r.year), y(r.actual)]);
   actPath = dots.length > 1 ? d(dots) : null;
-  if (part) {
-    const cur = plans.find((p) => p.cur);
-    const r = periods.find((p) => p.cur)?.r;
-    const b = r && part.years[r.year]?.b;
-    hits = [
-      ...act.map((r, i): Hit => ({ at: dots[i], r: 7, value: r.actual_raw, label: withRef(`${yearLabel(r.year)}の報告の実績値`, r.actual_ref_year) })),
-      ...(cur && r && cur.rings.length ? [{ at: cur.rings[0], r: 7, value: r.target_raw, label: `ゴールの目標値（${r.target_year}）` }] : []),
-      ...(cur?.start && r ? [{ at: cur.start, r: 4.5, value: r.base_raw, label: withRef('スタートの基準値', b?.note) }] : []),
-    ];
-  }
 }
 ---
 {drawable && (
-  <svg class:list={['spark', part && 'spark-goal']} viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
-    {part && <rect class="sp-frame" width={W} height={H} rx="4" />}
+  <svg class="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
     <rect class="sp-band" width={band} height={H} rx="4" />
     {plans.map((p) => (
       <g class={p.cur ? 'sp-plan' : 'sp-plan sp-off'}>
@@ -89,10 +66,5 @@ if (drawable) {
       {actPath && <path d={actPath} />}
       {dots.map(([cx, cy], i) => <circle cx={cx} cy={cy} r={i === dots.length - 1 ? 4 : 2.6} />)}
     </g>
-    {hits.length > 0 && (
-      <g class="sp-hit">
-        {hits.map((h) => <circle cx={h.at[0]} cy={h.at[1]} r={h.r} data-tip-value={h.value} data-tip-label={h.label} />)}
-      </g>
-    )}
   </svg>
 )}

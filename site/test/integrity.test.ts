@@ -178,7 +178,7 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
 });
 
-test('主要指標の一覧の行の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
+test('主要指標の達成状況の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
   for (const k of getKihonList()) {
     const groups = shuyouRows(k.id);
     const ids = groups.map((g) => shuyouAnchor(groups, g));
@@ -205,21 +205,6 @@ test('主要指標の達成状況の名前は、基本施策ページのその�
   }
   const k312 = getShuyouStatus().filter((r) => r.kihon_id === '3-12');
   assert.equal(new Set(k312.map((r) => r.href)).size, 2, '3-(12) の2つの指標が同じカードに向いている');
-});
-
-test('主要指標の達成状況（概要版）の指標には、付属資料の同じ指標の部分が表の順に当たる（欄を分けられない指標だけ当たらない）', () => {
-  const rows = getShuyouStatus();
-  // 付属資料の欄を部分に分けられない 2-(8)（4指標）・3-(7)（4指標）・4-(4)（2指標）だけが当たらない
-  assert.deepEqual(rows.filter((r) => !r.part).map((r) => r.kihon_id), ['2-8', '2-8', '2-8', '2-8', '3-7', '3-7', '3-7', '3-7', '4-4', '4-4']);
-  // 1つの指標に2つの部分が当たったり、部分が2回使われたりしない
-  const parts = rows.flatMap((r) => (r.part ? [r.part] : []));
-  assert.equal(new Set(parts).size, parts.length);
-  // 男性・女性などに分けた指標は、表の順で同じ部分に当たる
-  const partOf = (name: string) => rows.find((r) => r.name === name)?.part?.name;
-  assert.equal(partOf('平均寿命（女性）'), '平均寿命（女性）');
-  assert.match(partOf('国土強靱化地域計画の改定率') ?? '', /（改定率）$/);
-  assert.match(partOf('那覇港の外貿取扱貨物量') ?? '', /（港湾）$/);
-  assert.match(partOf('地域社会を支える人材の確保数（人口10万人当たり）') ?? '', /確保数）$/);
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {

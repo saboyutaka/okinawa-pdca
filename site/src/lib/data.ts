@@ -419,7 +419,7 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
   for (const r of [...rows].sort((a, b) => b.year - a.year)) if (!used.has(r)) out.push(group(r, false));
   return out;
 }
-// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。主要指標の一覧の行から飛ぶ
+// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。将来像のページの主要指標の名前から飛ぶ
 export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
 
 // ---------------------------------------------------------------- 主要指標の達成状況（概要版）
@@ -455,40 +455,33 @@ export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` 
 export const SHUYOU_CATS = SHUYOU_BINS.map((b) => ({ key: b.label, tone: b.tone }));
 export const shuyouCounts = (rows: { bin: ShuyouBin }[]) => countBy(rows, (r) => shuyouBinOf(r.bin).label, SHUYOU_CATS.map((c) => c.key));
 
-// 概要版の指標（1指標1行）が、付属資料のどの主要指標（基本施策ページのカード）にあたるか。
+// 概要版の指標（1指標1行）が、付属資料のどの主要指標（基本施策ページのカード）にあたるか。カードの id を返す。
 // 基本施策の主要指標が1つならそれ（男性・女性などはカードの中の部分）、2つ以上（3-(12) の県内空港の旅客数・重要港湾の公共取扱貨物量）なら名前で選ぶ
-function shuyouCardOf(r: ShuyouGaiyouRow) {
+function shuyouCardId(r: ShuyouGaiyouRow) {
   const groups = shuyouRows(r.kihon_id);
   const now = groups.filter((g) => g.latest.year === r.year);
   const key = (s: string) => s.normalize('NFKC').replace(/[\s※]/g, '');
   const g = now.length === 1 ? now[0] : now.find((g) => key(r.name).startsWith(key(g.latest.name)) || key(g.latest.name).startsWith(key(r.name))) ?? now[0];
-  return { g, id: g ? shuyouAnchor(groups, g) : 'shuyou' };
+  return g ? shuyouAnchor(groups, g) : 'shuyou';
 }
 
 export interface ShuyouStatus extends ShuyouGaiyouRow {
   bin: ShuyouBin;
   kihon: { id: string; name: string; code: string; shouraizou: number };
   href: string; // 基本施策ページのその主要指標のカード
-  // 付属資料のその指標の部分（男性・女性など。主要指標の一覧の行の小さな図 SeikaSpark に使う）。
-  // 付属資料の欄を部分に分けられない指標（2-(8)・3-(7)・4-(4)。概要版では2〜4指標が1つの欄にあたる）は null
-  part: ShuyouPart | null;
 }
 // 最新の報告の主要指標の達成状況（概要版の表の順。良い・悪いで並べ替えない）。概要版の表が読めない年度は空
 let shuyouStatus: ShuyouStatus[] | undefined;
 export function getShuyouStatus(): ShuyouStatus[] {
   if (shuyouStatus) return shuyouStatus;
   const kihon = new Map(getKihonList().map((k) => [k.id, k]));
-  const latest = load('shuyou_gaiyou').filter((r) => r.year === LATEST).map((r) => ({ r, ...shuyouCardOf(r) }));
-  shuyouStatus = latest.map(({ r, g, id }) => {
+  const latest = load('shuyou_gaiyou').filter((r) => r.year === LATEST);
+  shuyouStatus = latest.map((r) => {
     const k = kihon.get(r.kihon_id)!;
-    // 同じカードにあたる概要版の指標が部分の数と同じなら、表の順に部分を当てる（男性・女性、策定率・改定率、空港・港湾など。どれも同じ順に並んでいる）
-    const same = latest.filter((x) => x.r.kihon_id === r.kihon_id && x.id === id).map((x) => x.r);
-    const part = g && g.parts.length === same.length ? g.parts[same.indexOf(r)] : null;
     return {
       ...r, bin: shuyouBin(r),
       kihon: { id: k.id, name: k.name, code: k.code, shouraizou: k.shouraizou },
-      href: `/kihon/${k.id}/#${id}`,
-      part,
+      href: `/kihon/${k.id}/#${shuyouCardId(r)}`,
     };
   });
   return shuyouStatus;

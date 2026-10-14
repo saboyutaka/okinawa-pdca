@@ -6,6 +6,7 @@
 // 3つの段の割合は意味が違う（主要指標は R9 のゴールに対して、成果指標と取組はその年度の計画に対して）ので、1つの図や目盛りにまとめず、差も書かない。
 // すっきり見せるため、凡例と区分ごとの数は並べない。区分の名前と数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar。読み上げは棒全体で読む）。
 // 「主要指標の49指標」のような何をいくつ数えたかの言葉が、その一覧へのリンク（q は将来像のページの「s=1」のような一覧の条件）。
+// 主要指標は一覧のページを置かず、基本施策ごとに見せる5つの将来像のページへ（将来像のページでは、同じページの基本施策の節 shuyouHref へ）。
 // ステッカーの中の箱なので、線と影は付けず白い地だけにし、段は細い線で区切る。棒は動かさない（design.md の8章）
 import StatusBar from './StatusBar.astro';
 import { RATE_BINS, STATUSES, SHUYOU_CATS, shuyouCounts, type ShuyouStatus } from '../lib/data.ts';
@@ -20,8 +21,10 @@ interface Props {
   tori: Record<string, number>;
   /** 一覧の条件（将来像のページは `s=1`） */
   q?: string;
+  /** 主要指標の行き先（将来像のページは同じページの基本施策の節 `#kihon`） */
+  shuyouHref?: string;
 }
-const { shuyou, seika, tori, q = '' } = Astro.props;
+const { shuyou, seika, tori, q = '', shuyouHref = '/future/' } = Astro.props;
 const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
@@ -29,7 +32,7 @@ interface Cat { key: string; tone: Tone; n: number }
 const shuyouN = shuyouCounts(shuyou);
 const rungs: { id: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[] }[] = [
   {
-    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: shuyou.length, unit: '指標', href: href('/shihyou/shuyou/'), measure: '達成率',
+    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: shuyou.length, unit: '指標', href: shuyouHref, measure: '達成率',
     cats: SHUYOU_CATS.map((c) => ({ ...c, n: shuyouN[c.key] })),
   },
   {
