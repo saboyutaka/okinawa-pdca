@@ -1,6 +1,6 @@
 ---
-// くらしのテーマ（このサイト独自の分類）1つのページ。頭（名前・ドーナツ2枚）→ 施策の判定 → 4年間の推移 → 施策 → 成果指標 →（観光だけ）県の観光の計画 → シェア。
-// 頭は将来像のページと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。
+// くらしのテーマ（このサイト独自の分類）1つのページ。頭（名前・段の問いと答え）→ 施策の判定 → 4年間の推移 → 施策 → 成果指標 →（観光だけ）県の観光の計画 → シェア。
+// 頭は将来像のページと同じく、段の問いと答え（components/Ladder.astro）を中に置く。主要指標との対応はまだ決めていない（#93）ので、成果指標と取組の2段。
 // 何年度の数かはヘッダーの版（令和7年度版）と、「順調」「判定」の用語の説明に任せ、頭・節の見出し・札には書かない。
 // テーマの決め方の言葉は、頭の「このサイト独自の分類」を押すと、分け方の説明の下に出す（Term の note）。
 // 施策の判定と4年間の推移は、トップ・将来像のページと同じ形にし、数だけをこのテーマのものにする。
@@ -11,7 +11,7 @@ import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
-import DonutCard from '../../components/DonutCard.astro';
+import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
@@ -22,10 +22,10 @@ import ExtLink from '../../components/ExtLink.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import { LATEST, seikaHref, getShisakuList, getShouraizou, getKihonList, getSeikaGroups, trendPoints } from '../../lib/data.ts';
 import { inTheme } from '../../lib/themes.ts';
-import { band, fmt, pct } from '../../lib/format.ts';
+import { band, fmt } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import { themeDescription } from '../../lib/describe.ts';
-import { themeHead, total } from '../../lib/heads.ts';
+import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
 import SeikaRow from '../../components/SeikaRow.astro';
@@ -41,8 +41,6 @@ const byId = new Map(getShisakuList().map((s) => [s.id, s]));
 const items = t.ids.map((id) => byId.get(id)!);
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）。主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る
 const head = themeHead(t);
-const toriN = total(head.tori);
-const toriOk = head.tori['順調'] || 0;
 // 成果指標の一覧（数は head.seika と同じ）は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
 const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && inTheme(t, r.shisaku.id, r.latest.name));
 const SEIKA_SHOW = 10;
@@ -68,16 +66,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
     <div class="t-kicker">くらしのテーマ</div>
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
     <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
-    <div class="donuts">
-      <DonutCard plain frac={toriN ? toriOk / toriN : 0} label={`主な取組のうち順調 ${pct(toriOk, toriN)}`} more={{ href: `/torikumi/?theme=${t.id}`, label: '取組をさがす' }}>
-        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
-        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(toriN)}件</span></Fragment>
-      </DonutCard>
-      <DonutCard plain frac={head.seika ? head.reached / head.seika : 0} label={`成果指標のうち計画値に到達 ${pct(head.reached, head.seika)}`} more={{ href: `/shihyou/?theme=${t.id}`, label: '成果指標をさがす' }}>
-        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
-        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(head.reached)} / {fmt(head.seika)}指標</span></Fragment>
-      </DonutCard>
-    </div>
+    <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
   </header>
 
   <Toc
@@ -145,10 +134,10 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 
 <style>
   /* 頭。PC はアイコンを左に大きく置き、右に「くらしのテーマ」・名前・件数の札。スマホはアイコンを小さくして「くらしのテーマ」の行に並べ、名前を全幅にする。
-     ドーナツのカードは将来像のページと同じく頭の中に置き、余白もトップのヒーロー・将来像のページと同じにする（カードの位置がそろうように）。
-     地は白のままにし、ドーナツのカードはステッカーの中の箱（.inset）と同じ地の色で分ける。ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
+     段の問いと答え（Ladder）は将来像のページと同じく頭の中に置き、余白もトップのヒーロー・将来像のページと同じにする（段の位置がそろうように）。
+     地は白のままにし、段の箱はステッカーの中の箱（.inset）と同じ地の色で分ける。ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
   .t-hero {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "ico kicker" "ico name" "ico stats" "donuts donuts";
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "ico kicker" "ico name" "ico stats" "ladder ladder";
     gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px;
   }
   .ico { grid-area: ico; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: var(--pink); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
@@ -156,10 +145,9 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
   .t-kicker { grid-area: kicker; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .t-hero h1 { grid-area: name; margin: 4px 0 10px; }
   .t-hero :global(.head-stats) { grid-area: stats; }
-  .t-hero .donuts { grid-area: donuts; }
-  .t-hero :global(.donut-card.plain) { background: var(--bg); }
+  .t-hero :global(.ladder) { grid-area: ladder; background: var(--bg); }
   @media (max-width: 520px) {
-    .t-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ico kicker" "name name" "stats stats" "donuts donuts"; column-gap: 10px; }
+    .t-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ico kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
     .ico { width: 36px; height: 36px; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
     .ico :global(.theme-ic) { width: 21px; height: 21px; }
     .t-hero h1 { margin-top: 8px; }

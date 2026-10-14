@@ -1,12 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
-import StatusChart from '../../components/StatusChart.astro';
+import ShuyouTags from '../../components/ShuyouTags.astro';
+import StatusBar from '../../components/StatusBar.astro';
 import Sz from '../../components/Sz.astro';
 import Term from '../../components/Term.astro';
-import KeyBrief from '../../components/KeyBrief.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import {
-  LATEST, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika,
+  LATEST, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus,
 } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -16,7 +16,11 @@ const kihon = getKihonList();
 const shisaku = getShisakuList();
 const tori = getTorikumi(LATEST);
 const seika = getSeika(LATEST);
+const shuyou = getShuyouStatus();
 const statusKeys = STATUSES.map((s) => s.key);
+// 基本施策ごとに、名前の後ろに主要指標の達成状況の札（「後退 -6%」。報告書の順。components/ShuyouTags.astro）を置き、
+// 右（スマホは下）に主な取組の進捗状況の内訳の細い棒を控えめに置く（数は出さない。区分と数は棒の区間にマウスを乗せる・タップすると出る）。
+// 札は県の言葉で読めるので、凡例・「達成率」の説明は置かない。何の棒かは、カードの頭に1回だけ書く
 const visions = getShouraizou().map((v) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
   const ss = shisaku.filter((s) => s.shouraizou === v.id);
@@ -25,27 +29,36 @@ const visions = getShouraizou().map((v) => {
     n: t.length,
     shisaku: ss.length,
     seika: seika.filter((x) => x.shisaku_id.startsWith(`${v.id}-`)).length,
-    rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
-      label: k.name,
-      code: k.code,
-      href: `/kihon/${k.id}/`,
-      counts: countBy(t.filter((x) => x.shisaku_id.startsWith(`${k.id}-`)), statusOf, statusKeys),
-    })),
+    rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => {
+      const kt = t.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
+      return {
+        ...k,
+        shuyou: shuyou.filter((r) => r.kihon.id === k.id),
+        tori: countBy(kt, statusOf, statusKeys),
+      };
+    }),
   };
 });
-// 区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）
-const statusUsed = statusKeys.filter((key) => visions.some((v) => v.rows.some((r) => (r.counts[key] || 0) > 0)));
 ---
-<Base title="5つの将来像" description={`新・沖縄21世紀ビジョンの5つの将来像と${fmt(kihon.length)}の基本施策の一覧です。将来像・基本施策ごとの主な取組の進み具合を見られます。`}>
+<Base title="5つの将来像" description={`新・沖縄21世紀ビジョンの5つの将来像と${fmt(kihon.length)}の基本施策の一覧です。基本施策ごとの主要指標の達成率と主な取組の進み具合を見られます。`}>
   <h1>5つの将来像</h1>
   <p class="secondary lead">
     「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿を5つの<Term word="将来像" />に分け、そのもとに{fmt(kihon.length)}の<Term word="基本施策" />、さらに{fmt(shisaku.length)}の施策を置いています。施策ごとの成果指標と主な取組は、実施計画で決められています。
   </p>
-  <KeyBrief kind="status" used={statusUsed} />
   {visions.map((v) => (
     <section class:list={['sticker', 'vision', `sz-${v.id}`]} id={`shouraizou-${v.id}`} aria-labelledby={`h-${v.id}`}>
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} /><span class="v-nm"><span class="sr-only">将来像{v.id}　</span>{v.name}</span></a></h2>
-      <StatusChart title="基本施策" categories={STATUSES} rows={v.rows} legend={false} end="pct" barLabel={false} table={false} pctKey={{ word: '進捗状況', label: '順調', brief: 'key-status' }} />
+      <div class="v-kihon sticker">
+        <p class="k-head"><span class="v-kt">基本施策と主要指標</span><span class="k-hb" aria-hidden="true">主な取組</span></p>
+        <ul class="k-rows">
+          {v.rows.map((k) => (
+            <li class="k-r">
+              <div class="k-n"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span> <ShuyouTags items={k.shuyou} /></div>
+              <div class="k-bar"><span class="k-bl" aria-hidden="true">主な取組</span><StatusBar categories={STATUSES} counts={k.tori} context={`${k.name} 主な取組 `} size="mini" /></div>
+            </li>
+          ))}
+        </ul>
+      </div>
       <div class="v-stats">
         {/* 計画の階層（将来像 → 基本施策 → 施策・取組・成果指標）に合わせ、基本施策の図の下に置く。
             札は押すとその将来像で絞った一覧を開くので、何の札かを頭に1回だけ書く。並びはヘッダーのナビと同じ */}
@@ -67,6 +80,28 @@ const statusUsed = statusKeys.filter((key) => visions.some((v) => v.rows.some((r
   /* 帯は将来像のページへのリンク。名前のリンク（.name-link）と同じく、名前に薄い下線を付け、乗せると黒く太くする（番号の印には付けない） */
   .v-nm { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
   .v-h .sz-ribbon:hover .v-nm { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
+  /* 基本施策の行。PC は「名前と主要指標の札 | 主な取組の細い棒」の2列で、何の棒かは頭の行の列の見出しに1回だけ書く。
+     名前が何行にも折り返す幅では棒を名前の下に置き、見出しが棒から遠くなるので、棒ごとに左へ小さく「主な取組」と添える（トップの将来像の行と同じ字） */
+  .v-kihon { margin-top: 16px; padding-bottom: 8px; }
+  .k-head, .k-r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%); gap: 6px 20px; align-items: center; }
+  .k-head { margin: 0 0 4px; align-items: baseline; }
+  .v-kt { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .k-hb { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  .k-rows { list-style: none; margin: 0; padding: 0; }
+  .k-r { padding: 12px 0; }
+  .k-r + .k-r { border-top: 1.5px solid var(--hair); }
+  .k-n { font-weight: 700; line-height: 1.6; }
+  @media (min-width: 721px) { .k-n { font-size: 1.0625rem; } }
+  /* 主な取組は控えめに、細い棒だけ */
+  .k-bar :global(.sbar) { height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
+  .k-bl { display: none; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  @media (max-width: 720px) {
+    .k-head { display: block; }
+    .k-hb { display: none; }
+    .k-r { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .k-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
+    .k-bl { display: inline; }
+  }
   .v-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; }
   .v-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
   /* 言葉と札を1つの並びで折り返す。スマホでは言葉を1行目に置き、札3つを2行目に1行で並べる（札が1つだけ言葉の横に残らないように） */

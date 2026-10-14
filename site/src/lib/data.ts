@@ -419,7 +419,7 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
   for (const r of [...rows].sort((a, b) => b.year - a.year)) if (!used.has(r)) out.push(group(r, false));
   return out;
 }
-// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。主要指標の一覧の行から飛ぶ
+// 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。将来像のページの主要指標の名前から飛ぶ
 export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
 
 // ---------------------------------------------------------------- 主要指標の達成状況（概要版）
@@ -428,15 +428,16 @@ export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-$
 // 達成率は計画期間の最後（中期はR9、前期はR6）の目標値に対する割合で、成果指標の達成率（その年度の計画値に対する割合）とは違う。
 // 区分は概要版の表の達成率の印字で決める（scripts/check_extracted.py の shuyou_bin と同じ数え方）。目標が数でない指標（「増加」
 // 「可能な限り減少させる」など）は、県が「達成」「後退」と印字している。「-」は統計がまだ出ていないなどで比べられないもの
-// 色と形（tone）は成果指標の達成率の区分（RATE_BINS）にそろえ、横ばいは未着手と同じ灰色の「—」、比べられないものは空の印にする
+// 色と形（tone）は成果指標の達成率の区分（RATE_BINS）にそろえ、横ばいは未着手と同じ灰色の「—」、比べられないものは空の印にする。
+// word は札に書く県の言葉（5つの将来像のページの「後退 -6%」の札。前進は60%の上下を分けない）
 export const SHUYOU_BINS = [
-  { key: '100%以上', label: '目標値に到達', tone: 'good' },
-  { key: '60%以上100%未満', label: '前進（60%以上）', tone: 'warning' },
-  { key: '0%超60%未満', label: '前進（60%未満）', tone: 'serious' },
-  { key: '横ばい', label: '横ばい', tone: 'none' },
-  { key: '後退', label: '後退', tone: 'critical' },
-  { key: 'その他', label: '比べられない', tone: 'blank' },
-] as const satisfies readonly { key: string; label: string; tone: Tone }[];
+  { key: '100%以上', label: '目標値に到達', word: '到達', tone: 'good' },
+  { key: '60%以上100%未満', label: '前進（60%以上）', word: '前進', tone: 'warning' },
+  { key: '0%超60%未満', label: '前進（60%未満）', word: '前進', tone: 'serious' },
+  { key: '横ばい', label: '横ばい', word: '横ばい', tone: 'none' },
+  { key: '後退', label: '後退', word: '後退', tone: 'critical' },
+  { key: 'その他', label: '比べられない', word: '比べられない', tone: 'blank' },
+] as const satisfies readonly { key: string; label: string; word: string; tone: Tone }[];
 export type ShuyouBin = (typeof SHUYOU_BINS)[number]['key'];
 type ShuyouRate = Pick<ShuyouGaiyouRow, 'rate' | 'rate_raw'>;
 export function shuyouBin(r: ShuyouRate): ShuyouBin {
@@ -450,6 +451,10 @@ export const SHUYOU_FORWARD: ShuyouBin[] = ['100%以上', '60%以上100%未満',
 export const shuyouBinOf = (bin: ShuyouBin) => SHUYOU_BINS.find((b) => b.key === bin)!;
 // 達成率の札の文字（「51%」「達成」「後退」。比べられないものは「—」）
 export const shuyouRateText = (r: ShuyouRate) => (r.rate != null ? `${r.rate}%` : shuyouBin(r) === 'その他' ? '—' : r.rate_raw.normalize('NFKC').trim());
+// 主要指標の達成状況の区分の内訳の棒（components/StatusBar.astro）に渡す区分と、区分ごとの数。棒の区間と読み上げは概要版の言葉（「目標値に到達」など）で出す。
+// トップと将来像のページの頭の3つの段（Ladder。つながった棒）と、トップの将来像の行（Tiers。1指標1マスのマス目の棒）が使う
+export const SHUYOU_CATS = SHUYOU_BINS.map((b) => ({ key: b.label, tone: b.tone }));
+export const shuyouCounts = (rows: { bin: ShuyouBin }[]) => countBy(rows, (r) => shuyouBinOf(r.bin).label, SHUYOU_CATS.map((c) => c.key));
 
 // 概要版の指標（1指標1行）が、付属資料のどの主要指標（基本施策ページのカード）にあたるか。カードの id を返す。
 // 基本施策の主要指標が1つならそれ（男性・女性などはカードの中の部分）、2つ以上（3-(12) の県内空港の旅客数・重要港湾の公共取扱貨物量）なら名前で選ぶ

@@ -1,23 +1,23 @@
 ---
-// 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
-// - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前と県の達成率、その下に「スタート → いま → ゴール」の値。
-//   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、どの値にも年・年度を括弧で添える（lib/data.ts の eraRef。「（R3）」）。
+// 将来像のページの基本施策のカード（親は ul.k-list。PC は2列）。基本施策の名前の下に、主要指標と主な取組を並べる。
+// カードの幅で「スタート → いま → ゴール」の値が1行に入るよう、「主要指標」は左の列にせず指標の上に小さな見出しとして置く（主な取組は1行に収まるので左に言葉）。
+// 主要指標がこの行の主役で、主な取組の棒は細く控えめにする（docs/design.md の1章「3つの段」。基本施策をはかる物差しは主要指標）。
+// - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前の後ろに達成状況の札（「前進 37%」。5つの将来像のページと同じ
+//   components/ShuyouTags.astro）、その下に「スタート → いま → ゴール」の値を1行で。図は置かない（札が達成率をそのまま示すので、
+//   道のりを線にしても同じことを2回見せるだけになるため）。年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）。
+//   いまの値が何年の値かはまちまち（基準値と同じ年のままのものもある）なので、スタートといまの値には年・年度を括弧で添える（lib/data.ts の eraRef。「（R3）」）。
+//   ゴールは R9 のときは書かない（節の頭の文にある）。
 //   値の全角の数字などは半角にし（halfWidth。「％」もこの行では「%」に）、位は1つの指標の中でそろえる（sameScale。「3兆4,517億円」→「34,517億円」）。
-//   PC は3つを列にして、どの行でも同じ位置にそろえる（言葉を上、値と年度を下）。スマホは「言葉｜値」の2列に積み、達成率も同じ2列に入れて数の左端をそろえる。
-//   年ごとの動きは基本施策のページの図に任せる（名前がそのカードへのリンク）。
-//   達成率はこの行でいちばん大事な数なので、右に大きく、概要版の区分（目標値に到達・前進・横ばい・後退・比べられない）の色と形を付けて置く。
-//   札は数だけにし（成果指標の達成率の札と同じ）、区分の言葉は数にマウスを乗せる・タップすると出す（scripts/tooltip.ts）。
-//   主な取組の割合と取り違えないよう「達成率」と添え、それを押すと達成率の説明と区分の一覧を出す（凡例の代わり。ページの KeyBrief kind="shuyou"）。
-//   数でない印字（「達成」「後退」）は、大きな字だと強く見えるので小さくする
-// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（トップ・5つの将来像のページの棒と同じ形）。
+//   スマホは「言葉｜値」の2列に積み、数の左端をそろえる
+// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（ここでは主要指標より細く、字も小さくする）。
 //   「順調」を押すと進捗状況の説明と区分の一覧を出す（components/KeyNum.astro。ページの KeyBrief kind="status"）。
-//   区分ごとの件数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar）
+//   区分ごとの件数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar）。棒と割合は、主要指標の値の行と同じくらいの幅にまとめる
+//   （棒だけが行の右端まで伸びて割合が離れると、主要指標のまとまりと大きさがちぐはぐに見えるため）
 // 主要指標の名前は、基本施策の名前（太字）の下の項目なので、太字にせず字の色と下線だけでリンクと分かるようにする
 import StatusBar from './StatusBar.astro';
-import Icon from './Icon.astro';
-import Term from './Term.astro';
 import KeyNum from './KeyNum.astro';
-import { STATUSES, shuyouRateText, shuyouBinOf, eraRef, halfWidth, sameScale, type ShuyouStatus } from '../lib/data.ts';
+import ShuyouTags from './ShuyouTags.astro';
+import { STATUSES, eraRef, halfWidth, sameScale, type ShuyouStatus } from '../lib/data.ts';
 import { pct } from '../lib/format.ts';
 
 interface Measure { n: number; ok: number; counts: Record<string, number> }
@@ -31,87 +31,65 @@ const vals = (r: ShuyouStatus) => {
   return [
     { label: 'スタート', v: b, y: eraRef(r.base_ref) },
     { label: 'いま', v: a, y: eraRef(r.actual_ref), now: true },
-    { label: 'ゴール', v: t, y: eraRef(r.target_ref) },
+    // ゴールはほぼすべて R9 で、節の頭の文に「ゴール（R9の目標値）」とあるので、R9 だけのときは年度を書かない（「〜の累計」のような注は残す）
+    { label: 'ゴール', v: t, y: eraRef(r.target_ref) === 'R9' ? null : eraRef(r.target_ref) },
   ];
 };
-// 達成率の札の字。数は大きく、数でない印字（達成・後退）と — は小さく
-const rateOf = (r: ShuyouStatus) => {
-  const t = shuyouRateText(r);
-  return { t, word: !/\d/.test(t) };
-};
 ---
-<li class="k-item">
+<li class="k-item sticker">
   <div class="k-name"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
-  {shuyou.map((r, i) => (
-    <div class="k-row k-shuyou">
-      <span class="k-l">{i === 0 && '主要指標'}</span>
-      <div class="k-main">
-        <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" data-tip-value={REVISED} data-tip-label="※"><span aria-hidden="true">※</span><span class="sr-only">（{REVISED}）</span></span>}
-        <div class="k-vals">
-          {vals(r).map((x, j) => (
-            <>
-              {j > 0 && <span class="arrow" aria-hidden="true">→</span>}
-              <div class:list={['v', x.now && 'now']}><span class="v-l">{x.label}</span><span class="v-n">{x.v}{x.y && <span class="v-y">（{x.y}）</span>}</span></div>
-            </>
-          ))}
+  {shuyou.length > 0 && (
+    <div class="k-shuyou">
+      <span class="k-l">主要指標</span>
+      {shuyou.map((r) => (
+        <div class="k-ind">
+          <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" data-tip-value={REVISED} data-tip-label="※"><span aria-hidden="true">※</span><span class="sr-only">（{REVISED}）</span></span>} <ShuyouTags items={[r]} named={false} />
+          <p class="k-vals">
+            {vals(r).map((x, j) => (
+              <span class:list={['v', x.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{x.label}</span> <span class="v-n">{x.v}{x.y && <span class="v-y">（{x.y}）</span>}</span></span>
+            ))}
+          </p>
         </div>
-      </div>
-      <div class="k-rate">
-        <span class="k-rl"><Term word="主要指標の達成率" label="達成率" brief="key-shuyou" /></span>
-        <span class:list={['k-rv', rateOf(r).word && 'word']} data-tip-value={shuyouBinOf(r.bin).label} data-tip-label={`達成率 ${rateOf(r).t}`}><Icon tone={shuyouBinOf(r.bin).tone} size={14} />{rateOf(r).t === '—' ? <b aria-hidden="true">—</b> : <b>{rateOf(r).t}</b>}</span>
-        <span class="sr-only">（{shuyouBinOf(r.bin).label}）</span>
-      </div>
+      ))}
     </div>
-  ))}
+  )}
   {tori.n > 0 && (
-    <div class="k-row k-bar">
+    <div class="k-bar">
       <span class="k-l">主な取組</span>
-      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /></div>
-      <KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} />
+      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /><KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} /></div>
     </div>
   )}
 </li>
 
 <style>
-  .k-item { display: grid; gap: 10px; padding: 14px 18px; }
+  .k-item { display: grid; align-content: start; gap: 12px; padding: 14px 18px; min-width: 0; } /* 隣のカードより低いときも、中身は上に詰める */
   .k-name { font-size: 1.0625rem; line-height: 1.5; }
-  /* PC は「何の行か | 中身 | 右の数」。主要指標は名前の行に達成率をそろえ、主な取組は棒を中身の列いっぱいに伸ばす */
-  .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) auto; column-gap: 16px; }
-  .k-shuyou { grid-template-areas: "lab main rate"; align-items: start; }
-  .k-bar { grid-template-columns: 4.6em minmax(0, 1fr) auto; grid-template-areas: "lab viz num"; align-items: center; }
-  .k-l { grid-area: lab; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
-  .k-shuyou .k-l { padding-top: 2px; }
-  .k-main { grid-area: main; min-width: 0; line-height: 1.6; }
+  .k-l { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
+  /* 主要指標: 見出しの下に、指標ごとに「名前と札」「値」の2行 */
+  .k-shuyou { display: grid; gap: 8px; }
+  .k-shuyou .k-l { margin-bottom: -4px; }
+  .k-ind { min-width: 0; line-height: 1.7; }
   .s-name { font-size: 0.9375rem; font-weight: 400; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; padding: 0 3px; cursor: help; }
-  /* スタート・いま・ゴールは同じ幅の3列（矢印をはさむ）。どの行でも列の位置がそろうよう、幅は中身の長さによらず決める */
-  .k-vals { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; column-gap: 12px; max-width: 40rem; margin-top: 4px; }
-  .v { display: grid; min-width: 0; }
-  .v-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
-  .v-y { display: inline-block; font-size: 0.75rem; font-weight: 400; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; } /* 年度は値の後ろにひとまとまりで（入らなければ次の行へ） */
-  .v-n { font-size: 0.9375rem; color: var(--ink-2); line-height: 1.4; }
-  .now .v-n { color: var(--ink); font-weight: 700; }
-  .arrow { color: var(--muted); padding-bottom: 1px; }
-  /* 達成率は名前と値の2行の右に、言葉を上・数を下にして大きく置く */
-  .k-rate { grid-area: rate; align-self: center; display: grid; justify-items: end; white-space: nowrap; line-height: 1.2; }
-  .k-rl { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
-  .k-rv { display: inline-flex; align-items: center; gap: 6px; }
-  .k-rv b { font-family: var(--font-num); font-weight: 600; font-size: 1.6rem; }
-  .k-rv.word b { font-family: var(--font); font-weight: 700; font-size: 1.05rem; }
-  .k-viz { grid-area: viz; min-width: 0; }
-  .k-bar :global(.k-num) { grid-area: num; justify-self: end; }
-  /* 720px 以下は、主要指標のスタート・いま・ゴール・達成率を「言葉｜値」の2列で1行ずつ積む（言葉の列の幅を決めて、数の左端をそろえる） */
+  /* スタート → いま → ゴールの値を1行で（入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
+  .k-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin: 2px 0 0; font-size: 0.8125rem; color: var(--ink-2); line-height: 1.6; }
+  .v-l { font-size: 0.6875rem; font-weight: 700; }
+  .v-y { display: inline-block; font-size: 0.6875rem; white-space: nowrap; font-variant-numeric: tabular-nums; } /* 年度は値の後ろにひとまとまりで */
+  .now .v-n { color: var(--ink); font-weight: 700; font-size: 0.875rem; }
+  .now .v-y { font-weight: 400; color: var(--ink-2); }
+  .arrow { color: var(--muted); margin-right: 3px; }
+  /* 主な取組は控えめに: 左に言葉、細い棒のすぐ後ろに「順調」の割合 */
+  .k-bar { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
+  .k-viz { min-width: 0; max-width: 28rem; display: flex; align-items: center; gap: 12px; }
+  .k-viz :global(.sbar) { flex: 1; height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
+  .k-viz :global(.k-num) { flex: none; font-size: 0.8125rem; color: var(--ink-2); }
+  /* 720px 以下は、スタート・いま・ゴールを「言葉｜値」の2列で1行ずつ積む（言葉の列の幅を決めて、数の左端をそろえる） */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
     .k-name { font-size: 1rem; }
-    .k-row { grid-template-columns: 4.2em minmax(0, 1fr); column-gap: 10px; }
-    .k-shuyou { grid-template-areas: "lab main" "lab rate"; row-gap: 4px; }
-    .k-rate { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); column-gap: 8px; align-items: center; justify-items: start; }
-    .k-rv b { font-size: 1.35rem; }
-    .k-rv.word b { font-size: 1rem; }
-    .k-vals { grid-template-columns: 4.5rem minmax(0, 1fr); column-gap: 8px; align-items: baseline; row-gap: 2px; }
+    .k-vals { display: grid; grid-template-columns: 4rem minmax(0, 1fr); column-gap: 8px; row-gap: 2px; margin-top: 4px; font-size: 0.875rem; }
+    .v-l { font-size: 0.75rem; }
     .v { display: contents; }
     .arrow { display: none; }
-    .k-bar { grid-template-columns: 4.2em minmax(0, 1fr) auto; }
   }
 </style>

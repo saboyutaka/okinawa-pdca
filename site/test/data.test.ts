@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouBinOf, shuyouRateText, shouraizouName, sameScale,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -352,6 +352,21 @@ test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果�
   assert.equal(shuyouBinOf('横ばい').tone, 'none');
   assert.equal(shuyouBinOf('後退').tone, 'critical');
   assert.equal(shuyouBinOf('その他').label, '比べられない');
+});
+
+test('SHUYOU_BINS の word: 札の言葉は県の概要版の区分の言葉（前進は60%の上下を分けない）', () => {
+  assert.equal(shuyouBinOf('100%以上').word, '到達');
+  assert.equal(shuyouBinOf('60%以上100%未満').word, '前進');
+  assert.equal(shuyouBinOf('0%超60%未満').word, '前進');
+  assert.equal(shuyouBinOf('後退').word, '後退');
+  assert.equal(shuyouBinOf('その他').word, '比べられない');
+});
+
+test('shuyouCounts: 主要指標の棒の区分は概要版の言葉で、県の区分の並びのまま数える（0の区分も残す）', () => {
+  assert.deepEqual(SHUYOU_CATS.map((c) => c.key), ['目標値に到達', '前進（60%以上）', '前進（60%未満）', '横ばい', '後退', '比べられない']);
+  const counts = shuyouCounts([{ bin: '後退' }, { bin: '100%以上' }, { bin: '後退' }, { bin: 'その他' }]);
+  assert.deepEqual(Object.keys(counts), SHUYOU_CATS.map((c) => c.key));
+  assert.deepEqual(Object.values(counts), [1, 0, 0, 0, 2, 1]);
 });
 
 test('shuyouRateText: 主要指標の達成率の札の文字（数はそのまま、比べられないものは —）', () => {

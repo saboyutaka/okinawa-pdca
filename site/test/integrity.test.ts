@@ -196,7 +196,7 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
 });
 
-test('主要指標の一覧の行の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
+test('主要指標の達成状況の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
   for (const k of getKihonList()) {
     const groups = shuyouRows(k.id);
     const ids = groups.map((g) => shuyouAnchor(groups, g));

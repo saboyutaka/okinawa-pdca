@@ -573,7 +573,6 @@
 /shihyou/5-5-b-2/ab53b35b/
 /shihyou/5-5-b-3/609cebf8/
 /shihyou/5-5-b-4/6138a86b/
-/shihyou/shuyou/
 /shisaku/
 /shisaku/1-1-a-1/
 /shisaku/1-1-a-2/

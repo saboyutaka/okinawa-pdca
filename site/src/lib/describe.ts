@@ -91,7 +91,7 @@ export const kihonDescription = (name: string, c: AreaCounts) =>
   `${facts([judgesText(c.judges), toriText(c.tori)])}沖縄県PDCAの基本施策「${name}」の主要指標・施策・主な取組の進み具合。`;
 
 export const futureDescription = (id: number, name: string, c: AreaCounts) =>
-  `${facts([judgesText(c.judges), toriText(c.tori), seikaOf(c)])}沖縄県PDCAの将来像${id}「${name}」の基本施策ごとの進み具合と${SPAN}の推移。`;
+  `${facts([judgesText(c.judges), toriText(c.tori), seikaOf(c)])}沖縄県PDCAの将来像${id}「${name}」の基本施策ごとの主要指標・主な取組と${SPAN}の推移。`;
 
 // 部局のページは所管する取組が主なので、取組・成果指標を先に、かかわる施策を後ろに書く
 export const deptDescription = (name: string, c: AreaCounts) =>
