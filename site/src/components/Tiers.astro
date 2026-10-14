@@ -1,0 +1,34 @@
+---
+// トップの将来像の行の「主要指標 → 主な取組」の2本の棒（将来像のページの基本施策の行 KihonRow と同じ順）。
+// - 主要指標: 1つの将来像に5〜18指標あるので、達成状況の区分の内訳を1指標1マスにした細い「マス目の棒」（StatusBar の cells。区分は概要版の言葉）。
+//   主な取組のつながった棒と見た目を分け、5指標の将来像でも1指標が棒の何割かではなく何個のうち何個かと分かるようにする
+// - 主な取組: 進捗状況の区分の内訳の細い棒
+// 棒を長く取るため、割合の数は出さない。区分ごとの数は棒の区間にマウスを乗せる・タップすると出る。どちらの段も、左に何の段かを書き、棒の左端をそろえる
+import StatusBar from './StatusBar.astro';
+import { STATUSES, SHUYOU_CATS, shuyouCounts, type ShuyouStatus } from '../lib/data.ts';
+
+interface Props {
+  shuyou: ShuyouStatus[];
+  /** 主な取組の進捗状況（STATUSES）ごとの数 */
+  tori: Record<string, number>;
+  /** 読み上げの頭に付ける名前（将来像の名前） */
+  context: string;
+  class?: string;
+}
+const { shuyou, tori, context, class: cls } = Astro.props;
+---
+<div class:list={['tiers', cls]}>
+  {shuyou.length > 0 && (
+    <>
+      <span class="ts-l">主要指標</span>
+      <StatusBar categories={SHUYOU_CATS} counts={shuyouCounts(shuyou)} unit="指標" context={`${context} 主要指標の達成率 `} size="mini" cells />
+    </>
+  )}
+  <span class="ts-l">主な取組</span>
+  <StatusBar categories={STATUSES} counts={tori} context={`${context} 主な取組 `} size="mini" />
+</div>
+
+<style>
+  .tiers { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; min-width: 0; }
+  .ts-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+</style>

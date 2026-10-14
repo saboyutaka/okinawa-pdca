@@ -4,10 +4,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
-  getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
+  getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT,
 } from '../src/lib/data.ts';
-import { getThemes, unthemed } from '../src/lib/themes.ts';
+import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
+import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
 import {
   planSourceLink, kankoSeikaList, kankoShisakuList, RM_JUDGEMENTS, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
@@ -107,8 +108,25 @@ test('くらしのテーマの include・exclude の施策 ID が実在する', 
 });
 
 test('くらしのテーマの決め方の言葉に、正規表現の記号が残らない', () => {
-  // テーマのページに「〇〇」「〇〇」のどれかを含む施策、と出す
+  // テーマのページの「このサイト独自の分類」の説明に「〇〇」「〇〇」と出す
   none(getThemes().flatMap((t) => t.words.filter((w) => !w || /[()[\]?*+.\\^$]/.test(w)).map((w) => `${t.id}: ${w}`)), (x) => x);
+});
+
+test('どのくらしのテーマも4年度とも主な取組と成果指標があり、4年間の推移の最新の年度は頭の数と同じ', () => {
+  // 推移は年度ごとの行（trendPoints）、頭は年度をまたいでまとめた取組・成果指標（lib/heads.ts）で数えるので、最新の年度で数がずれないか
+  const bad = getThemes().flatMap((t) => {
+    const pick = (x: { shisaku_id: string; name: string }) => inTheme(t, x.shisaku_id, x.name);
+    const points = trendPoints(pick, pick);
+    const head = themeHead(t);
+    const last = points.at(-1)!;
+    return [
+      ...points.filter((p) => !p.aN || !p.bN).map((p) => `${t.id} ${p.y}: 取組 ${p.aN}・成果指標 ${p.bN}`),
+      ...(last.aN !== total(head.tori) || last.aOk !== (head.tori['順調'] || 0) || last.bN !== head.seika || last.bOk !== head.reached
+        ? [`${t.id}: 推移 ${last.aOk}/${last.aN}・${last.bOk}/${last.bN}、頭 ${head.tori['順調']}/${total(head.tori)}・${head.reached}/${head.seika}`]
+        : []),
+    ];
+  });
+  none(bad, (x) => x);
 });
 
 test('どのくらしのテーマにもアイコンがある', () => {
@@ -178,7 +196,7 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
 });
 
-test('主要指標の一覧の行の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
+test('主要指標の達成状況の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
   for (const k of getKihonList()) {
     const groups = shuyouRows(k.id);
     const ids = groups.map((g) => shuyouAnchor(groups, g));

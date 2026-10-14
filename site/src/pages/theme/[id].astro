@@ -1,20 +1,29 @@
 ---
+// くらしのテーマ（このサイト独自の分類）1つのページ。頭（名前・段の問いと答え）→ 施策の判定 → 4年間の推移 → 施策 → 成果指標 →（観光だけ）県の観光の計画 → シェア。
+// 頭は将来像のページと同じく、段の問いと答え（components/Ladder.astro）を中に置く。主要指標との対応はまだ決めていない（#93）ので、成果指標と取組の2段。
+// 何年度の数かはヘッダーの版（令和7年度版）と、「順調」「判定」の用語の説明に任せ、頭・節の見出し・札には書かない。
+// テーマの決め方の言葉は、頭の「このサイト独自の分類」を押すと、分け方の説明の下に出す（Term の note）。
+// 施策の判定と4年間の推移は、トップ・将来像のページと同じ形にし、数だけをこのテーマのものにする。
+// 県の観光の計画（個別計画）は沖縄県PDCAとは別の評価なので、PDCAの節の後ろに置く
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
-import DonutCard from '../../components/DonutCard.astro';
+import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import { LATEST, yearLabel, yearLong, rateBin, seikaHref, getTorikumi, getSeika, getShisakuList, getShouraizou, getKihonList, getTorikumiGroups, getSeikaGroups } from '../../lib/data.ts';
-import { themeIdsOfItem } from '../../lib/themes.ts';
-import { fmt, pct } from '../../lib/format.ts';
+import ExtLink from '../../components/ExtLink.astro';
+import TrendFigure from '../../components/TrendFigure.astro';
+import { LATEST, seikaHref, getShisakuList, getShouraizou, getKihonList, getSeikaGroups, trendPoints } from '../../lib/data.ts';
+import { inTheme } from '../../lib/themes.ts';
+import { band, fmt } from '../../lib/format.ts';
+import { LINKS } from '../../lib/links.ts';
 import { themeDescription } from '../../lib/describe.ts';
 import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
@@ -30,23 +39,15 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { t } = Astro.props;
 const byId = new Map(getShisakuList().map((s) => [s.id, s]));
 const items = t.ids.map((id) => byId.get(id)!);
-// 主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る
-const groups = getTorikumiGroups().filter((g) => themeIdsOfItem(g.shisaku.id, g.latest.name).includes(t.id));
-const tori = groups.filter((g) => g.statuses[g.statuses.length - 1]);
-const toriOk = tori.filter((g) => g.statuses[g.statuses.length - 1] === '順調').length;
-// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
+// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）。主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る
 const head = themeHead(t);
-const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && themeIdsOfItem(r.shisaku.id, r.latest.name).includes(t.id));
-const seikaOk = seika.filter((r) => rateBin(r.latest) === '100%以上').length;
-// 県全体（将来像・部局のページと同じ数え方）
-const allTori = getTorikumi(LATEST);
-const allSeika = getSeika(LATEST);
-const allToriRate = pct(allTori.filter((x) => x.status === '順調').length, allTori.length);
-const allSeikaRate = pct(allSeika.filter((x) => rateBin(x) === '100%以上').length, allSeika.length);
-// 成果指標の一覧は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
+// 成果指標の一覧（数は head.seika と同じ）は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
+const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && inTheme(t, r.shisaku.id, r.latest.name));
 const SEIKA_SHOW = 10;
-const judgeCounts = head.judges;
-// 一覧は将来像 › 基本施策の見出しの下に施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
+// 4年間の推移。年度ごとに、その年度の名前でテーマに入るかを決める（施策は4年度とも同じ）
+const pick = (x: { shisaku_id: string; name: string }) => inTheme(t, x.shisaku_id, x.name);
+const trend = trendPoints(pick, pick);
+// 一覧は将来像の帯の下に、将来像ごとに1つの箱を置き、箱の中を基本施策の名前で区切って施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
 const kihonList = getKihonList();
 const visions = getShouraizou()
   .map((v) => {
@@ -55,111 +56,111 @@ const visions = getShouraizou()
     return { ...v, n: vItems.length, kihon };
   })
   .filter((v) => v.n);
-// マス目を押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く
-const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
+// 決め方の言葉（「このサイト独自の分類」を押すと、分け方の説明の下に出す）
+const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`).join('')}です。`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
   <Crumbs items={[{ href: '/theme/', label: 'くらしのテーマ' }, { label: t.label }]} />
-  <header class="sticker lift t-head">
+  <header class="sticker lift t-hero">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-    <div class="t-title">
-      <div class="kind">くらしのテーマ</div>
-      <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" class="own" /></h1>
-    </div>
-    <p class="small secondary t-desc">施策・施策展開・基本施策の名前に{t.words.map((w) => <span class="nw">「{w}」</span>)}のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標です（<a href="/about/#theme">テーマの決め方</a>）。</p>
-    <div class="t-stats">
-      <HeadStats items={[
-        { label: '施策', n: items.length, href: '#list-h' },
-        { label: '主な取組', n: tori.length, href: `/torikumi/?theme=${t.id}`, note: yearLabel(LATEST) },
-        { label: '成果指標', n: seika.length, href: '#seika-h', note: yearLabel(LATEST) },
-      ]} />
-    </div>
+    <div class="t-kicker">くらしのテーマ</div>
+    <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
+    <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
+    <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
   </header>
-
-  <div class="donuts">
-    <DonutCard frac={tori.length ? toriOk / tori.length : 0} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`}>
-      主な取組のうち「順調」
-      <Fragment slot="sub">{fmt(tori.length)}件のうち{fmt(toriOk)}件（{yearLong(LATEST)}）。県全体は{allToriRate}。</Fragment>
-    </DonutCard>
-    <DonutCard frac={seika.length ? seikaOk / seika.length : 0} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`}>
-      <Term word="成果指標" />のうち<Term word="計画値" />に到達
-      <Fragment slot="sub">{fmt(seika.length)}指標のうち{fmt(seikaOk)}指標（{yearLong(LATEST)}）。県全体は{allSeikaRate}。</Fragment>
-    </DonutCard>
-  </div>
 
   <Toc
     links={[
       { href: '#judge-h', label: '施策の判定' },
+      { href: '#trend-h', label: '4年間の推移' },
       { href: '#list-h', label: '施策' },
       seika.length > 0 && { href: '#seika-h', label: '成果指標' },
     ]}
     head={{ kind: 'くらしのテーマ', tag: 'ttag', title: t.label }}
   />
 
-  {t.id === KANKO.theme && <RmSummary />}
-
   <section aria-labelledby="judge-h">
-    <h2 id="judge-h" class="anchor">このテーマの施策の判定（{yearLong(LATEST)}）</h2>
-    <p class="small secondary lead">マスを押すと、このテーマとその判定で絞り込んだ施策の一覧を開きます。</p>
-    <JudgeMatrix counts={judgeCounts} caption={`「${t.label}」の${fmt(items.length)}施策`} hrefOf={listHref} />
+    <h2 id="judge-h" class="anchor">施策の判定</h2>
+    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。</p>
+    {/* マスを押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く */}
+    <JudgeMatrix counts={head.judges} hrefOf={(k) => `/shisaku/?theme=${t.id}&judge=${k}`} />
+  </section>
+
+  <section aria-labelledby="trend-h">
+    <h2 id="trend-h" class="anchor">4年間の推移</h2>
+    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
+    <TrendFigure points={trend} />
   </section>
 
   <section aria-labelledby="list-h">
     <h2 id="list-h" class="anchor">施策（{fmt(items.length)}）</h2>
-    <p class="small"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
     <JudgeLegend />
     {visions.map((v) => (
       <>
         {/* 件数は名前の最後の行に続けて置き、数字の途中で折り返さない */}
         <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a><span class="n">（{v.n}）</span></span></h3>
-        {v.kihon.map((k) => (
-          <>
-            <h4 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></h4>
-            <ul class="row-list">
-              {k.items.map((s) => <ShisakuItem s={s} />)}
-            </ul>
-          </>
-        ))}
+        <div class="k-box">
+          {v.kihon.map((k) => (
+            <>
+              <h4 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></h4>
+              <ul class="row-list">
+                {k.items.map((s) => <ShisakuItem s={s} />)}
+              </ul>
+            </>
+          ))}
+        </div>
       </>
     ))}
+    <p class="small secondary after"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
   </section>
 
   {seika.length > 0 && (
     <section aria-labelledby="seika-h">
       <h2 id="seika-h" class="anchor">成果指標（{fmt(seika.length)}）</h2>
-      <p class="small"><a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
-      <p class="small secondary">{yearLong(LATEST)}の報告にある指標です。右の札は<Term word="達成率" />です。</p>
+      <p class="small secondary lead">右の札は<Term word="達成率" />です。</p>
       <SeikaKey mini />
       <ul class="row-list" id="theme-seika" data-more={SEIKA_SHOW}>
         {seika.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
       </ul>
       {seika.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="theme-seika" hidden>さらに表示（残り {fmt(seika.length - SEIKA_SHOW)}指標）</button></p>}
+      <p class="small secondary after">このテーマの施策の成果指標のほか、名前にこのテーマの言葉を含む、ほかの施策の成果指標も入れています。<a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
     </section>
   )}
+
+  {t.id === KANKO.theme && <RmSummary />}
 
   <ShareBox kind="くらしのテーマ" name={t.label} />
 </Base>
 
 <style>
-  /* アイコンと名前を1行に並べ、説明はその下に置く（スマホでは説明を全幅に広げる） */
-  .t-head { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: 'ico title' '. desc' '. stats'; gap: 6px 16px; align-items: center; margin-top: 12px; }
-  .t-head .ico { grid-area: ico; }
-  .t-title { grid-area: title; min-width: 0; }
-  .t-desc { grid-area: desc; margin: 0; }
-  .t-stats { grid-area: stats; margin-top: 6px; }
-  .kind { font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
-  .t-head h1 { margin: 0; }
-  .ico { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--pink); border: 2.5px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
-  .ico :global(.theme-ic) { width: 36px; height: 36px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* 頭。PC はアイコンを左に大きく置き、右に「くらしのテーマ」・名前・件数の札。スマホはアイコンを小さくして「くらしのテーマ」の行に並べ、名前を全幅にする。
+     段の問いと答え（Ladder）は将来像のページと同じく頭の中に置き、余白もトップのヒーロー・将来像のページと同じにする（段の位置がそろうように）。
+     地は白のままにし、段の箱はステッカーの中の箱（.inset）と同じ地の色で分ける。ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
+  .t-hero {
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "ico kicker" "ico name" "ico stats" "ladder ladder";
+    gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px;
+  }
+  .ico { grid-area: ico; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: var(--pink); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
+  .ico :global(.theme-ic) { width: 42px; height: 42px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .t-kicker { grid-area: kicker; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
+  .t-hero h1 { grid-area: name; margin: 4px 0 10px; }
+  .t-hero :global(.head-stats) { grid-area: stats; }
+  .t-hero :global(.ladder) { grid-area: ladder; background: var(--bg); }
+  @media (max-width: 520px) {
+    .t-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ico kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
+    .ico { width: 36px; height: 36px; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
+    .ico :global(.theme-ic) { width: 21px; height: 21px; }
+    .t-hero h1 { margin-top: 8px; }
+  }
+
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
   .sz-ribbon .n { white-space: nowrap; }
-  .k-h { font-size: 1rem; margin: 1.2em 0 0.5em; }
-  .sz-ribbon + .k-h { margin-top: 0.8em; }
+  /* 将来像ごとに1つの箱。中は基本施策の名前の行（地の色）と施策の行を、一覧（.row-list）と同じ細い線で区切って並べる */
+  .k-box { display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
+  .k-box .row-list { border: 0; border-radius: 0; box-shadow: none; }
+  .k-h { margin: 0; padding: 8px 16px; background: var(--bg); font-size: 0.9375rem; line-height: 1.5; }
   .nw { white-space: nowrap; }
+  .after { margin-top: 14px; }
   .more-row { margin-top: 14px; }
-  @media (max-width: 520px) {
-    .t-head { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: 'ico title' 'desc desc' 'stats stats'; gap: 10px 12px; }
-    .ico { width: 52px; height: 52px; }
-    .ico :global(.theme-ic) { width: 30px; height: 30px; }
-  }
+  @media print { .k-box { box-shadow: none; } }
 </style>

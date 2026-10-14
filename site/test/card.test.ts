@@ -19,7 +19,7 @@ test('カードの画像のフォントに、カードで使う字が全部入�
 
 test('施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページには、どれもカードがある', () => {
   const kinds = /^\/(shisaku|kihon|future|theme|bukyoku|torikumi|shihyou)\/.+\/$/;
-  const pages = pagePaths().filter((p) => kinds.test(p) && p !== '/shihyou/shuyou/');
+  const pages = pagePaths().filter((p) => kinds.test(p));
   const cards = getCards();
   assert.deepEqual(pages.filter((p) => !cards.has(p)), []);
   // ページの無いカードも作らない

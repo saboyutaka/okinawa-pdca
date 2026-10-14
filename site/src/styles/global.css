@@ -169,14 +169,16 @@ small, .small { font-size: 0.875rem; }
 .site-by { color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .site-by b { font-family: var(--font-display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; text-underline-offset: 0.25em; }
 .site-by:hover b { text-decoration-color: var(--pop); }
-.site-nav { flex-basis: 100%; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; margin: 0 -2px; }
+.site-nav { flex-basis: 100%; display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; margin: 0 -2px; }
 .site-nav::-webkit-scrollbar { display: none; }
 .site-nav a {
-  flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 14px; min-height: 38px;
+  flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 7px; min-height: 38px;
   display: inline-flex; align-items: center; border: 2px solid transparent; border-radius: 999px;
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
+/* 計画の段ごとのまとまり（将来像・主要指標 / 施策・成果指標 など）のあいだの区切り（layouts/Base.astro の NAV） */
+.site-nav .nav-sep { flex: none; align-self: center; width: 2px; height: 18px; margin: 0 3px; border-radius: 1px; background: var(--hair); }
 /* スマホでは、ロゴの右に「タイトル＋版の板」「（非公式）by …」の2行をロゴの高さに収め、その下にナビを置く。
    版の板がタイトルの横に入らない幅では、板を次の行に回す（ロゴは上下の真ん中に置いたまま） */
 @media (max-width: 720px) {
@@ -187,6 +189,7 @@ small, .small { font-size: 0.875rem; }
   .site-sub { flex-basis: 100%; margin: 0; font-size: 0.75rem; gap: 0 6px; }
   .site-sub small { font-size: 0.8125rem; }
   .site-by { padding: 0; }
+  .site-nav a { padding: 4px 6px; } /* 1画面に入る項目を増やす（いまのページの丸い枠の内側の余白だけ残す） */
 }
 /* 横にすべらせる帯（ヘッダーのナビ・ページ内の目次のリンクの並び）は、続きがある側の端をぼかす（scripts/scroll-hint.ts が more-l・more-r を付ける）。
    キーボードで移った項目がぼかしの下に隠れないよう、スクロールの止まる位置にぼかしの幅の余白を取る */
@@ -611,12 +614,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 /* 成果指標の一覧の行の小さな道のりの図（components/SeikaSpark.astro）。行が多いので、色と太さは要素に書かずここで付ける */
 .spark { display: block; overflow: visible; }
 .sp-band { fill: var(--bg); }
-/* 主要指標の小さな図（components/SeikaSpark.astro の part）: R4〜R9 の全体に地を敷き、前期の地を少し濃くする */
-.spark-goal .sp-frame { fill: var(--bg); }
-.spark-goal .sp-band { fill: var(--grid); }
-/* 主要指標の点の値を出す透明な円（ツールチップ）。マウスを乗せた円だけ薄い線で囲む */
-.sp-hit circle { fill: transparent; stroke: none; }
-.sp-hit circle:hover { stroke: var(--ink-2); stroke-width: 0.8; }
 .sp-plan path { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 3 2.5; stroke-linejoin: round; }
 .sp-plan circle { fill: var(--paper); stroke: var(--ink-2); stroke-width: 1.5; }
 .sp-plan .sp-start { fill: var(--ink-2); stroke: none; }

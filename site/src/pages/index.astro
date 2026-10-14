@@ -1,21 +1,19 @@
 ---
 import Base from '../layouts/Base.astro';
-import DonutCard from '../components/DonutCard.astro';
-import StatusBar from '../components/StatusBar.astro';
-import KeyBrief from '../components/KeyBrief.astro';
-import KeyNum from '../components/KeyNum.astro';
+import Ladder from '../components/Ladder.astro';
+import Tiers from '../components/Tiers.astro';
 import Term from '../components/Term.astro';
 import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
-import TrendChart from '../components/TrendChart.astro';
+import TrendFigure from '../components/TrendFigure.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, yearLong, rateBin, countJudges, STATUSES, statusOf, countBy,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
+  YEARS, LATEST, STATUSES, RATE_BINS, yearLong, rateBin, statusOf, countBy, countJudges,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
-import { band, fmt, pct } from '../lib/format.ts';
+import { band, fmt } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
@@ -25,31 +23,29 @@ const latestTori = getTorikumi(LATEST);
 const groups = getTorikumiGroups();
 const L = YEARS.length - 1;
 const latestGroups = groups.filter((g) => g.statuses[L]);
-const toriOk = latestGroups.filter((g) => g.statuses[L] === '順調').length;
-const latestSeika = getSeika(LATEST);
-const seikaOk = latestSeika.filter((s) => rateBin(s) === '100%以上').length;
+// ヒーローの3つの段（components/Ladder.astro）: 主要指標の達成状況・成果指標の達成率・主な取組の進捗状況の内訳
+const shuyou = getShuyouStatus();
+const seikaCounts = countBy(getSeika(LATEST), rateBin, RATE_BINS.map((b) => b.key));
+const toriCounts = countBy(latestGroups, (g) => g.statuses[L]!, STATUSES.map((s) => s.key));
 const shisaku = getShisakuList();
 const judgeCounts = countJudges(shisaku);
 
 
-// 将来像ごと。主な取組の進捗状況の内訳の棒と「順調」の割合（5つの将来像のページ・将来像のページの基本施策の行と同じ形）
+// 将来像ごと。主要指標の達成状況の内訳のマス目の棒と、主な取組の進捗状況の内訳の棒の2段（components/Tiers.astro。5つの将来像のページの基本施策の行と同じ順）。
+// 割合の数は出さず、2本の棒を長くする（区分ごとの数は棒の区間にマウスを乗せる・タップすると出る）
 const statusKeys = STATUSES.map((s) => s.key);
 const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length, counts: countBy(t, statusOf, statusKeys) };
+  return {
+    ...v,
+    shuyou: shuyou.filter((r) => r.kihon.shouraizou === v.id),
+    tori: countBy(t, statusOf, statusKeys),
+  };
 });
-// 区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの将来像で使っている区分）
-const statusUsed = statusKeys.filter((key) => visions.some((v) => (v.counts[key] || 0) > 0));
 
 
 // 4年間の推移
-const trend = YEARS.map((y) => {
-  const t = getTorikumi(y);
-  const s = getSeika(y);
-  const aOk = t.filter((x) => x.status === '順調').length;
-  const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
-  return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
-});
+const trend = trendPoints();
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -62,16 +58,7 @@ const boshu = boshuState();
       沖縄県は毎年、「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを点検し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>として公表しています。<br />
       その結果（令和4〜7年度）を、<a href="/about/">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
-    <div class="donuts">
-      <DonutCard plain frac={toriOk / latestGroups.length} label={`主な取組のうち順調 ${pct(toriOk, latestGroups.length)}`} more={{ href: '/torikumi/', label: '取組をさがす' }}>
-        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
-        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(latestGroups.length)}件</span></Fragment>
-      </DonutCard>
-      <DonutCard plain frac={seikaOk / latestSeika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, latestSeika.length)}`} more={{ href: '/shihyou/', label: '成果指標をさがす' }}>
-        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
-        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(latestSeika.length)}指標</span></Fragment>
-      </DonutCard>
-    </div>
+    <Ladder shuyou={shuyou} seika={seikaCounts} tori={toriCounts} />
   </section>
 
   <form class="search sticker" action="/shisaku/" method="get" role="search" aria-label="さがす">
@@ -95,14 +82,12 @@ const boshu = boshuState();
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
-    <KeyBrief kind="status" used={statusUsed} />
     <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
-          <StatusBar categories={STATUSES} counts={v.counts} context={`${v.name} 主な取組 `} size="mini" />
-          <KeyNum class="v-pv" word="進捗状況" label="順調" brief="key-status" value={pct(v.ok, v.n)} />
+          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} context={v.name} />
         </li>
       ))}
     </ul>
@@ -120,29 +105,7 @@ const boshu = boshuState();
   <section aria-labelledby="trend-h">
     <h2 id="trend-h">4年間の推移</h2>
     <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
-    <figure class="sticker trend">
-      <figcaption>
-        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-      </figcaption>
-      <TrendChart points={trend} />
-      <details>
-        <summary>表で見る</summary>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
-            <tbody>
-              {trend.map((p) => (
-                <tr>
-                  <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
-                  <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
-                  <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </figure>
+    <TrendFigure points={trend} />
   </section>
 
   <section aria-labelledby="iken-h">
@@ -168,7 +131,7 @@ const boshu = boshuState();
   .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; border: 2.5px solid var(--line); pointer-events: none; }
   .hero::before { width: 170px; height: 170px; right: -50px; top: -60px; background: var(--pink); }
   .hero::after { width: 90px; height: 90px; left: -34px; bottom: -34px; background: var(--lilac); }
-  .hero > * { position: relative; z-index: 1; }
+  .hero > :global(*) { position: relative; z-index: 1; } /* 部品（Ladder など）も飾りの丸の上に出す */
   .hero h1 { font-size: clamp(1.7rem, 4.6vw, 2.5rem); margin: 0.3em 0 0.2em; }
   /* サイトの名前と説明（lib/links.ts の SITE）。PC 幅は縦の線で区切って1行に、狭い画面は2行に積む */
   .site-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 0 0 10px; font-family: var(--font-display); font-size: 0.9375rem; line-height: 1.5; }
@@ -194,22 +157,20 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  /* 節の終わりの、一覧へ進むリンク（ドーナツのカードの「取組をさがす →」と同じ太字） */
+  /* 節の終わりの、一覧へ進むリンク（ヒーローの3つの段の「取組をさがす →」と同じ太字） */
   .more-link { margin: 10px 0 0; font-weight: 700; }
 
-  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う。棒と「順調」の割合は、5つの将来像のページの基本施策の棒と同じ */
-  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) auto; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う。PC は名前の右に「主要指標 → 主な取組」の2段を置き、スマホは名前の下に置く
+     （5つの将来像のページの基本施策の行と同じ形） */
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(300px, 48%, 470px); grid-template-areas: "badge name tiers"; gap: 8px 18px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
   .v-name { grid-area: name; line-height: 1.5; }
-  .vision :global(.sbar) { grid-area: bar; }
-  .vision :global(.v-pv) { grid-area: pv; justify-self: end; }
-  @media (max-width: 640px) {
-    .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
+  .vision :global(.v-tiers) { grid-area: tiers; }
+  @media (max-width: 720px) {
+    .vision { grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "badge name" "badge tiers"; gap: 8px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
   }
 
-  .trend { margin-top: 0; }
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
 
   .iken { background: var(--lilac); }
   .iken p { margin-top: 0; }

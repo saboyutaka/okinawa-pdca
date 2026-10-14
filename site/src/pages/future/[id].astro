@@ -1,6 +1,6 @@
 ---
-// 将来像1つのページ。頭（名前・ドーナツ2枚）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → 予算 → シェア。
-// 頭はトップのヒーローと同じく、ドーナツのカードを中に置き、見出しを問い・割合を答えにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
+// 将来像1つのページ。頭（名前・3つの段の問いと答え）→ 基本施策ごとの主要指標と主な取組 → 施策の判定 → 4年間の推移 → 予算 → シェア。
+// 頭はトップのヒーローと同じく、3つの段（主要指標・成果指標・主な取組。components/Ladder.astro）を中に置き、数だけをこの将来像のものにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
 // 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）。
 // 施策の判定と4年間の推移は、トップの節と同じ形（頭の文・マス目に題を付けない・推移の内訳は出さない）にし、数だけをこの将来像のものにする
 import type { InferGetStaticPropsType } from 'astro';
@@ -8,23 +8,23 @@ import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
-import DonutCard from '../../components/DonutCard.astro';
+import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import Chunk from '../../components/Chunk.astro';
 import KeyBrief from '../../components/KeyBrief.astro';
 import Term from '../../components/Term.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import TrendChart from '../../components/TrendChart.astro';
+import TrendFigure from '../../components/TrendFigure.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLong, STATUSES, statusOf, rateBin, countBy,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
+  LATEST, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries, trendPoints,
 } from '../../lib/data.ts';
-import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
-import { band, fmt, pct, yen } from '../../lib/format.ts';
+import type { TorikumiRow } from '../../lib/types.ts';
+import { band, pct, yen } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
@@ -41,9 +41,6 @@ const shisaku = getShisakuList().filter((s) => s.shouraizou === v.id);
 const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
 const seika = getSeika(LATEST).filter((s) => s.shisaku_id.startsWith(pre));
 const isOk = (t: TorikumiRow) => t.status === '順調';
-const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
-const toriOk = tori.filter(isOk).length;
-const seikaOk = seika.filter(reached).length;
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = futureHead(v.id);
 const judgeCounts = head.judges;
@@ -52,16 +49,10 @@ const judgeCounts = head.judges;
 const shuyou = getShuyouStatus().filter((r) => r.kihon.shouraizou === v.id);
 
 // 4年間の推移
-const trend = YEARS.map((y) => {
-  const t = getTorikumi(y).filter((x) => x.shisaku_id.startsWith(pre));
-  const s = getSeika(y).filter((x) => x.shisaku_id.startsWith(pre));
-  const aOk = t.filter(isOk).length;
-  const bOk = s.filter(reached).length;
-  return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
-});
+const trend = trendPoints((t) => t.shisaku_id.startsWith(pre), (s) => s.shisaku_id.startsWith(pre));
 
-// 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
-// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭のドーナツ・施策の判定・4年間の推移・成果指標をさがすにある）
+// 基本施策ごと。基本施策の名前の下に、主要指標（達成状況の札とスタート → いま → ゴールの値）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
+// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・成果指標をさがすにある）
 const kihonRows = kihon.map((k) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
   return {
@@ -70,8 +61,8 @@ const kihonRows = kihon.map((k) => {
     tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
   };
 });
-// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）
-const shuyouUsed = shuyou.map((r) => r.bin);
+// 主な取組の区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）。
+// 主要指標の札は県の言葉で読めるので、説明を置かない
 const toriUsed = statusKeys.filter((key) => kihonRows.some((k) => (k.tori.counts[key] || 0) > 0));
 
 // 予算（R7の決算見込額。同じ予算事業の重複を除いたもの）
@@ -91,16 +82,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       { label: '基本施策', n: kihon.length, href: '#kihon' },
       { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
     ]} />
-    <div class="donuts">
-      <DonutCard plain frac={toriOk / tori.length} label={`主な取組のうち順調 ${pct(toriOk, tori.length)}`} more={{ href: `/torikumi/?s=${v.id}`, label: '取組をさがす' }}>
-        <span class="nw">県の活動は、</span><span class="nw">計画どおりに</span><span class="nw">進んだ？</span>
-        <Fragment slot="sub"><Term word="主な取組" />のうち「順調」<span class="dc-n">{fmt(toriOk)} / {fmt(tori.length)}件</span></Fragment>
-      </DonutCard>
-      <DonutCard plain frac={seikaOk / seika.length} label={`成果指標のうち計画値に到達 ${pct(seikaOk, seika.length)}`} more={{ href: `/shihyou/?s=${v.id}`, label: '成果指標をさがす' }}>
-        <span class="nw">くらしや地域は、</span><span class="nw">計画どおりに</span><span class="nw">変わった？</span>
-        <Fragment slot="sub"><Term word="成果指標" />のうち<Term word="計画値" />に到達<span class="dc-n">{fmt(seikaOk)} / {fmt(seika.length)}指標</span></Fragment>
-      </DonutCard>
-    </div>
+    <Ladder shuyou={shuyou} seika={countBy(seika, rateBin, RATE_BINS.map((b) => b.key))} tori={countBy(tori, statusOf, statusKeys)} q={`s=${v.id}`} shuyouHref="#kihon" />
   </header>
 
   <Toc
@@ -114,11 +96,10 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   />
 
   <section aria-labelledby="kihon">
-    <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
-    <KeyBrief kind="shuyou" used={shuyouUsed} />
+    <h2 id="kihon" class="anchor">基本施策ごとの<Term word="主要指標" />と主な取組</h2>
+    <p class="small secondary lead">主要指標の札は、スタート（基準値）からゴール（R9の目標値）までのうち、どこまで進んだかの県の区分と達成率です。</p>
     <KeyBrief kind="status" used={toriUsed} />
-    <ul class="row-list k-list">
+    <ul class="k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
   </section>
@@ -132,29 +113,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
     <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
-    <figure class="sticker trend">
-      <figcaption>
-        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-      </figcaption>
-      <TrendChart points={trend} />
-      <details>
-        <summary>表で見る</summary>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
-            <tbody>
-              {trend.map((p) => (
-                <tr>
-                  <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
-                  <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
-                  <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </figure>
+    <TrendFigure points={trend} />
   </section>
 
   <section aria-labelledby="yosan-h">
@@ -173,26 +132,26 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
 <style>
   /* 頭。PC は番号の印を左に大きく置き、右に「将来像」・名前・件数の札。スマホは印を小さくして「将来像」の行に並べ、名前を全幅にする。
-     ドーナツのカードはトップのヒーローと同じく頭の中に置き、余白もトップのヒーローと同じにする（カードの位置がそろうように） */
+     3つの段の問いと答え（Ladder）はトップのヒーローと同じく頭の中に置き、余白もトップのヒーローと同じにする（段の位置がそろうように） */
   .v-hero {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "donuts donuts";
+    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "ladder ladder";
     gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px; background: var(--szw);
   }
   .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
   .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .v-hero h1 { grid-area: name; margin: 4px 0 10px; }
   .v-hero :global(.head-stats) { grid-area: stats; }
-  .v-hero .donuts { grid-area: donuts; }
+  .v-hero :global(.ladder) { grid-area: ladder; }
   @media (max-width: 520px) {
-    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "donuts donuts"; column-gap: 10px; }
+    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
     .v-hero :global(.hero-badge) { width: 36px; height: 36px; font-size: 1.15rem; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
     .v-hero h1 { margin-top: 8px; }
   }
 
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .trend { margin-top: 0; }
 
-  .k-list { margin-top: 12px; }
+  /* 基本施策は1つずつカード（components/KihonRow.astro）にし、PC は2列に並べる（1列だと右が空くため）。同じ行のカードは高さをそろえる */
+  .k-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; }
+  @media (min-width: 900px) { .k-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
 
 
   .budget { display: grid; gap: 6px; }
