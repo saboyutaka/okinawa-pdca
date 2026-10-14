@@ -82,7 +82,10 @@ for (const tree of document.querySelectorAll<HTMLElement>('[data-tree]')) {
     painted.add(el);
   };
 
+  // 木がいま見せている言葉（URL の q と同じ形。前後の空白を除く）
+  let shown = '';
   const run = () => {
+    shown = input.value.trim();
     const words = searchWords(input.value);
     for (const el of [...painted]) paint(el, null);
     for (const li of tree.querySelectorAll('li[data-hit]')) li.removeAttribute('data-hit');
@@ -144,14 +147,21 @@ for (const tree of document.querySelectorAll<HTMLElement>('[data-tree]')) {
   });
   // 幅が変わって成果指標の出る場所が変わったら、さがし直す
   wide.addEventListener('change', () => { if (input.value.trim()) run(); });
-  // 言葉の欄を URL の q にそろえてさがす。開いたときと、ほかのページから戻る・進むで bfcache から戻したとき
-  // （ブラウザによっては、戻したときに木の見た目はそのままで、言葉の欄だけを空にする。URL はさがすたびに書き換えているので、いつも木と合っている）
+  // 言葉の欄と木を URL の q にそろえる。URL はさがすたびに書き換えているので、いつも正しい。木がもうその言葉を見せていれば、欄だけを直す。
+  // 開いたときと、ほかのページから戻る・進むで bfcache から戻したときに動かす。ブラウザによっては、戻したときに木の見た目はそのままで
+  // 欄だけを空にし、それを pageshow より後に別の処理として行う（WebKit）ので、戻したときは少しあとにもう一度そろえる
   const fromUrl = () => {
     const q = new URLSearchParams(location.search).get('q') || '';
-    if (input.value === q && !q) return;
-    input.value = q;
-    run();
+    if (input.value.trim() !== q) input.value = q;
+    if (shown !== q) run();
   };
   fromUrl();
-  window.addEventListener('pageshow', (e) => { if (e.persisted) fromUrl(); });
+  // さがし終わったので、目次を出す（URL に q があるとき、ページの中の小さなスクリプトが読み込みの途中で隠している。pages/tree.astro の TREE_Q）
+  document.documentElement.classList.remove('tree-q');
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    fromUrl();
+    setTimeout(fromUrl, 0);
+    setTimeout(fromUrl, 300);
+  });
 }
