@@ -1,0 +1,26 @@
+---
+// 主要指標の達成率の小さな札（「■ -6%」）を、報告書の順（概要版の表の順。良い・悪いで並べ替えない）に並べる（5つの将来像のページの基本施策の行）。
+// 札の色と形は概要版の区分（SHUYOU_BINS）。札にマウスを乗せる・タップすると、名前と達成率と区分が出る（scripts/tooltip.ts）。
+// 数は見えているので、読み上げでは名前と区分を足す
+import Icon from './Icon.astro';
+import { shuyouRateText, shuyouBinOf, type ShuyouStatus } from '../lib/data.ts';
+
+interface Props { items: ShuyouStatus[] }
+const { items } = Astro.props;
+const rows = items.map((r) => ({ r, bin: shuyouBinOf(r.bin), rate: shuyouRateText(r) }));
+---
+<ul class="s-tags">
+  {rows.map((x) => (
+    <li class="s-tag" data-tip-label={x.r.name} data-tip-value={`達成率 ${x.rate}（${x.bin.label}）`}>
+      <Icon tone={x.bin.tone} size={12} /><b aria-hidden={x.rate === '—' ? 'true' : undefined}>{x.rate}</b><span class="sr-only">（{x.r.name}・{x.bin.label}）</span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  /* 札は文字と同じ流れに置き、前の言葉（「達成率」）に続けて折り返す */
+  .s-tags { display: inline; list-style: none; margin: 0; padding: 0; }
+  .s-tag { display: inline-flex; vertical-align: middle; align-items: center; gap: 4px; margin-right: 12px; white-space: nowrap; cursor: default; }
+  .s-tag:last-child { margin-right: 0; }
+  .s-tag b { font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; }
+</style>
