@@ -39,7 +39,7 @@ const visions = getShouraizou().map((v) => {
   return {
     ...v,
     shuyou: shuyou.filter((r) => r.kihon.shouraizou === v.id),
-    tori: { n: t.length, ok: t.filter((x) => x.status === '順調').length, counts: countBy(t, statusOf, statusKeys) },
+    tori: countBy(t, statusOf, statusKeys),
   };
 });
 
@@ -93,7 +93,7 @@ const boshu = boshuState();
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
-          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} context={v.name} pct={false} />
+          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} context={v.name} />
         </li>
       ))}
     </ul>

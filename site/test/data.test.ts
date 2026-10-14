@@ -354,6 +354,14 @@ test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果�
   assert.equal(shuyouBinOf('その他').label, '比べられない');
 });
 
+test('SHUYOU_BINS の word: 札の言葉は県の概要版の区分の言葉（前進は60%の上下を分けない）', () => {
+  assert.equal(shuyouBinOf('100%以上').word, '到達');
+  assert.equal(shuyouBinOf('60%以上100%未満').word, '前進');
+  assert.equal(shuyouBinOf('0%超60%未満').word, '前進');
+  assert.equal(shuyouBinOf('後退').word, '後退');
+  assert.equal(shuyouBinOf('その他').word, '比べられない');
+});
+
 test('shuyouCounts: 主要指標の棒の区分は概要版の言葉で、県の区分の並びのまま数える（0の区分も残す）', () => {
   assert.deepEqual(SHUYOU_CATS.map((c) => c.key), ['目標値に到達', '前進（60%以上）', '前進（60%未満）', '横ばい', '後退', '比べられない']);
   const counts = shuyouCounts([{ bin: '後退' }, { bin: '100%以上' }, { bin: '後退' }, { bin: 'その他' }]);

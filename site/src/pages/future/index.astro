@@ -1,9 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Tiers from '../../components/Tiers.astro';
+import ShuyouTags from '../../components/ShuyouTags.astro';
+import StatusBar from '../../components/StatusBar.astro';
 import Sz from '../../components/Sz.astro';
 import Term from '../../components/Term.astro';
-import KeyBrief from '../../components/KeyBrief.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import {
   LATEST, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus,
@@ -18,7 +18,9 @@ const tori = getTorikumi(LATEST);
 const seika = getSeika(LATEST);
 const shuyou = getShuyouStatus();
 const statusKeys = STATUSES.map((s) => s.key);
-// 基本施策ごとに、主要指標の達成率の札（報告書の順）と、主な取組の進捗状況の内訳の棒と「順調」の割合の2段（components/Tiers.astro。トップの将来像の行と同じ形）
+// 基本施策ごとに、名前の後ろに主要指標の達成状況の札（「後退 -6%」。報告書の順。components/ShuyouTags.astro）を置き、
+// 右（スマホは下）に主な取組の進捗状況の内訳の細い棒を控えめに置く（数は出さない。区分と数は棒の区間にマウスを乗せる・タップすると出る）。
+// 札は県の言葉で読めるので、凡例・「達成率」の説明は置かない。何の棒かは、カードの頭に1回だけ書く
 const visions = getShouraizou().map((v) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
   const ss = shisaku.filter((s) => s.shouraizou === v.id);
@@ -32,31 +34,27 @@ const visions = getShouraizou().map((v) => {
       return {
         ...k,
         shuyou: shuyou.filter((r) => r.kihon.id === k.id),
-        tori: { n: kt.length, ok: kt.filter((x) => x.status === '順調').length, counts: countBy(kt, statusOf, statusKeys) },
+        tori: countBy(kt, statusOf, statusKeys),
       };
     }),
   };
 });
-// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）
-const statusUsed = statusKeys.filter((key) => visions.some((v) => v.rows.some((r) => (r.tori.counts[key] || 0) > 0)));
 ---
 <Base title="5つの将来像" description={`新・沖縄21世紀ビジョンの5つの将来像と${fmt(kihon.length)}の基本施策の一覧です。基本施策ごとの主要指標の達成率と主な取組の進み具合を見られます。`}>
   <h1>5つの将来像</h1>
   <p class="secondary lead">
     「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿を5つの<Term word="将来像" />に分け、そのもとに{fmt(kihon.length)}の<Term word="基本施策" />、さらに{fmt(shisaku.length)}の施策を置いています。施策ごとの成果指標と主な取組は、実施計画で決められています。
   </p>
-  <KeyBrief kind="shuyou" used={shuyou.map((r) => r.bin)} />
-  <KeyBrief kind="status" used={statusUsed} />
   {visions.map((v) => (
     <section class:list={['sticker', 'vision', `sz-${v.id}`]} id={`shouraizou-${v.id}`} aria-labelledby={`h-${v.id}`}>
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} /><span class="v-nm"><span class="sr-only">将来像{v.id}　</span>{v.name}</span></a></h2>
       <div class="v-kihon sticker">
-        <p class="v-kt">基本施策</p>
+        <p class="k-head"><span class="v-kt">基本施策と主要指標</span><span class="k-hb" aria-hidden="true"><span class="sp-only">棒は</span>主な取組</span></p>
         <ul class="k-rows">
           {v.rows.map((k) => (
             <li class="k-r">
-              <div class="k-n"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
-              <Tiers class="k-t" shuyou={k.shuyou} tori={k.tori} context={k.name} tags />
+              <div class="k-n"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span> <ShuyouTags items={k.shuyou} /></div>
+              <div class="k-bar"><StatusBar categories={STATUSES} counts={k.tori} context={`${k.name} 主な取組 `} size="mini" /></div>
             </li>
           ))}
         </ul>
@@ -82,15 +80,24 @@ const statusUsed = statusKeys.filter((key) => visions.some((v) => v.rows.some((r
   /* 帯は将来像のページへのリンク。名前のリンク（.name-link）と同じく、名前に薄い下線を付け、乗せると黒く太くする（番号の印には付けない） */
   .v-nm { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
   .v-h .sz-ribbon:hover .v-nm { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
-  /* 基本施策の行。PC は名前の右に「主要指標 → 主な取組」の2段を置き、名前が何行にも折り返す幅では名前の下に置く（トップの将来像の行と同じ形） */
+  /* 基本施策の行。PC は「名前と主要指標の札 | 主な取組の細い棒」の2列、名前が何行にも折り返す幅では棒を名前の下に置く。
+     頭の行は列の見出しを兼ねる（スマホでは「棒は主な取組」） */
   .v-kihon { margin-top: 16px; padding-bottom: 8px; }
-  .v-kt { margin: 0 0 4px; font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .k-head, .k-r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%); gap: 6px 20px; align-items: center; }
+  .k-head { margin: 0 0 4px; align-items: baseline; }
+  .v-kt { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  .k-hb { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  .sp-only { display: none; }
   .k-rows { list-style: none; margin: 0; padding: 0; }
-  .k-r { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 46%, 420px); gap: 8px 20px; align-items: center; padding: 12px 0; }
+  .k-r { padding: 12px 0; }
   .k-r + .k-r { border-top: 1.5px solid var(--hair); }
-  .k-n { font-weight: 700; line-height: 1.5; }
+  .k-n { font-weight: 700; line-height: 1.6; }
   @media (min-width: 721px) { .k-n { font-size: 1.0625rem; } }
+  /* 主な取組は控えめに、細い棒だけ */
+  .k-bar :global(.sbar) { height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
   @media (max-width: 720px) {
+    .k-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+    .sp-only { display: inline; }
     .k-r { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   }
   .v-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; }
