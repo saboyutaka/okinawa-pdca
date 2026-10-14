@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
+import { LATEST, yearLong } from '../lib/data.ts';
 import ExtLink from '../components/ExtLink.astro';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
@@ -43,6 +44,8 @@ const NAV: { href: string; label: string; also?: string[]; not?: string[] }[][] 
 ];
 const inItem = (n: (typeof NAV)[number][number]) =>
   [n.href, ...(n.also || [])].some((h) => path.startsWith(h)) && !(n.not || []).some((h) => path.startsWith(h));
+// ヘッダーの版の木の板。いつの報告書までのデータかを、最新の対象年度で示す（「令和7年度版」。公表の年と取り違えないよう年度で書く）
+const EDITION = `${yearLong(LATEST)}版`;
 // ページの先読み（Speculation Rules）。サイトの中のリンクにマウスを乗せたとき・押し始めたときに、行き先の HTML を先に取っておく。
 // ブラウザが読むだけでスクリプトは要らない（いまは Chrome・Edge が読む。Safari・Firefox は読まず、これまでどおり押してから取る）。
 // 先読みしかしない（行き先のスクリプトまで動かす prerender はしない）。外のサイト（別のタブで開く）と同じページの # は除く。
@@ -56,7 +59,7 @@ const SPECULATION = {
 const SPECULATION_RULES = JSON.stringify(SPECULATION);
 // <script is:inline> の中身。CSP（astro.config.ts の security.csp）はハッシュが合うものしか動かさず、Astro は is:inline のハッシュを足さないので、中身を文字列にしてここで足す
 // 選んだ配色を最初に反映する（scripts/theme.ts が切り替えと記憶を受け持つ）。
-// あわせて html に js を付ける。スクリプトでしか動かない配色のボタンを、最初の描画から出すため（あとから出すとヘッダーの高さが変わり、ページ全体がずれる。styles/global.css の .theme-toggle）
+// あわせて html に js を付ける。スクリプトでしか動かない配色のボタン（フッター）を、最初の描画から出すため（あとから出すと、そのぶんずれる。styles/global.css の .theme-toggle）
 const THEME_INIT = `document.documentElement.classList.add('js');
 try {
   const t = localStorage.getItem('theme');
@@ -136,24 +139,23 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     )}
     <header class="site-header">
       <div class="wrap">
-        <a class="site-title" href="/">
-          {/* ロゴ: 星空の丘で、まるい子（いま）がみらいの白い星を見上げる。色は styles/global.css の --logo-*。favicon は src/assets/favicon.svg */}
-          <span class="mark" aria-hidden="true"><svg viewBox="0 0 36 36">
-            <path d="M6 3.4 Q6 6 8.6 6 Q6 6 6 8.6 Q6 6 3.4 6 Q6 6 6 3.4 Z M17.5 5.7 Q17.5 7.5 19.3 7.5 Q17.5 7.5 17.5 9.3 Q17.5 7.5 15.7 7.5 Q17.5 7.5 17.5 5.7 Z M32.5 16 Q32.5 18 34.5 18 Q32.5 18 32.5 20 Q32.5 18 30.5 18 Q32.5 18 32.5 16 Z M4.5 11.7 Q4.5 13 5.8 13 Q4.5 13 4.5 14.3 Q4.5 13 3.2 13 Q4.5 13 4.5 11.7 Z M12 2 Q12 3.2 13.2 3.2 Q12 3.2 12 4.4 Q12 3.2 10.8 3.2 Q12 3.2 12 2 Z M28 20.8 Q28 22 29.2 22 Q28 22 28 23.2 Q28 22 26.8 22 Q28 22 28 20.8 Z" fill="var(--logo-twinkle)" />
-            <path d="M-1 27.5 Q18 23 37 27.5 V37 H-1 Z" fill="var(--logo-hill)" stroke="var(--logo-ink)" stroke-width="2" />
-            <circle cx="14.5" cy="23" r="11.5" fill="var(--logo-body)" stroke="var(--logo-ink)" stroke-width="2.2" />
-            <ellipse cx="12.4" cy="20" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
-            <ellipse cx="19.2" cy="19" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
-            <circle cx="13.4" cy="18.8" r="1.35" fill="var(--logo-ink)" />
-            <circle cx="20.2" cy="17.8" r="1.35" fill="var(--logo-ink)" />
-            <path d="M28.5 3 L29.9 6.1 L33.3 6.5 L30.7 8.7 L31.4 12 L28.5 10.3 L25.6 12 L26.3 8.7 L23.7 6.5 L27.1 6.1 Z" fill="var(--logo-star)" stroke="var(--logo-ink)" stroke-width="1.5" stroke-linejoin="round" />
-          </svg></span><span>{SITE.name}</span>
-        </a>
-        <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
-        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
-          <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>
-          <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
-        </button>
+        <div class="site-id">
+          <a class="site-title" href="/">
+            {/* ロゴ: 星空の丘で、まるい子（いま）がみらいの白い星を見上げる。色は styles/global.css の --logo-*。favicon は src/assets/favicon.svg */}
+            <span class="mark" aria-hidden="true"><svg viewBox="0 0 36 36">
+              <path d="M6 3.4 Q6 6 8.6 6 Q6 6 6 8.6 Q6 6 3.4 6 Q6 6 6 3.4 Z M17.5 5.7 Q17.5 7.5 19.3 7.5 Q17.5 7.5 17.5 9.3 Q17.5 7.5 15.7 7.5 Q17.5 7.5 17.5 5.7 Z M32.5 16 Q32.5 18 34.5 18 Q32.5 18 32.5 20 Q32.5 18 30.5 18 Q32.5 18 32.5 16 Z M4.5 11.7 Q4.5 13 5.8 13 Q4.5 13 4.5 14.3 Q4.5 13 3.2 13 Q4.5 13 4.5 11.7 Z M12 2 Q12 3.2 13.2 3.2 Q12 3.2 12 4.4 Q12 3.2 10.8 3.2 Q12 3.2 12 2 Z M28 20.8 Q28 22 29.2 22 Q28 22 28 23.2 Q28 22 26.8 22 Q28 22 28 20.8 Z" fill="var(--logo-twinkle)" />
+              <path d="M-1 27.5 Q18 23 37 27.5 V37 H-1 Z" fill="var(--logo-hill)" stroke="var(--logo-ink)" stroke-width="2" />
+              <circle cx="14.5" cy="23" r="11.5" fill="var(--logo-body)" stroke="var(--logo-ink)" stroke-width="2.2" />
+              <ellipse cx="12.4" cy="20" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+              <ellipse cx="19.2" cy="19" rx="2.7" ry="3.3" fill="var(--logo-eye)" stroke="var(--logo-ink)" stroke-width="1.6" />
+              <circle cx="13.4" cy="18.8" r="1.35" fill="var(--logo-ink)" />
+              <circle cx="20.2" cy="17.8" r="1.35" fill="var(--logo-ink)" />
+              <path d="M28.5 3 L29.9 6.1 L33.3 6.5 L30.7 8.7 L31.4 12 L28.5 10.3 L25.6 12 L26.3 8.7 L23.7 6.5 L27.1 6.1 Z" fill="var(--logo-star)" stroke="var(--logo-ink)" stroke-width="1.5" stroke-linejoin="round" />
+            </svg></span><span>{SITE.name}</span>
+          </a>
+          <span class="edition">{EDITION}</span>
+          <span class="site-sub"><small>（非公式）</small><a class="site-by" href="/code-for-okinawa/" aria-current={path.startsWith('/code-for-okinawa/') ? 'page' : undefined}>by <b>{PROJECT.org}</b></a></span>
+        </div>
         <nav class="site-nav" aria-label="サイト内" data-scroll-hint>
           {NAV.map((g, i) => (
             <>
@@ -170,11 +172,17 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        {/* ナビに無いページへのリンクと、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
-        <ul class="foot-links">
-          <li><a href="/iken/">意見を伝えたい人へ</a></li>
-          <li><a href="/keikaku/">個別計画</a></li>
-        </ul>
+        {/* ナビに無いページへのリンクと配色のボタン、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
+        <div class="foot-row">
+          <ul class="foot-links">
+            <li><a href="/iken/">意見を伝えたい人へ</a></li>
+            <li><a href="/keikaku/">個別計画</a></li>
+          </ul>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
+            <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>
+            <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
+          </button>
+        </div>
         <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
       </div>
     </footer>

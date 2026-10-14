@@ -64,7 +64,7 @@ const listHref = (k: string) => `/shisaku/?theme=${t.id}&judge=${k}`;
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <div class="t-title">
       <div class="kind">くらしのテーマ</div>
-      <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<span class="own">このサイト独自の分類</span></h1>
+      <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" class="own" /></h1>
     </div>
     <p class="small secondary t-desc">施策・施策展開・基本施策の名前に{t.words.map((w) => <span class="nw">「{w}」</span>)}のどれかを含む{fmt(items.length)}施策と、その主な取組・成果指標です（<a href="/about/#theme">テーマの決め方</a>）。</p>
     <div class="t-stats">

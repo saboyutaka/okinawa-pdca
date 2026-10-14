@@ -52,6 +52,8 @@
   /* ロゴ（ヘッダーの印）。淡い紫の星空と丘で、まるい子がみらいの白い星を見上げる。中の絵はダークでも同じ色にする
      （ダークで変わるのはステッカーの縁と影だけ）。favicon（src/assets/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
   --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
+  /* ヘッダーの版の木の板。ロゴと同じく、木の色と字はダークでも変えない */
+  --wood: #efc98f; --wood-2: #e0ad68; --wood-grain: rgb(110 66 24 / 0.17); --wood-knot: rgb(110 66 24 / 0.3); --wood-ink: #3a2310;
   /* 以前の名前（ページの style から参照しているもの） */
   --page: var(--bg);
   --surface: var(--paper);
@@ -141,8 +143,10 @@ small, .small { font-size: 0.875rem; }
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-/* ロゴの印は幅を決めておく（スマホで2行目の字下げを、印の幅とすき間から計算するため） */
+/* ロゴの印は幅を決めておく（スマホでタイトルの右の2行を、印の幅とすき間から字下げするため） */
 .site-header { --mark-w: 40px; --mark-gap: 10px; }
+/* タイトル・版の板・「（非公式）by …」。広い画面では1行に並べ、狭い画面ではロゴの右に2行で置く */
+.site-id { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .site-title { display: inline-flex; align-items: center; gap: var(--mark-gap); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; line-height: 1.3; }
 /* 角の丸い四角のステッカー（丸いハンコは施策の判定だけに使うので、丸にしない）。絵は Base.astro の SVG */
 .site-title .mark {
@@ -150,20 +154,21 @@ small, .small { font-size: 0.875rem; }
   background: var(--logo-sky); border: 2.5px solid var(--line); box-shadow: 2px 2px 0 var(--shadow); transform: rotate(-4deg);
 }
 .site-title .mark svg { display: block; width: 100%; height: 100%; }
-/* 「（非公式）」と作っている団体（by Code for Okinawa）。広い画面ではタイトルに続け、狭い画面ではタイトルの下の行に小さく置く */
-.site-sub { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; margin-left: -12px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); }
+/* 版の木の板（Base.astro の EDITION）。字は数字だけ丸い英字フォントにする */
+.edition {
+  flex: none; white-space: nowrap; font-family: var(--font-num); font-weight: 700; font-size: 0.8125rem; line-height: 1; color: var(--wood-ink);
+  padding: 5px 8px 4px; border: 2px solid var(--line); border-radius: 4px; box-shadow: 2px 2px 0 var(--shadow); transform: rotate(2.5deg);
+  background:
+    radial-gradient(ellipse 8px 3px at 74% 64%, var(--wood-knot) 0 35%, transparent 70%),
+    repeating-linear-gradient(176deg, transparent 0 4px, var(--wood-grain) 4px 5px, transparent 5px 9px),
+    linear-gradient(var(--wood), var(--wood-2));
+}
+/* 「（非公式）」と作っている団体（by Code for Okinawa）。広い画面では版の板に続け、狭い画面ではタイトルの下の行に小さく置く */
+.site-sub { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; margin-left: 2px; font-size: 0.8125rem; line-height: 1.3; color: var(--ink-2); }
 .site-sub small { font-size: 0.9375rem; }
 .site-by { color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .site-by b { font-family: var(--font-display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; text-underline-offset: 0.25em; }
 .site-by:hover b { text-decoration-color: var(--pop); }
-.theme-toggle {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
-  background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
-}
-/* 配色のボタンはスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
-   最初の描画から出しておく（あとから出すとヘッダーの高さが変わり、ページ全体がずれる）。記号と文字は、いまの配色で選ぶ */
-:root:not(.js) .theme-toggle { display: none; }
-:root[data-theme="dark"] .theme-toggle .to-dark, :root:not([data-theme="dark"]) .theme-toggle .to-light { display: none; }
 .site-nav { flex-basis: 100%; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; margin: 0 -2px; }
 .site-nav::-webkit-scrollbar { display: none; }
 .site-nav a {
@@ -174,16 +179,16 @@ small, .small { font-size: 0.875rem; }
 .site-nav a[aria-current="page"] { border-color: var(--line); background: var(--paper); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
 /* 計画の段ごとのまとまり（将来像・主要指標 / 施策・成果指標 など）のあいだの区切り（layouts/Base.astro の NAV） */
 .site-nav .nav-sep { flex: none; align-self: center; width: 2px; height: 18px; margin: 0 2px; border-radius: 1px; background: var(--hair); }
-/* スマホでは「タイトル＋配色のボタン」「（非公式）by …」「ナビ」の3行を、タイトルの行に配色のボタンを並べて詰める */
+/* スマホでは、ロゴの右に「タイトル＋版の板」「（非公式）by …」の2行をロゴの高さに収め、その下にナビを置く。
+   版の板がタイトルの横に入らない幅では、板を次の行に回す（ロゴは上下の真ん中に置いたまま） */
 @media (max-width: 720px) {
-  .theme-label { display: none; }
-  .site-header .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; }
-  .site-title { grid-column: 1; grid-row: 1; }
-  .theme-toggle { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; }
-  .site-sub { grid-column: 1; grid-row: 2; margin: 0 0 0 calc(var(--mark-w) + var(--mark-gap)); font-size: 0.75rem; gap: 0 6px; } /* タイトルの文字の頭にそろえる */
+  .site-header .wrap { row-gap: 6px; }
+  .site-id { flex-basis: 100%; position: relative; min-height: var(--mark-w); padding-left: calc(var(--mark-w) + var(--mark-gap)); align-content: center; gap: 0 6px; }
+  .site-title .mark { position: absolute; left: 0; top: calc(50% - var(--mark-w) / 2); }
+  .edition { font-size: 0.6875rem; padding: 4px 4px 3px; }
+  .site-sub { flex-basis: 100%; margin: 0; font-size: 0.75rem; gap: 0 6px; }
   .site-sub small { font-size: 0.8125rem; }
   .site-by { padding: 0; }
-  .site-nav { grid-column: 1 / -1; margin-top: 6px; }
 }
 /* 横にすべらせる帯（ヘッダーのナビ・ページ内の目次のリンクの並び）は、続きがある側の端をぼかす（scripts/scroll-hint.ts が more-l・more-r を付ける）。
    キーボードで移った項目がぼかしの下に隠れないよう、スクロールの止まる位置にぼかしの幅の余白を取る */
@@ -196,8 +201,17 @@ small, .small { font-size: 0.875rem; }
 }
 .site-footer { margin-top: 64px; padding: 24px 0 40px; border-top: 2.5px solid var(--line); background: var(--paper); color: var(--ink-2); font-size: 0.875rem; }
 .site-footer p { max-width: 52em; }
+.site-footer .foot-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 22px; }
 .site-footer .foot-links { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .site-footer .foot-by { margin: 16px 0 0; font-size: 0.75rem; }
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
+}
+/* 配色のボタン（フッター）はスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
+   最初の描画から出しておく（あとから出すと、そのぶんずれる）。記号と文字は、いまの配色で選ぶ */
+:root:not(.js) .theme-toggle { display: none; }
+:root[data-theme="dark"] .theme-toggle .to-dark, :root:not([data-theme="dark"]) .theme-toggle .to-light { display: none; }
 
 /* ステッカー（カード）。.card は以前の名前。
    目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
@@ -420,7 +434,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .termpop-title { font-family: var(--font-display); font-weight: 700; }
 .termpop p { margin: 4px 0 0; }
 .termpop .termpop-note { margin-top: 8px; font-weight: 700; }
-/* 説明の代わりの短い説明と区分の一覧（Term の brief。将来像のページの「達成率」「順調」）。区分は横に並べて折り返す */
+/* 説明の代わりの短い説明と区分の一覧（Term の brief。components/KeyBrief.astro）。区分は横に並べて折り返す */
 .termpop-brief ul { list-style: none; padding: 0; margin: 8px 0 4px; display: flex; flex-wrap: wrap; gap: 2px 14px; }
 .termpop a { font-size: 0.875rem; }
 .termpop-close { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }

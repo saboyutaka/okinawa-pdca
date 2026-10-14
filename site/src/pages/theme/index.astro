@@ -3,13 +3,14 @@
 // ここはテーマどうしを見比べるための一覧にする: テーマごとのカードに、名前と施策の数（棒の分母。テーマの大きさが分かるように）、その下に施策の判定の内訳の棒を置く。
 // 成果指標・取組の数はテーマのページの頭にあるので出さない（5つの将来像のページの行と同じ考え方）。施策の数はテーマのページの頭と同じ（lib/heads.ts の themeHead）。
 // 並びは themes.json の順（良い・悪いで並べ替えない）。決め方の言葉も各テーマのページの頭にあるので、ここには出さない。
-// 「表で見る」は付けない（判定の内訳はテーマのページにあり、棒の読み上げには件数と割合がある）
+// 「表で見る」は付けない（判定の内訳はテーマのページにあり、棒の読み上げには件数と割合がある）。
+// 凡例の箱は置かず、棒の左の「判定」を押すと短い説明と区分の一覧を出す（components/KeyBrief.astro。将来像のページの基本施策の行の「順調」と同じ）
 import Base from '../../layouts/Base.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
-import Chip from '../../components/Chip.astro';
+import KeyBrief from '../../components/KeyBrief.astro';
 import Term from '../../components/Term.astro';
-import { LATEST, yearLong, countBy } from '../../lib/data.ts';
+import { LATEST, countBy } from '../../lib/data.ts';
 import { getThemes, unthemed } from '../../lib/themes.ts';
 import { themeHead } from '../../lib/heads.ts';
 import { JUDGE_GROUPS, judgeGroupOf } from '../../lib/icons.ts';
@@ -24,26 +25,26 @@ const themes = getThemes().map((t) => {
   };
 });
 const rest = unthemed();
+// 区分の一覧に出すのは、どれかのテーマで使っている区分
+const judgeUsed = keys.filter((key) => themes.some((t) => (t.judges[key] || 0) > 0));
 ---
 <Base title="くらしのテーマ" description="子ども・子育て、観光、交通など、くらしのテーマごとに沖縄県PDCAの施策・取組・成果指標を見られます（このサイト独自の分類）。">
   {/* 「このサイト独自の分類」の印は、押すと分け方の説明（lib/terms.ts の「くらしのテーマ」）が出る用語のボタンにし、リード文では分け方を説明しない */}
   <h1>くらしのテーマ<Term word="くらしのテーマ" label="このサイト独自の分類" note="テーマごとの言葉は、各テーマのページの頭にあります。" class="own" /></h1>
   {/* 何が分かるか → どう進むかを書く */}
   <p class="secondary lead">くらしに身近な{fmt(themes.length)}のテーマごとに、県の施策が計画どおりに進んでいるかを見比べられます。気になるテーマを押すと、そのテーマの施策・取組・成果指標をくわしく見られます。</p>
-  <div class="legend-box">
-    <span class="legend-l">{yearLong(LATEST)}の施策の<Term word="推進状況" label="判定" />:</span>
-    <ul class="legend" aria-label="棒の凡例">
-      {JUDGE_GROUPS.map((g) => <li><Chip tone={g.tone} shape={g.shape} text={g.label} /></li>)}
-    </ul>
-  </div>
+  <KeyBrief kind="judge" used={judgeUsed} />
 
-  {/* カードの中は、1行目に名前と施策の数、2行目に棒。名前はどれも1行に入る幅にして、どのカードでも棒が同じ高さに来るようにする（目線がばらつかないように） */}
+  {/* カードの中は、1行目に名前と施策の数、2行目に「判定」と棒。名前はどれも1行に入る幅にして、どのカードでも棒が同じ高さに来るようにする（目線がばらつかないように） */}
   <ul class="themes">
     {themes.map((t) => (
       <li class="sticker theme-card" id={t.id}>
         <div class="nm"><span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span><a class="name-link" href={`/theme/${t.id}/`}>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</a></div>
         <span class="cnt num">{fmt(t.ids.length)}施策</span>
-        <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
+        <div class="j-row">
+          <span class="j-l"><Term word="推進状況" label="判定" brief="key-judge" /></span>
+          <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
+        </div>
       </li>
     ))}
   </ul>
@@ -59,22 +60,12 @@ const rest = unthemed();
 </Base>
 
 <style>
-  /* 棒の凡例は読み方の手がかりなので、5つの将来像のページと同じく、小さく右に寄せ、地の色だけの箱（線と影なし）にまとめて本文と分ける。
-     スマホでは見出しを1行目に置き、札はその下に並べる */
-  .legend-box { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; width: fit-content; max-width: 100%; margin: 12px 0 14px auto; padding: 6px 12px; background: var(--paper); border-radius: 12px; font-size: 0.8125rem; color: var(--ink-2); }
-  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; }
-  .legend :global(.chip) { font-size: 0.75rem; gap: 4px; }
-  @media (max-width: 640px) {
-    .legend-box { margin-left: 0; padding: 6px 10px; }
-    .legend-l { width: 100%; }
-    .legend { gap: 2px 8px; }
-    .legend :global(.chip) { font-size: 0.6875rem; gap: 2px; }
-    .legend :global(.chip svg) { width: 10px; height: 10px; }
-  }
   /* カードは、一番長い名前（スタートアップ・起業）と施策の数が1行に入る幅（310px）より狭くしない（画面がそれより狭いときは画面の幅）。PC では3列 */
   .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr)); }
   .theme-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 12px; padding: 12px 16px 14px; scroll-margin-top: 16px; }
-  .theme-card :global(.sbar) { grid-column: 1 / -1; }
+  .j-row { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
+  /* 「判定」は、将来像のページの基本施策の行の「順調」（components/KeyNum.astro）と同じ小さな灰色の字 */
+  .j-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); line-height: 1.2; }
   .nm { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 1.05rem; line-height: 1.35; }
   .nw { white-space: nowrap; } /* 名前は、入りきらない狭い画面でだけ「・」の後ろで折り返す（トップのテーマの札と同じ） */
   .ico { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--pink); }
