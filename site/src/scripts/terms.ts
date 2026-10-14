@@ -51,6 +51,8 @@ function open(btn: HTMLElement) {
   const note = pop.querySelector<HTMLElement>('.termpop-note')!;
   note.textContent = btn.dataset.termNote || '';
   note.hidden = !btn.dataset.termNote;
+  // 西暦で表示するときは、大きさを測る前に書き換える（lib/era.ts）
+  window.era?.fix(pop);
   pop.hidden = false;
   const r = btn.getBoundingClientRect();
   const w = pop.offsetWidth;

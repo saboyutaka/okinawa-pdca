@@ -1,6 +1,9 @@
 // ツールチップ1つを、ホバー・フォーカス・タップ（tooltip.ts）と図の十字線（charts.ts）で使い回す。
-// 値は表やラベル・aria-label にも必ず出しているので、読み上げソフトには出さない
+// 値は表やラベル・aria-label にも必ず出しているので、読み上げソフトには出さない。
+// Esc で消せる（WCAG 1.4.13。マウスを乗せて・タップして出したときも、ポインターやフォーカスを動かさずに消せるように）。
+// 消したときに出した側で片付けること（図の十字線・タップで出したままにした印）は、出したすぐ後に onEsc で渡す
 let tip: HTMLDivElement | undefined;
+let cleanup: (() => void) | undefined;
 function el() {
   if (!tip) {
     tip = document.createElement('div');
@@ -13,7 +16,10 @@ function el() {
 }
 function place(x: number, y: number) {
   const t = el();
+  // 西暦で表示するときは、大きさを測る前に書き換える（lib/era.ts）
+  window.era?.fix(t);
   t.hidden = false;
+  cleanup = undefined;
   const r = t.getBoundingClientRect();
   t.style.left = `${Math.min(Math.max(8, x - r.width / 2), window.innerWidth - r.width - 8)}px`;
   t.style.top = `${y - r.height - 12 < 8 ? y + 20 : y - r.height - 12}px`;
@@ -49,3 +55,11 @@ export function showRows(title: string, rows: TipRow[], x: number, y: number) {
 export function hide() {
   if (tip) tip.hidden = true;
 }
+export function onEsc(fn: () => void) {
+  cleanup = fn;
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !tip || tip.hidden) return;
+  hide();
+  cleanup?.();
+});

@@ -1,17 +1,22 @@
 // data-tip-value / data-tip-label を持つ要素に、マウスを乗せる・タップするで同じ内容を出す。
 // 値は表やラベルにも必ず出しているので、ツールチップは補助にとどめる（棒の区間ごとにタブでは止めない）
-import { showText, hide } from './tip.ts';
+import { showText, hide, onEsc } from './tip.ts';
 
 const closest = (e: Event, selector: string) => (e.target instanceof Element ? e.target.closest<HTMLElement>(selector) : null);
 const target = (e: Event) => closest(e, '[data-tip-value]');
 const inChart = (e: Event) => closest(e, '.chart');
 let pinned: HTMLElement | null = null;
+// Esc で消した要素。マウスがその要素の上にあるあいだは出し直さない
+let quiet: HTMLElement | null = null;
 
 document.addEventListener('pointermove', (e) => {
   if (e.pointerType !== 'mouse' || inChart(e)) return;
   const el = target(e);
-  if (el) showText(el.dataset.tipValue, el.dataset.tipLabel, e.clientX, e.clientY);
-  else if (!pinned) hide();
+  if (el !== quiet) quiet = null;
+  if (el && el !== quiet) {
+    showText(el.dataset.tipValue, el.dataset.tipLabel, e.clientX, e.clientY);
+    onEsc(() => { quiet = el; });
+  } else if (!pinned) hide();
 });
 // スマホ: タップで出したままにし、もう一度タップするか、ほかの場所をタップすると消す（リンクやボタンの中では出さない）
 document.addEventListener('pointerup', (e) => {
@@ -20,6 +25,7 @@ document.addEventListener('pointerup', (e) => {
   if (el && !el.closest('a, button') && pinned !== el) {
     pinned = el;
     showText(el.dataset.tipValue, el.dataset.tipLabel, e.clientX, e.clientY);
+    onEsc(() => { pinned = null; });
   } else {
     pinned = null;
     hide();

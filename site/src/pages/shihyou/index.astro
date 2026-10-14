@@ -71,7 +71,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">{latestCount}</span>指標を表示</p>
+  <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{latestCount}</span>指標を表示</p>
   <p class="small secondary">
     右の札は{yearLabel(LATEST)}の<Term word="達成率" />（R6 までの指標は R6）です。
     ゴールの目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
