@@ -8,11 +8,11 @@ import Term from '../components/Term.astro';
 import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
 import JudgeMatrix from '../components/JudgeMatrix.astro';
-import TrendChart from '../components/TrendChart.astro';
+import TrendFigure from '../components/TrendFigure.astro';
 import Share from '../components/Share.astro';
 import {
   YEARS, LATEST, yearLong, rateBin, countJudges, STATUSES, statusOf, countBy,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount,
+  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getPdfCount, trendPoints,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { band, fmt, pct } from '../lib/format.ts';
@@ -43,13 +43,7 @@ const statusUsed = statusKeys.filter((key) => visions.some((v) => (v.counts[key]
 
 
 // 4年間の推移
-const trend = YEARS.map((y) => {
-  const t = getTorikumi(y);
-  const s = getSeika(y);
-  const aOk = t.filter((x) => x.status === '順調').length;
-  const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
-  return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
-});
+const trend = trendPoints();
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -120,29 +114,7 @@ const boshu = boshuState();
   <section aria-labelledby="trend-h">
     <h2 id="trend-h">4年間の推移</h2>
     <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
-    <figure class="sticker trend">
-      <figcaption>
-        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-      </figcaption>
-      <TrendChart points={trend} />
-      <details>
-        <summary>表で見る</summary>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
-            <tbody>
-              {trend.map((p) => (
-                <tr>
-                  <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
-                  <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
-                  <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </figure>
+    <TrendFigure points={trend} />
   </section>
 
   <section aria-labelledby="iken-h">
@@ -208,8 +180,6 @@ const boshu = boshuState();
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
   }
 
-  .trend { margin-top: 0; }
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
 
   .iken { background: var(--lilac); }
   .iken p { margin-top: 0; }

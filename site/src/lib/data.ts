@@ -972,6 +972,19 @@ export function getSeika(year: number) {
   return load('seika').filter((s) => s.year === year);
 }
 
+// 4年間の推移（トップ・将来像・くらしのテーマのページの図と表）。年度ごとに、主な取組のうち「順調」の割合（a）と、成果指標のうち計画値に届いた割合（b）。
+// どの取組・成果指標を数えるかはページが決める（省くと全部）
+export function trendPoints(pickTori: (t: TorikumiRow) => boolean = () => true, pickSeika: (s: SeikaRow) => boolean = () => true) {
+  return YEARS.map((y) => {
+    const t = getTorikumi(y).filter(pickTori);
+    const s = getSeika(y).filter(pickSeika);
+    const aOk = t.filter((x) => x.status === '順調').length;
+    const bOk = s.filter((x) => rateBin(x) === '100%以上').length;
+    return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
+  });
+}
+export type TrendRow = ReturnType<typeof trendPoints>[number];
+
 // ---------------------------------------------------------------- 出典
 
 // 読み込んだ県の PDF の数（取得台帳 data/raw/manifest.jsonl のうち、取得できた対象年度 R4〜R7 の PDF。zip の中の PDF は数えない）

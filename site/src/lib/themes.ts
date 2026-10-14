@@ -43,9 +43,11 @@ export function unthemed() {
   return getShisakuList().filter((s) => !inAny.has(s.id));
 }
 
-// 主な取組・成果指標のテーマ（施策のテーマ ＋ 名前に当たるテーマ）。テーマの並びは themes.json の順
+// 主な取組・成果指標がそのテーマに入るか（施策のテーマ ＋ 名前に当たるテーマ）
+export const inTheme = (t: Theme, shisakuId: string, name: string | null | undefined) =>
+  t.idSet.has(shisakuId) || (!t.exclude.includes(shisakuId) && t.re.test(name || ''));
+// 主な取組・成果指標のテーマ。テーマの並びは themes.json の順
 export function themesOfItem(shisakuId: string, name: string | null | undefined) {
-  const n = name || '';
-  return getThemes().filter((t) => t.idSet.has(shisakuId) || (!t.exclude.includes(shisakuId) && t.re.test(n)));
+  return getThemes().filter((t) => inTheme(t, shisakuId, name));
 }
 export const themeIdsOfItem = (shisakuId: string, name: string | null | undefined) => themesOfItem(shisakuId, name).map((t) => t.id);
