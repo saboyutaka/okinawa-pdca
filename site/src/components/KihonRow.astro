@@ -9,7 +9,8 @@
 //   スマホは「言葉｜値」の2列に積み、数の左端をそろえる
 // - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合（ここでは主要指標より細く、字も小さくする）。
 //   「順調」を押すと進捗状況の説明と区分の一覧を出す（components/KeyNum.astro。ページの KeyBrief kind="status"）。
-//   区分ごとの件数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar）
+//   区分ごとの件数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar）。棒と割合は、主要指標の値の行と同じくらいの幅にまとめる
+//   （棒だけが行の右端まで伸びて割合が離れると、主要指標のまとまりと大きさがちぐはぐに見えるため）
 // 主要指標の名前は、基本施策の名前（太字）の下の項目なので、太字にせず字の色と下線だけでリンクと分かるようにする
 import StatusBar from './StatusBar.astro';
 import KeyNum from './KeyNum.astro';
@@ -53,8 +54,7 @@ const vals = (r: ShuyouStatus) => {
   {tori.n > 0 && (
     <div class="k-row k-bar">
       <span class="k-l">主な取組</span>
-      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /></div>
-      <KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} />
+      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /><KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} /></div>
     </div>
   )}
 </li>
@@ -62,10 +62,10 @@ const vals = (r: ShuyouStatus) => {
 <style>
   .k-item { display: grid; gap: 12px; padding: 14px 18px; }
   .k-name { font-size: 1.0625rem; line-height: 1.5; }
-  /* PC は「何の行か | 中身 | 右の数」。主要指標は中身の列から右の数の列までを使い、主な取組の棒は主要指標の値の行と同じ幅までにする */
-  .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 7.5rem; column-gap: 16px; }
-  .k-shuyou { grid-template-areas: "lab main main"; align-items: start; }
-  .k-bar { grid-template-areas: "lab viz num"; align-items: center; }
+  /* 「何の行か | 中身」の2列。左の言葉は主要指標・主な取組とも同じ大きさ */
+  .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); column-gap: 16px; }
+  .k-shuyou { grid-template-areas: "lab main"; align-items: start; }
+  .k-bar { grid-template-areas: "lab viz"; align-items: center; }
   .k-l { grid-area: lab; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); line-height: 1.6; }
   .k-shuyou .k-l { padding-top: 3px; }
   .k-main { grid-area: main; min-width: 0; line-height: 1.7; }
@@ -78,17 +78,15 @@ const vals = (r: ShuyouStatus) => {
   .now .v-n { color: var(--ink); font-weight: 700; font-size: 0.9375rem; }
   .now .v-y { font-weight: 400; color: var(--ink-2); }
   .arrow { color: var(--muted); }
-  /* 主な取組は控えめに: 棒を細くし、言葉と割合の字も小さくする */
-  .k-bar .k-l { font-size: 0.75rem; }
-  .k-bar :global(.k-num) { font-size: 0.8125rem; }
-  .k-viz { grid-area: viz; min-width: 0; max-width: 40rem; }
-  .k-viz :global(.sbar) { height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
-  .k-bar :global(.k-num) { grid-area: num; justify-self: end; color: var(--ink-2); }
+  /* 主な取組は控えめに: 細い棒のすぐ後ろに「順調」の割合を置き、主要指標の値の行と同じくらいの幅にまとめる */
+  .k-viz { grid-area: viz; min-width: 0; max-width: 28rem; display: flex; align-items: center; gap: 12px; }
+  .k-viz :global(.sbar) { flex: 1; height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
+  .k-viz :global(.k-num) { flex: none; font-size: 0.8125rem; color: var(--ink-2); }
   /* 720px 以下は、スタート・いま・ゴールを「言葉｜値」の2列で1行ずつ積む（言葉の列の幅を決めて、数の左端をそろえる） */
   @media (max-width: 720px) {
     .k-item { padding: 12px 14px; }
     .k-name { font-size: 1rem; }
-    .k-row { grid-template-columns: 4.2em minmax(0, 1fr) auto; column-gap: 10px; }
+    .k-row { grid-template-columns: 4.2em minmax(0, 1fr); column-gap: 10px; }
     .k-vals { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); column-gap: 8px; row-gap: 2px; margin-top: 4px; }
     .v { display: contents; }
     .arrow { display: none; }
