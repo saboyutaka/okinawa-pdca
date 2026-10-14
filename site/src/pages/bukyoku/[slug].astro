@@ -3,7 +3,6 @@
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import DonutCard from '../../components/DonutCard.astro';
 import Moves, { type MoveGroup } from '../../components/Moves.astro';
@@ -136,8 +135,6 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
 <Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, head)} ogType="article">
-  <Crumbs items={[{ href: '/bukyoku/', label: '部局の一覧' }, { label: dept.name }]} />
-
   <header class="sticker lift d-head">
     <div class="kind">沖縄県の部局</div>
     <h1>{dept.name}</h1>

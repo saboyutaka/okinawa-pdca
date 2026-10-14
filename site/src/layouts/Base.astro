@@ -1,10 +1,11 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
+import { NOINDEX, PROJECT, SITE } from '../lib/links.ts';
 import { LATEST, yearLong } from '../lib/data.ts';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
+import { ERA_JS_PATH } from '../lib/era.ts';
 import { CARD_SIZE, cardMeta } from '../lib/card.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
 import fontUrl from '../fonts/fredoka-num.woff2?url';
@@ -57,11 +58,14 @@ const SPECULATION = {
 const SPECULATION_RULES = JSON.stringify(SPECULATION);
 // <script is:inline> の中身。CSP（astro.config.ts の security.csp）はハッシュが合うものしか動かさず、Astro は is:inline のハッシュを足さないので、中身を文字列にしてここで足す
 // 選んだ配色を最初に反映する（scripts/theme.ts が切り替えと記憶を受け持つ）。
-// あわせて html に js を付ける。スクリプトでしか動かない配色のボタン（フッター）を、最初の描画から出すため（あとから出すと、そのぶんずれる。styles/global.css の .theme-toggle）
+// 年を西暦で表示すると選んでいれば、書き換えのスクリプト（lib/era.ts）を読み込む。読み終えるまでページを読み進めないので、最初の描画から西暦で出る
+// （和暦のままの人は読まない。書き換えは、ページを読みながらそのスクリプトが行う）。
+// あわせて html に js を付ける。スクリプトでしか動かない年の書き方と配色のボタン（フッター）を、最初の描画から出すため（あとから出すと、そのぶんずれる。styles/global.css の .foot-toggles）
 const THEME_INIT = `document.documentElement.classList.add('js');
 try {
   const t = localStorage.getItem('theme');
   if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  if (localStorage.getItem('era') === 'seireki') document.write('<script src="${ERA_JS_PATH}"><\\/script>');
 } catch {}`;
 // スマホでナビが横にはみ出すとき、ナビだけを横にずらす（ページは動かさない）。
 // 前のページのナビの位置を引き継ぎ（sessionStorage）、ページを移るたびにナビが横に跳ばないようにする。いまいるページの項目が
@@ -95,7 +99,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
-    {STEALTH && <meta name="robots" content="noindex, nofollow" />}
+    {NOINDEX && <meta name="robots" content="noindex, nofollow" />}
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -130,11 +134,6 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <a class="skip" href="#main">本文へスキップ</a>
     {/* 外部リンク（components/ExtLink.astro）が aria-describedby で指す、読み上げ用の説明。画面には出さず、コピーにも入らない */}
     <span id="newtab-note" hidden>別のタブで開きます</span>
-    {STEALTH && (
-      <aside class="beta-notice" aria-label="ベータ版のお知らせ">
-        <p class="wrap"><b>ベータ版</b><span>沖縄県への問い合わせが済むまで、検索エンジンには載せていません。</span></p>
-      </aside>
-    )}
     <header class="site-header">
       <div class="wrap">
         <div class="site-id">
@@ -170,17 +169,24 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     </main>
     <footer class="site-footer">
       <div class="wrap">
-        {/* ナビに無いページへのリンクと配色のボタン、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
+        {/* ナビに無いページへのリンクと、年の書き方・配色のボタン、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
         <div class="foot-row">
           <ul class="foot-links">
+            <li><a href="/tree/">計画の目次</a></li>
             <li><a href="/iken/">意見を伝えたい人へ</a></li>
             <li><a href="/keikaku/">個別計画</a></li>
           </ul>
-          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
-            <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>
-            <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
-          </button>
-          <span class="sr-only" role="status" id="theme-status"></span>
+          <div class="foot-toggles">
+            {/* 年の書き方の切り替え（scripts/era.ts。data-src は書き換えのスクリプト）。文字は、いまの書き方でないほうを styles/global.css が選ぶ */}
+            <button type="button" class="foot-toggle era-toggle" id="era-toggle" data-src={ERA_JS_PATH}>
+              <span class="to-seireki">西暦で表示</span><span class="to-wareki">令和で表示</span>
+            </button>
+            <button type="button" class="foot-toggle theme-toggle" id="theme-toggle" aria-label="ダークモードに切り替える">
+              <span class="to-dark" aria-hidden="true">☾</span><span class="theme-label to-dark">ダーク</span>
+              <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
+            </button>
+            <span class="sr-only" role="status" id="theme-status"></span>
+          </div>
         </div>
         <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています。</p>
       </div>

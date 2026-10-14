@@ -54,10 +54,11 @@ type Pt = [x: number, y: number];
 type Box = [x1: number, y1: number, x2: number, y2: number];
 
 const NS = 'http://www.w3.org/2000/svg';
+// 文字は、西暦で表示するときは西暦にしてから入れる（幅を測って置き場所を決めるので、入れたあとで書き換わると重なる。lib/era.ts）
 function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number | null | undefined> = {}, text?: string) {
   const e = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, String(v));
-  if (text != null) e.textContent = text;
+  if (text != null) e.textContent = window.era?.text(text) ?? text;
   return e;
 }
 const nf = new Intl.NumberFormat('ja-JP');
@@ -226,7 +227,8 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
     svg.append(sv('line', { class: v === 0 ? 'base' : 'gridl', x1: m.l, x2: W - m.r + 8, y1: y(v), y2: y(v) }));
     svg.append(sv('text', { class: 'tick', x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, `${v}%`));
   }
-  points.forEach((p, i) => svg.append(sv('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }, W < 480 ? yl(p.y) : `${yl(p.y)}（${p.y}）`)));
+  // 広い図は和暦に西暦を添える（西暦で表示するときは西暦だけ）
+  points.forEach((p, i) => svg.append(sv('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }, W < 480 || window.era?.seireki ? yl(p.y) : `${yl(p.y)}（${p.y}）`)));
   const div = points.findIndex((p) => p.y >= 2025);
   if (div > 0) {
     const dx = (x(div - 1) + x(div)) / 2;
@@ -499,3 +501,5 @@ for (const d of document.querySelectorAll('details')) d.addEventListener('toggle
 window.addEventListener('beforeprint', () => { for (const c of charts) c.el.classList.remove('m-anim', 'm-go'); });
 window.addEventListener('beforeprint', renderAll);
 window.addEventListener('afterprint', renderAll);
+// 年の書き方を切り替えたら描き直す（文字の幅が変わるため。scripts/era.ts）
+document.addEventListener('era', renderAll);

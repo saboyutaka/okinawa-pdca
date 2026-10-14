@@ -3,7 +3,7 @@
 // 事業には自分のページが無いので、名前は施策のページの事業のカードへのリンクにする（scripts/list-filter.ts で絞り込む）。
 // 並びは施策をさがすと同じく基本施策ごと（1つの事業に施策が複数あるときは最初の施策）
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
+import Hierarchy from '../../components/Hierarchy.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import IkkatsuRow from '../../components/IkkatsuRow.astro';
 import Chip from '../../components/Chip.astro';
@@ -74,7 +74,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
 });
 ---
 <Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${IKKATSU_YEARS.map(yearLabel).join('・')}）の評価・将来像・部局でさがせます。`}>
-  <Crumbs items={[{ href: '/yosan/', label: '予算と財源' }, { label: '一括交付金の事業をさがす' }]} />
+  <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="一括交付金の事業をさがす" />
   <h1>一括交付金の事業をさがす</h1>
   <p class="lead">
     一括交付金（ソフト）を使った県の事業 {fmt(rows.length)}件を、{IKKATSU_YEARS.map(yearLabel).join('・')}の<Term word="一括交付金の事後評価" label="事後評価" />つきでさがせます。

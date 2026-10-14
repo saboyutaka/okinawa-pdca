@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
-- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。
+- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。計画の目次（`/tree/`）も同じく、目次の木（名前とリンクだけ。中身は `lib/tree-data.ts`）を `/tree/data-<ハッシュ>.json`（控えは `/tree/data.json`）から描く（7章）。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、部局の「前の年度からの変化」が使う。
@@ -28,15 +28,16 @@
 
 ## 3. lib とスクリプト
 
-- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
+- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
 - `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の1章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
-- `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。
+- `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。例外は、年を西暦で表示するときに読む `/era-<ハッシュ>.js`（`lib/era.ts` の `ERA_JS`。7章）。
   - `charts.ts`: `[data-chart]` の JSON から表示幅に合わせて SVG の図を描く（固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため）。一覧の行の小さな図 `components/SeikaSpark.astro` は文字が無いのでビルド時に SVG にする。
   - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む（開け閉めは `filter-more.ts`）。
-  - `torikumi-search.ts`: 取組をさがす（`#tf`）の検索と一覧。検索用のデータを読んで一覧を描く（7章）。`shisaku-trend.ts`: 施策の一覧の頭の「判定の移り変わり」のリンクで絞り込みを変える。`like.ts`: いいねのボタン（`components/Like.astro`）。
+  - `torikumi-search.ts`: 取組をさがす（`#tf`）の検索と一覧。検索用のデータを読んで一覧を描く（7章）。`shisaku-trend.ts`: 施策の一覧の頭の「判定の移り変わり」のリンクで絞り込みを変える。`like.ts`: いいねのボタン（`components/Like.astro`）。`tree.ts`: 計画の目次（`/tree/`）の木を JSON から描き、「開く深さ」のボタン（押した階層まで木を開く）と、キーワード（施策・取組・成果指標の名前を部分一致でさがし、当たった行とその親だけを残して開き、当たった字に `<mark>` を付ける。言葉は URL の `q` に残す。当たった所は `lib/search.ts` の `matchRanges`）。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`table-scroll.ts`（横にすべらせる表の箱 `.table-wrap` を、表が入りきらないときだけ Tab で止まる名前つきの region にする）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
+  - `era.ts`: 年の書き方（和暦・西暦）の切り替えボタン（フッター）。書き換えは `lib/era.ts` の `ERA_JS`（別のファイル）が受け持ち、`window.era` を置く。和暦のままの人が押したときは、ここでそのファイルを読み込んでから切り替える。図（`charts.ts`）は描く文字を `window.era.text` で西暦にしてから幅を測り（入れたあとで書き換わると札が重なる）、切り替えたら描き直す。吹き出し（`tip.ts`・`terms.ts`）は中身を入れたら `window.era.fix` で書き換えてから大きさを測る。
   - `motion.ts`: 動き（[design.md](design.md) の8章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
 - CSP（`astro.config.ts` の `security.csp` で各ページの `<meta>` に出す）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
@@ -44,7 +45,7 @@
 
 ## 4. ページ
 
-トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。公開した URL は変えない（8章）。
+トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/tree/`（計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組（最新の年度）を、開け閉めできる `details` の入れ子で並べ（木は HTML に書かず、`scripts/tree.ts` が JSON から描く。7章）、基本施策には主要指標、施策には成果指標を付ける（PC の幅では名前の横に、スマホでは開いた中の行に。同じ指標を2か所に書き、幅で片方だけを出す）。木の中身は `lib/data.ts` の `getPlanTree`。名前のリンクは `summary` の外に置き、`summary` は ▶ の丸だけにする（`summary` の中にリンクを置くと、押せるものが入れ子になる）。入口はいまはフッターだけ）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 
@@ -56,7 +57,7 @@
 
 - 全ページの head に `canonical` と `og:url`（本番のドメインでのそのページの URL。クエリは付けない）を出す。プレビューと版ごとの URL（workers.dev。[deploy.md](deploy.md) の3章）・絞り込みのクエリ付きの URL も、本番のそのページとして扱ってもらうため。どの URL にも出る 404 のページだけは出さない（`Base` の `canonical={false}`）。
 - `sitemap.xml` は、`astro.config.ts` の小さな統合が、書き出した全ページ（404 と、`/torikumi/data.json` のようなファイルを除く）から作る。依存を足さないため `@astrojs/sitemap` は使わない。`robots.txt` は `pages/robots.txt.ts` で、巡回は止めずに sitemap の場所だけを書く（[deploy.md](deploy.md) の4章）。
-- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、パンくずのあるページに `BreadcrumbList`（`components/Crumbs.astro`）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
+- 構造化データ（JSON-LD）は、トップに `WebSite`（サイトの名前と略称・作り手の Code for Okinawa・もとにした県の資料）、ページの階層のあるページに `BreadcrumbList`（`components/Hierarchy.astro`。画面の階層に無いいまのページを最後に足し、ページの無い段の施策展開は入れない）を出す。県を作り手として書かない（県は `isBasedOn` に並べた資料の作り手として書く）。`<script type="application/ld+json">` はデータで、動くスクリプトではないので、3章の CSP のハッシュは要らない。
 - SNS のカードは、全ページの head に `og:image`（大きさと説明の文も `og:image:width`・`og:image:height`・`og:image:alt` で書く）・`twitter:card`（`summary_large_image`）・`og:locale`（`ja_JP`）を出す。カードの題名と説明の文は、ページの題名と説明文（下の `lib/describe.ts`）をそのまま `og:title`・`og:description` に出す。
 - カードの画像は、施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページ（約2,600）はページごとの画像、ほかのページはサイト共通の画像（`layouts/Base.astro` がページの URL で選ぶ。`lib/card.ts` の `cardMeta`）。
   - ページごとの画像は `/og/<ページの URL の末尾の / を .png にしたもの>`（`/og/shisaku/1-1-a-1.png`）。ビルドで `pages/og/[...card].png.ts` が書き出す。中身（satori に渡す要素の木）は `lib/card.ts`、PNG にするのは `lib/card-render.ts`（satori で SVG にし、resvg で PNG にする）。`og:image` の URL には中身のハッシュを `?v=` で付け、中身が変わったら SNS が取り直すようにする（Cloudflare はクエリを見ずに同じ画像を返す）。
@@ -77,7 +78,11 @@
 - 一覧の行（`.row-list > li`）は `content-visibility: auto` で、画面の外の行を描かない（`styles/global.css`）。成果指標・施策・一括交付金などの一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重いため（スマホ幅でレイアウトのやり直しが 200ms 台から 10〜30ms に減った）。行の中身は行の外へはみ出せないので、吹き出しなどは body に付ける。`make shot` は画面の外まで撮るので、これを外して撮る。
 - ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
 - 動き（[design.md](design.md) の8章）は見た目だけを動かし（transform・opacity などで、レイアウトのやり直しをしない）、読み込んだときの動き（ドーナツ・スタンプ）は CSS だけで動かす（スクリプトの読み込みを待たず、止まっても必ず終わる）。外のライブラリは使わない。足したとき（2026-10）は、CPU を4倍遅くしたスマホ幅と PC 幅で、トップ・施策・将来像・成果指標をさがす・取組をさがすの CLS・LCP・長いタスク・50ms を超えたコマの数を前と比べ、測るたびのぶれの中で変わらないことを確かめた（CLS はどれも 0〜0.012 のまま）。
-- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの検索用データ `data-<ハッシュ>.json` の preload）。
+- ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの検索用データ `data-<ハッシュ>.json`・計画の目次のデータの preload）。
+- 計画の目次（`/tree/`）は約2,500行あり、HTML に書くと 750KB（gzip で約87KB）になった。ブラウザのスクリプトはページを読み終えてから動くので、戻る・進むで読み直したとき（bfcache を使わないとき）に、絞り込む前の目次と空の言葉の欄がしばらく見えてから描き直していた。いまは HTML（約12KB）には目次を書かず、名前とリンクだけの JSON（約225KB、gzip で約63KB。`lib/tree-data.ts`）を preload して `scripts/tree.ts` が描く。
+  - URL に `q` があれば、さがしてから一度で描く。データが届くまでは目次の場所を画面の高さぶん取り（取組をさがすと同じ）、言葉の欄は URL の `q` で先に埋める。
+  - 描き直しで開き方とスクロールの位置が失われないよう、離れるとき（`pagehide`）に `history.state` の `tree` に残し、描いたあとに戻す（データのファイルが変わったら使わない）。
+  - スクリプトが動かないときは目次を出さず、施策をさがす・5つの将来像へのリンクを出す（`<noscript>`）。
 - 取組をさがすの検索用データは、一覧と絞り込みに使う `data`（gzip で約105KB）と、キーワードで探すときだけ使う「やったこと」の `summary`（約96KB）の2つのファイルに分ける（`lib/search-data.ts`）。1つだったとき（約200KB）は、Slow 4G で読むだけで約1秒かかり、そのあいだ最初の一覧が出なかった。
   - `summary` はキーワードの欄に入ったとき（クエリに `q` があるときは初めから `data` と一緒に）読む。最初の一覧は `summary` を待たない。届くまではキーワードで探さず、件数を「読み込み中…」にする（一覧はそのまま）。読めなかったときは名前などだけで探し、件数の横にそう書く。
   - 片方だけを控え（`data.json`・`summary.json`）から読むと、公開し直した直後に、前の版と新しい版が混ざることがある。行の並びで対応させているので、`data` に同じビルドの `summary` の `hash` を持たせ、合わなければ両方を控えから読み直す。
@@ -92,7 +97,8 @@
   - CSS が1つなので、部品やページの `<style>` もどのページにも届く。Astro の `<style>` は部品ごとに範囲をしぼる（scoped）ので混ざらないが、`:global()` を単独で書くと全ページに効く。`.x :global(.y)` のように、範囲をしぼった要素の中に書く。
 - 数字のフォント（約4KB）は `/_astro/` にハッシュ付きの名前で書き出し（`astro.config.ts` の `vite.build.assetsInlineLimit`）、ずっとキャッシュさせる。CSS に埋め込むと CSP の `default-src 'self'` に止められる（`data:` のフォントになるため）。配信のキャッシュの決まりは `public/_headers`。
 - ページを移ったあとに見た目が変わらないようにする（ずれ・ちらつき）。ヘッダーはどのページにもあるので特に気をつける。
-  - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト）。
+  - スクリプトでしか動かないものを、読み込んだあとに `hidden` を外して出すと、そのぶんずれる（配色のボタンを出すとヘッダーが 6px 伸び、ページ全体が下にずれていた）。`<head>` のインラインスクリプトが `html` に `js` を付けるので、`:root:not(.js)` で隠し、最初の描画から出す。中身もいまの状態に合わせて CSS で選ぶ（配色のボタンの ☾ ダーク／☀ ライト、年の書き方のボタンの 西暦で表示／令和で表示）。
+  - 年を西暦で表示するとき（[design.md](design.md) の2章）は、書き換えのスクリプト（`lib/era.ts` の `ERA_JS`、`/era-<ハッシュ>.js`）を `<head>` のインラインスクリプトが `document.write` で読み込み、読み終えるまでページを読み進めない。そのスクリプトがページを読みながら（MutationObserver）書き換えるので、最初の描画から西暦で出る（`site.ts` で読み終えてから書き換えると、和暦が一瞬見え、文字の幅のぶんずれる。ページを移るときの View Transition にも和暦が写る）。ページに埋め込むと、どのページの HTML も gzip で約1.5KB 増える（中央値 11KB の1割強。2026-10-15）ので、別のファイルにして西暦を選んだ人だけが読む（名前に中身のハッシュが付き、ずっとキャッシュされる）。和暦のままの人は読まない。
   - ナビの横の位置は、前のページの位置を引き継ぐ（`layouts/Base.astro` の `NAV_SCROLL`。sessionStorage の `nav-x`）。端のぼかしもそこで付ける。
   - 取組をさがすの一覧は、検索用のデータが届いてからスクリプトで描く。届くまでは一覧（`#results` の `aria-busy`）が画面の高さぶんの場所を取っておく。空のままだと下の注記が最初の画面に見え、届いて行を描くと押し出されて、ページが大きくずれていた（CLS が PC 幅で 0.33、スマホ幅で 0.27。0.1 以下が「良い」）。絞り込み中の札も、URL の条件からデータを待たずに出す。
   - クエリ付きの URL で当たりが0件のときは、取っておいた場所が無くなって注記が画面に入るので、そのぶんずれる（CLS 約0.2）。1件以上なら 0.1 未満。

@@ -73,10 +73,12 @@ test('WebSite は作り手を Code for Okinawa にし、県の資料はもとに
   }
 });
 
-test('パンくずの BreadcrumbList は1から番号を振り、いまのページは here の URL にする', () => {
-  const ld = breadcrumbLd([{ href: '/future/1/', label: '将来像1' }, { label: '施策' }], '/shisaku/1-1-a-1/');
+test('ページの階層の BreadcrumbList は1から番号を振り、いまのページは here の URL にし、ページの無い段（施策展開）は入れない', () => {
+  const ld = breadcrumbLd([{ href: '/future/1/', label: '将来像1' }, { label: '施策展開' }, { label: '施策' }], '/shisaku/1-1-a-1/');
   assert.deepEqual(ld.itemListElement, [
     { '@type': 'ListItem', position: 1, name: '将来像1', item: `${SITE.url}future/1/` },
     { '@type': 'ListItem', position: 2, name: '施策', item: `${SITE.url}shisaku/1-1-a-1/` },
   ]);
+  // いまのページに href があっても here にする
+  assert.equal(breadcrumbLd([{ href: '/future/', label: '計画' }, { href: '/kihon/1-1/', label: '基本施策' }], '/kihon/1-1/').itemListElement[1].item, `${SITE.url}kihon/1-1/`);
 });

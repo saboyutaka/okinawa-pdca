@@ -1,7 +1,6 @@
 ---
 // 沖縄観光推進ロードマップ（第6次沖縄県観光振興基本計画の実施計画）の PDCA。基本施策・施策展開の一覧と年度ごとの進み具合
 import Base from '../../../layouts/Base.astro';
-import Crumbs from '../../../components/Crumbs.astro';
 import StatusChart from '../../../components/StatusChart.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
@@ -44,8 +43,6 @@ const seikaAll = kankoSeikaList();
 const SEIKA_SHOW = 10;
 ---
 <Base title={`${KANKO.name}（個別計画）`} description={`${KANKO.basis}の実施計画「${KANKO.name}」のPDCA（成果指標と主な取組の評価）を、施策展開ごとに整理しています。`} ogType="article">
-  <Crumbs items={[{ href: '/keikaku/', label: '個別計画' }, { label: KANKO.short }]} />
-
   <header class="sticker lift head">
     <div><span class="plan-tag">個別計画</span></div>
     <h1>{KANKO.name}</h1>

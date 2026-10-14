@@ -111,8 +111,9 @@ a:hover { text-decoration-thickness: 2.5px; }
 .name-link:hover { text-decoration-color: var(--ink); }
 .sub-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
 :focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
-/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり） */
-h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; word-break: auto-phrase; }
+/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり）。
+   text-wrap: balance は付けない。行の長さをそろえるので、2〜3行の見出しがどの行も短くなって右が空く（下の .lead と同じ考え） */
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; word-break: auto-phrase; }
 h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0.25em 0 0.5em; letter-spacing: 0.02em; }
 h2 { font-size: 1.35rem; margin: 2.2em 0 0.6em; }
 h3 { font-size: 1.08rem; margin: 1.6em 0 0.4em; }
@@ -132,18 +133,6 @@ small, .small { font-size: 0.875rem; }
 /* 本文へスキップ（キーボードで最初にフォーカスしたときだけ見える） */
 .skip { position: absolute; left: 8px; top: -60px; z-index: 50; background: var(--paper); color: var(--link); padding: 8px 14px; border-radius: 999px; border: 2.5px solid var(--line); font-weight: 700; }
 .skip:focus { top: 8px; }
-
-/* 公開前（ステルス）のベータ版の帯（Base.astro の STEALTH）。ヘッダーの上に全ページで出す。
-   状態の色（黄・橙など）と取り違えないよう、地は文字の色にして色を反転させる */
-.beta-notice { background: var(--ink); color: var(--paper); font-size: 0.8125rem; line-height: 1.6; }
-.beta-notice p { display: flex; align-items: baseline; gap: 4px 10px; margin-block: 0; padding-block: 7px; }
-.beta-notice b { flex: none; font-family: var(--font-display); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 0 10px; }
-.beta-notice span { word-break: auto-phrase; }
-/* スマホでは札の下にも文字を回して、帯の行数を減らす */
-@media (max-width: 720px) {
-  .beta-notice p { display: block; }
-  .beta-notice b { display: inline-block; margin-right: 8px; }
-}
 
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
@@ -210,13 +199,15 @@ small, .small { font-size: 0.875rem; }
 .site-footer .foot-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 22px; }
 .site-footer .foot-links { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .site-footer .foot-by { margin: 16px 0 0; font-size: 0.75rem; }
-.theme-toggle {
+.site-footer .foot-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.foot-toggle {
   display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
   background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
 }
-/* 配色のボタン（フッター）はスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
-   最初の描画から出しておく（あとから出すと、そのぶんずれる）。記号と文字は、いまの配色で選ぶ */
-:root:not(.js) .theme-toggle { display: none; }
+/* 年の書き方と配色のボタン（フッター）はスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
+   最初の描画から出しておく（あとから出すと、そのぶんずれる）。文字と記号は、いまの書き方・配色でないほうを選ぶ */
+:root:not(.js) .foot-toggles { display: none; }
+:root[data-era="seireki"] .era-toggle .to-seireki, :root:not([data-era="seireki"]) .era-toggle .to-wareki { display: none; }
 :root[data-theme="dark"] .theme-toggle .to-dark, :root:not([data-theme="dark"]) .theme-toggle .to-light { display: none; }
 
 /* ステッカー（カード）。.card は以前の名前。
@@ -246,12 +237,9 @@ figure { margin: 0; }
 .notice {
   background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
 }
-.breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.875rem; color: var(--ink-2); margin-top: 18px; }
-/* パンくずの無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーをパンくずのあるページと同じくらい下げる */
+/* ページの階層（components/Hierarchy.astro）の無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーを階層のあるページと同じくらい下げる */
 #main > h1:first-child { margin-top: 28px; }
 #main > .sticker.lift:first-child { margin-top: 24px; }
-.breadcrumb a { color: var(--ink); text-decoration: none; padding: 0 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
-.breadcrumb a:hover { background: var(--sky); }
 
 /* 数字の見出し（ヒーロー・タイル） */
 .hero-figure { font-family: var(--font-num); font-size: 3.2rem; font-weight: 600; line-height: 1.1; }
@@ -306,23 +294,13 @@ details[open] > summary { margin-bottom: 8px; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
 .chip.empty { color: var(--ink-2); }
-/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
+/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）などで使う（丸いハンコは施策の判定だけ） */
 .jstamp {
   display: inline-flex; align-items: center; justify-content: center; gap: 2px; flex: none; width: 30px; height: 30px; border-radius: 50%;
   border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
   font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; line-height: 1;
 }
 .row-list:empty { display: none; }
-/* 親の施策の札（components/ParentShisaku.astro）の下にぶら下げるページの頭。少し下げて置き、カギ形の線でつなぐ（取組・成果指標のページ） */
-.hang { position: relative; margin: 14px 0 0 32px; }
-.hang::before {
-  content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
-  border-left: 3px solid var(--line); border-bottom: 3px solid var(--line); border-bottom-left-radius: 12px;
-}
-@media (max-width: 640px) {
-  .hang { margin-left: 20px; }
-  .hang::before { left: -12px; width: 10px; }
-}
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
 /* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */
@@ -636,15 +614,13 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
    どの要素も、ふだんの見た目は動き終わった形にし、キーフレームには始まりの形だけを書く。ここが効かないとき（端末で動きを減らす設定・印刷・対応していないブラウザ）は、
    はじめから動き終わった形で見える。状態の区分はどれも同じ動きにする（遅れだけを目立たせない） */
 @media (prefers-reduced-motion: no-preference) {
-  /* ページを移るとき: 前のページから次のページへ短く重ねて切り替える（スクリプトは使わない。対応していないブラウザはこれまでどおり）。
-     ヘッダーに名前を付けて別に動かすと、下までスクロールしたページから移ったときに上から降りてくるので、ページ全体をそのまま重ねる */
-  @view-transition { navigation: auto; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
+  /* ページを移るときは重ねて切り替えない（@view-transition は付けない）。ページの階層（components/Hierarchy.astro）の段の数がページごとに違い、
+     前と次のページの頭が上下にずれて二重に見え、がたつくため。ヘッダーに名前を付けて別に動かすのも、下までスクロールしたページから移ったときに上から降りてくるので使わない */
   /* 配色の切り替え: ボタンから丸く広げる（scripts/theme.ts が html に vt-theme とボタンの位置 --vt-x・--vt-y・--vt-r を付ける） */
   html.vt-theme::view-transition-old(root), html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
   html.vt-theme::view-transition-new(root) { animation: m-reveal 0.4s ease-out; }
 
-  /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・親の施策の札・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
+  /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
   /* 「条件で絞り込む」（components/FilterMore.astro）の矢印: 開け閉めで上下に回る */
@@ -691,16 +667,14 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 @keyframes m-like-out { to { opacity: 0; transform: scale(0.94); } }
 
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
-   ナビ・配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
+   ナビ・年の書き方と配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
    地の色は白にし、状態の色は画面と同じに印刷する（色だけでなく形と文字でも出しているので、白黒の印刷でも読める） */
 html.printing .wrap { max-width: 186mm; padding-inline: 0; }
 @media print {
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
-  .beta-notice { background: none; color: var(--ink); border-bottom: 1.5px solid var(--line); }
-  .beta-notice b { border: 1.5px solid var(--line); }
+  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .card, .row-list { box-shadow: none !important; }

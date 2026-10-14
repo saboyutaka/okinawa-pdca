@@ -24,10 +24,8 @@ export const SITE = {
   url: 'https://okinawa-miraima.com/',
 };
 
-// まだ公開前（ステルス）。県への問い合わせが済むまでは、検索エンジンに載せず（noindex）、全ページのヘッダーの上にベータ版の帯を出して
-// そのことを伝える（layouts/Base.astro）。SNS のシェアボタンは、このあいだも出す。
-// 公開してよくなったら false にし、public/_headers の X-Robots-Tag も外す
-export const STEALTH = true;
+// まだ検索エンジンに載せない（noindex）。載せてよくなったら false にし、public/_headers の X-Robots-Tag も外す
+export const NOINDEX = true;
 
 // このサイトを作っている団体と管理者、制作に協力してくれた人
 export const PROJECT = {

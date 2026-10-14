@@ -4,7 +4,7 @@ import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
-import Crumbs from '../../components/Crumbs.astro';
+import Hierarchy from '../../components/Hierarchy.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
@@ -18,7 +18,7 @@ import { kihonDescription } from '../../lib/describe.ts';
 import { kihonHead } from '../../lib/heads.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getShouraizou, getShisakuList, shuyouRows, shuyouAnchor, sourceLink,
+  getShisakuList, shuyouRows, shuyouAnchor, sourceLink, planParents,
 } from '../../lib/data.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -26,7 +26,6 @@ export const getStaticPaths = ROUTES['kihon/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { k } = Astro.props;
-const shou = getShouraizou().find((x) => x.id === k.shouraizou);
 const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
 const statusKeys = STATUSES.map((x) => x.key);
 const src = k.source && sourceLink(k.source, k.page);
@@ -52,10 +51,9 @@ const hSrc = h && planSourceLink('hyoka', h.source, h.page);
 const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => r.id))).size;
 ---
 <Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, kihonHead(k.id))} ogType="article">
-  <Crumbs items={[{ href: `/future/${k.shouraizou}/`, label: `将来像${k.shouraizou}`, sz: k.shouraizou }, { label: k.name }]} />
+  <Hierarchy items={planParents({ kihon: k.id })} page={k.name} />
   <header class="sticker lift k-head">
     <span class="code-no code-corner" title="県の報告書での番号">基本施策 {k.code}</span>
-    <div class="kind">将来像{k.shouraizou}「{shou?.name}」の<Term word="基本施策" /></div>
     <h1>{k.name}</h1>
     {k.mezasu && (
       <div class="bubble-row says">
@@ -163,7 +161,6 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   /* 頭は施策ページと同じ太いステッカー。目指す姿は県の吹き出しに入れる */
   .k-head { position: relative; display: grid; gap: 4px; margin-top: 12px; padding-top: 30px; }
   .k-head h1 { margin: 2px 0 10px; }
-  .kind { font-size: 0.9375rem; color: var(--ink-2); }
   .label { font-weight: 700; margin-bottom: 4px; }
   .past { margin-top: 18px; }
   .says .first { margin: 4px 0 0; }

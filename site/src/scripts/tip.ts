@@ -16,6 +16,8 @@ function el() {
 }
 function place(x: number, y: number) {
   const t = el();
+  // 西暦で表示するときは、大きさを測る前に書き換える（lib/era.ts）
+  window.era?.fix(t);
   t.hidden = false;
   cleanup = undefined;
   const r = t.getBoundingClientRect();

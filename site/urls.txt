@@ -2654,6 +2654,7 @@
 /torikumi/5-5-b-4/9f16b5b9/
 /torikumi/5-5-b-4/b42fc8b1/
 /torikumi/5-5-b-4/e1640f19/
+/tree/
 /yosan/
 /yosan/ikkatsu/
 /yosan/zaigen/
