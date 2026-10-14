@@ -106,7 +106,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <h2 id="kihon" class="anchor">基本施策ごとの<Term word="主要指標" />と主な取組</h2>
     <p class="small secondary lead">主要指標の札は、スタート（基準値）からゴール（R9の目標値）までのうち、どこまで進んだかの県の区分と達成率です。</p>
     <KeyBrief kind="status" used={toriUsed} />
-    <ul class="row-list k-list">
+    <ul class="k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
     </ul>
   </section>
@@ -180,13 +180,9 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .trend { margin-top: 0; }
 
-  .k-list { margin-top: 12px; }
-  /* PC は基本施策を2列のマスに並べる（1行だと右が空くため）。箱は1つのまま、マスのあいだは一覧の行と同じ細い線（.row-list のすき間の地の色）。
-     基本施策の数が奇数の将来像は、最後の空きマスを白で埋める（グリッドの ::after も1つのマスになる） */
-  @media (min-width: 900px) {
-    .k-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .k-list:has(> li:last-child:nth-child(odd))::after { content: ""; background: var(--paper); }
-  }
+  /* 基本施策は1つずつカード（components/KihonRow.astro）にし、PC は2列に並べる（1列だと右が空くため）。同じ行のカードは高さをそろえる */
+  .k-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; }
+  @media (min-width: 900px) { .k-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
 
 
   .budget { display: grid; gap: 6px; }

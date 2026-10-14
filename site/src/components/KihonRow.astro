@@ -1,5 +1,5 @@
 ---
-// 将来像のページの基本施策の1行（親は ul.row-list。PC は2列のマス）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
+// 将来像のページの基本施策のカード（親は ul.k-list。PC は2列）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
 // 主要指標がこの行の主役で、主な取組の棒は細く控えめにする（docs/design.md の1章「3つの段」。基本施策をはかる物差しは主要指標）。
 // - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前の後ろに達成状況の札（「前進 37%」。5つの将来像のページと同じ
 //   components/ShuyouTags.astro）、その下に「スタート → いま → ゴール」の値を1行で。図は置かない（札が達成率をそのまま示すので、
@@ -33,7 +33,7 @@ const vals = (r: ShuyouStatus) => {
   ];
 };
 ---
-<li class="k-item">
+<li class="k-item sticker">
   <div class="k-name"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
   {shuyou.map((r, i) => (
     <div class="k-row k-shuyou">
@@ -57,7 +57,7 @@ const vals = (r: ShuyouStatus) => {
 </li>
 
 <style>
-  .k-item { display: grid; align-content: start; gap: 12px; padding: 14px 18px; } /* 2列のマスで隣のマスより低いときも、中身は上に詰める */
+  .k-item { display: grid; align-content: start; gap: 12px; padding: 14px 18px; min-width: 0; } /* 隣のカードより低いときも、中身は上に詰める */
   .k-name { font-size: 1.0625rem; line-height: 1.5; }
   /* 「何の行か | 中身」の2列。左の言葉は主要指標・主な取組とも同じ大きさ */
   .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); column-gap: 16px; }
