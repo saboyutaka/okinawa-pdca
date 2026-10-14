@@ -42,7 +42,7 @@ const ikkatsuBorrowed = ikkatsu.filter((j) => j.shisaku_from).length;
 const reached = YEARS.map((y) => `${yearLabel(y)} ${fmt(getSeika(y).filter((s) => rateBin(s) === '100%以上').length)}`).join('・');
 const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISHED[y])}`).join('・');
 ---
-<Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・使っている技術・注意点">
+<Base title="このサイトについて" description="このサイトの作り手・データの出典・作り方・使っている技術・注意点・アクセシビリティ">
   <h1>このサイトについて</h1>
   <p class="lead">
     沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
@@ -201,6 +201,9 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     <li>数字の表示に、丸い英字フォント <ExtLink href="https://github.com/hafontia/Fredoka-One">Fredoka</ExtLink>（数字と記号だけに絞ったもの。<a href="/fonts/Fredoka-OFL.txt">SIL Open Font License 1.1</a>）を使っています。日本語の文字は、お使いの端末のフォントで表示します。</li>
     <li>SNS で共有したときに出るカードの画像の文字には、<ExtLink href="https://github.com/notofonts/noto-cjk">Noto Sans CJK JP</ExtLink>（<a href="/fonts/NotoSansCJK-OFL.txt">SIL Open Font License 1.1</a>）を使っています。</li>
   </ul>
+
+  <h2 id="accessibility">アクセシビリティ</h2>
+  <p>文字と地の色のコントラストの基準（WCAG など）や、ウェブアクセシビリティの規格（JIS X 8341-3 など）に沿っています。使いにくいところがあれば、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお知らせください。</p>
 </Base>
 
 <style>

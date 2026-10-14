@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { PROJECT, SITE, STEALTH } from '../lib/links.ts';
 import { LATEST, yearLong } from '../lib/data.ts';
-import ExtLink from '../components/ExtLink.astro';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
 import { CARD_SIZE, cardMeta } from '../lib/card.ts';
@@ -182,7 +181,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
             <span class="to-light" aria-hidden="true">☀</span><span class="theme-label to-light">ライト</span>
           </button>
         </div>
-        <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています（管理: <ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink>。</p>
+        <p class="foot-by">このサイトは、<a href="/code-for-okinawa/">{PROJECT.org}</a> の<Term word="シビックテック" />の取り組みとして作っています。</p>
       </div>
     </footer>
   </body>
