@@ -78,7 +78,7 @@ const headTrends = trends.filter((t) => t.key !== 'streak');
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">{shisaku.length}</span>施策を表示</p>
+  <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{shisaku.length}</span>施策を表示</p>
   <JudgeLegend />
 
   <div id="shisaku-list">

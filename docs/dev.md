@@ -23,6 +23,7 @@
 ```sh
 make build && make shot                                    # PC 幅（1280px）とスマホ幅（390px）で撮って tmp/shots に
 make shot PAGES="/ /shisaku/1-1-a-1/ --dark"               # ページとオプションを選ぶ
+make shot PAGES="/shisaku/1-1-a-1/ --seireki"             # 年を西暦で表示して撮る
 make shot PAGES="/torikumi/ --top"                         # 最初の画面だけ
 make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"     # 最初に当たる要素だけ
 make shot PAGES="/shisaku/1-1-a-1/ --at '#check'"         # その要素まで # で跳んだときの画面（上に貼り付いた目次を見る）

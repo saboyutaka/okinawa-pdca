@@ -1,6 +1,6 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
-import { showRows, hide, type TipRow } from './tip.ts';
+import { showRows, hide, onEsc, type TipRow } from './tip.ts';
 import { moving } from './motion.ts';
 
 // 図の JSON の形。書き出すのは components/TrendChart.astro（trend）と SeikaChart.astro・RmSeika.astro（seika）、KatsudouChart.astro（katsudou）
@@ -54,10 +54,11 @@ type Pt = [x: number, y: number];
 type Box = [x1: number, y1: number, x2: number, y2: number];
 
 const NS = 'http://www.w3.org/2000/svg';
+// 文字は、西暦で表示するときは西暦にしてから入れる（幅を測って置き場所を決めるので、入れたあとで書き換わると重なる。lib/era.ts）
 function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number | null | undefined> = {}, text?: string) {
   const e = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, String(v));
-  if (text != null) e.textContent = text;
+  if (text != null) e.textContent = window.era?.text(text) ?? text;
   return e;
 }
 const nf = new Intl.NumberFormat('ja-JP');
@@ -95,6 +96,7 @@ function popAt<E extends SVGElement>(el: E, cls: 'm-dot' | 'm-tag', ms: number) 
 // 横に並ぶ点（年度）を、ポインターと矢印キーで選ぶ
 function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: number, bottom: number, onShow: (i: number, x: number, y: number) => void, start: number) {
   let idx = -1;
+  let quiet = false; // マウスを乗せて出したものを Esc で消したら、マウスが図から出るまで出し直さない
   const line = sv('line', { class: 'cross', y1: top, y2: bottom, visibility: 'hidden' });
   svg.append(line);
   const show = (i: number, pt?: Pt) => {
@@ -104,6 +106,11 @@ function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: num
     line.setAttribute('visibility', 'visible');
     const r = svg.getBoundingClientRect();
     onShow(i, pt ? pt[0] : r.left + xs[i], pt ? pt[1] : r.top + top);
+    // 図の外にフォーカスがあるとき（マウスを乗せて出したとき）に Esc で消したら、十字線も一緒に消す
+    onEsc(() => {
+      off();
+      quiet = true;
+    });
   };
   const off = () => {
     idx = -1;
@@ -116,9 +123,15 @@ function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: num
     xs.forEach((v, i) => { if (Math.abs(v - x) < Math.abs(xs[b] - x)) b = i; });
     return b;
   };
-  svg.addEventListener('pointermove', (e) => show(nearest(e.clientX), [e.clientX, e.clientY]));
-  svg.addEventListener('pointerdown', (e) => show(nearest(e.clientX), [e.clientX, e.clientY]));
-  svg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') off(); });
+  svg.addEventListener('pointermove', (e) => { if (!quiet) show(nearest(e.clientX), [e.clientX, e.clientY]); });
+  svg.addEventListener('pointerdown', (e) => {
+    quiet = false;
+    show(nearest(e.clientX), [e.clientX, e.clientY]);
+  });
+  svg.addEventListener('pointerleave', (e) => {
+    quiet = false;
+    if (e.pointerType === 'mouse') off();
+  });
   wrap.onkeydown = (e) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -214,7 +227,8 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
     svg.append(sv('line', { class: v === 0 ? 'base' : 'gridl', x1: m.l, x2: W - m.r + 8, y1: y(v), y2: y(v) }));
     svg.append(sv('text', { class: 'tick', x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, `${v}%`));
   }
-  points.forEach((p, i) => svg.append(sv('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }, W < 480 ? yl(p.y) : `${yl(p.y)}（${p.y}）`)));
+  // 広い図は和暦に西暦を添える（西暦で表示するときは西暦だけ）
+  points.forEach((p, i) => svg.append(sv('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }, W < 480 || window.era?.seireki ? yl(p.y) : `${yl(p.y)}（${p.y}）`)));
   const div = points.findIndex((p) => p.y >= 2025);
   if (div > 0) {
     const dx = (x(div - 1) + x(div)) / 2;
@@ -487,3 +501,5 @@ for (const d of document.querySelectorAll('details')) d.addEventListener('toggle
 window.addEventListener('beforeprint', () => { for (const c of charts) c.el.classList.remove('m-anim', 'm-go'); });
 window.addEventListener('beforeprint', renderAll);
 window.addEventListener('afterprint', renderAll);
+// 年の書き方を切り替えたら描き直す（文字の幅が変わるため。scripts/era.ts）
+document.addEventListener('era', renderAll);

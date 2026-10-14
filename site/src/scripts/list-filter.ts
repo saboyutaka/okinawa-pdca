@@ -9,6 +9,7 @@
 // 条件は URL のクエリに残すので、そのまま共有できる。
 // 絞り込むたびに、キーワード以外で初めの選択から変えた条件の数を、フォームの data-filter-n に残し、filters:change（detail.n）で送る（components/FilterMore.astro のボタンの数）。
 // 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
+// 札を押して条件を外すと札を作り直すので、フォーカスは同じ位置の札（無ければ1つ前の札）へ、札が無くなったら件数の行へ移す（WCAG 2.4.3）。
 import { matchesAll, searchText, searchWords } from '../lib/search.ts';
 import { bump } from './motion.ts';
 
@@ -24,6 +25,10 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
   const count = form.dataset.count ? document.querySelector(form.dataset.count) : null;
   const empty = form.dataset.empty ? document.querySelector<HTMLElement>(form.dataset.empty) : null;
   const summary = form.dataset.summary && document.querySelector<HTMLElement>(form.dataset.summary);
+  // 札が無くなったときのフォーカスの行き先（件数の行。Tab では止めない）
+  const countLine = count?.closest<HTMLElement>('.result-count') ?? null;
+  if (countLine) countLine.tabIndex = -1;
+  let refocus = -1; // 押して外した札の位置（外したあとにフォーカスを移す）
   const inputsOf = (name: string) => [...form.querySelectorAll<Field>(`[name="${CSS.escape(name)}"]`)];
   // 入力の初めの値（select は selected の付いた選択肢。無ければ先頭）
   const defaultOf = (el: Field) => (el instanceof HTMLSelectElement ? (([...el.options].find((o) => o.defaultSelected) || el.options[0])?.value ?? '') : el.defaultValue);
@@ -79,19 +84,26 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
     return [label, `「${value}」`, () => { if (first) first.value = ''; }];
   };
 
+  const settleFocus = () => {
+    if (refocus < 0) return;
+    const left = summary ? [...summary.querySelectorAll<HTMLElement>('.active-chip')] : [];
+    (left[Math.min(refocus, left.length - 1)] ?? countLine)?.focus();
+    refocus = -1;
+  };
   const renderSummary = (conds: Map<string, string[]>) => {
     if (!summary) return;
     const parts = [...conds].flatMap(([name, values]) => values.map((v) => [name, v]));
     if (!parts.length) {
       summary.replaceChildren();
       summary.hidden = true;
+      settleFocus();
       return;
     }
     summary.hidden = false;
     const head = document.createElement('span');
     head.className = 'active-l';
     head.textContent = '絞り込み中:';
-    const chips = parts.map(([name, value]) => {
+    const chips = parts.map(([name, value], i) => {
       const [label, text, clear] = describe(name, value);
       const b = document.createElement('button');
       b.type = 'button';
@@ -102,7 +114,7 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
       x.setAttribute('aria-hidden', 'true');
       x.textContent = '×';
       b.append(x);
-      b.addEventListener('click', () => { clear(); apply(); });
+      b.addEventListener('click', () => { clear(); refocus = i; apply(); });
       return b;
     });
     const all = document.createElement('button');
@@ -111,9 +123,11 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
     all.textContent = 'すべて外す';
     all.addEventListener('click', () => {
       for (const el of form.elements) reset(el);
+      refocus = 0;
       apply();
     });
     summary.replaceChildren(head, ...chips, ...(parts.length > 1 ? [all] : []));
+    settleFocus();
   };
 
   let ready = false; // 開いたときの最初の絞り込みが済んだか

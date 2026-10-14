@@ -36,8 +36,12 @@ const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${uni
 <style>
   .sbar { display: flex; gap: 2px; height: 24px; width: 100%; padding: 2px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
   .sbar.mini { height: 14px; padding: 1.5px; border-width: 1.5px; gap: 1.5px; }
-  .seg { flex-basis: 0; min-width: 3px; background-color: var(--tone); display: flex; align-items: center; padding-left: 8px; container-type: inline-size; }
-  .mini .seg { min-width: 2px; padding: 0; }
+  /* 地との差が 3:1 未満の色の区間には、内側に縁を付けて、すき間（地の色）と見分けられるようにする（styles/global.css の --*-edge） */
+  .seg {
+    flex-basis: 0; min-width: 3px; background-color: var(--tone); box-shadow: inset 0 0 0 1.5px var(--tone-edge, var(--tone));
+    display: flex; align-items: center; padding-left: 8px; container-type: inline-size;
+  }
+  .mini .seg { min-width: 2px; padding: 0; box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
   .seg:first-child { border-radius: 999px 0 0 999px; }
   .seg:last-child { border-radius: 0 999px 999px 0; }
   .seg:only-child { border-radius: 999px; }

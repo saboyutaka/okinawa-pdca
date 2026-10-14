@@ -42,7 +42,7 @@ const CELLS = JUDGE_CELLS.map((c) => ({ k: c.key, ...PLACE[c.key], y: c.yText, x
             class:list={['mcell', 'press', `tone-${j.tone}`, ui.hatch && 'hatch', `on-c${col}`, ...Array.from({ length: span }, (_, i) => `on-r${row + i}`)]}
             style={`grid-row: ${row} / span ${span}; grid-column: ${col};`}
             href={hrefOf(k)}
-            aria-label={`${k} ${j.label}、${fmt(n)}施策。主な取組の順調の割合 ${y}、成果指標の達成率 ${x}。この判定の施策の一覧を開く`}
+            aria-label={`${k} ${ui.short} ${fmt(n)}施策${j.label === ui.short ? '' : `（${j.label}）`}。主な取組の順調の割合 ${y}、成果指標の達成率 ${x}。この判定の施策の一覧を開く`}
           >
             <span class="mh"><span class="mk"><Icon tone={j.tone} shape={ui.shape} size={14} />{k}</span><span class="ms">{ui.short}</span></span>
             <span class="mn">{fmt(n)}</span>
