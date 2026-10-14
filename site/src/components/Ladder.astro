@@ -2,7 +2,9 @@
 // トップのヒーローと将来像・くらしのテーマのページの頭に置く、3つの段の問いと答え（docs/design.md の1章「3つの段」）。
 // くらしのテーマは主要指標との対応をまだ決めていない（#93）ので、shuyou を渡さず、成果指標と取組の2段にする。
 // 計画の階層と同じ向きに上から「沖縄の姿（基本施策の主要指標）→ 施策の成果（成果指標）→ 県の活動（主な取組の進捗状況）」と並べ、
-// どの段も、問い・何をいくつ数えたか・答えの割合1つ・県の区分の内訳の棒1本を同じ形で出す（区分は県の並びのまま）。
+// どの段も、県の呼び名・問い・何をいくつ数えたか・答えの割合1つ・県の区分の内訳の棒1本を同じ形で出す（区分は県の並びのまま）。
+// 県の呼び名は、県の概要版の「新PDCA」の図と様式２の見出しの言葉（主要指標＝最終アウトカム、成果指標＝初期アウトカム、
+// 活動指標＝アウトプット）。問いの上に小さく置き、押すと用語の説明を出す（Term）。
 // 答えの割合は、問いに答える区分の割合を小さく添えるだけにする（主要指標は基準値より良くなった「前進」。県の概要版の区分で、目標値に到達を含む。
 // 成果指標は「計画値に到達」（達成率 100%以上）、取組は「順調」。トップの4年間の推移と同じ数）。
 // 主要指標も、ほかの段と同じつながった棒にする（49指標を1マスずつにすると、スマホで細かすぎるため）。
@@ -12,6 +14,7 @@
 // 主要指標は一覧のページを置かず、基本施策ごとに見せる5つの将来像のページへ（将来像のページでは、同じページの基本施策の節 shuyouHref へ）。
 // ステッカーの中の箱なので、線と影は付けず白い地だけにし、段は細い線で区切る。棒は動かさない（design.md の8章）
 import StatusBar from './StatusBar.astro';
+import Term from './Term.astro';
 import { RATE_BINS, STATUSES, SHUYOU_CATS, SHUYOU_FORWARD, shuyouCounts, type ShuyouStatus } from '../lib/data.ts';
 import type { Tone } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
@@ -33,11 +36,11 @@ const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
 interface Cat { key: string; tone: Tone; n: number }
-type Rung = { id: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number } };
+type Rung = { id: string; kind: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number } };
 const shuyouRung = (rows: ShuyouStatus[]): Rung => {
   const c = shuyouCounts(rows);
   return {
-    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: rows.length, unit: '指標', href: shuyouHref, measure: '達成率',
+    id: 'shuyou', kind: '最終アウトカム', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: rows.length, unit: '指標', href: shuyouHref, measure: '達成率',
     cats: SHUYOU_CATS.map((x) => ({ ...x, n: c[x.key] })),
     ans: { label: '前進', n: rows.filter((r) => SHUYOU_FORWARD.includes(r.bin)).length },
   };
@@ -45,12 +48,12 @@ const shuyouRung = (rows: ShuyouStatus[]): Rung => {
 const rungs: Rung[] = [
   ...(shuyou ? [shuyouRung(shuyou)] : []),
   {
-    id: 'seika', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: href('/shihyou/'), measure: '達成率',
+    id: 'seika', kind: '初期アウトカム', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: href('/shihyou/'), measure: '達成率',
     cats: RATE_BINS.map((b) => ({ key: b.key, tone: b.tone, n: seika[b.key] || 0 })),
     ans: { label: '計画値に到達', n: seika['100%以上'] || 0 },
   },
   {
-    id: 'tori', q: ['県の活動は、', '計画どおりに', '進んだ？'], term: '主な取組', n: sum(tori), unit: '件', href: href('/torikumi/'), measure: '進捗状況',
+    id: 'tori', kind: 'アウトプット', q: ['県の活動は、', '計画どおりに', '進んだ？'], term: '主な取組', n: sum(tori), unit: '件', href: href('/torikumi/'), measure: '進捗状況',
     cats: STATUSES.map((s) => ({ key: s.key, tone: s.tone, n: tori[s.key] || 0 })),
     ans: { label: '順調', n: tori['順調'] || 0 },
   },
@@ -60,6 +63,7 @@ const rungs: Rung[] = [
   {rungs.map((r) => (
     <li class:list={['rung', `rung-${r.id}`]}>
       <div class="r-q">
+        <p class="r-kind"><Term word={r.kind} /></p>
         <p class="r-title">{r.q.map((w) => <span class="nw">{w}</span>)}</p>
         <p class="r-sub">
           <a class="r-link" href={r.href}>{r.term}の<b>{fmt(r.n)}</b>{r.unit}<span aria-hidden="true"> →</span></a>
@@ -76,6 +80,7 @@ const rungs: Rung[] = [
   /* PC は「問いと数 | 棒」の2列。どの段も同じ列にそろえ、問いは1行に収める（何をいくつ数えたかのリンクは問いの下の行） */
   .rung { display: grid; grid-template-columns: 19.5em minmax(0, 1fr); gap: 8px 24px; align-items: center; padding: 14px 0; }
   .rung + .rung { border-top: 1.5px solid var(--hair); }
+  .r-kind { margin: 0 0 2px; font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; line-height: 1.5; color: var(--ink-2); }
   .r-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .r-title .nw { display: inline-block; } /* 問いは文節の切れ目でだけ折り返す */
   /* 何をいくつ数えたか（リンク）と答えの割合を1行に。割合は右に寄せ、入らなければ次の行へ */
