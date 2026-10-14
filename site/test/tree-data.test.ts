@@ -15,7 +15,7 @@ test('localNo: 通しの番号から、その階層の中の番号を取り出�
 
 test('書き出す場所の名前は、中身の SHA-256 の先頭8桁', () => {
   assert.equal(treeDataHash(), createHash('sha256').update(treeDataJson()).digest('hex').slice(0, 8));
-  assert.equal(treeDataPath(), `/tree/data-${treeDataHash()}.json`);
+  assert.equal(treeDataPath(), `/mokuji/data-${treeDataHash()}.json`);
 });
 
 test('目次のデータは lib/data.ts の getPlanTree と同じ並び・同じ数で、行の id とリンクは重ならない', () => {

@@ -8,8 +8,8 @@
   Cache-Control: public, max-age=31536000, immutable
 /torikumi/summary-*.json
   Cache-Control: public, max-age=31536000, immutable
-# 計画の目次のデータも、名前に中身のハッシュが付く（lib/tree-data.ts）。控えの /tree/data.json は既定のまま
-/tree/data-*.json
+# 計画の目次のデータも、名前に中身のハッシュが付く（lib/tree-data.ts）。控えの /mokuji/data.json は既定のまま
+/mokuji/data-*.json
   Cache-Control: public, max-age=31536000, immutable
 
 # ページ（HTML。URL は / か末尾が / のものだけ）は5分キャッシュする。HTML にだけ ETag が付かず（workers.dev でも

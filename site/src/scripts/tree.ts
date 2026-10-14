@@ -1,6 +1,6 @@
-// 計画の目次（/tree/。pages/tree.astro）。
+// 計画の目次（/mokuji/。pages/mokuji.astro）。
 //  - 描く: ul[data-tree] の data-src（名前にハッシュの付いた JSON。読めなければ data-fallback の控え）を読み、目次を描く（データの形は lib/tree-data.ts）。
-//    URL に q があれば、さがしてから一度で描く。描く HTML の形と見た目の決まりは pages/tree.astro の頭の説明と CSS
+//    URL に q があれば、さがしてから一度で描く。描く HTML の形と見た目の決まりは pages/mokuji.astro の頭の説明と CSS
 //  - 開く深さ: [data-tree-depth="i"] のボタンを押すと、木の details のうち階層（data-level。将来像が 0）が i 未満のものを開き、ほかは閉じる。
 //    いまの開き方がどれかのボタンの形にそろっているときだけ、そのボタンを押した形（aria-pressed）にする
 //    （1つずつ開け閉めしてそろわなくなったら、どれも押していない形。印刷の前後に scripts/print.ts が開け閉めしたときも同じ）
@@ -83,7 +83,7 @@ async function init(tree: HTMLElement) {
   const hits = document.querySelector<HTMLElement>(`[data-tree-hits="${tree.id}"] > span`);
   const btns = [...document.querySelectorAll<HTMLButtonElement>(`[data-tree-depth][aria-controls="${tree.id}"]`)];
   const urlQ = () => new URLSearchParams(location.search).get('q') || '';
-  // 成果指標を施策の名前の横に出す幅（pages/tree.astro の CSS と同じ）
+  // 成果指標を施策の名前の横に出す幅（pages/mokuji.astro の CSS と同じ）
   const wide = matchMedia('(min-width: 760px)');
 
   // 言葉の欄は、データを待たずに URL の q で埋める。届くまでに打った言葉も URL に残し、描いたあとにさがす
@@ -118,7 +118,7 @@ async function init(tree: HTMLElement) {
     if (msg) msg.textContent = '目次を読み込めませんでした。時間をおいて、ページを再読み込みしてください。';
     return;
   }
-  // はじめに押してあるボタンの深さまで開く（pages/tree.astro の START）
+  // はじめに押してあるボタンの深さまで開く（pages/mokuji.astro の START）
   const startDepth = Number(btns.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.treeDepth ?? 1);
   tree.innerHTML = data.visions.map(visionRow).join('');
   const nodes = [...tree.querySelectorAll<HTMLDetailsElement>('details[data-level]')];
@@ -253,7 +253,7 @@ async function init(tree: HTMLElement) {
     // bfcache を使わずに戻ったとき: 離れたときのスクロールの位置に戻す（描く前はページが短く、ブラウザが戻せないことがある）
     window.scrollTo(0, saved.y);
   } else {
-    // # の行き先（/tree/#s-1-1-a-1 など）が目次の中にあれば、親を開いてそこへ動く（scripts/disclosure.ts は目次を描く前に動くので、ここで行う）
+    // # の行き先（/mokuji/#s-1-1-a-1 など）が目次の中にあれば、親を開いてそこへ動く（scripts/disclosure.ts は目次を描く前に動くので、ここで行う）
     const id = decodeURIComponent(location.hash.slice(1));
     const target = id ? document.getElementById(id) : null;
     if (target && tree.contains(target)) {
