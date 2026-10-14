@@ -1,5 +1,5 @@
 ---
-// 将来像のページの基本施策の1行（親は ul.row-list）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
+// 将来像のページの基本施策の1行（親は ul.row-list。PC は2列のマス）。基本施策の名前の下に、主要指標と主な取組の行を、左に何の行かを書いて並べる。
 // 主要指標がこの行の主役で、主な取組の棒は細く控えめにする（docs/design.md の1章「3つの段」。基本施策をはかる物差しは主要指標）。
 // - 主要指標（基本施策の最終的な成果をはかる指標。県の概要版の表の順）: 名前の後ろに達成状況の札（「前進 37%」。5つの将来像のページと同じ
 //   components/ShuyouTags.astro）、その下に「スタート → いま → ゴール」の値を1行で。図は置かない（札が達成率をそのまま示すので、
@@ -42,10 +42,7 @@ const vals = (r: ShuyouStatus) => {
         <a class="s-name name-link" href={r.href}>{r.name}</a>{r.revised && <span class="mark" data-tip-value={REVISED} data-tip-label="※"><span aria-hidden="true">※</span><span class="sr-only">（{REVISED}）</span></span>} <ShuyouTags items={[r]} named={false} />
         <p class="k-vals">
           {vals(r).map((x, j) => (
-            <>
-              {j > 0 && <span class="arrow" aria-hidden="true">→</span>}
-              <span class:list={['v', x.now && 'now']}><span class="v-l">{x.label}</span> <span class="v-n">{x.v}{x.y && <span class="v-y">（{x.y}）</span>}</span></span>
-            </>
+            <span class:list={['v', x.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{x.label}</span> <span class="v-n">{x.v}{x.y && <span class="v-y">（{x.y}）</span>}</span></span>
           ))}
         </p>
       </div>
@@ -60,7 +57,7 @@ const vals = (r: ShuyouStatus) => {
 </li>
 
 <style>
-  .k-item { display: grid; gap: 12px; padding: 14px 18px; }
+  .k-item { display: grid; align-content: start; gap: 12px; padding: 14px 18px; } /* 2列のマスで隣のマスより低いときも、中身は上に詰める */
   .k-name { font-size: 1.0625rem; line-height: 1.5; }
   /* 「何の行か | 中身」の2列。左の言葉は主要指標・主な取組とも同じ大きさ */
   .k-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); column-gap: 16px; }
@@ -71,13 +68,13 @@ const vals = (r: ShuyouStatus) => {
   .k-main { grid-area: main; min-width: 0; line-height: 1.7; }
   .s-name { font-size: 0.9375rem; font-weight: 400; }
   .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 1px; padding: 0 3px; cursor: help; }
-  /* スタート → いま → ゴールの値を1行で（入らなければ値の切れ目で折り返す）。いまだけ濃い太字 */
+  /* スタート → いま → ゴールの値を1行で（入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
   .k-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; }
   .v-l { font-size: 0.75rem; font-weight: 700; }
   .v-y { display: inline-block; font-size: 0.75rem; white-space: nowrap; font-variant-numeric: tabular-nums; } /* 年度は値の後ろにひとまとまりで */
   .now .v-n { color: var(--ink); font-weight: 700; font-size: 0.9375rem; }
   .now .v-y { font-weight: 400; color: var(--ink-2); }
-  .arrow { color: var(--muted); }
+  .arrow { color: var(--muted); margin-right: 4px; }
   /* 主な取組は控えめに: 細い棒のすぐ後ろに「順調」の割合を置き、主要指標の値の行と同じくらいの幅にまとめる */
   .k-viz { grid-area: viz; min-width: 0; max-width: 28rem; display: flex; align-items: center; gap: 12px; }
   .k-viz :global(.sbar) { flex: 1; height: 10px; padding: 1px; border-width: 1px; gap: 1px; }

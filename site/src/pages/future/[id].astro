@@ -181,6 +181,12 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   .trend { margin-top: 0; }
 
   .k-list { margin-top: 12px; }
+  /* PC は基本施策を2列のマスに並べる（1行だと右が空くため）。箱は1つのまま、マスのあいだは一覧の行と同じ細い線（.row-list のすき間の地の色）。
+     基本施策の数が奇数の将来像は、最後の空きマスを白で埋める（グリッドの ::after も1つのマスになる） */
+  @media (min-width: 900px) {
+    .k-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .k-list:has(> li:last-child:nth-child(odd))::after { content: ""; background: var(--paper); }
+  }
 
 
   .budget { display: grid; gap: 6px; }
