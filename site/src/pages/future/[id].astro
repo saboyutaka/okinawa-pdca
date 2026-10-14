@@ -6,7 +6,6 @@
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
-import Crumbs from '../../components/Crumbs.astro';
 import Sz from '../../components/Sz.astro';
 import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
@@ -71,8 +70,6 @@ const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e
 const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 ---
 <Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
-  <Crumbs items={[{ href: '/future/', label: '5つの将来像' }, { label: `将来像${v.id}` }]} />
-
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
     {/* 番号は印にあるので「将来像」の後ろの番号は読み上げだけ */}

@@ -546,6 +546,39 @@ export function getShisaku(id: string) {
   return getShisakuList().find((s) => s.id === id);
 }
 
+// ページの階層（components/Hierarchy.astro）の1段。いまのページの上の段だけを並べる。href の無い段（施策展開）は、ページが無いのでリンクにしない
+export interface PathItem {
+  label: string;
+  href?: string;
+  code?: string; // 報告書の番号のうち、その段の分（「(1)」「ア」「①」）
+  kind?: string; // 段の名前（読み上げ用）
+  title?: string; // 番号の title（報告書での番号の全体）
+  sz?: number; // 将来像の帯にする
+}
+
+// 計画の体系での、将来像から at の段まで（将来像 → 基本施策 → 施策展開 → 施策）。主な取組・成果指標のページの階層は、入っている施策までのこれ。
+// 基本施策・施策のページは自身を除いた planParents。将来像のページは上の段が無いので階層を置かない
+export function planPath(at: { kihon: string } | { shisaku: string }): PathItem[] {
+  const s = 'shisaku' in at ? getShisaku(at.shisaku) : undefined;
+  const k = getKihonList().find((x) => x.id === ('kihon' in at ? at.kihon : s?.kihon_id));
+  const v = getShouraizou().find((x) => x.id === k?.shouraizou);
+  if (!k || !v || ('shisaku' in at && !s)) throw new Error(`ページの階層を作れない: ${JSON.stringify(at)}`);
+  const items: PathItem[] = [
+    { label: v.name, href: `/future/${v.id}/`, sz: v.id },
+    { label: k.name, href: `/kihon/${k.id}/`, code: k.code.split('-')[1], kind: '基本施策', title: `基本施策 ${k.code}` },
+  ];
+  if (s) {
+    // 施策の番号は「3-(1)-ア-①」（将来像-基本施策-施策展開-施策）
+    const [, , tenkai, no] = s.code.split('-');
+    items.push(
+      { label: s.tenkai_name, code: tenkai, kind: '施策展開', title: `施策展開 ${s.code.slice(0, s.code.lastIndexOf('-'))}` },
+      { label: s.name, href: `/shisaku/${s.id}/`, code: no, kind: '施策', title: `施策 ${s.code}` },
+    );
+  }
+  return items;
+}
+export const planParents = (at: { kihon: string } | { shisaku: string }) => planPath(at).slice(0, -1);
+
 // 施策の最新の年度の判定の内訳（A〜G。判定の無い施策は「なし」）。判定のマス目（トップ・将来像・部局・テーマ）とページの説明文で同じものを使う
 export const countJudges = (list: Pick<Shisaku, 'judges'>[]) => countBy(list, (s) => s.judges[LATEST] ?? 'なし', JUDGES.map((j) => j.key));
 

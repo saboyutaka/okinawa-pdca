@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou,
+  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, planPath, planParents,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
@@ -296,4 +296,21 @@ test('将来像の名前は、印字の「〜島を目指して」から語尾�
   assert.equal(printed.length, 5);
   assert.ok(printed.every((s) => s.name.endsWith('島を目指して')), '報告書の印字の形が変わったら shouraizouName を見直す');
   assert.ok(getShouraizou().every((v) => v.name.endsWith('島')));
+});
+
+test('planPath: ページの階層は 将来像 → 基本施策 → 施策展開 → 施策 で、番号は施策の番号を段ごとに分けたもの', () => {
+  assert.deepEqual(planPath({ shisaku: '3-1-a-1' }).map((p) => [p.code ?? '', p.label, p.href ?? '']), [
+    ['', '希望と活力にあふれる豊かな島', '/future/3/'],
+    ['(1)', '県民所得の着実な向上につながる企業の「稼ぐ力」の強化', '/kihon/3-1/'],
+    ['ア', '全産業における労働生産性の向上', ''],
+    ['①', 'リゾテックおきなわの推進による産業ＤＸの加速化', '/shisaku/3-1-a-1/'],
+  ]);
+  // 基本施策・施策のページは自身を入れない
+  assert.deepEqual(planParents({ kihon: '3-1' }).map((p) => p.label), ['希望と活力にあふれる豊かな島']);
+  assert.deepEqual(planParents({ shisaku: '3-1-a-1' }).map((p) => p.label).slice(-1), ['全産業における労働生産性の向上']);
+  // どの施策でも作れて、将来像の番号と段ごとの番号をつなぐと施策の番号に戻る
+  for (const s of getShisakuList()) {
+    const p = planPath({ shisaku: s.id });
+    assert.equal([p[0].sz, ...p.slice(1).map((x) => x.code)].join('-'), s.code);
+  }
 });

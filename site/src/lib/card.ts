@@ -214,7 +214,7 @@ const heading = (kick: El, name: string, width: number, height: number) =>
 // 名前の上の「何のページか」の行
 const kicker = (...kids: Kid[]) => box({ alignItems: 'center', gap: 12, height: KICK_H, flexShrink: 0, fontSize: 26, color: color('ink-2') }, ...kids);
 
-// 親の施策の札（取組・成果指標のページの頭と同じく、施策の判定は小さな丸いハンコ）。kind（「この取組が入っている施策」など）は行の右端に小さく
+// 親の施策の札（施策の判定は小さな丸いハンコ）。kind（「この取組が入っている施策」など）は行の右端に小さく
 const PARENT_H = 62;
 function parent(s: Shisaku, kind: string) {
   return box(
