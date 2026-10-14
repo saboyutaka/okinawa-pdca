@@ -1,5 +1,5 @@
 ---
-// 将来像1つのページ。頭（名前・3つの段の問いと答え）→ 基本施策ごとの進み具合（主要指標・主な取組）→ 施策の判定 → 4年間の推移 → 予算 → シェア。
+// 将来像1つのページ。頭（名前・3つの段の問いと答え）→ 基本施策ごとの主要指標と主な取組 → 施策の判定 → 4年間の推移 → 予算 → シェア。
 // 頭はトップのヒーローと同じく、3つの段（主要指標・成果指標・主な取組。components/Ladder.astro）を中に置き、数だけをこの将来像のものにする。数が何年度の報告かは頭で1回だけ書き、節の見出し・札には書かない。
 // 節の頭の文は、表示の説明（「棒は〜」「点を押すと〜」）ではなく、見た人が知りたいこと（何が分かるか・だれが決めているか）の1文にし、比べ方の決まりは図の後ろに置く（トップと同じ）。
 // 施策の判定と4年間の推移は、トップの節と同じ形（頭の文・マス目に題を付けない・推移の内訳は出さない）にし、数だけをこの将来像のものにする
@@ -58,8 +58,8 @@ const trend = YEARS.map((y) => {
   return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
 });
 
-// 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
-// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭のドーナツ・施策の判定・4年間の推移・成果指標をさがすにある）
+// 基本施策ごと。基本施策の名前の下に、主要指標（スタート → いま → ゴールの道のりと達成率）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
+// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・成果指標をさがすにある）
 const kihonRows = kihon.map((k) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
   return {
@@ -103,8 +103,8 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   />
 
   <section aria-labelledby="kihon">
-    <h2 id="kihon" class="anchor">基本施策ごとの進み具合</h2>
-    <p class="small secondary lead">基本施策ごとに、くらしや地域の変化をはかる<Term word="主要指標" />と、県の活動（主な取組）の進み具合を見られます。</p>
+    <h2 id="kihon" class="anchor">基本施策ごとの<Term word="主要指標" />と主な取組</h2>
+    <p class="small secondary lead">主要指標は、スタート（基準値）からゴール（R9の目標値）までの道のりのどこにいまがあるかを、県の達成率で示しています。</p>
     <KeyBrief kind="shuyou" used={shuyouUsed} />
     <KeyBrief kind="status" used={toriUsed} />
     <ul class="row-list k-list">
