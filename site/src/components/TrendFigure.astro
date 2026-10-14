@@ -1,0 +1,38 @@
+---
+// 4年間の推移の図と「表で見る」（トップ・将来像・くらしのテーマのページ）。数は lib/data.ts の trendPoints。
+// 節の見出しと頭の文（割合の幅）はページに置く
+import TrendChart from './TrendChart.astro';
+import { yearLong, type TrendRow } from '../lib/data.ts';
+import { fmt } from '../lib/format.ts';
+
+interface Props { points: TrendRow[] }
+const { points } = Astro.props;
+---
+<figure class="sticker trend">
+  <figcaption>
+    <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
+  </figcaption>
+  <TrendChart points={points} />
+  <details>
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
+        <tbody>
+          {points.map((p) => (
+            <tr>
+              <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
+              <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
+              <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<style>
+  .trend { margin-top: 0; }
+  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+</style>
