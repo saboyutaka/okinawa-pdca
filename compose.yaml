@@ -1,7 +1,10 @@
+# どのサービスもほかのコンテナとはつながず、外（npm など）とつながるかポートを出すだけなので、
+# Docker の既定の bridge に載せる。compose がプロジェクト（main・worktree）ごとにネットワークを作らないように
 services:
   # 抽出（data/raw → data/interim → data/extracted）
   tools:
     build: docker/tools
+    network_mode: bridge
     volumes:
       - .:/work
     working_dir: /work
@@ -12,6 +15,7 @@ services:
   # 次のコンテナでも同じ番号になるため、自分を動いているサーバーと取り違えて起動を断る。二重起動はポートで防げるので使わない
   site:
     image: node:24-alpine
+    network_mode: bridge
     volumes:
       - .:/work
       - site_node_modules:/work/site/node_modules
@@ -29,6 +33,7 @@ services:
   # init と ipc: host は Playwright の案内どおり（Chromium の共有メモリが足りなくならないように）
   shot:
     build: docker/shot
+    network_mode: bridge
     volumes:
       - .:/work
       - shot_node_modules:/work/scripts/shot/node_modules
