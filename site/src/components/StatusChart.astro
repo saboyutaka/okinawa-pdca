@@ -29,7 +29,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   </figcaption>
   {legend && (
     <ul class="legend" aria-label="凡例">
-      {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
+      {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} readTitle /></li>)}
     </ul>
   )}
   <div class:list={['rows', short && 'short']}>

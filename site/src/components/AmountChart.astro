@@ -17,7 +17,7 @@ const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : '�
     {caption && <div class="chart-caption">{caption}</div>}
   </figcaption>
   <ul class="legend" aria-label="凡例">
-    {used.map((c) => <li><span class={`swatch series-${c.series}`} title={c.note}>{c.key}</span></li>)}
+    {used.map((c) => <li><span class={`swatch series-${c.series}`} title={c.note}>{c.key}{c.note && <span class="sr-only">（{c.note}）</span>}</span></li>)}
   </ul>
   <div class="rows">
     {rows.map((r) => {
