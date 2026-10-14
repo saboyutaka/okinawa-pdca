@@ -49,7 +49,7 @@ const visions = getShouraizou().map((v) => {
     <section class:list={['sticker', 'vision', `sz-${v.id}`]} id={`shouraizou-${v.id}`} aria-labelledby={`h-${v.id}`}>
       <h2 id={`h-${v.id}`} class="v-h"><a class:list={['sz-ribbon', `sz-${v.id}`]} href={`/future/${v.id}/`}><Sz id={v.id} sr={false} /><span class="v-nm"><span class="sr-only">将来像{v.id}　</span>{v.name}</span></a></h2>
       <div class="v-kihon sticker">
-        <p class="k-head"><span class="v-kt">基本施策と主要指標</span><span class="k-hb" aria-hidden="true"><span class="sp-only">棒は</span>主な取組</span></p>
+        <p class="k-head"><span class="v-kt">基本施策と主要指標</span><span class="k-hb" aria-hidden="true"><span class="sp-only">バーは</span>主な取組</span></p>
         <ul class="k-rows">
           {v.rows.map((k) => (
             <li class="k-r">
@@ -81,7 +81,7 @@ const visions = getShouraizou().map((v) => {
   .v-nm { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
   .v-h .sz-ribbon:hover .v-nm { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   /* 基本施策の行。PC は「名前と主要指標の札 | 主な取組の細い棒」の2列、名前が何行にも折り返す幅では棒を名前の下に置く。
-     頭の行は列の見出しを兼ねる（スマホでは「棒は主な取組」） */
+     頭の行は列の見出しを兼ねる（スマホでは「バーは主な取組」） */
   .v-kihon { margin-top: 16px; padding-bottom: 8px; }
   .k-head, .k-r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%); gap: 6px 20px; align-items: center; }
   .k-head { margin: 0 0 4px; align-items: baseline; }
