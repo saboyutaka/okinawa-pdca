@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
 import type {
-  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, ShisakuRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
+  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
@@ -706,6 +706,42 @@ let groupHrefs: Map<string, string> | undefined;
 export function torikumiPage(shisakuId: string, key: string) {
   groupHrefs ??= new Map(getTorikumiGroups().map((g) => [`${g.shisaku.id}|${sameKey(g.key)}`, g.href]));
   return groupHrefs.get(`${shisakuId}|${sameKey(key)}`) ?? null;
+}
+
+// 計画の目次（/tree/）の木。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組で、どれも報告書の順。
+// 施策展開は施策の行の tenkai_id・tenkai_name で、番号は施策の番号から最後の「-①」を外したもの（1-(1)-ア）。
+// 基本施策には主要指標（概要版の表の行。男女別などを分けた県の数え方で、名前は概要版の印字）、施策には成果指標を付ける。
+// 主な取組・成果指標・主要指標は最新の年度の報告にあるものだけ（主な取組は延べ。いくつかの施策に載る取組は、それぞれの施策の下に出る）
+export interface PlanTreeShisaku { shisaku: Shisaku; seika: SeikaGroupOfShisaku[]; torikumi: TorikumiGroup[] }
+export interface PlanTreeTenkai { id: string; code: string; name: string; shisaku: PlanTreeShisaku[] }
+export interface PlanTreeKihon { kihon: KihonRow; shuyou: ShuyouStatus[]; tenkai: PlanTreeTenkai[] }
+export interface PlanTreeVision { vision: ShouraizouRow; kihon: PlanTreeKihon[] }
+export function getPlanTree(): PlanTreeVision[] {
+  const tori = new Map<string, TorikumiGroup[]>();
+  for (const g of getTorikumiGroups()) {
+    if (g.latest.year !== LATEST) continue;
+    if (!tori.has(g.shisaku.id)) tori.set(g.shisaku.id, []);
+    tori.get(g.shisaku.id)!.push(g);
+  }
+  const shisaku = getShisakuList();
+  const kihon = getKihonList();
+  const shuyou = getShuyouStatus();
+  const tenkaiOf = (kihonId: string) => {
+    const m = new Map<string, PlanTreeTenkai>();
+    for (const s of shisaku.filter((x) => x.kihon_id === kihonId)) {
+      if (!m.has(s.tenkai_id)) m.set(s.tenkai_id, { id: s.tenkai_id, code: s.code.replace(/-[^-]+$/, ''), name: s.tenkai_name, shisaku: [] });
+      m.get(s.tenkai_id)!.shisaku.push({
+        shisaku: s,
+        seika: seikaGroupsOf(s.id).filter((g) => g.latest.year === LATEST),
+        torikumi: tori.get(s.id) ?? [],
+      });
+    }
+    return [...m.values()];
+  };
+  return getShouraizou().map((vision) => ({
+    vision,
+    kihon: kihon.filter((k) => k.shouraizou === vision.id).map((k) => ({ kihon: k, shuyou: shuyou.filter((r) => r.kihon_id === k.id), tenkai: tenkaiOf(k.id) })),
+  }));
 }
 
 // 同じ名前の取組が別の施策にも載っているもの（総括報告書の「再掲」）
