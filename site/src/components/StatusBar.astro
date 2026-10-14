@@ -1,5 +1,7 @@
 ---
 // 100%積み上げの横棒1本。区切りは2pxのすき間。棒全体を1つの画像として読み上げ、区間ごとにタブでは止めない（値は表やラベルにもある）
+// cells を付けると、1件を1マスにして区分ごとにまとめて並べる「マス目の棒」にする（主要指標。数が少ないので、割合ではなく何個のうち何個かを見せ、
+// 主な取組のつながった棒と見た目を分ける。docs/design.md の1章「3つの段」）。区分のあいだは、マスのあいだより少し広くあける
 import { fmt, pct } from '../lib/format.ts';
 import type { Tone } from '../lib/icons.ts';
 
@@ -11,23 +13,24 @@ interface Props {
   /** 棒の中に割合を書く区分（入りきるときだけ） */
   labelKey?: string;
   size?: 'normal' | 'mini';
+  cells?: boolean;
 }
-const { categories, counts, unit = '件', context = '', labelKey = categories[0]?.key, size = 'normal' } = Astro.props;
+const { categories, counts, unit = '件', context = '', labelKey = categories[0]?.key, size = 'normal', cells = false } = Astro.props;
 const total = categories.reduce((s, c) => s + (counts[c.key] || 0), 0);
 const segs = categories.filter((c) => counts[c.key] > 0).map((c) => ({ ...c, n: counts[c.key] }));
 const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}`;
+const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${unit}（${pct(s.n, total)}）`, 'data-tip-label': `${context}${s.key}` });
 ---
-<div class:list={['sbar', size]} role="img" aria-label={aria}>
-  {segs.map((s) => (
-    <span
-      class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']}
-      style={`flex-grow:${s.n}`}
-      data-tip-value={`${fmt(s.n)}${unit}（${pct(s.n, total)}）`}
-      data-tip-label={`${context}${s.key}`}
-    >
-      {size === 'normal' && s.key === labelKey && s.n / total >= 0.18 && <span class="seg-label">{pct(s.n, total)}</span>}
-    </span>
-  ))}
+<div class:list={['sbar', size, cells && 'cells']} role="img" aria-label={aria}>
+  {cells
+    ? segs.flatMap((s, i) => Array.from({ length: s.n }, (_, j) => (
+      <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch', i > 0 && j === 0 && 'cat-first']} {...tip(s)}></span>
+    )))
+    : segs.map((s) => (
+      <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']} style={`flex-grow:${s.n}`} {...tip(s)}>
+        {size === 'normal' && s.key === labelKey && s.n / total >= 0.18 && <span class="seg-label">{pct(s.n, total)}</span>}
+      </span>
+    ))}
 </div>
 
 <style>
@@ -39,6 +42,11 @@ const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s
   .seg:last-child { border-radius: 0 999px 999px 0; }
   .seg:only-child { border-radius: 999px; }
   .seg:hover { filter: brightness(1.1); }
+  /* マス目の棒: どのマスも同じ幅。マスの角を少し丸め、区分の変わり目だけ少し広くあける */
+  .cells .seg { flex-grow: 1; min-width: 2px; padding: 0; border-radius: 2px; }
+  .cells .seg.cat-first { margin-left: 2px; }
+  .cells .seg:first-child { border-radius: 999px 2px 2px 999px; }
+  .cells .seg:last-child { border-radius: 2px 999px 999px 2px; }
   /* 塗りの上の文字は塗りの明るさで決める（青緑・黄・橙は濃い文字が読める） */
   .seg-label { color: var(--on-fill); font-family: var(--font-num); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   /* 棒が短い（スマホで名前と同じ行に置いたときなど）と割合の文字が隣の区間にはみ出すので、区間の幅が足りなければ書かない */

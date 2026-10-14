@@ -1,6 +1,7 @@
 ---
 // 将来像・基本施策の行の「主要指標 → 主な取組」の2段（トップの将来像の行と5つの将来像のページの基本施策の行。将来像のページの基本施策の行 KihonRow と同じ順）。
-// - 主要指標: トップの将来像の行（1つの将来像に5〜18指標）は、達成状況の区分の内訳の細い棒（主な取組の棒と同じ形・同じ長さ。区分は概要版の言葉）。
+// - 主要指標: トップの将来像の行（1つの将来像に5〜18指標）は、達成状況の区分の内訳を1指標1マスにした細い「マス目の棒」（StatusBar の cells。
+//   主な取組の棒と同じ長さで、つながった棒と見た目を分ける。5指標の将来像でも1指標が棒の何割かではなく何個のうち何個かと分かる。区分は概要版の言葉）。
 //   5つの将来像のページの基本施策の行（1〜4指標）は tags を付け、達成率の数を添えた札を報告書の順に並べる（components/ShuyouTags.astro）。
 //   札の前の「達成率」を押すと達成率の説明と区分の一覧を出す（凡例の代わり。ページの KeyBrief kind="shuyou"）
 // - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合。「順調」を押すと進捗状況の説明と区分の一覧を出す（ページの KeyBrief kind="status"）
@@ -28,7 +29,7 @@ const { shuyou, tori, context, tags = false, class: cls } = Astro.props;
       <span class="ts-l">主要指標</span>
       {tags
         ? <div class="ts-main ts-tags"><span class="ts-key"><Term word="主要指標の達成率" label="達成率" brief="key-shuyou" /></span><ShuyouTags items={shuyou} /></div>
-        : <div class="ts-main"><StatusBar categories={SHUYOU_CATS} counts={shuyouCounts(shuyou)} unit="指標" context={`${context} 主要指標の達成率 `} size="mini" /></div>}
+        : <div class="ts-main"><StatusBar categories={SHUYOU_CATS} counts={shuyouCounts(shuyou)} unit="指標" context={`${context} 主要指標の達成率 `} size="mini" cells /></div>}
     </div>
   )}
   {tori.n > 0 && (
