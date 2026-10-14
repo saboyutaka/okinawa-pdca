@@ -16,6 +16,5 @@ import './disclosure.ts';
 // print.ts は charts.ts より前に置く（印刷の直前に、紙の幅にそろえてから図を描き直すため）
 import './print.ts';
 import './charts.ts';
-import './draw-in.ts';
 import './scroll-hint.ts';
 import './toc.ts';

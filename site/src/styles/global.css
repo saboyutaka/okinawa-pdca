@@ -666,12 +666,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   .chart.m-anim .m-line { stroke-dasharray: var(--len); animation: m-draw 0.55s linear both paused; }
   .chart.m-anim :is(.m-dot, .m-tag) { transform-box: fill-box; transform-origin: center; animation: m-pop 0.22s cubic-bezier(0.3, 1.5, 0.6, 1) var(--d, 0ms) both paused; }
   .chart.m-anim.m-go :is(.m-line, .m-dot, .m-tag) { animation-play-state: running; }
-  /* 主要指標の道のり（将来像のページの基本施策の行。components/ShuyouRoad.astro）: 画面に入ったときに1回だけ、スタートからいままで線を伸ばし、
-     届いたときにいまの印を置く。いま・スタート・ゴールの値とゴールの旗は最初から出しておく。
-     scripts/draw-in.ts が初めに m-anim を付けて止めておき、画面に入ると m-go で動かし、動き終わったら両方を外す */
-  .road.m-anim .rd-fill { animation: m-grow 0.6s ease-out both paused; }
-  .road.m-anim .rd-dot { animation: m-pop 0.22s cubic-bezier(0.3, 1.5, 0.6, 1) 0.5s both paused; }
-  .road.m-anim.m-go :is(.rd-fill, .rd-dot) { animation-play-state: running; }
 }
 @keyframes m-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y)); } }
 @keyframes m-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }
@@ -679,7 +673,6 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 @keyframes m-drop { from { opacity: 0; transform: translateY(-6px); } }
 @keyframes m-arc { from { stroke-dasharray: 0 400; } }
 @keyframes m-stamp { from { scale: 1.7; opacity: 0; } 55% { scale: 0.93; opacity: 1; } }
-@keyframes m-grow { from { transform: scaleX(0); } }
 @keyframes m-draw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
 @keyframes m-pop { from { transform: scale(0); } }
 @keyframes m-heart { 45% { transform: scale(1.35); } }

@@ -1,13 +1,15 @@
 ---
-// 主要指標の達成状況の札（「後退 -6%」「到達 131%」）を、報告書の順（概要版の表の順。良い・悪いで並べ替えない）に並べる（5つの将来像のページの基本施策の名前の後ろ）。
+// 主要指標の達成状況の札（「後退 -6%」「到達 131%」）を、報告書の順（概要版の表の順。良い・悪いで並べ替えない）に並べる
+// （5つの将来像のページの基本施策の名前の後ろと、将来像のページの基本施策の行の指標の名前の後ろ）。
 // 札には県の概要版の区分の言葉（SHUYOU_BINS の word）と達成率の数を書き、地と縁を区分の色にする。状態は言葉で読めるので、形の印は付けない
 // （形は取組の進捗状況の並びから来ていて、「前進（60%未満）」が「やや遅れ」と同じ▲になり、前に進んでいるのに遅れに見えるため。docs/design.md の2章）。
 // 数でない印字（「達成」「後退」）と比べられないものは、言葉だけにする。札にマウスを乗せる・タップすると、指標の名前と達成率と区分が出る（scripts/tooltip.ts）。
 // どの区分の札も同じ大きさ・同じ強さにする（1章）
 import { shuyouRateText, shuyouBinOf, type ShuyouStatus } from '../lib/data.ts';
 
-interface Props { items: ShuyouStatus[] }
-const { items } = Astro.props;
+// named={false} は、指標の名前が札のすぐ前に見えているとき（読み上げで名前をくり返さない）
+interface Props { items: ShuyouStatus[]; named?: boolean }
+const { items, named = true } = Astro.props;
 const rows = items.map((r) => {
   const bin = shuyouBinOf(r.bin);
   const rate = shuyouRateText(r);
@@ -17,7 +19,7 @@ const rows = items.map((r) => {
 <ul class="s-tags">
   {rows.map((x) => (
     <li class:list={['s-tag', `tone-${x.bin.tone}`]} data-tip-label={x.r.name} data-tip-value={`達成率 ${x.rate}（${x.bin.label}）`}>
-      <span class="w">{x.bin.word}</span>{x.num && <span class="n">{x.num}</span>}<span class="sr-only">（{x.r.name}）</span>
+      <span class="w">{x.bin.word}</span>{x.num && <span class="n">{x.num}</span>}{named && <span class="sr-only">（{x.r.name}）</span>}
     </li>
   ))}
 </ul>
