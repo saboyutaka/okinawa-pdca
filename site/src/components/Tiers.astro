@@ -1,0 +1,48 @@
+---
+// 将来像・基本施策の行の「主要指標 → 主な取組」の2段（トップの将来像の行と5つの将来像のページの基本施策の行。将来像のページの基本施策の行 KihonRow と同じ順）。
+// - 主要指標: 達成率の印を報告書の順に並べる（components/ShuyouMarks.astro。tags を付けると数を添えた札）。
+//   「達成率」を押すと達成率の説明と区分の一覧を出す（凡例の代わり。ページの KeyBrief kind="shuyou"）
+// - 主な取組: 進捗状況の区分の内訳の細い棒と「順調」の割合。「順調」を押すと進捗状況の説明と区分の一覧を出す（ページの KeyBrief kind="status"）
+// どちらの段も、左に何の段かを書き、中身の左端をそろえる。区分ごとの件数は棒の区間・印にマウスを乗せる・タップすると出る
+import StatusBar from './StatusBar.astro';
+import ShuyouMarks from './ShuyouMarks.astro';
+import KeyNum from './KeyNum.astro';
+import Term from './Term.astro';
+import { STATUSES, type ShuyouStatus } from '../lib/data.ts';
+import { pct } from '../lib/format.ts';
+
+interface Props {
+  shuyou: ShuyouStatus[];
+  tori: { n: number; ok: number; counts: Record<string, number> };
+  /** 読み上げの頭に付ける名前（将来像・基本施策の名前） */
+  context: string;
+  tags?: boolean;
+  class?: string;
+}
+const { shuyou, tori, context, tags = false, class: cls } = Astro.props;
+---
+<div class:list={['tiers', cls]}>
+  {shuyou.length > 0 && (
+    <div class="tier ts-shuyou">
+      <span class="ts-l">主要指標</span>
+      <div class="ts-main"><span class="ts-key"><Term word="主要指標の達成率" label="達成率" brief="key-shuyou" /></span><ShuyouMarks items={shuyou} tags={tags} context={`${context} `} /></div>
+    </div>
+  )}
+  {tori.n > 0 && (
+    <div class="tier ts-tori">
+      <span class="ts-l">主な取組</span>
+      <div class="ts-main"><StatusBar categories={STATUSES} counts={tori.counts} context={`${context} 主な取組 `} size="mini" /></div>
+      <KeyNum class="ts-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} />
+    </div>
+  )}
+</div>
+
+<style>
+  .tiers { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; min-width: 0; }
+  .tier { display: contents; }
+  .ts-l { grid-column: 1; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .ts-main { grid-column: 2; min-width: 0; }
+  .ts-shuyou .ts-main { grid-column: 2 / -1; line-height: 1.5; }
+  .ts-key { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-right: 8px; vertical-align: middle; }
+  .tiers :global(.ts-num) { grid-column: 3; justify-self: end; }
+</style>

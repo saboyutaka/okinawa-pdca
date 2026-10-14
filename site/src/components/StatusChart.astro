@@ -1,18 +1,13 @@
 ---
 // 区分ごとの内訳を、行（年度・将来像など）ごとの100%積み上げ横棒で並べる。凡例は上、表は下に畳んで置く。
 // 同じ区分の図をいくつも並べるページでは、凡例をページに1回だけ出し、図には legend={false} を渡す（毎回の凡例はくどいため）。
-// 5つの将来像のページは凡例の箱を置かず、右の割合に pctKey で「順調」と添え、それを押すと短い説明と区分の一覧を出す（components/KeyNum.astro・KeyBrief.astro）
 // 行の名前が年度（R4 前期）のように短いときは、名前を1行にし、スマホでも棒を同じ行に置く（1行が3段になって縦に長くなるため）
 import StatusBar from './StatusBar.astro';
 import Chip from './Chip.astro';
-import KeyNum from './KeyNum.astro';
 import { fmt, pct } from '../lib/format.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
-// id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く
-// end は行の右に出すもの: 'total' は件数（初め）、'pct' は最初の区分（順調など）の割合、'none' は出さない（件数・割合は「表で見る」と読み上げにある）。
-// barLabel={false} は棒の中に割合を書かない（end="pct" で棒の外に出すときなど）。
-// table={false} は「表で見る」を付けない（5つの将来像のページ /future/ だけの例外。件数は基本施策のページにある。棒の読み上げには件数と割合がある。docs/design.md の1章）
+// id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く。行の右には件数を出す
 interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
@@ -21,12 +16,8 @@ interface Props {
   rows: Row[];
   unit?: string;
   legend?: boolean;
-  end?: 'total' | 'pct' | 'none';
-  barLabel?: boolean;
-  table?: boolean;
-  pctKey?: { word: string; label: string; brief: string };
 }
-const { title, caption, categories, rows, unit = '件', legend = true, end = 'total', barLabel = true, table = true, pctKey } = Astro.props;
+const { title, caption, categories, rows, unit = '件', legend = true } = Astro.props;
 const used = categories.filter((c) => rows.some((r) => (r.counts[c.key] || 0) > 0));
 const totalOf = (r: Row) => used.reduce((s, c) => s + (r.counts[c.key] || 0), 0);
 const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3);
@@ -41,7 +32,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
       {used.map((c) => <li><Chip tone={c.tone} text={c.key} title={c.note} shape={c.shape} /></li>)}
     </ul>
   )}
-  <div class:list={['rows', short && 'short', `end-${end}`]}>
+  <div class:list={['rows', short && 'short']}>
     {rows.map((r) => (
       <div class="row">
         <div class:list={['row-label', r.id && 'anchor']} id={r.id}>
@@ -49,35 +40,30 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
           {r.code && <> <span class="code-no">{r.code}</span></>}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
-        <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} labelKey={barLabel ? undefined : ''} />
-        {end === 'total' && <div class="row-total num">{fmt(totalOf(r))}{unit}</div>}
-        {end === 'pct' && (pctKey
-          ? <KeyNum class="row-pct" {...pctKey} value={pct(r.counts[categories[0].key] || 0, totalOf(r))} />
-          : <div class="row-pct num" aria-hidden="true">{pct(r.counts[categories[0].key] || 0, totalOf(r))}</div>)}
+        <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />
+        <div class="row-total num">{fmt(totalOf(r))}{unit}</div>
       </div>
     ))}
   </div>
-  {table && (
-    <details class="table-view">
-      <summary>表で見る</summary>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr>
-                <th>{r.label}</th>
-                {used.map((c) => <td class="num">{fmt(r.counts[c.key] || 0)}<br /><small class="secondary">{pct(r.counts[c.key] || 0, totalOf(r))}</small></td>)}
-                <td class="num">{fmt(totalOf(r))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  )}
+  <details class="table-view">
+    <summary>表で見る</summary>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th>{r.label}</th>
+              {used.map((c) => <td class="num">{fmt(r.counts[c.key] || 0)}<br /><small class="secondary">{pct(r.counts[c.key] || 0, totalOf(r))}</small></td>)}
+              <td class="num">{fmt(totalOf(r))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
 </figure>
 
 <style>
@@ -88,23 +74,12 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
   figcaption + .rows { margin-top: 12px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }
-  /* 右が件数でないときは、棒の列の幅を図の幅の割合で決める（名前の長い行があっても棒が細くならないように。長い名前は折り返す） */
-  .end-none { grid-template-columns: minmax(0, 1fr) minmax(160px, 32%); }
-  .end-pct { grid-template-columns: minmax(0, 1fr) minmax(140px, 24%) auto; }
-  /* 棒を細く短くしたぶん、名前を大きくして主役にする（将来像のページの基本施策の行の名前と同じ大きさ。components/KihonRow.astro） */
-  .end-pct .row-label { font-size: 1rem; }
-  @media (min-width: 721px) { .end-pct .row-label { font-size: 1.0625rem; } }
-  /* 右に割合を出す図は、太い棒が目立ちすぎるので StatusBar の mini と同じ細い棒にする（内訳は見せたまま） */
-  .end-pct .row :global(.sbar) { height: 14px; padding: 1.5px; border-width: 1.5px; gap: 1.5px; }
-  .end-pct .row :global(.seg) { min-width: 2px; padding: 0; }
-  .end-none, .end-pct { row-gap: 16px; } /* 名前が折り返す行もあるので、行のあいだを少し広げてゆとりを持たせる */
   .row { display: contents; }
   .row-label { font-size: 0.9375rem; line-height: 1.35; font-weight: 700; }
   .row-sub { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
   /* ほかのページから飛んできた行（部局のページの課）は、地の色で示す */
   .row-label:target { background: var(--sky); box-shadow: 0 0 0 4px var(--sky); border-radius: 4px; }
   .row-total { font-size: 0.875rem; color: var(--ink-2); min-width: 4.5em; text-align: right; }
-  .rows :global(.row-pct) { font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; min-width: 3.4em; text-align: right; }
   .short .row-label { white-space: nowrap; }
   .short .row-sub { display: inline; margin-left: 0.3em; }
   .table-view { margin-top: 14px; }
@@ -115,13 +90,5 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
     .rows:not(.short) .row :global(.sbar) { grid-column: 1 / -1; grid-row: 2; }
     .short { gap: 8px 10px; }
     .short .row-total { min-width: 0; }
-  }
-  /* 名前が何行にも折り返す幅では、スマホと同じく名前の下に棒を置く（割合は棒の右） */
-  @media (max-width: 720px) {
-    .end-none:not(.short), .end-pct:not(.short) { grid-template-columns: 1fr; row-gap: 18px; }
-    .end-none:not(.short) .row { display: grid; gap: 4px; }
-    .end-pct:not(.short) .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; }
-    .end-pct:not(.short) .row-label { grid-column: 1 / -1; }
-    .end-pct:not(.short) .row :global(.sbar) { grid-column: 1; grid-row: 2; }
   }
 </style>

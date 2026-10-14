@@ -1,9 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import Ladder from '../components/Ladder.astro';
-import StatusBar from '../components/StatusBar.astro';
+import Tiers from '../components/Tiers.astro';
 import KeyBrief from '../components/KeyBrief.astro';
-import KeyNum from '../components/KeyNum.astro';
 import Term from '../components/Term.astro';
 import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
@@ -15,7 +14,7 @@ import {
   getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
-import { band, fmt, pct } from '../lib/format.ts';
+import { band, fmt } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
@@ -33,14 +32,18 @@ const shisaku = getShisakuList();
 const judgeCounts = countJudges(shisaku);
 
 
-// 将来像ごと。主な取組の進捗状況の内訳の棒と「順調」の割合（5つの将来像のページ・将来像のページの基本施策の行と同じ形）
+// 将来像ごと。主要指標の達成率の印と、主な取組の進捗状況の内訳の棒と「順調」の割合の2段（components/Tiers.astro。5つの将来像のページの基本施策の行と同じ形）
 const statusKeys = STATUSES.map((s) => s.key);
 const visions = getShouraizou().map((v) => {
   const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  return { ...v, n: t.length, ok: t.filter((x) => x.status === '順調').length, counts: countBy(t, statusOf, statusKeys) };
+  return {
+    ...v,
+    shuyou: shuyou.filter((r) => r.kihon.shouraizou === v.id),
+    tori: { n: t.length, ok: t.filter((x) => x.status === '順調').length, counts: countBy(t, statusOf, statusKeys) },
+  };
 });
-// 区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの将来像で使っている区分）
-const statusUsed = statusKeys.filter((key) => visions.some((v) => (v.counts[key] || 0) > 0));
+// 区分の一覧は凡例の箱にせず、行の「達成率」「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの将来像で使っている区分）
+const statusUsed = statusKeys.filter((key) => visions.some((v) => (v.tori.counts[key] || 0) > 0));
 
 
 // 4年間の推移
@@ -87,14 +90,14 @@ const boshu = boshuState();
   <section aria-labelledby="vision-h">
     <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
     <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
+    <KeyBrief kind="shuyou" used={shuyou.map((r) => r.bin)} />
     <KeyBrief kind="status" used={statusUsed} />
     <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
-          <StatusBar categories={STATUSES} counts={v.counts} context={`${v.name} 主な取組 `} size="mini" />
-          <KeyNum class="v-pv" word="進捗状況" label="順調" brief="key-status" value={pct(v.ok, v.n)} />
+          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} context={v.name} />
         </li>
       ))}
     </ul>
@@ -186,17 +189,17 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
-  /* 節の終わりの、一覧へ進むリンク（ドーナツのカードの「取組をさがす →」と同じ太字） */
+  /* 節の終わりの、一覧へ進むリンク（ヒーローの3つの段の「取組をさがす →」と同じ太字） */
   .more-link { margin: 10px 0 0; font-weight: 700; }
 
-  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う。棒と「順調」の割合は、5つの将来像のページの基本施策の棒と同じ */
-  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(120px, 24%, 220px) auto; grid-template-areas: "badge name bar pv"; gap: 4px 14px; align-items: center; }
+  /* 将来像は1つの箱に1行ずつ。色は番号の印だけに使う。PC は名前の右に「主要指標 → 主な取組」の2段を置き、スマホは名前の下に置く
+     （5つの将来像のページの基本施策の行と同じ形） */
+  .vision { display: grid; grid-template-columns: 40px minmax(0, 1fr) clamp(300px, 48%, 470px); grid-template-areas: "badge name tiers"; gap: 8px 18px; align-items: center; }
   .vision :global(.big-badge) { grid-area: badge; width: 38px; height: 38px; font-size: 1.15rem; }
   .v-name { grid-area: name; line-height: 1.5; }
-  .vision :global(.sbar) { grid-area: bar; }
-  .vision :global(.v-pv) { grid-area: pv; justify-self: end; }
-  @media (max-width: 640px) {
-    .vision { grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "badge name name" "badge bar pv"; gap: 6px 12px; }
+  .vision :global(.v-tiers) { grid-area: tiers; }
+  @media (max-width: 720px) {
+    .vision { grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "badge name" "badge tiers"; gap: 8px 12px; }
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
   }
 
