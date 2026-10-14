@@ -1,6 +1,6 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
-import { showRows, hide, type TipRow } from './tip.ts';
+import { showRows, hide, onEsc, type TipRow } from './tip.ts';
 import { moving } from './motion.ts';
 
 // 図の JSON の形。書き出すのは components/TrendChart.astro（trend）と SeikaChart.astro・RmSeika.astro（seika）、KatsudouChart.astro（katsudou）
@@ -95,6 +95,7 @@ function popAt<E extends SVGElement>(el: E, cls: 'm-dot' | 'm-tag', ms: number) 
 // 横に並ぶ点（年度）を、ポインターと矢印キーで選ぶ
 function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: number, bottom: number, onShow: (i: number, x: number, y: number) => void, start: number) {
   let idx = -1;
+  let quiet = false; // マウスを乗せて出したものを Esc で消したら、マウスが図から出るまで出し直さない
   const line = sv('line', { class: 'cross', y1: top, y2: bottom, visibility: 'hidden' });
   svg.append(line);
   const show = (i: number, pt?: Pt) => {
@@ -104,6 +105,11 @@ function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: num
     line.setAttribute('visibility', 'visible');
     const r = svg.getBoundingClientRect();
     onShow(i, pt ? pt[0] : r.left + xs[i], pt ? pt[1] : r.top + top);
+    // 図の外にフォーカスがあるとき（マウスを乗せて出したとき）に Esc で消したら、十字線も一緒に消す
+    onEsc(() => {
+      off();
+      quiet = true;
+    });
   };
   const off = () => {
     idx = -1;
@@ -116,9 +122,15 @@ function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: num
     xs.forEach((v, i) => { if (Math.abs(v - x) < Math.abs(xs[b] - x)) b = i; });
     return b;
   };
-  svg.addEventListener('pointermove', (e) => show(nearest(e.clientX), [e.clientX, e.clientY]));
-  svg.addEventListener('pointerdown', (e) => show(nearest(e.clientX), [e.clientX, e.clientY]));
-  svg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') off(); });
+  svg.addEventListener('pointermove', (e) => { if (!quiet) show(nearest(e.clientX), [e.clientX, e.clientY]); });
+  svg.addEventListener('pointerdown', (e) => {
+    quiet = false;
+    show(nearest(e.clientX), [e.clientX, e.clientY]);
+  });
+  svg.addEventListener('pointerleave', (e) => {
+    quiet = false;
+    if (e.pointerType === 'mouse') off();
+  });
   wrap.onkeydown = (e) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();

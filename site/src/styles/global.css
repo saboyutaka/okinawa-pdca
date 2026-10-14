@@ -30,7 +30,8 @@
   --grid: #dfe3f3;
   --hair: #c4c9e6;
   --link: #2a45d6;
-  --muted: #6b7099;
+  /* 報告書の番号などの薄い文字。ページの地（--bg）の上でも 4.5:1 以上にする */
+  --muted: #646991;
   /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。ライトの黄は明るい地で 3:1 未満なので、形に濃い縁を付ける */
   --good: #00927f;
   --warning: #f0c52e;
@@ -549,8 +550,11 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .toc a[aria-current="location"] { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
 /* 目次の線のすぐ下の見出しは、ほかの節の間ほど空けない（目次の線が区切りになるため） */
 .toc + section > h2:first-child { margin-top: 1.2em; }
-/* # の行き先は、貼り付いた目次（何のページかの1行とリンク）の下に出す */
-.anchor, [id^="seika-"], [id^="shuyou-"] { scroll-margin-top: 104px; }
+/* # の行き先と、Tab でフォーカスした要素は、貼り付いた目次（何のページかの1行とリンク）の下に出す（WCAG 2.4.11）。
+   目次のあるページはページ全体の scroll-padding で空ける（行き先の scroll-margin と足し合わされるので、そちらは付けない）。
+   目次の無いページの # の行き先は、前のとおり行き先の側で空ける */
+html:has(.toc) { scroll-padding-top: 104px; }
+html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-margin-top: 104px; }
 
 
 .prose { white-space: pre-line; }
