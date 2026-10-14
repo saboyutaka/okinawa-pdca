@@ -13,7 +13,6 @@ services:
   # ポートは SITE_PORT で変えられる（中と外を同じ番号にして、Astro が出す URL と合わせる）。
   # --ignore-lock: Astro のロックファイル（site/.astro/dev.json）はコンテナの中のプロセス番号を記録し、止めると残る。
   # 次のコンテナでも同じ番号になるため、自分を動いているサーバーと取り違えて起動を断る。二重起動はポートで防げるので使わない
-  # WATCH_POLLING: コンテナの中には、ホストで書き換えたファイルの変更の知らせが届かないので、開発サーバーに一定の間隔でファイルを見に行かせる（astro.config.ts）
   site:
     image: node:24-alpine
     network_mode: bridge
