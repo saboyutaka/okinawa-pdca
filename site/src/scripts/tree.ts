@@ -14,8 +14,6 @@ import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } fro
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
 import { bump } from './motion.ts';
 
-const wide = matchMedia('(min-width: 760px)');
-
 // ---------------------------------------------------------------- 描く
 
 const esc = (s: string | number) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -84,6 +82,8 @@ async function init(tree: HTMLElement) {
   const hits = document.querySelector<HTMLElement>(`[data-tree-hits="${tree.id}"] > span`);
   const btns = [...document.querySelectorAll<HTMLButtonElement>(`[data-tree-depth][aria-controls="${tree.id}"]`)];
   const urlQ = () => new URLSearchParams(location.search).get('q') || '';
+  // 成果指標を施策の名前の横に出す幅（pages/tree.astro の CSS と同じ）
+  const wide = matchMedia('(min-width: 760px)');
 
   // 言葉の欄は、データを待たずに URL の q で埋める。届くまでに打った言葉も URL に残し、描いたあとにさがす
   let ready = false;

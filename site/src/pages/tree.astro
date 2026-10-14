@@ -59,8 +59,8 @@ const dataPath = treeDataPath();
 </Base>
 
 <style is:global>
-  /* 計画の目次の見た目。ページの <style>（scoped）にすると、Astro が範囲をしぼるための属性（data-astro-cid-…）を全部の要素に付け、
-     行の多いこのページでは HTML の3分の1ほど（約400KB）になったので、.tree-box などの名前の下に書いた全体の CSS にする */
+  /* 計画の目次の見た目。目次の行はスクリプト（scripts/tree.ts）が描くので、Astro が範囲をしぼるための属性（data-astro-cid-…）が付かず、
+     ページの <style>（scoped）では当たらない。.tree-box などの名前の下に書いた全体の CSS にする */
 
   /* キーワードと開く深さ。スクリプトでしか動かないので、スクリプトが動くとき（html.js）だけ出す。いまの開き方にそろっているボタンを押した形にする（scripts/tree.ts） */
   .filters.tree-search { margin-bottom: 0; }
