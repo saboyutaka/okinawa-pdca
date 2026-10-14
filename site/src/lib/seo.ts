@@ -77,9 +77,11 @@ export const websiteLd = (description: string) => ({
   isBasedOn: SOURCES.map((s) => ({ '@type': 'CreativeWork', ...s, author: PREF })),
 });
 
-// パンくず（components/Crumbs.astro）。href の無い項目（いまのページ）は here の URL にする
+// ページの階層（components/Hierarchy.astro）。最後の項目（いまのページ）は here の URL にし、ページの無い段（施策展開。href なし）は入れない
 export const breadcrumbLd = (items: { href?: string; label: string }[], here: string) => ({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
-  itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.label, item: absUrl(it.href ?? here) })),
+  itemListElement: items
+    .flatMap((it, i) => (i === items.length - 1 ? [{ name: it.label, href: here }] : it.href ? [{ name: it.label, href: it.href }] : []))
+    .map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: absUrl(it.href) })),
 });

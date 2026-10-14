@@ -106,8 +106,9 @@ a:hover { text-decoration-thickness: 2.5px; }
 .name-link:hover { text-decoration-color: var(--ink); }
 .sub-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
 :focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
-/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり） */
-h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; text-wrap: balance; word-break: auto-phrase; }
+/* 見出しは文節の区切りで折り返す（「脱炭素化に向 / けた」のような切れ方を避ける。対応していないブラウザでは今までどおり）。
+   text-wrap: balance は付けない。行の長さをそろえるので、2〜3行の見出しがどの行も短くなって右が空く（下の .lead と同じ考え） */
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.45; font-weight: 700; word-break: auto-phrase; }
 h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0.25em 0 0.5em; letter-spacing: 0.02em; }
 h2 { font-size: 1.35rem; margin: 2.2em 0 0.6em; }
 h3 { font-size: 1.08rem; margin: 1.6em 0 0.4em; }
@@ -229,12 +230,9 @@ figure { margin: 0; }
 .notice {
   background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
 }
-.breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.875rem; color: var(--ink-2); margin-top: 18px; }
-/* パンくずの無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーをパンくずのあるページと同じくらい下げる */
+/* ページの階層（components/Hierarchy.astro）の無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーを階層のあるページと同じくらい下げる */
 #main > h1:first-child { margin-top: 28px; }
 #main > .sticker.lift:first-child { margin-top: 24px; }
-.breadcrumb a { color: var(--ink); text-decoration: none; padding: 0 10px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
-.breadcrumb a:hover { background: var(--sky); }
 
 /* 数字の見出し（ヒーロー・タイル） */
 .hero-figure { font-family: var(--font-num); font-size: 3.2rem; font-weight: 600; line-height: 1.1; }
@@ -289,23 +287,13 @@ details[open] > summary { margin-bottom: 8px; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
 .chip.empty { color: var(--ink-2); }
-/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）と、取組のページの親の施策の札で使う（丸いハンコは施策の判定だけ） */
+/* 施策の判定（A〜G）の小さな丸いハンコ。施策の一覧の行（ShisakuItem）などで使う（丸いハンコは施策の判定だけ） */
 .jstamp {
   display: inline-flex; align-items: center; justify-content: center; gap: 2px; flex: none; width: 30px; height: 30px; border-radius: 50%;
   border: 2px solid var(--line); background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); transform: rotate(-6deg);
   font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; line-height: 1;
 }
 .row-list:empty { display: none; }
-/* 親の施策の札（components/ParentShisaku.astro）の下にぶら下げるページの頭。少し下げて置き、カギ形の線でつなぐ（取組・成果指標のページ） */
-.hang { position: relative; margin: 14px 0 0 32px; }
-.hang::before {
-  content: ''; position: absolute; left: -17px; top: -16px; width: 15px; height: 46px;
-  border-left: 3px solid var(--line); border-bottom: 3px solid var(--line); border-bottom-left-radius: 12px;
-}
-@media (max-width: 640px) {
-  .hang { margin-left: 20px; }
-  .hang::before { left: -12px; width: 10px; }
-}
 /* 取組・施策の判定の斜線（E・F＝取組の遅れ） */
 .hatch { background-image: repeating-linear-gradient(135deg, var(--paper) 0 1.5px, transparent 1.5px 5px); }
 /* 将来像の番号の印（components/Sz.astro）。色は将来像ごと */
@@ -615,15 +603,13 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
    どの要素も、ふだんの見た目は動き終わった形にし、キーフレームには始まりの形だけを書く。ここが効かないとき（端末で動きを減らす設定・印刷・対応していないブラウザ）は、
    はじめから動き終わった形で見える。状態の区分はどれも同じ動きにする（遅れだけを目立たせない） */
 @media (prefers-reduced-motion: no-preference) {
-  /* ページを移るとき: 前のページから次のページへ短く重ねて切り替える（スクリプトは使わない。対応していないブラウザはこれまでどおり）。
-     ヘッダーに名前を付けて別に動かすと、下までスクロールしたページから移ったときに上から降りてくるので、ページ全体をそのまま重ねる */
-  @view-transition { navigation: auto; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
+  /* ページを移るときは重ねて切り替えない（@view-transition は付けない）。ページの階層（components/Hierarchy.astro）の段の数がページごとに違い、
+     前と次のページの頭が上下にずれて二重に見え、がたつくため。ヘッダーに名前を付けて別に動かすのも、下までスクロールしたページから移ったときに上から降りてくるので使わない */
   /* 配色の切り替え: ボタンから丸く広げる（scripts/theme.ts が html に vt-theme とボタンの位置 --vt-x・--vt-y・--vt-r を付ける） */
   html.vt-theme::view-transition-old(root), html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
   html.vt-theme::view-transition-new(root) { animation: m-reveal 0.4s ease-out; }
 
-  /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・親の施策の札・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
+  /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
   @media (hover: hover) {

@@ -56,5 +56,5 @@ export const TAG_PAGES = [
 // 投稿の本文に入れる名前。X は日本語を1字で2字分に数えて140字までなので、長い名前は途中で切る
 export const shortName = (s: string, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
 
-// シェアの投稿の本文（施策「〇〇」について）。上と下のシェアパネル（Crumbs の share・components/ShareBox.astro）で同じものを使う
+// シェアの投稿の本文（施策「〇〇」について）。シェアの枠（components/ShareBox.astro）が使う
 export const shareText = (kind: string, name: string) => `${kind}「${shortName(name)}」について`;
