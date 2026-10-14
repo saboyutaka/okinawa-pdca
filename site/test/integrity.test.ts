@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou,
+  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT,
 } from '../src/lib/data.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -278,4 +278,33 @@ test('将来像の名前は、印字の「〜島を目指して」から語尾�
   assert.equal(printed.length, 5);
   assert.ok(printed.every((s) => s.name.endsWith('島を目指して')), '報告書の印字の形が変わったら shouraizouName を見直す');
   assert.ok(getShouraizou().every((v) => v.name.endsWith('島')));
+});
+
+test('計画の目次の木には、将来像・基本施策・施策展開・施策が1回ずつ報告書の順に、最新の年度の主な取組がどれも1回ずつ報告書の番号の順に入る', () => {
+  const tree = getPlanTree();
+  assert.deepEqual(tree.map((v) => v.vision.id), getShouraizou().map((v) => v.id));
+  const kihon = tree.flatMap((v) => v.kihon);
+  assert.deepEqual(kihon.map((k) => k.kihon.id), getKihonList().map((k) => k.id));
+  // 施策展開は1回ずつ。番号は基本施策の番号から続き、施策の番号の頭になる（施策が施策展開ごとにまとまって並んでいなければ、下の施策の順の比べ方で落ちる）
+  const tenkai = kihon.flatMap((k) => k.tenkai.map((t) => ({ k: k.kihon, t })));
+  assert.equal(new Set(tenkai.map(({ t }) => t.id)).size, tenkai.length);
+  none(tenkai.filter(({ k, t }) => !t.code.startsWith(`${k.code}-`) || t.shisaku.some((s) => !s.shisaku.code.startsWith(`${t.code}-`))), ({ t }) => `${t.id} ${t.code}`);
+  const shisaku = tenkai.flatMap(({ t }) => t.shisaku);
+  assert.deepEqual(shisaku.map((s) => s.shisaku.id), getShisakuList().map((s) => s.id));
+  const key = (shisakuId: string, no: number) => `${shisakuId}|${no}`;
+  const inTree = shisaku.flatMap((s) => s.torikumi.map((g) => key(s.shisaku.id, g.latest.no)));
+  assert.deepEqual([...inTree].sort(), getTorikumi(LATEST).map((t) => key(t.shisaku_id, t.no)).sort());
+  none(shisaku.filter((s) => s.torikumi.some((g, i) => i > 0 && g.latest.no <= s.torikumi[i - 1].latest.no)), (s) => s.shisaku.id);
+});
+
+test('計画の目次の木の指標は、最新の年度の主要指標（概要版の数え方）と成果指標がどれも1回ずつ、その基本施策・施策の下に入る', () => {
+  const kihon = getPlanTree().flatMap((v) => v.kihon);
+  const shuyou = kihon.flatMap((k) => k.shuyou);
+  assert.equal(shuyou.length, SHUYOU_COUNT[LATEST]);
+  none(kihon.filter((k) => !k.shuyou.length || k.shuyou.some((r) => r.kihon_id !== k.kihon.id)), (k) => k.kihon.id);
+  const shisaku = kihon.flatMap((k) => k.tenkai.flatMap((t) => t.shisaku));
+  const seika = shisaku.flatMap((s) => s.seika.map((g) => ({ s, g })));
+  assert.equal(seika.length, getSeika(LATEST).length);
+  assert.equal(new Set(seika.map(({ g }) => g.href)).size, seika.length);
+  none(seika.filter(({ s, g }) => g.shisaku.id !== s.shisaku.id || g.latest.year !== LATEST), ({ g }) => g.href);
 });

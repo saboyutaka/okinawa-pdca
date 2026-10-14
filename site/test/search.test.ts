@@ -1,7 +1,7 @@
 // 表記ゆれをそろえる・一覧の検索の比べ方（lib/search.ts）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { foldVariants, searchText, searchWords, matchesAll } from '../src/lib/search.ts';
+import { foldVariants, searchText, searchWords, matchesAll, matchRanges } from '../src/lib/search.ts';
 
 const hit = (text: string, q: string) => matchesAll(searchText(text), searchWords(q));
 
@@ -32,4 +32,17 @@ test('検索: 空白で区切った言葉は、すべて含まれるものだけ
   assert.ok(!hit('子供の居場所', '子ども 貧困'));
   assert.ok(hit('ＩＣＴを活用した', 'ict'));
   assert.deepEqual(searchWords('  '), []);
+});
+
+test('matchRanges: 当たった所を元の文字の位置で返し、重なりはまとめる', () => {
+  const mark = (text: string, q: string) => matchRanges(text, searchWords(q)).map(([a, b]) => text.slice(a, b));
+  assert.deepEqual(mark('離島の離島振興', '離島'), ['離島', '離島']);
+  assert.deepEqual(mark('観光振興', '観光 光振'), ['観光振']);
+  // 全角・半角と大文字・小文字をそろえて探し、元の字のまま印を付ける
+  assert.deepEqual(mark('ＭａａＳの導入', 'maas'), ['ＭａａＳ']);
+  // 表記ゆれ: 「子ども」で探して「こども」に当たる
+  assert.deepEqual(mark('こども家庭支援', '子ども'), ['こども']);
+  // NFKC で字の数が変わるもの（㎡ → m2）も、元の1字ごと印を付ける
+  assert.deepEqual(mark('100㎡以上', 'm2'), ['㎡']);
+  assert.deepEqual(mark('観光', '離島'), []);
 });
