@@ -98,7 +98,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
         {GRADES.map((x) => (
           <label class="fchip" title={x.note}>
             <input type="checkbox" name="gr" value={x.key} data-text={`${x.mark} ${x.key}`} />
-            <span><Icon tone={x.tone} shape={x.shape} />{x.mark} {x.key}</span>
+            <span><Icon tone={x.tone} shape={x.shape} />{x.mark} {x.key}<span class="sr-only">（{x.note}）</span></span>
           </label>
         ))}
         <label class="fchip"><input type="checkbox" name="gr" value="none" data-text={`${yearLabel(IKKATSU_LATEST)}の評価なし`} /><span><Icon tone="blank" shape="ring" />{yearLabel(IKKATSU_LATEST)}の評価なし</span></label>
@@ -132,11 +132,11 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">{fmt(rows.length)}</span>件を表示</p>
+  <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{fmt(rows.length)}</span>件を表示</p>
   <div class="glegend small">
     <span class="gl-head">スタンプは年度ごとの事後評価（{yearLabel(IKKATSU_LATEST)}は{fmt(latest.length)}事業）:</span>
     <ul aria-label="事後評価の凡例">
-      {GRADES.map((x) => <li><Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(counts[x.key] || 0)}`} title={x.note} /></li>)}
+      {GRADES.map((x) => <li><Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(counts[x.key] || 0)}`} title={x.note} readTitle /></li>)}
     </ul>
   </div>
 

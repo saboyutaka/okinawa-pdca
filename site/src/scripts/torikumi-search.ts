@@ -1,5 +1,7 @@
 // 取組をさがす（pages/torikumi/index.astro）の検索と一覧。検索用のデータ（lib/search-data.ts）を読んで、一覧をここで描く。
-// どのページでも読み込む（scripts/site.ts）ので、検索のフォーム（#tf）があるページでだけ動かす
+// どのページでも読み込む（scripts/site.ts）ので、検索のフォーム（#tf）があるページでだけ動かす。
+// 押したボタンが消えるときは、フォーカスを続きの場所へ移す（WCAG 2.4.3）: 「さらに表示」は出した最初の行へ、
+// 絞り込み中の札で条件を外したときは、同じ位置の札（無ければ1つ前の札）へ、札が無くなったら件数の行へ
 import { iconSvg } from '../lib/icons.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { SearchData as Data, SearchSummary as Summary } from '../lib/search-data.ts';
@@ -20,6 +22,10 @@ function search(form: HTMLFormElement) {
   let summaryFailed = false;
   const unit = document.getElementById('unit')!;
   const noSummary = document.getElementById('no-summary')!;
+  // 札が無くなったときのフォーカスの行き先（件数の行。Tab では止めない）
+  const countLine = count.closest<HTMLElement>('.result-count');
+  if (countLine) countLine.tabIndex = -1;
+  let refocus = -1; // 押して外した札の位置（外したあとにフォーカスを移す）
   let hits: number[] = []; // 当たった行の番号（data.rows の）
   let shown = 0;
   let words: SearchWord[] = [];
@@ -168,6 +174,7 @@ function search(form: HTMLFormElement) {
     const chips: HTMLElement[] = [];
     for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
       if (!input.value) continue;
+      const i = chips.length;
       const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
       const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : `「${input.value}」`;
       const b = el('button', 'active-chip', `${label}: ${text}`) as HTMLButtonElement;
@@ -176,11 +183,15 @@ function search(form: HTMLFormElement) {
       const x = el('span', '', '×');
       x.setAttribute('aria-hidden', 'true');
       b.append(x);
-      b.addEventListener('click', () => { input.value = ''; apply(); });
+      b.addEventListener('click', () => { input.value = ''; refocus = i; apply(); });
       chips.push(b);
     }
     active.hidden = chips.length === 0;
     active.replaceChildren(...(chips.length ? [el('span', 'active-l', '絞り込み中:'), ...chips] : []));
+    if (refocus >= 0) {
+      (chips[Math.min(refocus, chips.length - 1)] ?? countLine)?.focus();
+      refocus = -1;
+    }
   }
 
   for (const [k, v] of new URLSearchParams(location.search)) {
@@ -191,7 +202,11 @@ function search(form: HTMLFormElement) {
   renderActive();
   form.addEventListener('input', apply);
   form.addEventListener('submit', (e) => e.preventDefault());
-  more.addEventListener('click', showMore);
+  more.addEventListener('click', () => {
+    const first = list.children.length;
+    showMore();
+    list.children[first]?.querySelector<HTMLElement>('a')?.focus();
+  });
   async function load<T>(url: string) {
     const r = await fetch(url);
     if (!r.ok) throw new Error(String(r.status));

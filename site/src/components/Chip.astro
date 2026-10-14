@@ -1,9 +1,11 @@
 ---
-// 状態の印（形＋色＋文字）。tone が無いときは「公表なし」などの空の印
+// 状態の印（形＋色＋文字）。tone が無いときは「公表なし」などの空の印。
+// title は区分の説明（「計画の90%以上」など）で、マウスを乗せると出る。readTitle を付けると、読み上げにも（）で読ませる
+// （span の title は読み上げソフトがふつう読まないため）。凡例のように1回だけ読まれる所で使い、行ごとの札には付けない（毎行読まれてうるさい）
 import Icon from './Icon.astro';
 import type { Shape, Tone } from '../lib/icons.ts';
 
-interface Props { tone?: Tone | null; text: string; title?: string; shape?: Shape }
-const { tone, text, title, shape } = Astro.props;
+interface Props { tone?: Tone | null; text: string; title?: string; shape?: Shape; readTitle?: boolean }
+const { tone, text, title, shape, readTitle = false } = Astro.props;
 ---
-<span class:list={['chip', !tone && 'empty']} title={title}><Icon tone={tone || 'blank'} shape={tone ? shape : 'ring'} /><span>{text}</span></span>
+<span class:list={['chip', !tone && 'empty']} title={title}><Icon tone={tone || 'blank'} shape={tone ? shape : 'ring'} /><span>{text}{readTitle && title && <span class="sr-only">（{title}）</span>}</span></span>

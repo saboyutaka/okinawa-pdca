@@ -189,7 +189,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       {ikLatest.length > 0 && (
         <div class="ik-sum">
           <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
-          {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} />)}
+          {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} readTitle />)}
         </div>
       )}
       <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
