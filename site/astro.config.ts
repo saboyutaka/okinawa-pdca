@@ -87,6 +87,11 @@ const earlyHints: AstroIntegration = {
   },
 };
 
+// 開発サーバー（make dev）のファイルの見張り。コンテナの中には、ホストで書き換えたファイルの変更の知らせ（inotify）が届かず、
+// 書き換えても前の中身を出し続ける（Docker Desktop for Mac で確かめた）。compose.yaml が WATCH_POLLING を渡したときだけ、一定の間隔でファイルを見に行く。
+// 書き出したサイト（dist。数千のファイル）は見に行かない
+const watch = process.env.WATCH_POLLING ? { usePolling: true, interval: 300, ignored: [/\/dist\//] } : undefined;
+
 export default defineConfig({
   site: SITE.url,
   output: 'static',
@@ -117,5 +122,5 @@ export default defineConfig({
   // 部品の <style> もどのページにも届くので、:global() は .x :global(.y) のように、範囲をしぼった要素の中に書く。
   // assetsInlineLimit: 数字のフォント（約4KB）は小さいので、そのままだと Vite が CSS に data: で埋め込み、CSP の default-src 'self' に止められる。
   // フォントだけは埋め込まず、/_astro/ にハッシュ付きの名前で書き出す（ずっとキャッシュされる。layouts/Base.astro で preload）
-  vite: { build: { cssCodeSplit: false, assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined) } },
+  vite: { server: { watch }, build: { cssCodeSplit: false, assetsInlineLimit: (file) => (file.endsWith('.woff2') ? false : undefined) } },
 });

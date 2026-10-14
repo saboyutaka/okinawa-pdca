@@ -4,7 +4,7 @@
 
 ## 1. コンテナ
 
-ホストに node や Python のライブラリは入れず、`compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine、`shot` = Playwright と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントし、Docker の既定の bridge に載せるので compose はネットワークを作らない）。開発サーバーは http://localhost:4321/（`SITE_PORT=4400 make dev` で変えられる）。
+ホストに node や Python のライブラリは入れず、`compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine、`shot` = Playwright と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントし、Docker の既定の bridge に載せるので compose はネットワークを作らない）。開発サーバーは http://localhost:4321/（`SITE_PORT=4400 make dev` で変えられる）。コンテナの中にはホストで書き換えたファイルの変更の知らせが届かないので、開発サーバーは0.3秒ごとにファイルを見に行って書き換えを反映する（`compose.yaml` の `WATCH_POLLING` と `site/astro.config.ts`）。
 
 依存パッケージのインストール時のスクリプト（postinstall など）は動かさない（`site/.npmrc`・`scripts/shot/.npmrc` の `ignore-scripts=true`）。コンテナはリポジトリ全体（main では `.git` も）を書き込める形でマウントしているので、悪意のあるパッケージが入っても `.git/hooks` などを書き換えさせないため。いまの依存はスクリプトが無くても動く。スクリプトが要るパッケージを足すときは、要る理由を確かめてから `npm rebuild <名前> --ignore-scripts=false` でそのパッケージだけ動かす。
 
