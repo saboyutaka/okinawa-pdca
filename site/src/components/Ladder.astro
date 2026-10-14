@@ -1,5 +1,6 @@
 ---
-// トップのヒーローと将来像のページの頭に置く、3つの段の問いと答え（docs/design.md の1章「3つの段」）。
+// トップのヒーローと将来像・くらしのテーマのページの頭に置く、3つの段の問いと答え（docs/design.md の1章「3つの段」）。
+// くらしのテーマは主要指標との対応をまだ決めていない（#93）ので、shuyou を渡さず、成果指標と取組の2段にする。
 // 計画の階層と同じ向きに上から「沖縄の姿（基本施策の主要指標）→ 施策の成果（成果指標）→ 県の活動（主な取組の進捗状況）」と並べ、
 // どの段も、問い・何をいくつ数えたか・答えの割合1つ・県の区分の内訳の棒1本を同じ形で出す（区分は県の並びのまま）。
 // 答えの割合は、問いに答える区分の割合を小さく添えるだけにする（主要指標は基準値より良くなった「前進」。県の概要版の区分で、目標値に到達を含む。
@@ -16,7 +17,8 @@ import type { Tone } from '../lib/icons.ts';
 import { fmt, pct } from '../lib/format.ts';
 
 interface Props {
-  shuyou: ShuyouStatus[];
+  /** 主要指標（くらしのテーマのページは渡さず、主要指標の段を出さない） */
+  shuyou?: ShuyouStatus[];
   /** 成果指標の達成率の区分（RATE_BINS）ごとの数 */
   seika: Record<string, number>;
   /** 主な取組の進捗状況（STATUSES）ごとの数 */
@@ -31,13 +33,17 @@ const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
 interface Cat { key: string; tone: Tone; n: number }
-const shuyouN = shuyouCounts(shuyou);
-const rungs: { id: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number } }[] = [
-  {
-    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: shuyou.length, unit: '指標', href: shuyouHref, measure: '達成率',
-    cats: SHUYOU_CATS.map((c) => ({ ...c, n: shuyouN[c.key] })),
-    ans: { label: '前進', n: shuyou.filter((r) => SHUYOU_FORWARD.includes(r.bin)).length },
-  },
+type Rung = { id: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number } };
+const shuyouRung = (rows: ShuyouStatus[]): Rung => {
+  const c = shuyouCounts(rows);
+  return {
+    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: rows.length, unit: '指標', href: shuyouHref, measure: '達成率',
+    cats: SHUYOU_CATS.map((x) => ({ ...x, n: c[x.key] })),
+    ans: { label: '前進', n: rows.filter((r) => SHUYOU_FORWARD.includes(r.bin)).length },
+  };
+};
+const rungs: Rung[] = [
+  ...(shuyou ? [shuyouRung(shuyou)] : []),
   {
     id: 'seika', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: href('/shihyou/'), measure: '達成率',
     cats: RATE_BINS.map((b) => ({ key: b.key, tone: b.tone, n: seika[b.key] || 0 })),

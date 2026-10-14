@@ -15,16 +15,16 @@ import KeyBrief from '../../components/KeyBrief.astro';
 import Term from '../../components/Term.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import TrendChart from '../../components/TrendChart.astro';
+import TrendFigure from '../../components/TrendFigure.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
-  YEARS, LATEST, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries,
+  LATEST, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
+  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries, trendPoints,
 } from '../../lib/data.ts';
-import type { SeikaRow as SeikaRowT, TorikumiRow } from '../../lib/types.ts';
-import { band, fmt, pct, yen } from '../../lib/format.ts';
+import type { TorikumiRow } from '../../lib/types.ts';
+import { band, pct, yen } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
@@ -41,7 +41,6 @@ const shisaku = getShisakuList().filter((s) => s.shouraizou === v.id);
 const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
 const seika = getSeika(LATEST).filter((s) => s.shisaku_id.startsWith(pre));
 const isOk = (t: TorikumiRow) => t.status === '順調';
-const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = futureHead(v.id);
 const judgeCounts = head.judges;
@@ -50,13 +49,7 @@ const judgeCounts = head.judges;
 const shuyou = getShuyouStatus().filter((r) => r.kihon.shouraizou === v.id);
 
 // 4年間の推移
-const trend = YEARS.map((y) => {
-  const t = getTorikumi(y).filter((x) => x.shisaku_id.startsWith(pre));
-  const s = getSeika(y).filter((x) => x.shisaku_id.startsWith(pre));
-  const aOk = t.filter(isOk).length;
-  const bOk = s.filter(reached).length;
-  return { y, a: (aOk / t.length) * 100, b: (bOk / s.length) * 100, aOk, aN: t.length, bOk, bN: s.length };
-});
+const trend = trendPoints((t) => t.shisaku_id.startsWith(pre), (s) => s.shisaku_id.startsWith(pre));
 
 // 基本施策ごと。基本施策の名前の下に、主要指標（達成状況の札とスタート → いま → ゴールの値）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
 // 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・成果指標をさがすにある）
@@ -120,29 +113,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
     <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
-    <figure class="sticker trend">
-      <figcaption>
-        <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
-      </figcaption>
-      <TrendChart points={trend} />
-      <details>
-        <summary>表で見る</summary>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
-            <tbody>
-              {trend.map((p) => (
-                <tr>
-                  <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
-                  <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
-                  <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </figure>
+    <TrendFigure points={trend} />
   </section>
 
   <section aria-labelledby="yosan-h">
@@ -177,8 +148,6 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     .v-hero h1 { margin-top: 8px; }
   }
 
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .trend { margin-top: 0; }
 
   /* 基本施策は1つずつカード（components/KihonRow.astro）にし、PC は2列に並べる（1列だと右が空くため）。同じ行のカードは高さをそろえる */
   .k-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 14px; }
