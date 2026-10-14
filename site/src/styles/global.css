@@ -169,10 +169,10 @@ small, .small { font-size: 0.875rem; }
 .site-by { color: var(--ink-2); text-decoration: none; white-space: nowrap; padding: 4px 0; }
 .site-by b { font-family: var(--font-display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; text-underline-offset: 0.25em; }
 .site-by:hover b { text-decoration-color: var(--pop); }
-.site-nav { flex-basis: 100%; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; margin: 0 -2px; }
+.site-nav { flex-basis: 100%; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px 6px; margin: 0 -2px; }
 .site-nav::-webkit-scrollbar { display: none; }
 .site-nav a {
-  flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 14px; min-height: 38px;
+  flex: none; font-family: var(--font-display); font-size: 0.9375rem; color: var(--ink); text-decoration: none; padding: 4px 10px; min-height: 38px;
   display: inline-flex; align-items: center; border: 2px solid transparent; border-radius: 999px;
 }
 .site-nav a:hover { border-color: var(--hair); background: var(--paper); }
@@ -189,6 +189,7 @@ small, .small { font-size: 0.875rem; }
   .site-sub { flex-basis: 100%; margin: 0; font-size: 0.75rem; gap: 0 6px; }
   .site-sub small { font-size: 0.8125rem; }
   .site-by { padding: 0; }
+  .site-nav a { padding: 4px 8px; } /* 1画面に入る項目を増やす（いまのページの丸い枠の内側の余白だけ残す） */
 }
 /* 横にすべらせる帯（ヘッダーのナビ・ページ内の目次のリンクの並び）は、続きがある側の端をぼかす（scripts/scroll-hint.ts が more-l・more-r を付ける）。
    キーボードで移った項目がぼかしの下に隠れないよう、スクロールの止まる位置にぼかしの幅の余白を取る */

@@ -1,15 +1,13 @@
 ---
 // トップのヒーローと将来像のページの頭に置く、3つの段の問いと答え（docs/design.md の1章「3つの段」）。
 // 計画の階層と同じ向きに上から「沖縄の姿（基本施策の主要指標）→ 施策の成果（成果指標）→ 県の活動（主な取組の進捗状況）」と並べ、
-// どの段も、問い・何をいくつ数えたか・県の区分の内訳を同じ形で出す（1つの割合だけを大きくしない。区分は県の並びのまま、0でないものを同じ重みで）。
+// どの段も、問い・何をいくつ数えたか・県の区分の内訳の棒1本を同じ形で出す（1つの割合だけを大きくしない。区分は県の並びのまま）。
 // 3つの段の割合は意味が違う（主要指標は R9 のゴールに対して、成果指標と取組はその年度の計画に対して）ので、1つの図や目盛りにまとめず、差も書かない。
-// 主要指標は49しかないので、棒ではなく1指標を1つの印にして、区分ごとにまとめて並べる（区分の中は概要版の表の順）。印にマウスを乗せる・タップすると名前と達成率が出る。
-// 内訳の区分は、押すとその区分で絞り込んだ一覧を開く（q は将来像のページの「s=1」のような一覧の条件）。
-// ステッカーの中の箱なので、線と影は付けず白い地だけにし、段は細い線で区切る。内訳の棒・印は動かさない（design.md の8章）
+// すっきり見せるため、凡例と区分ごとの数は並べない。区分の名前と数は、棒の区間にマウスを乗せる・タップすると出る（StatusBar。読み上げは棒全体で読む）。
+// 「主要指標の49指標」のような何をいくつ数えたかの言葉が、その一覧へのリンク（q は将来像のページの「s=1」のような一覧の条件）。
+// ステッカーの中の箱なので、線と影は付けず白い地だけにし、段は細い線で区切る。棒は動かさない（design.md の8章）
 import StatusBar from './StatusBar.astro';
-import Icon from './Icon.astro';
-import Term from './Term.astro';
-import { RATE_BINS, STATUSES, SHUYOU_BINS, shuyouRateText, type ShuyouStatus } from '../lib/data.ts';
+import { RATE_BINS, STATUSES, SHUYOU_BINS, type ShuyouStatus } from '../lib/data.ts';
 import type { Tone } from '../lib/icons.ts';
 import { fmt } from '../lib/format.ts';
 
@@ -23,96 +21,48 @@ interface Props {
   q?: string;
 }
 const { shuyou, seika, tori, q = '' } = Astro.props;
-const href = (path: string, k?: string, v?: string) => {
-  const p = new URLSearchParams(q);
-  if (k && v != null) p.append(k, v);
-  return p.size ? `${path}?${p}` : path;
-};
+const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
-interface Cat { key: string; label: string; tone: Tone; n: number; href: string }
-const rungs: { id: string; q: string[]; term: string; n: number; unit: string; more: { href: string; label: string }; measure: { word: string; label?: string }; cats: Cat[] }[] = [
+// 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す
+interface Cat { key: string; tone: Tone; n: number }
+const rungs: { id: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[] }[] = [
   {
-    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: shuyou.length, unit: '指標',
-    more: { href: href('/shihyou/shuyou/'), label: '主要指標の一覧' },
-    measure: { word: '主要指標の達成率', label: '達成率' },
-    cats: SHUYOU_BINS.map((b) => ({ key: b.key, label: b.label, tone: b.tone, n: shuyou.filter((r) => r.bin === b.key).length, href: href('/shihyou/shuyou/', 'bin', b.key) })),
+    id: 'shuyou', q: ['沖縄は、', 'めざす姿に', '近づいた？'], term: '主要指標', n: shuyou.length, unit: '指標', href: href('/shihyou/shuyou/'), measure: '達成率',
+    cats: SHUYOU_BINS.map((b) => ({ key: b.label, tone: b.tone, n: shuyou.filter((r) => r.bin === b.key).length })),
   },
   {
-    id: 'seika', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標',
-    more: { href: href('/shihyou/'), label: '成果指標をさがす' },
-    measure: { word: '達成率' },
-    cats: RATE_BINS.map((b) => ({ key: b.key, label: b.key, tone: b.tone, n: seika[b.key] || 0, href: href('/shihyou/', 'bin', b.key) })),
+    id: 'seika', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: href('/shihyou/'), measure: '達成率',
+    cats: RATE_BINS.map((b) => ({ key: b.key, tone: b.tone, n: seika[b.key] || 0 })),
   },
   {
-    id: 'tori', q: ['県の活動は、', '計画どおりに', '進んだ？'], term: '主な取組', n: sum(tori), unit: '件',
-    more: { href: href('/torikumi/'), label: '取組をさがす' },
-    measure: { word: '進捗状況' },
-    cats: STATUSES.map((s, i) => ({ key: s.key, label: s.key, tone: s.tone, n: tori[s.key] || 0, href: href('/torikumi/', 'st', String(i)) })),
+    id: 'tori', q: ['県の活動は、', '計画どおりに', '進んだ？'], term: '主な取組', n: sum(tori), unit: '件', href: href('/torikumi/'), measure: '進捗状況',
+    cats: STATUSES.map((s) => ({ key: s.key, tone: s.tone, n: tori[s.key] || 0 })),
   },
 ];
-const shown = (cats: Cat[]) => cats.filter((c) => c.n > 0);
-const marksLabel = (r: (typeof rungs)[number]) => `${r.term} ${fmt(r.n)}${r.unit}の${r.measure.label ?? r.measure.word}: ${shown(r.cats).map((c) => `${c.label} ${fmt(c.n)}`).join('、')}`;
 ---
 <ul class="ladder">
   {rungs.map((r) => (
     <li class:list={['rung', `rung-${r.id}`]}>
       <div class="r-q">
         <p class="r-title">{r.q.map((w) => <span class="nw">{w}</span>)}</p>
-        <p class="r-sub"><Term word={r.term} />の<b>{fmt(r.n)}</b>{r.unit}</p>
-        <a class="r-more" href={r.more.href}>{r.more.label}<span aria-hidden="true"> →</span></a>
+        <a class="r-link" href={r.href}>{r.term}の<b>{fmt(r.n)}</b>{r.unit}<span aria-hidden="true"> →</span></a>
       </div>
-      <div class="r-viz">
-        {r.id === 'shuyou' ? (
-          <div class="marks" role="img" aria-label={marksLabel(r)}>
-            {shown(r.cats).map((c) => (
-              <span class="mk-bin">
-                {shuyou.filter((x) => x.bin === c.key).map((x) => (
-                  <span class="mk" data-tip-label={x.name} data-tip-value={`達成率 ${shuyouRateText(x)}（${c.label}）`}><Icon tone={c.tone} size={16} /></span>
-                ))}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure.word} `} labelKey="" />
-        )}
-        <ul class="r-counts">
-          <li class="r-cl"><Term word={r.measure.word} label={r.measure.label} />:</li>
-          {shown(r.cats).map((c) => (
-            <li><a class="r-c" href={c.href}><Icon tone={c.tone} />{c.label}<b>{fmt(c.n)}</b></a></li>
-          ))}
-        </ul>
-      </div>
+      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey="" />
     </li>
   ))}
 </ul>
 
 <style>
   .ladder { list-style: none; margin: 18px 0 0; padding: 2px 18px; background: var(--paper); border-radius: 16px; }
-  /* PC は「問いと数 | 内訳」の2列。どの段も同じ列にそろえ、問いは1行に収める（一覧へのリンクは数の下の行） */
+  /* PC は「問いと数 | 棒」の2列。どの段も同じ列にそろえ、問いは1行に収める（何をいくつ数えたかのリンクは問いの下の行） */
   .rung { display: grid; grid-template-columns: 17.5em minmax(0, 1fr); gap: 8px 24px; align-items: center; padding: 14px 0; }
   .rung + .rung { border-top: 1.5px solid var(--hair); }
   .r-title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; }
   .r-title .nw { display: inline-block; } /* 問いは文節の切れ目でだけ折り返す */
-  .r-sub { margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-2); line-height: 1.6; }
-  .r-sub b { font-family: var(--font-num); font-weight: 600; color: var(--ink); margin: 0 1px; }
-  .r-more { display: inline-block; margin-top: 2px; font-size: 0.875rem; font-weight: 700; }
-  .r-viz { display: grid; gap: 8px; min-width: 0; }
-  /* 主要指標の印。区分ごとにまとめ、区分のあいだを少しあける */
-  .marks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 24px; }
-  .mk-bin { display: inline-flex; flex-wrap: wrap; gap: 3px; }
-  .mk { display: inline-flex; padding: 1px; cursor: default; }
-  /* 区分ごとの数（押すとその区分の一覧）。どの区分も同じ大きさの字にする */
-  .r-counts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font-size: 0.8125rem; color: var(--ink-2); }
-  .r-cl { font-weight: 700; }
-  .r-c { display: inline-flex; align-items: baseline; gap: 4px; color: var(--ink-2); text-decoration-color: var(--hair); }
-  .r-c:hover { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
-  .r-c :global(.ic) { align-self: center; }
-  .r-c b { font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; color: var(--ink); }
+  .r-link { display: inline-block; margin-top: 2px; font-size: 0.875rem; font-weight: 700; }
+  .r-link b { font-family: var(--font-num); font-weight: 600; margin: 0 1px; }
   @media (max-width: 640px) {
     .ladder { padding: 2px 14px; }
-    .rung { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-    /* 印を少し小さくし、区分の途中で行が折り返さないようにする（いちばん多い区分の14個が1行に入る） */
-    .mk { padding: 0; }
-    .mk :global(.ic) { width: 14px; height: 14px; }
+    .rung { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 0; }
   }
 </style>
