@@ -144,9 +144,14 @@ for (const tree of document.querySelectorAll<HTMLElement>('[data-tree]')) {
   });
   // 幅が変わって成果指標の出る場所が変わったら、さがし直す
   wide.addEventListener('change', () => { if (input.value.trim()) run(); });
-  const q = new URLSearchParams(location.search).get('q');
-  if (q) {
+  // 言葉の欄を URL の q にそろえてさがす。開いたときと、ほかのページから戻る・進むで bfcache から戻したとき
+  // （ブラウザによっては、戻したときに木の見た目はそのままで、言葉の欄だけを空にする。URL はさがすたびに書き換えているので、いつも木と合っている）
+  const fromUrl = () => {
+    const q = new URLSearchParams(location.search).get('q') || '';
+    if (input.value === q && !q) return;
     input.value = q;
     run();
-  }
+  };
+  fromUrl();
+  window.addEventListener('pageshow', (e) => { if (e.persisted) fromUrl(); });
 }
