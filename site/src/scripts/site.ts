@@ -11,6 +11,7 @@ import './show-more.ts';
 import './like.ts';
 import './tooltip.ts';
 import './theme.ts';
+import './era.ts';
 import './terms.ts';
 import './disclosure.ts';
 // print.ts は charts.ts より前に置く（印刷の直前に、紙の幅にそろえてから図を描き直すため）
