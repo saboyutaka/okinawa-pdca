@@ -129,18 +129,6 @@ small, .small { font-size: 0.875rem; }
 .skip { position: absolute; left: 8px; top: -60px; z-index: 50; background: var(--paper); color: var(--link); padding: 8px 14px; border-radius: 999px; border: 2.5px solid var(--line); font-weight: 700; }
 .skip:focus { top: 8px; }
 
-/* 公開前（ステルス）のベータ版の帯（Base.astro の STEALTH）。ヘッダーの上に全ページで出す。
-   状態の色（黄・橙など）と取り違えないよう、地は文字の色にして色を反転させる */
-.beta-notice { background: var(--ink); color: var(--paper); font-size: 0.8125rem; line-height: 1.6; }
-.beta-notice p { display: flex; align-items: baseline; gap: 4px 10px; margin-block: 0; padding-block: 7px; }
-.beta-notice b { flex: none; font-family: var(--font-display); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 0 10px; }
-.beta-notice span { word-break: auto-phrase; }
-/* スマホでは札の下にも文字を回して、帯の行数を減らす */
-@media (max-width: 720px) {
-  .beta-notice p { display: block; }
-  .beta-notice b { display: inline-block; margin-right: 8px; }
-}
-
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
@@ -674,8 +662,6 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
   .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
-  .beta-notice { background: none; color: var(--ink); border-bottom: 1.5px solid var(--line); }
-  .beta-notice b { border: 1.5px solid var(--line); }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .card, .row-list { box-shadow: none !important; }
