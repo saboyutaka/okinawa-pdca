@@ -132,7 +132,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">{fmt(rows.length)}</span>件を表示</p>
+  <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{fmt(rows.length)}</span>件を表示</p>
   <div class="glegend small">
     <span class="gl-head">スタンプは年度ごとの事後評価（{yearLabel(IKKATSU_LATEST)}は{fmt(latest.length)}事業）:</span>
     <ul aria-label="事後評価の凡例">

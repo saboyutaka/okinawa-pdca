@@ -32,14 +32,17 @@
   --link: #2a45d6;
   /* 報告書の番号などの薄い文字。ページの地（--bg）の上でも 4.5:1 以上にする */
   --muted: #646991;
-  /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。ライトの黄は明るい地で 3:1 未満なので、形に濃い縁を付ける */
+  /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。地（--paper・--bg）との差が 3:1 未満の色（ライトの黄・灰、ダークの赤・灰）は、
+     形と内訳の棒の区間に、地と 3:1 以上の差がある縁（--*-edge）を付ける（WCAG 1.4.11）。縁の要らない色は、縁を塗りと同じ色にする */
   --good: #00927f;
   --warning: #f0c52e;
   --warning-edge: #8f6b00;
   --serious: #e46b2b;
   --critical: #b0243e;
+  --critical-edge: #b0243e;
   --none: #898781;
   --blank: #c3c2b7;
+  --blank-edge: #7d7c72;
   --on-fill: #0b0b0b;
   /* 将来像の色（新・沖縄21世紀ビジョン基本計画のパンフレットの色に合わせる。1 緑・2 青・3 橙・4 ピンク・5 青緑）。
      番号の印と見出しの帯だけに使い、状態の色（棒・印）には使わない。--sz-N-ink はその上の文字の色 */
@@ -72,7 +75,8 @@
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
   --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
-  --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
+  --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --critical-edge: #dc6178; --none: #898781;
+  --blank: #52514e; --blank-edge: #85847c;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
   --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
   --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
@@ -295,9 +299,9 @@ details[open] > summary { margin-bottom: 8px; }
 .tone-good { --tone: var(--good); }
 .tone-warning { --tone: var(--warning); --tone-edge: var(--warning-edge); }
 .tone-serious { --tone: var(--serious); }
-.tone-critical { --tone: var(--critical); }
+.tone-critical { --tone: var(--critical); --tone-edge: var(--critical-edge); }
 .tone-none { --tone: var(--none); }
-.tone-blank { --tone: var(--blank); }
+.tone-blank { --tone: var(--blank); --tone-edge: var(--blank-edge); }
 .ic { flex: none; fill: var(--tone); stroke: var(--tone-edge, var(--tone)); stroke-width: 1; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
@@ -468,7 +472,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   border: 2px solid var(--line); border-radius: 999px; padding: 4px 12px; min-height: 38px;
 }
 .fchip input:checked + span { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-.fchip input:checked + span::before { content: "✓"; font-weight: 700; }
+/* 選んだ印の ✓ は見た目だけ（選んだかは radio・checkbox が伝えるので、/ "" で読み上げの名前に入れない。対応していないブラウザは1つ目の content を使う） */
+.fchip input:checked + span::before { content: "✓"; content: "✓" / ""; font-weight: 700; }
 .fchip input:focus-visible + span { outline: 3px solid var(--pop); outline-offset: 2px; }
 .fchip:hover > input + span { background: var(--sky); }
 .filters label .own { justify-self: start; transform: none; margin: 0; }
@@ -642,6 +647,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・親の施策の札・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
+  /* 「条件で絞り込む」（components/FilterMore.astro）の矢印: 開け閉めで上下に回る */
+  .more-toggle .chev { transition: transform 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
   }

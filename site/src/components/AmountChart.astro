@@ -51,7 +51,7 @@ const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : '�
     <summary>表で見る</summary>
     <div class="table-wrap">
       <table>
-        <thead><tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
+        <thead><tr><td></td>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr></thead>
         <tbody>
           {rows.map((r) => (
             <tr>

@@ -50,7 +50,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th></th>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
+          <tr><td></td>{used.map((c) => <th class="num">{c.key}</th>)}<th class="num">計</th></tr>
         </thead>
         <tbody>
           {rows.map((r) => (

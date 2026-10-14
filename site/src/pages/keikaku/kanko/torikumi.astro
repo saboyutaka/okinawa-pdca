@@ -64,7 +64,7 @@ const stOf = (g: KankoTorikumiGroup) => {
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
-  <p class="result-count" aria-live="polite"><span id="count">{fmt(rows.length)}</span>件を表示</p>
+  <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{fmt(rows.length)}</span>件を表示</p>
 
   <div id="rm-list">
     {kihon.map((k) => {

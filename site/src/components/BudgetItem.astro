@@ -51,7 +51,8 @@ const rest = tori.slice(1);
   .b-sub .swatch { font-size: inherit; }
   .tlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
   .tlist :global(.chip) { font-size: 0.8125rem; margin-right: 2px; }
-  .t-more > summary { font-size: 0.8125rem; padding: 0; }
+  /* 押す的の高さを 24px 以上にする（WCAG 2.5.8） */
+  .t-more > summary { font-size: 0.8125rem; padding: 2px 0; }
   .t-more[open] > summary { margin-bottom: 2px; }
   .b-amt { text-align: right; white-space: nowrap; }
   .b-now { font-size: 1.15rem; }

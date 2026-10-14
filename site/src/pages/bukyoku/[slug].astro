@@ -290,7 +290,7 @@ const sources = deptSourcePages(dept.name);
       </FilterMore>
     </form>
     <div class="active-filters" id="active" hidden></div>
-    <p class="result-count" aria-live="polite">下の一覧で <span id="dcount">{fmt(seikaLatest.length + related.length)}</span>件を表示</p>
+    <p class="result-count" aria-live="polite" aria-atomic="true">下の一覧で <span id="dcount">{fmt(seikaLatest.length + related.length)}</span>件を表示</p>
     <p id="dempty" class="secondary" hidden>条件に合うものはありません。</p>
 
     {seikaLatest.length > 0 && (
