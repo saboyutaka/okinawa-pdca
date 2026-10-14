@@ -11,7 +11,7 @@
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、部局の「前の年度からの変化」が使う。
   - `JUDGE_CELLS`: 判定の区分表（[data.md](data.md) の 6.3）。判定のマス目（`components/JudgeMatrix.astro`）と、印字された判定が区分表どおりかを確かめるテストが使う。
   - `shisakuDepts`: 部局がかかわる施策（関係部等に名前がある施策と、その部局の取組がある施策）。
-  - `SHUYOU_BINS`・`shuyouBin`: 主要指標の達成状況の区分（概要版の達成率の印字で決める。`scripts/check_extracted.py` の `shuyou_bin` と同じ）。区分の色と形（`tone`）は成果指標の達成率の区分（`RATE_BINS`）にそろえる。`getShuyouStatus` が最新の年度の概要版の行に、区分と基本施策ページのその指標のカードへのリンクと、付属資料のその指標の部分（`part`。主要指標の一覧の行の小さな図に使う。[data.md](data.md) の 4.5）を付ける。トップと将来像のページの頭の3つの段（`components/Ladder.astro`。1指標を1つの印にして区分ごとに並べる）、将来像ページの基本施策の行（`components/KihonRow.astro`。達成率とスタート → いま → ゴールの値。年・年度は `eraRef` で「R3」の形にそろえる）、主要指標の一覧（`pages/shihyou/shuyou.astro`。達成率の区分と将来像で絞り込める）が使う。
+  - `SHUYOU_BINS`・`shuyouBin`: 主要指標の達成状況の区分（概要版の達成率の印字で決める。`scripts/check_extracted.py` の `shuyou_bin` と同じ）。区分の色と形（`tone`）は成果指標の達成率の区分（`RATE_BINS`）にそろえる。`getShuyouStatus` が最新の年度の概要版の行に、区分と基本施策ページのその指標のカードへのリンクと、付属資料のその指標の部分（`part`。主要指標の一覧の行の小さな図に使う。[data.md](data.md) の 4.5）を付ける。トップと将来像のページの頭の3つの段（`components/Ladder.astro`。1指標を1つの印にして区分ごとに並べる）、トップの将来像の行と5つの将来像のページの基本施策の行（`components/Tiers.astro`。「主要指標 → 主な取組」の2段で、主要指標は印を報告書の順に並べる `components/ShuyouMarks.astro`）、将来像ページの基本施策の行（`components/KihonRow.astro`。達成率と、スタート → ゴールの線にいまを達成率で置いた道のり `components/ShuyouRoad.astro`。年・年度は `eraRef` で「R3」の形にそろえる）、主要指標の一覧（`pages/shihyou/shuyou.astro`。達成率の区分と将来像で絞り込める）が使う。
   - `getShouraizou`: 将来像の名前は語尾の「を目指して」を外して出す（`shouraizouName`。総括報告書の付属資料は章の見出しの形「〜島を目指して」で印字しているが、基本計画の概念図などでは将来像そのものを「〜島」と呼ぶため。`data/extracted` は印字のまま）。
   - `countJudges`: 施策の最新の年度の判定の内訳（A〜G と判定なし）。判定のマス目（トップ・将来像・部局・テーマ）と、ページの説明文（6章）が使う。
   - `lib/heads.ts`: ページの頭に出す最新の年度の数（施策・基本施策・将来像・くらしのテーマ・部局ごとの、施策の判定・主な取組の進捗状況・成果指標の達成率の内訳）。ページの説明文と SNS のカードの画像（6章）が使い、ページの判定のマス目も同じ数を出す。
@@ -38,6 +38,7 @@
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
   - `motion.ts`: 動き（[design.md](design.md) の8章）のうち、スクリプトから動かすもの（件数のはね・押して出した行）と、端末で動きを減らす設定かどうか。動きの見た目は `styles/global.css` の「動き」にまとめる。
+  - `draw-in.ts`: HTML で描いた図（`[data-draw-in]`。主要指標の道のり）を、画面に入ったときに1回だけ動かす（`charts.ts` の図と同じく、`m-anim` で止めておき `m-go` で動かす）。
 - CSP（`astro.config.ts` の `security.csp` で各ページの `<meta>` に出す）で、ブラウザが動かすのはこのサイトのファイルと、Astro が書き出したスクリプトだけ（ほかは Cloudflare が配信のときに差し込むアクセス解析のスクリプトだけ）。CSS は `/_astro/` のファイルだけで、ページに `<style>` は書き出さない（7章）。外のサイトのスクリプト・フォント・画像は読み込めず、`onclick` のような属性に書いたスクリプト・`javascript:` のリンク・`eval` は動かない（style 属性は許している）。
   - `<script is:inline>` は Astro がハッシュを足さないので、`layouts/Base.astro` のように中身を文字列にして `set:html` で出し、同じ文字列のハッシュを `Astro.csp.insertScriptHash` で足す。
   - 違反はブラウザのエラーになり、`make shot` で `NG` と出る。
