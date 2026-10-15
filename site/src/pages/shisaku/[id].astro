@@ -13,7 +13,7 @@ import SeikaKey from '../../components/SeikaKey.astro';
 import ToriCard from '../../components/ToriCard.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
-import ThemeTags from '../../components/ThemeTags.astro';
+import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
@@ -80,12 +80,11 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 <Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
   <Hierarchy items={planParents({ shisaku: s.id })} page={s.name} />
   <header class="sticker lift head">
-    <span class="code-no code-corner" title="県の報告書での番号">施策 {s.code}</span>
+    <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)} />
     <div class="head-main">
       <h1>{s.name}</h1>
       <div class="meta">
         <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
-        {themes.length > 0 && <ThemeTags ids={themes.map((t) => t.id)} />}
       </div>
     </div>
     <div class="head-side">
@@ -258,11 +257,12 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 <style>
   /* 右の判定（ハンコと4年間の判定）は縦に長いので、県の吹き出しは左の列に入れて並べる（左の下が空かないように） */
   .head {
-    position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr;
-    grid-template-areas: "main side" "says side"; gap: 16px 24px; align-items: start; margin-top: 12px; padding-top: 30px;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "kind kind" "main side" "says side"; gap: 16px 24px; align-items: start; margin-top: 12px;
   }
+  .head > :global(.head-kind) { grid-area: kind; margin-bottom: -10px; }
   .head-main { grid-area: main; }
-  .head h1 { margin: 4px 0 8px; }
+  .head h1 { margin: 0 0 8px; }
   .report-no { white-space: nowrap; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -281,7 +281,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
-    .head { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "main" "side" "says"; }
+    .head { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "kind" "main" "side" "says"; }
     .head-side { width: auto; justify-items: start; }
     .head-years { max-width: 280px; }
     .head-years .label { text-align: left; }
