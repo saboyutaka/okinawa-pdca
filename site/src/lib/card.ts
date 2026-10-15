@@ -214,7 +214,8 @@ const heading = (kick: El, name: string, width: number, height: number) =>
 // 名前の上の「何のページか」の行
 const kicker = (...kids: Kid[]) => box({ alignItems: 'center', gap: 12, height: KICK_H, flexShrink: 0, fontSize: 26, color: color('ink-2') }, ...kids);
 
-// 親の札（施策・基本施策・取組）。lead は名前の前の印、kind（「この取組が入っている施策」など）は行の右端に小さく
+// 親の札（施策・基本施策・取組）。lead は名前の前の印（施策の判定のハンコと将来像の番号。基本施策・取組の札は印を付けない。
+// 将来像の番号の印は将来像のものなので、基本施策・取組の名前の前には置かない）、kind（「この取組が入っている施策」など）は行の右端に小さく
 const PARENT_H = 62;
 function parentBar(lead: Kid, name: string, kind: string) {
   return box(
@@ -715,7 +716,7 @@ function shuyouCard(g: ShuyouGroupOfKihon) {
   }
   return frame(
     color('paper'),
-    parentBar(sz(g.kihon.shouraizou, 34), g.kihon.name, 'この指標の基本施策'),
+    parentBar(null, g.kihon.name, 'この指標の基本施策'),
     gap(8),
     heading(kicker('主要指標'), x.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
@@ -737,7 +738,7 @@ function katsudouCard(a: ActivityShare) {
   const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
   return frame(
     color('paper'),
-    parentBar(sz(g.shisaku.shouraizou, 34), g.latest.name, 'この指標の取組'),
+    parentBar(null, g.latest.name, 'この指標の取組'),
     gap(8),
     heading(kicker('活動指標'), a.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
