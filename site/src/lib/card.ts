@@ -648,9 +648,12 @@ function seikaCard(g: SeikaGroupOfShisaku) {
   );
 }
 
-// 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま
-const DIGITS = /([-△]?[\d０-９][\d０-９,.，．]*)/;
-function valueText(text: string, unit = ''): El {
+// 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま。
+// 報告書の印字は全角と半角の数字がまじる（計画「１施設」・実績「1施設」）ので、並べたときに数字の位置と幅がそろうよう、数字・カンマ・ピリオド・％は半角にする
+const DIGITS = /([-△]?\d[\d,.]*)/;
+const halfWidth = (s: string) => s.replace(/[０-９，．％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+function valueText(raw: string, unit = ''): El {
+  const text = halfWidth(raw);
   if (!DIGITS.test(text)) return txt({ fontSize: 24, flexShrink: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text, 1);
   const ps = [...text.split(DIGITS).filter(Boolean), ...(unit ? [unit] : [])];
   return box({ alignItems: 'baseline', columnGap: 2, flexShrink: 1, minWidth: 0, overflow: 'hidden' }, ps.map((t) => txt({ fontSize: DIGITS.test(t) ? 34 : 20, flexShrink: 0, whiteSpace: 'nowrap' }, t)));
