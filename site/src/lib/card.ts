@@ -93,7 +93,8 @@ function icon(tone: Tone | null | undefined, shape: Shape | null | undefined, si
   return img(svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="${size}" height="${size}">${inner}</svg>`), size);
 }
 
-// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）
+// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）。将来像のものなので、将来像と、「将来像Nの基本施策」の行だけに置き、
+// 施策・取組・基本施策の名前の前には置かない（その将来像の施策と読めないため）
 const sz = (id: number, size = 40) =>
   box({ width: size, height: size, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, background: color(`sz-${id}`), color: color(`sz-${id}-ink`), fontSize: size * 0.56, lineHeight: 1 }, String(id));
 
@@ -214,8 +215,8 @@ const heading = (kick: El, name: string, width: number, height: number) =>
 // 名前の上の「何のページか」の行
 const kicker = (...kids: Kid[]) => box({ alignItems: 'center', gap: 12, height: KICK_H, flexShrink: 0, fontSize: 26, color: color('ink-2') }, ...kids);
 
-// 親の札（施策・基本施策・取組）。lead は名前の前の印（施策の判定のハンコと将来像の番号。基本施策・取組の札は印を付けない。
-// 将来像の番号の印は将来像のものなので、基本施策・取組の名前の前には置かない）、kind（「この取組が入っている施策」など）は行の右端に小さく
+// 親の札（施策・基本施策・取組）。lead は名前の前の印（施策の札は施策の判定のハンコ。基本施策・取組の札は印を付けない）、
+// kind（「この取組が入っている施策」など）は行の右端に小さく
 const PARENT_H = 62;
 function parentBar(lead: Kid, name: string, kind: string) {
   return box(
@@ -226,7 +227,7 @@ function parentBar(lead: Kid, name: string, kind: string) {
   );
 }
 // 親の施策の札（施策の判定は小さな丸いハンコ）
-const parent = (s: Shisaku, kind: string) => parentBar([judgeStamp(s.judges[LATEST], 44), sz(s.shouraizou, 34)], s.name, kind);
+const parent = (s: Shisaku, kind: string) => parentBar(judgeStamp(s.judges[LATEST], 44), s.name, kind);
 
 // 区分（進捗状況・判定・達成率）
 interface Cat { key: string; label: string; tone: Tone; shape: Shape; hatch?: boolean }
@@ -347,7 +348,7 @@ function shisakuCard(s: Shisaku) {
     color('paper'),
     box(
       { height: top, flexShrink: 0, columnGap: 28 },
-      box({ flex: 1 }, heading(kicker(sz(s.shouraizou), '施策'), s.name, INNER_W - 28 - STAMP_W, top)),
+      box({ flex: 1 }, heading(kicker('施策'), s.name, INNER_W - 28 - STAMP_W, top)),
       box(
         { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: STAMP_W, flexShrink: 0 },
         judgeStamp(hd.judge, stamp),
