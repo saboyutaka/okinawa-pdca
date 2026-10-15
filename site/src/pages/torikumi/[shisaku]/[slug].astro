@@ -44,7 +44,7 @@ const first = firstYearOf(g);
 const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]));
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
-// 部局票の「対応する成果指標」は出さない（docs/site.md の 1章の seikaOfTorikumi）
+// 部局票の「対応する成果指標」は出さない（docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
 const candidates = renameCandidates(g);
 // 前の年度の報告での名前（名前が変わった取組も、同じ取組として年度をつないでいる。lib/renames.ts）
 const formers = formerNames(g).map((f) => ({ ...f, span: f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0]) }));
