@@ -96,6 +96,7 @@
 /kihon/5-4/
 /kihon/5-5/
 /map/
+/mokuji/
 /shihyou/
 /shihyou/1-1-a-1/9396c87b/
 /shihyou/1-1-a-2/6062542f/
@@ -2655,7 +2656,6 @@
 /torikumi/5-5-b-4/9f16b5b9/
 /torikumi/5-5-b-4/b42fc8b1/
 /torikumi/5-5-b-4/e1640f19/
-/tree/
 /yosan/
 /yosan/ikkatsu/
 /yosan/zaigen/

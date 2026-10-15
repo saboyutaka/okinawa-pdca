@@ -30,15 +30,19 @@
   --grid: #dfe3f3;
   --hair: #c4c9e6;
   --link: #2a45d6;
-  --muted: #6b7099;
-  /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。ライトの黄は明るい地で 3:1 未満なので、形に濃い縁を付ける */
+  /* 報告書の番号などの薄い文字。ページの地（--bg）の上でも 4.5:1 以上にする */
+  --muted: #646991;
+  /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。地（--paper・--bg）との差が 3:1 未満の色（ライトの黄・灰、ダークの赤・灰）は、
+     形と内訳の棒の区間に、地と 3:1 以上の差がある縁（--*-edge）を付ける（WCAG 1.4.11）。縁の要らない色は、縁を塗りと同じ色にする */
   --good: #00927f;
   --warning: #f0c52e;
   --warning-edge: #8f6b00;
   --serious: #e46b2b;
   --critical: #b0243e;
+  --critical-edge: #b0243e;
   --none: #898781;
   --blank: #c3c2b7;
+  --blank-edge: #7d7c72;
   --on-fill: #0b0b0b;
   /* 将来像の色（新・沖縄21世紀ビジョン基本計画のパンフレットの色に合わせる。1 緑・2 青・3 橙・4 ピンク・5 青緑）。
      番号の印と見出しの帯だけに使い、状態の色（棒・印）には使わない。--sz-N-ink はその上の文字の色 */
@@ -71,7 +75,8 @@
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
   --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
-  --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --none: #898781; --blank: #52514e;
+  --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --critical-edge: #dc6178; --none: #898781;
+  --blank: #52514e; --blank-edge: #85847c;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
   --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
   --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
@@ -194,13 +199,15 @@ small, .small { font-size: 0.875rem; }
 .site-footer .foot-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 22px; }
 .site-footer .foot-links { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
 .site-footer .foot-by { margin: 16px 0 0; font-size: 0.75rem; }
-.theme-toggle {
+.site-footer .foot-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.foot-toggle {
   display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 0.875rem; font-weight: 700; color: var(--ink);
   background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 14px; min-height: 40px; cursor: pointer; white-space: nowrap;
 }
-/* 配色のボタン（フッター）はスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
-   最初の描画から出しておく（あとから出すと、そのぶんずれる）。記号と文字は、いまの配色で選ぶ */
-:root:not(.js) .theme-toggle { display: none; }
+/* 年の書き方と配色のボタン（フッター）はスクリプトでしか動かないので、スクリプトが動くとき（<head> のインラインスクリプトが html に js を付ける）だけ出す。
+   最初の描画から出しておく（あとから出すと、そのぶんずれる）。文字と記号は、いまの書き方・配色でないほうを選ぶ */
+:root:not(.js) .foot-toggles { display: none; }
+:root[data-era="seireki"] .era-toggle .to-seireki, :root:not([data-era="seireki"]) .era-toggle .to-wareki { display: none; }
 :root[data-theme="dark"] .theme-toggle .to-dark, :root:not([data-theme="dark"]) .theme-toggle .to-light { display: none; }
 
 /* ステッカー（カード）。.card は以前の名前。
@@ -280,9 +287,9 @@ details[open] > summary { margin-bottom: 8px; }
 .tone-good { --tone: var(--good); }
 .tone-warning { --tone: var(--warning); --tone-edge: var(--warning-edge); }
 .tone-serious { --tone: var(--serious); }
-.tone-critical { --tone: var(--critical); }
+.tone-critical { --tone: var(--critical); --tone-edge: var(--critical-edge); }
 .tone-none { --tone: var(--none); }
-.tone-blank { --tone: var(--blank); }
+.tone-blank { --tone: var(--blank); --tone-edge: var(--blank-edge); }
 .ic { flex: none; fill: var(--tone); stroke: var(--tone-edge, var(--tone)); stroke-width: 1; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
@@ -443,7 +450,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   border: 2px solid var(--line); border-radius: 999px; padding: 4px 12px; min-height: 38px;
 }
 .fchip input:checked + span { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-.fchip input:checked + span::before { content: "✓"; font-weight: 700; }
+/* 選んだ印の ✓ は見た目だけ（選んだかは radio・checkbox が伝えるので、/ "" で読み上げの名前に入れない。対応していないブラウザは1つ目の content を使う） */
+.fchip input:checked + span::before { content: "✓"; content: "✓" / ""; font-weight: 700; }
 .fchip input:focus-visible + span { outline: 3px solid var(--pop); outline-offset: 2px; }
 .fchip:hover > input + span { background: var(--sky); }
 .filters label .own { justify-self: start; transform: none; margin: 0; }
@@ -525,8 +533,11 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .toc a[aria-current="location"] { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
 /* 目次の線のすぐ下の見出しは、ほかの節の間ほど空けない（目次の線が区切りになるため） */
 .toc + section > h2:first-child { margin-top: 1.2em; }
-/* # の行き先は、貼り付いた目次（何のページかの1行とリンク）の下に出す */
-.anchor, [id^="seika-"], [id^="shuyou-"] { scroll-margin-top: 104px; }
+/* # の行き先と、Tab でフォーカスした要素は、貼り付いた目次（何のページかの1行とリンク）の下に出す（WCAG 2.4.11）。
+   目次のあるページはページ全体の scroll-padding で空ける（行き先の scroll-margin と足し合わされるので、そちらは付けない）。
+   目次の無いページの # の行き先は、前のとおり行き先の側で空ける */
+html:has(.toc) { scroll-padding-top: 104px; }
+html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-margin-top: 104px; }
 
 
 .prose { white-space: pre-line; }
@@ -612,6 +623,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
+  /* 「条件で絞り込む」（components/FilterMore.astro）の矢印: 開け閉めで上下に回る */
+  .more-toggle .chev { transition: transform 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
   }
@@ -654,14 +667,14 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 @keyframes m-like-out { to { opacity: 0; transform: scale(0.94); } }
 
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
-   ナビ・配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
+   ナビ・年の書き方と配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
    地の色は白にし、状態の色は画面と同じに印刷する（色だけでなく形と文字でも出しているので、白黒の印刷でも読める） */
 html.printing .wrap { max-width: 186mm; padding-inline: 0; }
 @media print {
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .theme-toggle, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
+  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .card, .row-list { box-shadow: none !important; }

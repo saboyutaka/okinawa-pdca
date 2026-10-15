@@ -31,4 +31,4 @@ const KINDS: Record<Props['kind'], { text: string; label: string; items: Item[] 
 const k = KINDS[kind];
 const items = k.items.filter((c) => used.includes(c.key));
 ---
-<template id={`key-${kind}`}><p>{k.text}</p><ul aria-label={k.label}>{items.map((c) => <li><Chip tone={c.tone} text={c.text} title={c.title} shape={c.shape} /></li>)}</ul></template>
+<template id={`key-${kind}`}><p>{k.text}</p><ul aria-label={k.label}>{items.map((c) => <li><Chip tone={c.tone} text={c.text} title={c.title} shape={c.shape} readTitle /></li>)}</ul></template>

@@ -4,6 +4,7 @@
 //   make shot                                    # トップを PC 幅（1280px）とスマホ幅（390px）で
 //   make shot PAGES="/ /shisaku/1-1-a-1/"        # ページを並べる
 //   make shot PAGES="/torikumi/ --dark --top"    # ダーク・最初の画面だけ
+//   make shot PAGES="/shisaku/1-1-a-1/ --seireki"  # 年を西暦で表示して
 //   make shot PAGES="/shisaku/1-1-a-1/ --selector .scard"       # 最初に当たる要素だけ
 //   make shot PAGES="/shisaku/1-1-a-1/ --at '#torikumi'"        # その要素まで # で跳んだときの画面（上に貼り付く目次を見る）
 //   make shot PAGES="/shisaku/1-1-a-1/ --click .like-btn --top"  # 押してから撮る
@@ -14,7 +15,7 @@
 //   404 で返し、ディレクトリは末尾に / を付けた URL へ転送する。--base で動いているサーバー（Cloudflare の
 //   プレビューなど）も撮れる。開発サーバー（make dev）は Vite がホスト名 site からの読み込みを断る
 //   （server.allowedHosts）ので撮れない。いいねの POST（/api/like）には、Worker（site/worker/api.ts）の代わりに 204 を返す
-// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>][+<押した要素>][~<--at のセレクタ>]-<幅>[-dark].png（git に入れない）。初めはページ全体を撮る
+// - 書き出し先は tmp/shots/<ページ>[@<セレクタ>][+<押した要素>][~<--at のセレクタ>]-<幅>[-dark][-seireki].png（git に入れない）。初めはページ全体を撮る
 // - ページ全体の画像は縦に長い。画像を読ませて確かめるときは --top や --selector で範囲をしぼる
 // - スマホ幅（768px 未満）はタッチの端末として開く（:hover の見た目にならない）
 // - 端末で動きを減らす設定（prefers-reduced-motion: reduce）にして開き、動き（styles/global.css の「動き」）の途中ではなく動き終わった形を撮る
@@ -31,6 +32,7 @@ import { chromium } from 'playwright';
 const HELP = `使い方: node scripts/shot/shot.ts [ページのパス ...] [オプション]
   --width <px>       画面の幅（何度でも。初めは 1280 と 390）
   --dark             ダークで撮る
+  --seireki          年を西暦で表示して撮る
   --top              ページ全体ではなく最初の画面だけ撮る
   --selector <css>   この CSS セレクタに最初に当たる要素だけ撮る
   --at <css>         この CSS セレクタに最初に当たる要素まで、# のリンクと同じようにスクロールしてから、その画面を撮る
@@ -103,6 +105,7 @@ const { values: opts, positionals } = parseArgs({
   options: {
     width: { type: 'string', multiple: true },
     dark: { type: 'boolean', default: false },
+    seireki: { type: 'boolean', default: false },
     top: { type: 'boolean', default: false },
     selector: { type: 'string' },
     at: { type: 'string' },
@@ -157,6 +160,10 @@ try {
       // Base.astro の <head> のスクリプトが読む配色の記憶（site/src/scripts/theme.ts と同じ）
       await context.addInitScript(() => localStorage.setItem('theme', 'dark'));
     }
+    if (opts.seireki) {
+      // Base.astro の <head> のスクリプト（site/src/lib/era.ts の ERA_INIT）が読む年の書き方の記憶
+      await context.addInitScript(() => localStorage.setItem('era', 'seireki'));
+    }
     for (const pagePath of pages) {
       const page = await context.newPage();
       const errors: string[] = [];
@@ -179,7 +186,7 @@ try {
         (opts.selector ? `@${slug(opts.selector)}` : '') +
         (opts.click ? `+${slug(opts.click)}` : '') +
         (opts.at ? `~${slug(opts.at)}` : '') +
-        `-${width}${opts.dark ? '-dark' : ''}.png`;
+        `-${width}${opts.dark ? '-dark' : ''}${opts.seireki ? '-seireki' : ''}.png`;
       const path = join(opts.out, name);
       const status = res?.status() ?? 0;
       if (status < 400 && opts.click) {
