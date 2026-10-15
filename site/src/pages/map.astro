@@ -81,52 +81,50 @@ const KIND = {
   <div class="active-filters" id="map-active" hidden></div>
   <p class="result-count" aria-live="polite" data-map-result></p>
 
-  <div class="map-wide">
-    <div class="imap sticker" data-map-root>
-      <p class="im-note small secondary" data-map-empty hidden>主要指標は、R5 の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
-      <p class="im-note small secondary" data-map-nofilter hidden>主要指標は基本施策ごとの指標で、部局・くらしのテーマに分けていないので、その条件ではどれも薄くなります。</p>
-      <div class="im-cols">
-        <span class="im-cg" aria-hidden="true">将来像</span>
-        {MAP_KINDS.map((k) => (
-          <div class="im-col" data-tier={k.kind} data-tier-head={k.kind} data-param={k.param} data-term={k.term} data-unit={k.unit} data-parent={KIND[k.kind].parent} data-shapes={String(k.shapes)}
-            data-cats={JSON.stringify(k.cats.map((c) => [c.key, c.label, c.tone]))} data-src={mapDataPath(k.kind)} data-fallback={mapDataFallback(k.kind)} data-check={mapCheck(k.kind)}>
-            <span class="im-name"><Term word={k.term} note={outcomeNote(k)} /><span class="im-n">(<b data-map-count>{fmt(n[k.kind])}</b><span class="sr-only">{k.unit}</span>)</span></span>
-          </div>
-        ))}
-        <span class="im-hint" aria-hidden="true">矢印キーでマスを移れます</span>
-      </div>
-      <div class="im-grid" tabindex="0" role="img" data-map-grid
-        aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
-        {rows.map((r) => (
-          <div class="im-row">
-            <p class="im-gt"><Sz id={r.s} sr={false} /><span class="im-gn">将来像{r.s}</span></p>
-            <div class="im-tiers">
-              {r.tiers.map((t) => (
-                <div class="im-tier" data-tier={t.kind}>
-                  <p class="im-tl">{MAP_KINDS.find((k) => k.kind === t.kind)!.term}</p>
-                  <div class="im-cells" set:html={t.html} />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div class="im-pop" data-map-pop aria-live="polite" hidden></div>
+  <div class="imap sticker" data-map-root>
+    <p class="im-note small secondary" data-map-empty hidden>主要指標は、R5 の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
+    <p class="im-note small secondary" data-map-nofilter hidden>主要指標は基本施策ごとの指標で、部局・くらしのテーマに分けていないので、その条件ではどれも薄くなります。</p>
+    <div class="im-cols">
+      <span class="im-cg" aria-hidden="true">将来像</span>
+      {MAP_KINDS.map((k) => (
+        <div class="im-col" data-tier={k.kind} data-tier-head={k.kind} data-param={k.param} data-term={k.term} data-unit={k.unit} data-parent={KIND[k.kind].parent} data-shapes={String(k.shapes)}
+          data-cats={JSON.stringify(k.cats.map((c) => [c.key, c.label, c.tone]))} data-src={mapDataPath(k.kind)} data-fallback={mapDataFallback(k.kind)} data-check={mapCheck(k.kind)}>
+          <span class="im-name"><Term word={k.term} note={outcomeNote(k)} /><span class="im-n">(<b data-map-count>{fmt(n[k.kind])}</b><span class="sr-only">{k.unit}</span>)</span></span>
+        </div>
+      ))}
+      <span class="im-hint" aria-hidden="true">矢印キーでマスを移れます</span>
     </div>
-
-    <section class="map-key sticker" aria-labelledby="map-key-h">
-      <h2 class="mk-title" id="map-key-h">色の見方</h2>
-      <p class="mk-lead small secondary">色は<span data-map-year>{yl}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
-      <dl class="mk-list small">
-        {MAP_KINDS.map((k) => (
-          <div class="mk-row">
-            <dt>{k.term}の{k.kind === 'katsudou' ? <Term word="進捗状況" /> : <Term word={k.measure} label="達成率" />}</dt>
-            <dd><ul aria-label={`${k.term}の区分`}>{k.cats.map((c) => <li><i class={`mc tone-${c.tone}`} aria-hidden="true"></i>{k.shapes ? <Chip tone={c.tone} text={c.label} /> : c.label}</li>)}</ul></dd>
+    <div class="im-grid" tabindex="0" role="img" data-map-grid
+      aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
+      {rows.map((r) => (
+        <div class="im-row">
+          <p class="im-gt"><Sz id={r.s} sr={false} /><span class="im-gn">将来像{r.s}</span></p>
+          <div class="im-tiers">
+            {r.tiers.map((t) => (
+              <div class="im-tier" data-tier={t.kind}>
+                <p class="im-tl">{MAP_KINDS.find((k) => k.kind === t.kind)!.term}</p>
+                <div class="im-cells" set:html={t.html} />
+              </div>
+            ))}
           </div>
-        ))}
-      </dl>
-    </section>
+        </div>
+      ))}
+    </div>
+    <div class="im-pop" data-map-pop aria-live="polite" hidden></div>
   </div>
+
+  <section class="map-key sticker" aria-labelledby="map-key-h">
+    <h2 class="mk-title" id="map-key-h">色の見方</h2>
+    <p class="mk-lead small secondary">色は<span data-map-year>{yl}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
+    <dl class="mk-list small">
+      {MAP_KINDS.map((k) => (
+        <div class="mk-row">
+          <dt>{k.term}の{k.kind === 'katsudou' ? <Term word="進捗状況" /> : <Term word={k.measure} label="達成率" />}</dt>
+          <dd><ul aria-label={`${k.term}の区分`}>{k.cats.map((c) => <li><i class={`mc tone-${c.tone}`} aria-hidden="true"></i>{k.shapes ? <Chip tone={c.tone} text={c.label} /> : c.label}</li>)}</ul></dd>
+        </div>
+      ))}
+    </dl>
+  </section>
 
   <p class="small secondary note">
     並びは報告書の順です。R4〜R6 は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7 からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で、R7 に指標と目標値が見直されたので、年度を変えるとマスの数が変わります。
@@ -147,10 +145,6 @@ const KIND = {
 <style is:global>
   /* 指標のマップ。マス（.mc）は lib/map-data.ts が文字列で書き、吹き出しの中身はスクリプト（scripts/indicator-map.ts）が描くので、
      Astro が範囲をしぼるための属性が付かない。.imap・.map-key の下に書いた全体の CSS にする */
-  /* 全部のマスが1画面に入るよう、広い画面ではマップと凡例を本文の幅（.wrap）より広げ、画面の幅（最大 1440px）にする */
-  @media (min-width: 1100px) {
-    .map-wide { --mw: min(100vw - 32px, 1440px); width: var(--mw); margin-inline: calc((100% - var(--mw)) / 2); }
-  }
   .imap {
     position: relative; margin-top: 12px; padding: 14px 18px 12px;
     --cell: 13px; --gap: 2px; --pitch: calc(var(--cell) + var(--gap)); --w-gt: 2.25rem; --w-shuyou: calc(7 * var(--pitch) - var(--gap));
