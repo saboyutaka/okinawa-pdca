@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+import IndicatorMap from '../components/IndicatorMap.astro';
+import FilterMore from '../components/FilterMore.astro';
+import Term from '../components/Term.astro';
+import ExtLink from '../components/ExtLink.astro';
+import { YEARS, LATEST, yearLabel, yearLong, DEPTS } from '../lib/data.ts';
+import { getThemes } from '../lib/themes.ts';
+import { MAP_KINDS, mapCells, mapCounts } from '../lib/map-data.ts';
+import { LINKS } from '../lib/links.ts';
+import { fmt } from '../lib/format.ts';
+
+// 指標のマップ。主要指標・成果指標・活動指標（主な取組）を、1マス＝1指標で将来像ごとに並べ、選んだ年度の県の区分で色分けする（材料は lib/map-data.ts）。
+// 3つの指標は区分の意味が違うので、マップを分ける（「すべて」は3つを上から計画の階層の順に並べる。docs/design.md の1章）。
+// 頭で指標（すべて・1つ）と年度を選び、くらしのテーマ・部局・マップごとの区分で絞り込むと、条件に合わないマスを薄くする（隠さずに、全体の中のどこにあるかを見せる）。
+// 条件は URL のクエリに残す。動きは scripts/indicator-map.ts
+const themes = getThemes();
+const used = new Set(MAP_KINDS.flatMap((k) => mapCells(k.kind).map((c) => c.dept)));
+const depts = DEPTS.filter((d) => used.has(d.name));
+const n = Object.fromEntries(MAP_KINDS.map((k) => [k.kind, mapCounts(k.kind)[YEARS.indexOf(LATEST)]]));
+// マップごとの区分の絞り込みの見出し
+const binLabel = { shuyou: '主要指標の達成率', seika: '成果指標の達成率', katsudou: '主な取組の進捗状況' };
+---
+<Base title="指標のマップ" description={`沖縄県PDCAの主要指標${n.shuyou}・成果指標${n.seika}・主な取組の活動指標${fmt(n.katsudou)}件（${yearLong(LATEST)}）を、1マス＝1指標で将来像ごとに並べ、R4〜R7 の年度ごとの県の区分で色分けしたマップです。`}>
+  <h1>指標のマップ</h1>
+  <p class="secondary lead">
+    <Term word="主要指標" />・<Term word="成果指標" />・<Term word="活動指標" />を、1マス＝1指標で将来像ごとに並べ、選んだ年度の県の区分で色分けしました。3つは区分の意味が違うので、マップを分けています。
+  </p>
+
+  <form class="filters sticker map-form" aria-label="マップの指標と年度、絞り込み" data-map-form data-years={YEARS.join(',')} data-summary="map-active">
+    <fieldset class="fgroup" data-label="指標">
+      <legend class="fgroup-label">指標</legend>
+      <div class="fchips">
+        <label class="fchip"><input type="radio" name="kind" value="" checked /><span>すべて</span></label>
+        {MAP_KINDS.map((k) => <label class="fchip"><input type="radio" name="kind" value={k.kind} /><span>{k.term}</span></label>)}
+      </div>
+    </fieldset>
+    <fieldset class="fgroup" data-label="年度">
+      <legend class="fgroup-label">年度</legend>
+      <div class="fchips">
+        {YEARS.map((y) => <label class="fchip" title={yearLong(y)}><input type="radio" name="year" value={String(y)} checked={y === LATEST} /><span>{yearLabel(y)}</span></label>)}
+      </div>
+    </fieldset>
+    <FilterMore id="map-more">
+      <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
+        <select name="theme">
+          <option value="">すべて</option>
+          {themes.map((t) => <option value={t.id}>{t.label}</option>)}
+        </select>
+      </label>
+      <label data-label="部局">担当部局
+        <select name="dept">
+          <option value="">すべて</option>
+          {depts.map((d) => <option value={d.name}>{d.name}</option>)}
+        </select>
+      </label>
+      {MAP_KINDS.map((k) => (
+        <label data-label={binLabel[k.kind]} data-map-bin={k.kind}>{binLabel[k.kind]}
+          <select name={k.param}>
+            <option value="">すべて</option>
+            {k.cats.map((c) => <option value={c.key}>{c.label}</option>)}
+          </select>
+        </label>
+      ))}
+    </FilterMore>
+  </form>
+  <div class="active-filters" id="map-active" hidden></div>
+
+  {MAP_KINDS.map((k) => <IndicatorMap info={k} />)}
+
+  <p class="small secondary note">
+    並びは報告書の順です。R4〜R6 は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7 からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で、R7 に指標と目標値が見直されたので、年度を変えるとマスの数が変わります。
+    主な取組は延べ件数で、いくつかの施策に載る取組は施策ごとに1マスです。部局は最新の報告の担当部局で、くらしのテーマは<Term word="くらしのテーマ" label="このサイト独自の分類" />です。
+  </p>
+</Base>
+
+<style>
+  .map-form { margin-top: 16px; }
+  /* 指標と年度は、PC では1行に並べる */
+  .map-form .fgroup { flex-basis: auto; }
+  .filters label .own { margin-left: 4px; }
+  .note { margin-top: 1.5em; }
+  @media print {
+    .map-form, #map-active { display: none; }
+  }
+</style>
