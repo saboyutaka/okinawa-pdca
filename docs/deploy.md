@@ -9,7 +9,7 @@
 | ファイル | 中身 |
 |---|---|
 | [site/wrangler.jsonc](../site/wrangler.jsonc) | Worker の設定（名前・workers.dev の URL・プレビュー・`/api/` を Worker に通す） |
-| [site/public/_headers](../site/public/_headers) | 配るときのヘッダー（キャッシュ・守りのヘッダー・noindex） |
+| [site/public/_headers](../site/public/_headers) | 配るときのヘッダー（キャッシュ・守りのヘッダー） |
 | [site/public/_redirects](../site/public/_redirects) | 公開した後に変えた URL の転送（[site.md](site.md) の 8章） |
 | [site/worker/api.ts](../site/worker/api.ts) | `/api/` を受ける Worker（いまは、いいねだけ）。`npx wrangler deploy` が `dist` と一緒に上げる |
 
@@ -40,9 +40,9 @@
 
 ## 4. 検索エンジンに載せる
 
-**いまは検索エンジンに載せない設定にしている。** 全ページの `<meta name="robots" content="noindex, nofollow">`（`site/src/lib/links.ts` の `NOINDEX`）と、配信時の `X-Robots-Tag: noindex, nofollow`（`site/public/_headers`）。沖縄県への確認が取れたので、2026-10-14 にヘッダーの上のベータ版の帯は外した（noindex はそのまま）。
+沖縄県への確認が取れたので、2026-10-14 にヘッダーの上のベータ版の帯を外し、2026-10-15 に noindex（全ページの `<meta name="robots">` と、配信時の `X-Robots-Tag`）を外して検索エンジンに載せた。これより後に URL を変えるときは、古い URL から転送する（[site.md](site.md) の 8章）。
 
-載せてよくなったら、`NOINDEX` を `false` にし、`_headers` の `X-Robots-Tag` の行を外す。`robots.txt`（`site/src/pages/robots.txt.ts`）では巡回を止めない（止めると noindex が読まれず、URL だけ検索結果に出ることがある）。
+`robots.txt`（`site/src/pages/robots.txt.ts`）では巡回を止めない。止めると、またページを検索から外したくなったときに noindex が読まれず、URL だけ検索結果に出ることがある。
 
 ## 5. 手元で確かめる
 
