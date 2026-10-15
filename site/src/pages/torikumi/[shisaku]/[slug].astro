@@ -18,7 +18,7 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, seikaOfTorikumi, renameCandidates, repostsOf, firstYearOf, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements, planPath,
+  sectionHref, sourceLink, seikaOfTorikumi, renameCandidates, repostsOf, firstYearOf, formerNames, AMOUNT_KINDS, rateBin, RATE_BINS, activityRuns, activityAchievement, activityAchievements, planPath,
   type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -52,6 +52,8 @@ const rateChip = (grp: (typeof seikaMatches)[number]) => {
   return { tone: RATE_BINS.find((b) => b.key === rateBin(x))?.tone, text: `${x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw || '達成率なし'}（${yearLabel(x.year)}）` };
 };
 const candidates = renameCandidates(g);
+// 前の年度の報告での名前（名前が変わった取組も、同じ取組として年度をつないでいる。lib/renames.ts）
+const formers = formerNames(g).map((f) => ({ ...f, span: f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0]) }));
 const reposts = repostsOf(g);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
 const rm = kankoOfPdca(s.id, g.key);
@@ -191,12 +193,13 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
     <Fragment slot="status"><small>{yearLabel(t.year)}</small><Chip tone={latestTone} text={latestStatus} /></Fragment>
   </Toc>
 
-  {(t.year !== LATEST || first !== YEARS[0]) && (
+  {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0) && (
     <div class="bubble-row notice-row">
       <span class="avatar" aria-hidden="true">!</span>
       <div class="bubble">
         {t.year !== LATEST && <p><strong>{yearLabel(t.year + 1)}の報告には、この名前の取組はありません。</strong>終わったか、名前が変わった可能性があります。</p>}
         {first !== YEARS[0] && <p><strong>{yearLabel(first)}の報告から載っている取組です。</strong></p>}
+        {formers.map((f) => <p><strong>{f.span}の報告では「{f.name}」という名前でした。</strong></p>)}
         {candidates.length > 0 && (
           <>
             <p class="small">関係がありそうな取組（同じ施策で、この取組の前後の年度に載っているもの。名前の変更や、取組の分割・統合の可能性があります）:</p>
@@ -212,7 +215,7 @@ const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMa
             </ul>
           </>
         )}
-        <p class="small secondary">年度をまたいだ取組の同一性は名前で判断しています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。</p>
+        <p class="small secondary">年度をまたいだ取組の同一性は、名前と、名前が変わったときは予算事業や活動指標が続いているかで判断しています（<a href="/about/#kazoekata">このサイトでの数え方</a>）。</p>
       </div>
     </div>
   )}

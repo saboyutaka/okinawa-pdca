@@ -3,10 +3,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  load, YEARS, LATEST, nameKey, sameKey, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
+  load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
 } from '../src/lib/data.ts';
+import { TORIKUMI_RENAMES } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -194,6 +195,42 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   const s = getSeikaGroups().find((x) => x.shisaku.id === '2-1-a-1' && x.latest.name === 'こどもの貧困対策支援員による支援人数');
   assert.ok(s);
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
+});
+
+test('名前が変わった取組（TORIKUMI_RENAMES）は、前の名前の年度と新しい名前の年度が1つの取組にまとまる', () => {
+  const rows = load('torikumi');
+  const yearsOf = (shisaku: string, name: string) => rows.filter((t) => t.shisaku_id === shisaku && t.key === nameKey(name)).map((t) => t.year);
+  for (const r of TORIKUMI_RENAMES) {
+    for (const s of r.shisaku) {
+      // 前の名前の報告が終わった後に、新しい名前の報告が始まる（同じ年度に両方は載っていない）
+      const from = yearsOf(s, r.from);
+      const to = yearsOf(s, r.to);
+      assert.ok(from.length && to.length, `${s}: ${r.from} → ${r.to} が報告に無い`);
+      assert.ok(Math.max(...from) < Math.min(...to), `${s}: ${r.from} と ${r.to} の年度が重なる`);
+      // 新しい名前のまとまりに、前の名前の年度も入る
+      const g = getTorikumiGroups().find((x) => x.shisaku.id === s && x.latest.name === r.to);
+      assert.ok(g, `${s}: ${r.to}`);
+      assert.deepEqual(from.filter((y) => g.years[y]?.name !== r.from), [], `${s}: ${r.from}`);
+      assert.equal(torikumiPage(s, nameKey(r.from)), g.href);
+    }
+  }
+  // 1つのまとまりに、同じ年度の取組が2つ入らない（2つの取組を同じ新しい名前に読み替えていない）
+  const seen = new Map<string, number>();
+  for (const t of rows) {
+    const k = `${t.year}|${t.shisaku_id}|${torikumiKey(t.shisaku_id, t.key)}`;
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  none([...seen].filter(([, n]) => n > 1), ([k]) => k);
+  // 例: R6までは「〜導入促進事業（講演会・体験学習等啓発イベント）」、R7は「〜導入促進（講演会・体験学習等啓発イベント）」。どの年度も部局票の記載にたどれる
+  const g = getTorikumiGroups().find((x) => x.shisaku.id === '1-1-a-2' && x.latest.name === '鉄軌道を含む新たな公共交通システムの導入促進（講演会・体験学習等啓発イベント）');
+  assert.ok(g);
+  assert.deepEqual(g.statuses.map(Boolean), [true, true, true, true]);
+  for (const y of YEARS) assert.ok(budgetOf(y, '1-1-a-2', g.key), `${y} の部局票`);
+  assert.deepEqual(formerNames(g), [{ name: '鉄軌道を含む新たな公共交通システムの導入促進事業（講演会・体験学習等啓発イベント）', years: [2022, 2023, 2024] }]);
+  // 前の名前のまま R7 にも載っている施策では、読み替えない（3-2-a-1 の「ICTを活用した観光危機情報の収集・発信」は R7 で活動指標が変わった別の中身）
+  const ict = getTorikumiGroups().find((x) => x.shisaku.id === '3-2-a-1' && x.latest.name === 'ICTを活用した観光危機情報の収集・発信');
+  assert.ok(ict);
+  assert.deepEqual(formerNames(ict), []);
 });
 
 test('主要指標の達成状況の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
