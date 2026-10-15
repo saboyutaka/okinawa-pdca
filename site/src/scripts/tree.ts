@@ -8,8 +8,11 @@
 //    （全角・半角と表記ゆれは lib/search.ts でそろえる）。当たった行とその親の行・当たった行の中だけを見せ、当たった行の親を開いて、当たった字に印を付ける。
 //    成果指標は、PC の幅では施策の行の名前の横にあるので（同じ指標の .qn が2つある。data-qk）、施策の行が当たったことにする。
 //    言葉を消すと、さがす前の開き方に戻す。言葉は URL の q に残す（ほかの一覧の絞り込みと同じ）
+//  - 出す指標: [data-tree-show="木の id"] のボタンで、チェックボックスの吹き出しを開け閉めする。選んだ種類（主要指標・成果指標・活動指標）を
+//    木の data-show に入れ、CSS で選んでいない種類を隠す（pages/mokuji.astro）。隠した指標はキーワードでもさがさない。
+//    吹き出しは、ボタンをもう一度押す・外を押す・Esc（ボタンにフォーカスを戻す）・フォーカスが外へ出る、で閉じる
 //  - 戻る・進む: bfcache から戻したときは、言葉の欄と木を URL の q にそろえる。bfcache を使わずに読み直したときは目次を描き直すので、
-//    離れるときに開き方とスクロールの位置を history.state に残し、描いたあとに戻す
+//    離れるときに開き方・出す指標・スクロールの位置を history.state に残し、描いたあとに戻す
 //  - キーボード: 木（role="tree"）では Tab は1回だけ止まり（前にいた行。はじめは最初の行）、↑ ↓ で見えている行を移り、Home・End で最初・最後の行へ。
 //    → は閉じた行を開き、開いた行では最初の子へ。← は開いた行を閉じ、ほかでは親の行へ。Space は開け閉め、Enter は名前のページを開く
 //    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。
@@ -22,11 +25,12 @@ import { bump, reveal } from './motion.ts';
 // ---------------------------------------------------------------- 描く
 
 const esc = (s: string | number) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-// すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数（PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
+// すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数で、指標の種類（出す指標の data-show の値）を入れる
+// （PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
 // ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）。そこで読むので、画面の数は読ませない（docs/design.md の9章）
-type Count = [label: string, n: number, ind?: boolean];
+type Count = [label: string, n: number, ind?: string];
 const counts = (cs: Count[]) =>
-  `<span class="cnt" aria-hidden="true">${cs.filter(([, n]) => n > 0).map(([l, n, ind]) => `<span${ind ? ' class="c-ind"' : ''}>${l} <b>${n}</b></span>`).join('')}</span>`;
+  `<span class="cnt" aria-hidden="true">${cs.filter(([, n]) => n > 0).map(([l, n, ind]) => `<span${ind ? ` class="c-ind" data-ind="${ind}"` : ''}>${l} <b>${n}</b></span>`).join('')}</span>`;
 const said = (cs: Count[]) => cs.filter(([, n, ind]) => n > 0 && !ind).map(([l, n]) => `${l} ${n}`).join('・');
 // 開け閉めの丸（summary）。Tab では止めない（キーボードでは名前の行で開け閉めする）
 const toggle = (level: number, cs: Count[]) =>
@@ -37,22 +41,26 @@ const ti = (level: number, open = false) => `role="treeitem" tabindex="-1" aria-
 // 読み上げの名前の頭に、段の名前と番号を足す（画面の番号と「指標」の札は読ませない。ページの階層と同じく、番号だけでは何の段か分からないため）。
 // キーワードでさがす名前（.qn）はこの外に置く
 const sr = (s: string) => `<span class="sr-only">${esc(s)}　</span>`;
-// 指標。q はキーワードでさがすもの（成果指標）。名前の横（PC）と開いた中の行（スマホ）の2か所に書く
+// 指標。q はキーワードでさがすもの（成果指標）。名前の横（PC）と開いた中の行（スマホ）の2か所に書く。
+// show は出す指標の種類（data-show の値）で、data-ind に入れる
 const indName = (name: string, href: string, q: boolean) => (q ? `<span class="qn" data-qk="${esc(href)}">${esc(name)}</span>` : esc(name));
-const inds = (links: TreeLink[], kind: string, q: boolean) =>
+const inds = (links: TreeLink[], kind: string, show: string, q: boolean) =>
   links.length
-    ? `<span class="inds">${links.map(([name, href]) => `<span class="ind-i"><span class="ind" aria-hidden="true">指標</span><a class="sub-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></span>`).join('')}</span>`
+    ? `<span class="inds" data-ind="${show}">${links.map(([name, href]) => `<span class="ind-i"><span class="ind" aria-hidden="true">指標</span><a class="sub-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></span>`).join('')}</span>`
     : '';
-const indRow = ([name, href]: TreeLink, kind: string, q: boolean) =>
-  `<li role="none" class="leaf leaf-ind"${q ? ' data-q="成果指標"' : ''}><div class="tb"><span class="no ind" aria-hidden="true">指標</span><a class="name-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></div></li>`;
+const indRow = ([name, href]: TreeLink, kind: string, show: string, q: boolean) =>
+  `<li role="none" class="leaf leaf-ind" data-ind="${show}"${q ? ' data-q="成果指標"' : ''}><div class="tb"><span class="no ind" aria-hidden="true">指標</span><a class="name-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></div></li>`;
+// 取組の活動指標。取組の名前の右に、どの幅でも出す（取組は下の段の無い行なので）。取組のページの活動指標の節へのリンクにする
+const actInd = (name: string, href: string) =>
+  name ? `<span class="act" data-ind="katsudou"><span class="ind" aria-hidden="true">指標</span><a class="sub-link" href="${esc(href)}#katsudou" tabindex="-1">${sr('活動指標')}<span class="qn">${esc(name)}</span></a></span>` : '';
 
 function shisakuRow(s: TreeShisaku) {
-  const cs: Count[] = [['取組', s.torikumi.length], ['成果指標', s.seika.length, true]];
+  const cs: Count[] = [['取組', s.torikumi.length], ['成果指標', s.seika.length, 'seika']];
   const rows = [
-    ...s.seika.map((l) => indRow(l, '成果指標', true)),
-    ...s.torikumi.map(([no, name, href]) => `<li role="none" class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a></div></li>`),
+    ...s.seika.map((l) => indRow(l, '成果指標', 'seika', true)),
+    ...s.torikumi.map(([no, name, href, act]) => `<li role="none" class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><span class="nm"><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a>${actInd(act, href)}</span></div></li>`),
   ];
-  return `<li role="none" class="nd lv3" id="s-${esc(s.id)}" data-q="施策"><div class="tb"><span class="no" aria-hidden="true">${esc(s.no)}</span><span class="nm"><a class="name-link" href="/shisaku/${esc(s.id)}/" ${ti(4, rows.length > 0)}>${sr(`施策${s.no}`)}<span class="qn">${esc(s.name)}</span></a>${inds(s.seika, '成果指標', true)} ${counts(cs)}</span></div>${
+  return `<li role="none" class="nd lv3" id="s-${esc(s.id)}" data-q="施策"><div class="tb"><span class="no" aria-hidden="true">${esc(s.no)}</span><span class="nm"><a class="name-link" href="/shisaku/${esc(s.id)}/" ${ti(4, rows.length > 0)}>${sr(`施策${s.no}`)}<span class="qn">${esc(s.name)}</span></a>${inds(s.seika, '成果指標', 'seika', true)} ${counts(cs)}</span></div>${
     rows.length ? `${toggle(3, cs)}<ul role="group">${rows.join('')}</ul></details>` : '<span class="tg" aria-hidden="true"><span class="tw tw-none"></span></span>'
   }</li>`;
 }
@@ -62,8 +70,8 @@ function tenkaiRow(t: TreeTenkai) {
   return `<li role="none" class="nd lv2" id="t-${esc(t.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(t.no)}</span><span class="nm"><span class="tk-name" ${ti(3, true)}>${sr(`施策展開${t.no}`)}${esc(t.name)}</span> ${counts(cs)}</span></div>${toggle(2, cs)}<ul role="group">${t.shisaku.map(shisakuRow).join('')}</ul></details></li>`;
 }
 function kihonRow(k: TreeKihon) {
-  const cs: Count[] = [['施策展開', k.tenkai.length], ['主要指標', k.shuyou.length, true]];
-  return `<li role="none" class="nd lv1" id="k-${esc(k.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(k.no)}</span><span class="nm"><a class="name-link" href="/kihon/${esc(k.id)}/" ${ti(2, true)}>${sr(`基本施策${k.no}`)}${esc(k.name)}</a>${inds(k.shuyou, '主要指標', false)} ${counts(cs)}</span></div>${toggle(1, cs)}<ul role="group">${k.shuyou.map((l) => indRow(l, '主要指標', false)).join('')}${k.tenkai.map(tenkaiRow).join('')}</ul></details></li>`;
+  const cs: Count[] = [['施策展開', k.tenkai.length], ['主要指標', k.shuyou.length, 'shuyou']];
+  return `<li role="none" class="nd lv1" id="k-${esc(k.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(k.no)}</span><span class="nm"><a class="name-link" href="/kihon/${esc(k.id)}/" ${ti(2, true)}>${sr(`基本施策${k.no}`)}${esc(k.name)}</a>${inds(k.shuyou, '主要指標', 'shuyou', false)} ${counts(cs)}</span></div>${toggle(1, cs)}<ul role="group">${k.shuyou.map((l) => indRow(l, '主要指標', 'shuyou', false)).join('')}${k.tenkai.map(tenkaiRow).join('')}</ul></details></li>`;
 }
 // 将来像は帯にする（番号の印は components/Sz.astro と同じ形）
 function visionRow(v: TreeVision) {
@@ -79,8 +87,8 @@ async function load(url: string) {
   return r.json() as Promise<TreeData>;
 }
 
-// 離れるときに残す、開き方とスクロールの位置（history.state の tree）。src は描いたデータで、データが変わったら（公開し直したら）使わない
-interface Saved { src: string; open: number[]; y: number }
+// 離れるときに残す、開き方・出す指標・スクロールの位置（history.state の tree）。src は描いたデータで、データが変わったら（公開し直したら）使わない
+interface Saved { src: string; open: number[]; show: string[]; y: number }
 const savedOf = (src: string): Saved | null => {
   const s = (history.state as { tree?: Saved } | null)?.tree;
   return s && s.src === src ? s : null;
@@ -98,8 +106,47 @@ async function init(tree: HTMLElement) {
   // 成果指標を施策の名前の横に出す幅（pages/mokuji.astro の CSS と同じ）
   const wide = matchMedia('(min-width: 760px)');
 
-  // 言葉の欄は、データを待たずに URL の q で埋める。届くまでに打った言葉も URL に残し、描いたあとにさがす
+  // ---------------------------------------------------------------- 出す指標
+  // データを待たずに動かす。選び直したときに言葉が入っていれば、さがし直す（描いたあとだけ）
+  const show = document.querySelector<HTMLElement>(`[data-tree-show="${tree.id}"]`);
+  const showBtn = show?.querySelector<HTMLButtonElement>('button[aria-controls]');
+  const showPop = showBtn ? document.getElementById(showBtn.getAttribute('aria-controls')!) : null;
+  const showNow = show?.querySelector<HTMLElement>('[data-tree-show-now]');
+  const boxes = [...(show?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? [])];
   let ready = false;
+  const shows = new Set<string>();
+  const applyShow = () => {
+    shows.clear();
+    for (const b of boxes) if (b.checked) shows.add(b.value);
+    tree.dataset.show = [...shows].join(' ');
+    if (showNow) showNow.textContent = boxes.filter((b) => b.checked).map((b) => b.dataset.short).join('・') || '出さない';
+    if (ready && input?.value.trim()) run();
+  };
+  const isOpen = () => showBtn?.getAttribute('aria-expanded') === 'true';
+  const openShow = (open: boolean, refocus = false) => {
+    if (!showBtn || !showPop || isOpen() === open) return;
+    showPop.hidden = !open;
+    showBtn.setAttribute('aria-expanded', String(open));
+    if (refocus) showBtn.focus();
+  };
+  for (const b of boxes) b.addEventListener('change', applyShow);
+  showBtn?.addEventListener('click', () => openShow(!isOpen()));
+  show?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !isOpen()) return;
+    e.preventDefault();
+    openShow(false, true);
+  });
+  // フォーカスが吹き出しとボタンの外へ移ったら閉じる（押してもフォーカスの移らないブラウザ（Safari）があるので、移り先の無いときは外を押したかで決める）
+  show?.addEventListener('focusout', (e) => {
+    const to = e.relatedTarget;
+    if (to instanceof Node && !show.contains(to)) openShow(false);
+  });
+  document.addEventListener('click', (e) => {
+    if (show && !show.contains(e.target as Node)) openShow(false);
+  });
+  applyShow();
+
+  // 言葉の欄は、データを待たずに URL の q で埋める。届くまでに打った言葉も URL に残し、描いたあとにさがす
   let timer = 0;
   if (input) input.value = urlQ();
   const update = () => {
@@ -135,6 +182,10 @@ async function init(tree: HTMLElement) {
   tree.innerHTML = data.visions.map(visionRow).join('');
   const nodes = [...tree.querySelectorAll<HTMLDetailsElement>('details[data-level]')];
   const saved = savedOf(src);
+  if (saved) {
+    for (const b of boxes) b.checked = saved.show.includes(b.value);
+    applyShow();
+  }
   const openSet = saved ? new Set(saved.open) : null;
   nodes.forEach((d, i) => { d.open = openSet ? openSet.has(i) : Number(d.dataset.level) < startDepth; });
   tree.setAttribute('role', 'tree');
@@ -297,19 +348,27 @@ async function init(tree: HTMLElement) {
   // ---------------------------------------------------------------- キーワード
   const lis = [...tree.querySelectorAll<HTMLLIElement>('li')];
   const original = new Map([...tree.querySelectorAll<HTMLElement>('.qn')].map((el) => [el, el.textContent || '']));
-  const items = [...tree.querySelectorAll<HTMLLIElement>('li[data-q]')].map((li) => {
-    const name = li.querySelector<HTMLElement>(':scope > .tb .qn')!;
-    const key = name.dataset.qk;
-    return {
-      li,
-      kind: li.dataset.q!,
-      text: searchText(original.get(name)!),
-      names: key ? [...tree.querySelectorAll<HTMLElement>(`.qn[data-qk="${CSS.escape(key)}"]`)] : [name],
-      row: li.closest<HTMLLIElement>('li.lv3')!,
-    };
-  });
-  // 件数は、言葉の欄の説明と同じ順（施策・取組・成果指標）に並べる
-  const kinds = ['施策', '取組', '成果指標'];
+  // show は出す指標の種類（選んでいないときはさがさない）。活動指標は取組の行の中にあるので、取組の行が当たったことにする
+  const items = [
+    ...[...tree.querySelectorAll<HTMLLIElement>('li[data-q]')].map((li) => {
+      const name = li.querySelector<HTMLElement>(':scope > .tb .name-link .qn')!;
+      const key = name.dataset.qk;
+      return {
+        li,
+        kind: li.dataset.q!,
+        show: li.dataset.ind,
+        text: searchText(original.get(name)!),
+        names: key ? [...tree.querySelectorAll<HTMLElement>(`.qn[data-qk="${CSS.escape(key)}"]`)] : [name],
+        row: li.closest<HTMLLIElement>('li.lv3')!,
+      };
+    }),
+    ...[...tree.querySelectorAll<HTMLElement>('.act .qn')].map((name) => {
+      const li = name.closest('li')!;
+      return { li, kind: '活動指標', show: 'katsudou', text: searchText(original.get(name)!), names: [name], row: li };
+    }),
+  ];
+  // 件数は、言葉の欄の説明と同じ順（施策・取組・成果指標）に並べ、活動指標は最後に置く
+  const kinds = ['施策', '取組', '成果指標', '活動指標'];
 
   // 当たった字に印（mark）を付ける。words が null なら元の文字に戻す
   const painted = new Set<HTMLElement>();
@@ -354,7 +413,7 @@ async function init(tree: HTMLElement) {
     const n = new Map(kinds.map((k) => [k, 0]));
     const hit: HTMLLIElement[] = [];
     for (const it of items) {
-      if (!matchesAll(it.text, words)) continue;
+      if ((it.show && !shows.has(it.show)) || !matchesAll(it.text, words)) continue;
       n.set(it.kind, n.get(it.kind)! + 1);
       const li = it.kind === '成果指標' && wide.matches ? it.row : it.li;
       li.dataset.hit = '';
@@ -422,7 +481,7 @@ async function init(tree: HTMLElement) {
   // 離れるときに、開き方（さがしているときは、さがす前の開き方）とスクロールの位置を残す
   window.addEventListener('pagehide', () => {
     const opens = before ?? nodes.map((d) => d.open);
-    const state: Saved = { src, open: opens.flatMap((o, i) => (o ? [i] : [])), y: window.scrollY };
+    const state: Saved = { src, open: opens.flatMap((o, i) => (o ? [i] : [])), show: [...shows], y: window.scrollY };
     history.replaceState({ ...(history.state as object | null), tree: state }, '');
   });
 }

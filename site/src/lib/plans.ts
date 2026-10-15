@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, type Shisaku, type YearGroup } from './data.ts';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, type Shisaku, type YearGroup } from './data.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { HyokaKihonRow, IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
@@ -186,7 +186,7 @@ export function kankoOfPdca(shisakuId: string, key: string) {
       for (const g of s.torikumi) {
         for (const t of Object.values(g.years)) {
           for (const p of t.pdca || []) {
-            const k = `${p.shisaku_id}|${sameKey(p.key)}`;
+            const k = `${p.shisaku_id}|${torikumiKey(p.shisaku_id, p.key)}`;
             if (!reverse.has(k)) reverse.set(k, []);
             const list = reverse.get(k)!;
             if (!list.some((x) => x.rm.id === s.id && x.row.key === g.key)) list.push({ rm: s, row: g });
@@ -195,7 +195,7 @@ export function kankoOfPdca(shisakuId: string, key: string) {
       }
     }
   }
-  return reverse.get(`${shisakuId}|${sameKey(key)}`) || [];
+  return reverse.get(`${shisakuId}|${torikumiKey(shisakuId, key)}`) || [];
 }
 
 // 沖縄県PDCA の施策に入っている取組のうち、観光ロードマップでも評価されているもの（施策のページで使う）

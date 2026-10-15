@@ -17,7 +17,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, statusOf, rateBin, countBy,
-  getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents,
+  getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents, torikumiCells,
 } from '../../lib/data.ts';
 import type { SeikaRow } from '../../lib/types.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -118,7 +118,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     <div class="sticker fact">
       <div class="tile-label"><Term word="主な取組" />（{yearLabel(LATEST)}）</div>
       <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}<small>件が順調</small></div>
-      {toriLatest.length > 0 && <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} size="mini" />}
+      {toriLatest.length > 0 && <StatusBar categories={STATUSES} context={`${yearLabel(LATEST)}の主な取組 `} pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s), keys: true }} />}
     </div>
   </div>
 

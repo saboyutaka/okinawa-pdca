@@ -1,37 +1,67 @@
 ---
 // 100%積み上げの横棒1本。区切りは2pxのすき間。棒全体を1つの画像として読み上げ、区間ごとにタブでは止めない（値は表やラベルにもある）
-// cells を付けると、1件を1マスにして区分ごとにまとめて並べる「マス目の棒」にする（主要指標。数が少ないので、割合ではなく何個のうち何個かを見せ、
-// 主な取組のつながった棒と見た目を分ける。docs/design.md の1章「3つの段」）。マスのあいだのすき間は、区分の変わり目も同じ幅
+// cells を付けると、1件を1マスにして区分ごとにまとめて並べる「マス目の棒」にする（数えられるくらい少ないもの。割合ではなく何個のうち何個かを見せる。
+// 主要指標は、主な取組のつながった棒と見た目を分ける。docs/design.md の1章「3つの段」）。マスのあいだのすき間は、区分の変わり目も同じ幅。
+// squares も付けると、枠の棒にせず、指標のマップのマスのような決まった大きさの四角を並べる（数で長さが変わり、何件あるかも見える。入らなければ折り返す）。
+// pop を渡すと四角にし（cells・squares を付けなくてよい）、四角を押すと、その1件の中身を吹き出しに出す（scripts/cell-pop.ts。指標のマップのマスと同じ形。
+// 将来像のページの頭の主要指標、施策の行と施策のページの頭の主な取組）。数は pop.items から数え、四角は区分ごとにまとめて、区分の中は渡した順（報告書の順）にする。
+// 中身は四角と同じ並びの template 要素に書き（lib/cell-pop.ts）、押したときに写す（区分の札は四角の区分からスクリプトが書く）。
+// pop.keys を付けると Tab で1回止まり、← → で1件ずつ移って中身を出し、Enter でそのページを開く（施策のページ・将来像のページの頭。
+// 一覧の行では付けない。行ごとに Tab が止まって長くなり、中身は名前のリンクの先の施策のページにもあるため）
 import { fmt, pct } from '../lib/format.ts';
+import { countBy, type CellItem } from '../lib/data.ts';
+import { cellPopHtml } from '../lib/cell-pop.ts';
 import type { Tone } from '../lib/icons.ts';
 
 interface Props {
   categories: { key: string; tone: Tone; hatch?: boolean }[];
-  counts: Record<string, number>;
+  /** 区分ごとの数（pop を渡すときは pop.items から数える） */
+  counts?: Record<string, number>;
   unit?: string;
   context?: string;
   /** 棒の中に割合を書く区分（入りきるときだけ） */
   labelKey?: string;
   size?: 'normal' | 'mini';
   cells?: boolean;
+  /** cells のとき、枠の棒にせず、決まった大きさの四角を数だけ並べる */
+  squares?: boolean;
+  /** 四角を押すと出す中身。term と year は吹き出しの頭に書く、何の1件か（「主な取組」）と年度（「R7」）。
+   *  shapes は区分の札に状態の形を付けるか（主要指標は付けない。docs/design.md の2章）、keys はキーボードで1件ずつ移れるようにするか */
+  pop?: { term: string; year: string; items: CellItem[]; shapes?: boolean; keys?: boolean };
 }
-const { categories, counts, unit = '件', context = '', labelKey = categories[0]?.key, size = 'normal', cells = false } = Astro.props;
+const { categories, unit = '件', context = '', labelKey = categories[0]?.key, size = 'normal', pop } = Astro.props;
+const cells = Boolean(pop || Astro.props.cells);
+const squares = Boolean(pop || Astro.props.squares);
+const counts = pop ? countBy(pop.items, (x) => x.key, categories.map((c) => c.key)) : Astro.props.counts ?? {};
 const total = categories.reduce((s, c) => s + (counts[c.key] || 0), 0);
 const segs = categories.filter((c) => counts[c.key] > 0).map((c) => ({ ...c, n: counts[c.key] }));
-const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}`;
+const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}${pop?.keys ? '。← → で1件ずつ中身を出し、Enter でそのページを開きます' : ''}`;
 const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${unit}（${pct(s.n, total)}）`, 'data-tip-label': `${context}${s.key}` });
+// 押すと出す四角（区分ごとにまとめる）と、その中身（lib/cell-pop.ts）
+const picked = pop ? categories.flatMap((c, k) => pop.items.filter((x) => x.key === c.key).map((x) => ({ c, k, x }))) : [];
 ---
-<div class:list={['sbar', size, cells && 'cells']} role="img" aria-label={aria}>
-  {cells
-    ? segs.flatMap((s) => Array.from({ length: s.n }, () => (
-      <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']} {...tip(s)}></span>
-    )))
-    : segs.map((s) => (
-      <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']} style={`flex-grow:${s.n}`} {...tip(s)}>
-        {size === 'normal' && s.key === labelKey && s.n / total >= 0.18 && <span class="seg-label">{pct(s.n, total)}</span>}
-      </span>
-    ))}
-</div>
+{pop ? (
+  <span class="pick" data-cell-pop data-term={pop.term} data-year={pop.year} data-shapes={String(pop.shapes ?? true)}
+    data-cats={JSON.stringify(categories.map((c) => [c.key, c.tone]))}>
+    <div class:list={['sbar', size, 'cells', 'squares']} role="img" aria-label={aria} tabindex={pop.keys ? 0 : undefined}>
+      {picked.map(({ c, k }) => <span class:list={['seg', `tone-${c.tone}`, c.hatch && 'hatch']} data-k={k}></span>)}
+    </div>
+    <template set:html={cellPopHtml(picked.map(({ x }) => x))}></template>
+    {pop.keys && <span class="pick-hint" aria-hidden="true">← → で移り、Enter で開けます</span>}
+  </span>
+) : (
+  <div class:list={['sbar', size, cells && 'cells', cells && squares && 'squares']} role="img" aria-label={aria}>
+    {cells
+      ? segs.flatMap((s) => Array.from({ length: s.n }, () => (
+        <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']} {...tip(s)}></span>
+      )))
+      : segs.map((s) => (
+        <span class:list={['seg', `tone-${s.tone}`, s.hatch && 'hatch']} style={`flex-grow:${s.n}`} {...tip(s)}>
+          {size === 'normal' && s.key === labelKey && s.n / total >= 0.18 && <span class="seg-label">{pct(s.n, total)}</span>}
+        </span>
+      ))}
+  </div>
+)}
 
 <style>
   .sbar { display: flex; gap: 2px; height: 24px; width: 100%; padding: 2px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); }
@@ -50,6 +80,29 @@ const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${uni
   .cells .seg { flex-grow: 1; min-width: 2px; padding: 0; border-radius: 2px; }
   .cells .seg:first-child { border-radius: 999px 2px 2px 999px; }
   .cells .seg:last-child { border-radius: 2px 999px 999px 2px; }
+  /* 四角を並べる形: 枠と地を付けず、指標のマップのマスと同じく角を少し丸めた四角にする。
+     ふつうの大きさは棒の外側の高さと同じ 24px（将来像のページの頭で、成果指標・取組の棒と同じ太さに並べる）、mini は行の文字に合わせて 12px */
+  .sbar.squares { --sq: 24px; flex-wrap: wrap; gap: 4px; width: auto; height: auto; padding: 0; border: 0; border-radius: 0; background: none; }
+  .sbar.squares.mini { --sq: 12px; gap: 2px; }
+  .squares .seg, .squares .seg:is(:first-child, :last-child) { flex: none; width: var(--sq); height: var(--sq); min-width: 0; border-radius: 4px; }
+  .squares.mini .seg, .squares.mini .seg:is(:first-child, :last-child) { border-radius: 3px; }
+  /* 押せる四角（pop）: マウスを乗せると細い縁、押して中身を出している四角は太い縁（指標のマップのマスと同じ） */
+  .pick { position: relative; display: block; min-width: 0; }
+  .pick .seg { cursor: pointer; }
+  @media (hover: hover) { .pick .seg:hover { outline: 2px solid var(--ink-2); outline-offset: 1px; } }
+  .pick .seg.sel { outline: 2.5px solid var(--ink); outline-offset: 1.5px; }
+  .pick .sbar { width: fit-content; max-width: 100%; } /* フォーカスの枠を四角の並びにそわせる */
+  .pick .sbar:focus-visible { outline-offset: 4px; border-radius: 4px; }
+  /* キーボードで止まったときだけ、キーの使い方を四角の下に小さく出す（読み上げは aria-label の終わりで伝える） */
+  .pick-hint {
+    display: none; position: absolute; left: 0; top: calc(100% + 5px); z-index: 2; padding: 0 8px; font-size: 0.75rem; font-weight: 700; line-height: 1.6; white-space: nowrap;
+    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
+  }
+  .pick:has(.sbar:focus-visible) .pick-hint { display: block; }
+  /* スマホでは指で押しやすいよう、小さい四角を指標のマップのマスと同じ大きさにする */
+  @media (max-width: 640px) {
+    .pick .sbar.squares.mini { --sq: 14px; }
+  }
   /* 塗りの上の文字は塗りの明るさで決める（青緑・黄・橙は濃い文字が読める） */
   .seg-label { color: var(--on-fill); font-family: var(--font-num); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   /* 棒が短い（スマホで名前と同じ行に置いたときなど）と割合の文字が隣の区間にはみ出すので、区間の幅が足りなければ書かない */

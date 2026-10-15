@@ -1,7 +1,7 @@
 ---
 import { createHash } from 'node:crypto';
 import '../styles/global.css';
-import { NOINDEX, PROJECT, SITE } from '../lib/links.ts';
+import { PROJECT, SITE } from '../lib/links.ts';
 import { LATEST, yearLong } from '../lib/data.ts';
 import Term from '../components/Term.astro';
 import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
@@ -111,7 +111,6 @@ for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES]) Ast
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
-    {NOINDEX && <meta name="robots" content="noindex, nofollow" />}
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />

@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import {
   YEARS, LATEST, STATUSES, RATE_BINS, SHUYOU_BINS, load, yearLabel, planIndex, withUnit, refText, eraRef, halfWidth, sameScale,
   getShuyouStatus, shuyouBin, shuyouRateText, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
-  getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, type TorikumiGroup,
+  getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
 import { themeIdsOfItem } from './themes.ts';
 import type { Tone } from './icons.ts';
@@ -77,6 +77,12 @@ function shuyouValues(x: ShuyouGaiyouRow): MapYear['v'] {
   const [b, a, t] = sameScale([half(x.base_raw), half(x.actual_raw), half(x.target_raw)]);
   return [['基準値', withRef(b, x.base_ref)], ['実績値', withRef(a, x.actual_ref)], ['目標値', withRef(t, x.target_ref)], ['達成率', shuyouRateText(x)]];
 }
+// 主要指標を1指標1つの四角にしたときの中身（将来像のページの頭。components/Ladder.astro）。値はマップの吹き出しと同じ最新の報告の値で、名前の下に基本施策を書く
+export const shuyouCells = (rows: ShuyouStatus[]): CellItem[] => rows.map((r) => ({
+  key: shuyouBinOf(r.bin).label, name: r.name, href: r.href,
+  sub: { label: '基本施策', name: r.kihon.name, href: `/kihon/${r.kihon.id}/`, code: r.kihon.code },
+  vals: shuyouValues(r),
+}));
 function buildShuyou(): Built {
   const rows = load('shuyou_gaiyou');
   const parents = parentTable();
