@@ -1,17 +1,16 @@
 ---
-// シェアのボタン。押すと、SNS のシェアパネル（Share.astro）とリンクのコピーを入れた小さな枠を開く。
-// 指標（成果指標・主要指標・活動指標）のカードの右上と、将来像・基本施策・施策・取組・部局・くらしのテーマのページの頭の右上に置く。
-// 指標は、指標のシェア用のページの URL（lib/routes.ts の SHARE_ROUTES）をシェアし、SNS には指標のカードの画像が出て、開いた人はこの指標の場所に着く。
-// ページの頭では、そのページの URL をシェアする（SNS にはページのカードの画像が出る。ページの終わりのシェアの枠 ShareBox と同じ本文）。
+// 指標（成果指標・主要指標・活動指標）のカードの右上に置く、その指標のシェアのボタン。押すと、SNS のシェアパネル（Share.astro）とリンクのコピーを入れた小さな枠を開く。
+// シェアするのは指標のシェア用のページの URL（lib/routes.ts の SHARE_ROUTES）で、SNS には指標のカードの画像が出て、開いた人はこの指標の場所に着く。
+// ページ（施策・取組など）のシェアは、ページの終わりのシェアの枠（ShareBox.astro）で行い、ページの頭には置かない。
 // 開け閉めは details（キーボードと読み上げでもそのまま使える）。ほかの場所を押す・Esc で閉じ、1つ開くとほかは閉じる。コピーのボタンはスクリプトで動く
 // （scripts/share-menu.ts。スクリプトが動かないときはボタンを出さず、リンクの欄から写せる）。印刷では出さない
 import Share from './Share.astro';
 import { absUrl } from '../lib/seo.ts';
 import { shareText } from '../lib/iken.ts';
 
-// path はシェアするページの URL（指標はシェア用のページ。無ければ見ているページ）、kind は「成果指標」「施策」など、name は名前
-interface Props { path?: string; kind: string; name: string }
-const { path = Astro.url.pathname, kind, name } = Astro.props;
+// path はシェア用のページの URL、kind は「成果指標」など、name は指標の名前
+interface Props { path: string; kind: string; name: string }
+const { path, kind, name } = Astro.props;
 const url = absUrl(path);
 ---
 <details class="share-menu" data-share-menu>

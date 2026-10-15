@@ -14,7 +14,6 @@ import ThemeIcon from '../../components/ThemeIcon.astro';
 import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
-import ShareMenu from '../../components/ShareMenu.astro';
 import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
@@ -62,7 +61,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
   <header class="sticker lift t-hero">
     <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-    <div class="t-kicker"><span>くらしのテーマ</span><ShareMenu kind="くらしのテーマ" name={t.label} /></div>
+    <div class="t-kicker">くらしのテーマ</div>
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
     <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
     <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
@@ -141,8 +140,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
   }
   .ico { grid-area: ico; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: var(--pink); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
   .ico :global(.theme-ic) { width: 42px; height: 42px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  /* 「くらしのテーマ」の行の右端にシェアのボタン（components/ShareMenu.astro。施策などのページの頭の HeadKind と同じ場所） */
-  .t-kicker { grid-area: kicker; display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
+  .t-kicker { grid-area: kicker; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
   .t-hero h1 { grid-area: name; margin: 4px 0 10px; }
   .t-hero :global(.head-stats) { grid-area: stats; }
   .t-hero :global(.ladder) { grid-area: ladder; background: var(--bg); }

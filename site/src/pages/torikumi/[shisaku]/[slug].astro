@@ -161,7 +161,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 <Base {...torikumiHead(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift head">
-    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)}><ShareMenu kind="主な取組" name={t.name} /></HeadKind>
+    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)} />
     <h1>{t.name}</h1>
     <div class="meta">
       <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>

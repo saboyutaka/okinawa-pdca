@@ -56,7 +56,7 @@
 - URL: 成果指標は `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`（もとは成果指標のページ。公開した URL を変えないため、そのままシェア用に使う。`seikaShareHref`）、主要指標は `/shuyou/<基本施策ID>/<key の SHA-1 の先頭8桁>/`（key は基本施策の中の最新の報告の名前）、活動指標は `/katsudou/<施策ID>/<key の SHA-1 の先頭8桁>/`（key は取組の key と活動指標の名前・行の札。取組のページの図1つに1つ）。どれも年度をまたいで同じで、名前が変わると URL も変わる（8章）。
 - 中身: 題名・説明文・SNS のカードの画像（6章）は指標のもので、`og:url` と `canonical` はシェア用のページ自身（Facebook は `og:url` の URL を読み直すため）。開いた人は、head のはじめのスクリプトで、すぐにカードの場所へ移す（`layouts/Base.astro` の `jump`。`location.replace` なので、戻るで戻ってもまた移らない。SNS のカードを作る取得はスクリプトを動かさないので、指標の画像のままになる）。サーバーの転送（`_redirects`）にすると SNS も転送の先を読み、入っているページの画像になるので使わない。スクリプトが動かないときのために、本文には何の指標かと、カードの場所へのリンクだけを置く（`components/ShareJump.astro`）。
 - 検索には載せない（`<meta name="robots" content="noindex">`）。sitemap.xml にも入れない（`astro.config.ts`）。公開した URL の一覧（`urls.txt`）には入れる。
-- 指標のカードの右上の「シェア」のボタン（`components/ShareMenu.astro`）が、シェア用のページの URL を SNS のシェアパネルとリンクのコピーで渡す（[design.md](design.md) の6章）。同じボタンを将来像・基本施策・施策・取組・部局・くらしのテーマのページの頭にも置き、そこではそのページの URL を渡す。
+- 指標のカードの右上の「シェア」のボタン（`components/ShareMenu.astro`）が、シェア用のページの URL を SNS のシェアパネルとリンクのコピーで渡す（[design.md](design.md) の6章）。
 
 ## 5. くらしのテーマの定義
 

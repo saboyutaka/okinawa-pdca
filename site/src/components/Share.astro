@@ -5,7 +5,7 @@
 // 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない。ツールチップは「〇〇 でシェア」だけにし、
 // 「別のタブで開きます」は読み上げの文字にだけ付ける。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる。
-// path を渡すと、そのページ（指標のシェア用のページなど。components/ShareMenu.astro）の URL を入れる。
+// path を渡すと、そのページ（指標のシェア用のページ。components/ShareMenu.astro）の URL を入れる。
 // compact はシェアの枠（ShareBox.astro）用。スマホ（520px 以下）では、いいねと1行に並ぶように「シェア」の文字を隠してアイコンだけにする。
 import { SNS, shareHref } from '../lib/share.ts';
 import { SHARE_ICONS } from '../lib/share-icons.ts';
