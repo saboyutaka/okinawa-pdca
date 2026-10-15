@@ -32,7 +32,7 @@ const { items, page } = Astro.props;
   /* --step は段の下げ幅、--in は段の頭から線までの幅（番号の下に線を通す）、
      --gap は段のあいだ、--lw は線の太さ、--pb は箱の下の余白、--out は箱とページの頭のあいだ（下の #main の margin-top と同じ） */
   .hier {
-    --step: 14px; --in: 5px; --gap: 8px; --lw: 2.5px; --pb: 14px; --out: 16px;
+    --step: 7px; --in: 2px; --gap: 8px; --lw: 2px; --pb: 14px; --out: 16px;
     width: fit-content; max-width: 100%; margin-top: 18px; padding: 14px 20px var(--pb) 16px; font-size: 0.9375rem; line-height: 1.5;
   }
   /* すぐ下のページの頭のステッカーは、最後の段からの線の長さに合わせて離す */
@@ -44,8 +44,8 @@ const { items, page } = Astro.props;
   /* 上の段の番号の下から、この段の1行目の頭へのカギ形の線 */
   .h-item:not(:first-child)::before {
     content: ''; position: absolute; top: 0; height: calc(var(--gap) + 0.75em + var(--lw) / 2);
-    left: calc((var(--lv) - 1) * var(--step) + var(--in) - var(--lw) / 2); width: calc(var(--step) - var(--in) - 3px + var(--lw) / 2);
-    border-left: var(--lw) solid var(--hair); border-bottom: var(--lw) solid var(--hair); border-bottom-left-radius: 6px;
+    left: calc((var(--lv) - 1) * var(--step) + var(--in) - var(--lw) / 2); width: calc(var(--step) - var(--in) - 1px + var(--lw) / 2);
+    border-left: var(--lw) solid var(--hair); border-bottom: var(--lw) solid var(--hair); border-bottom-left-radius: 3px;
   }
   /* 名前が折り返したときに、番号の下から段の下の端まで線を下ろす（次の段の ::before につながる。1行なら高さ0で出ない） */
   .h-item::after {
