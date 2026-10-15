@@ -2,7 +2,6 @@
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
-import StatusChart from '../../components/StatusChart.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Chip from '../../components/Chip.astro';
 import Icon from '../../components/Icon.astro';
@@ -10,7 +9,7 @@ import Stamps from '../../components/Stamps.astro';
 import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
-import ToriCard from '../../components/ToriCard.astro';
+import ToriRow from '../../components/ToriRow.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
 import HeadKind from '../../components/HeadKind.astro';
@@ -39,15 +38,9 @@ const { s } = Astro.props;
 const kihon = getKihonList().find((k) => k.id === s.kihon_id)!;
 const tRows = torikumiRows(s);
 const sRows = seikaGroupsOf(s.id);
-const statusKeys = STATUSES.map((x) => x.key);
 const yearsDesc = [...YEARS].reverse();
 const themes = themesOf(s.id);
 
-const progressRows = YEARS.map((y) => ({
-  label: yearLabel(y),
-  sub: y <= 2024 ? '前期' : '中期',
-  counts: countBy(s.torikumi.filter((t) => t.year === y), statusOf, statusKeys),
-}));
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = shisakuHead(s);
 const toriLatest = s.torikumi.filter((t) => t.year === LATEST);
@@ -68,6 +61,8 @@ const judgeStamps = YEARS.map((y) => {
 const latest = s.years[LATEST];
 const pastYears = yearsDesc.filter((y) => y !== LATEST && s.years[y] && (s.years[y].check || s.years[y].action));
 const toriActive = tRows.filter((r) => r.years[LATEST]);
+// 主な取組の一覧の上の凡例（行の印に使っている区分だけ。報告に無い取組の印の区分も入れる）
+const toriUsed = STATUSES.filter((c) => tRows.some((r) => statusOf(r.latest) === c.key));
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 // 一括交付金（ソフト）の事業（事後評価の検証シートにこの施策のコードがあるもの）と、観光ロードマップでも評価されている取組の施策
 const ikkatsu = ikkatsuOf(s.id);
@@ -81,20 +76,20 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   <Hierarchy items={planParents({ shisaku: s.id })} page={s.name} />
   <header class="sticker lift head">
     <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)} />
-    <div class="head-main">
-      <h1>{s.name}</h1>
-      <div class="meta">
-        <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
-      </div>
+    <h1>{s.name}</h1>
+    <div class="meta">
+      <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
     </div>
-    <div class="head-side">
-      <div class:list={['stamp-big', `tone-${j ? j.tone : 'blank'}`]}>
-        <div class:list={['circle', 'm-stamp', j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={22} />}{s.judges[LATEST] || '—'}</span></div>
-        <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
-        <div class="sb">{yearLong(LATEST)}の<Term word="推進状況" label="県の判定" /></div>
+    <div class="now inset">
+      <div class="now-l">
+        <div class:list={['circle', 'm-stamp', `tone-${j ? j.tone : 'blank'}`, j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={18} />}{s.judges[LATEST] || '—'}</span></div>
+        <div class="now-t">
+          <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
+          <div class="sb">{yearLong(LATEST)}の<Term word="推進状況" label="県の判定" /></div>
+        </div>
       </div>
-      <div class="head-years">
-        <div class="small secondary label">4年間の判定</div>
+      <div class="now-years">
+        <span class="now-yl">4年間</span>
         <Stamps items={judgeStamps} label="4年間の判定" size="small" pop={0.22} />
       </div>
     </div>
@@ -113,16 +108,17 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     )}
   </header>
 
+  {/* 本文の節と同じ「成果指標 → 主な取組」の順（トップ・将来像の段の「成果 → 活動」とも同じ） */}
   <div class="facts">
-    <div class="sticker fact">
-      <div class="tile-label"><Term word="主な取組" />（{yearLabel(LATEST)}）</div>
-      <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}<small>件が順調</small></div>
-      {toriLatest.length > 0 && <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} size="mini" />}
-    </div>
     <div class="sticker fact">
       <div class="tile-label"><Term word="成果指標" />（{yearLabel(LATEST)}）</div>
       <div class="tile-value">{fmt(reached)}/{fmt(seikaLatest.length)}<small>が計画値に到達</small></div>
       <div class="chips">{seikaLatest.map((r) => <Chip tone={toneOfBin(r.latest)} text={`達成率 ${rateText(r.latest)}`} />)}</div>
+    </div>
+    <div class="sticker fact">
+      <div class="tile-label"><Term word="主な取組" />（{yearLabel(LATEST)}）</div>
+      <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}<small>件が順調</small></div>
+      {toriLatest.length > 0 && <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} size="mini" />}
     </div>
   </div>
 
@@ -130,8 +126,8 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     links={[
       { href: '#seika', label: '成果指標' },
       { href: '#torikumi', label: '主な取組' },
-      ikkatsu.length > 0 && { href: '#ikkatsu', label: '一括交付金' },
       { href: '#check', label: '県のふりかえり' },
+      ikkatsu.length > 0 && { href: '#ikkatsu', label: '一括交付金' },
       { href: '#source', label: '出典' },
     ]}
     head={{ kind: '施策', title: s.name }}
@@ -151,7 +147,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     {seikaLatest.map((row) => <SeikaCard row={row} />)}
     {seikaPast.length > 0 && (
       <details class="past">
-        <summary>R6まで使われていた成果指標（{seikaPast.length}）</summary>
+        <summary>{yearLabel(LATEST)}の報告に無い成果指標（{seikaPast.length}）</summary>
         {seikaPast.map((row) => <SeikaCard row={row} />)}
       </details>
     )}
@@ -159,18 +155,19 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="torikumi">
     <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">スタンプは各年度の<Term word="進捗状況" />です。名前を押すと、4年分の活動内容・予算・県の検証と改善案を見られます。</p>
-    <StatusChart title="この施策の主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
-    <div class="tcards">
-      {toriActive.map((row) => <ToriCard row={row} shisakuId={s.id} />)}
-    </div>
+    <p class="small secondary lead">印は{yearLabel(LATEST)}の<Term word="進捗状況" />で、隣は<Term word="活動指標" />の計画と実績です。名前を押すと、4年分の進捗状況・活動内容・予算・県の検証と改善案を見られます。</p>
+    {/* 行の印（形と色）の言葉は、ここに1回だけ出す（行では読み上げだけ） */}
+    <p class="tkey small">{toriUsed.map((c) => <Chip tone={c.tone} text={c.key} title={c.note} readTitle />)}</p>
+    <ul class="row-list tlist">
+      {toriActive.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
+    </ul>
     {toriEnded.length > 0 && (
       <details class="past">
-        <summary>R7の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
-        <p class="small secondary">R7の中期実施計画で取組が入れ替わったり、名前が変わったりしたものです。</p>
-        <div class="tcards">
-          {toriEnded.map((row) => <ToriCard row={row} shisakuId={s.id} />)}
-        </div>
+        <summary>{yearLabel(LATEST)}の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
+        <p class="small secondary">R7から中期実施計画になり、取組が入れ替わったり、名前が変わったりしたものがあります。印は、最後に報告があった年度の進捗状況です。</p>
+        <ul class="row-list">
+          {toriEnded.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
+        </ul>
       </details>
     )}
     {rmShisaku.length > 0 && (
@@ -180,28 +177,6 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       </p>
     )}
   </section>
-
-  {ikkatsu.length > 0 && (
-    <section aria-labelledby="ikkatsu">
-      <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業</h2>
-      <p class="small secondary lead">主な取組の評価とは別に、この施策に当たる一括交付金（ソフト）の事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />したもの（◎達成・○概ね達成・△一部達成・未達成）です。</p>
-      {ikLatest.length > 0 && (
-        <div class="ik-sum">
-          <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
-          {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} readTitle />)}
-        </div>
-      )}
-      <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
-      {ikPast.length > 0 && (
-        <details class="past">
-          <summary>{yearLabel(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
-          <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
-        </details>
-      )}
-      <p class="small"><a href={`${IKKATSU_HREF}?s=${s.shouraizou}`}>将来像{s.shouraizou}の一括交付金の事業をさがす</a>・<a href={IKKATSU_HREF}>すべての事業をさがす</a></p>
-      <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
-    </section>
-  )}
 
   <section aria-labelledby="check">
     <h2 id="check" class="anchor">県のふりかえりと、これから</h2>
@@ -224,14 +199,45 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         </div>
       </div>
     )}
-    {pastYears.map((y) => (
-      <details class="sticker cad">
-        <summary>{yearLong(y)}のふりかえり</summary>
-        {s.years[y].check && <><h3>施策の推進状況の分析（Check）</h3><Prose text={s.years[y].check} /></>}
-        {s.years[y].action && <><h3>施策の推進戦略案（Action）</h3><Prose text={s.years[y].action} /></>}
-      </details>
-    ))}
+    {/* 前の年度は1つの箱に細い線で区切って並べる（年度ごとの太いステッカーを積むと重いため）。見出しの言葉は最新の年度とそろえ、
+        Check と Action は中の箱（.inset）に分ける */}
+    {pastYears.length > 0 && (
+      <ul class="row-list cads">
+        {pastYears.map((y) => (
+          <li>
+            <details class="cad">
+              <summary>{yearLong(y)}のふりかえり</summary>
+              {s.years[y].check && <div class="cad-part inset"><h3>ふりかえり（Check）</h3><Prose text={s.years[y].check} /></div>}
+              {s.years[y].action && <div class="cad-part inset"><h3>これからどうする（Action）</h3><Prose text={s.years[y].action} /></div>}
+            </details>
+          </li>
+        ))}
+      </ul>
+    )}
   </section>
+
+  {/* 一括交付金の事後評価は沖縄県PDCAとは別の評価なので、県のふりかえり（PDCA の流れ）の後ろに置く */}
+  {ikkatsu.length > 0 && (
+    <section aria-labelledby="ikkatsu">
+      <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業</h2>
+      <p class="small secondary lead">主な取組の評価とは別に、この施策に当たる一括交付金（ソフト）の事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />したもの（◎達成・○概ね達成・△一部達成・未達成）です。</p>
+      {ikLatest.length > 0 && (
+        <div class="ik-sum">
+          <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
+          {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} readTitle />)}
+        </div>
+      )}
+      <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
+      {ikPast.length > 0 && (
+        <details class="past">
+          <summary>{yearLabel(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
+          <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
+        </details>
+      )}
+      <p class="small"><a href={`${IKKATSU_HREF}?s=${s.shouraizou}`}>将来像{s.shouraizou}の一括交付金の事業をさがす</a>・<a href={IKKATSU_HREF}>すべての事業をさがす</a></p>
+      <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
+    </section>
+  )}
 
   <ShareBox kind="施策" name={s.name} />
 
@@ -255,51 +261,52 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 </Base>
 
 <style>
-  /* 右の判定（ハンコと4年間の判定）は縦に長いので、県の吹き出しは左の列に入れて並べる（左の下が空かないように） */
-  .head {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr;
-    grid-template-areas: "kind kind" "main side" "says side"; gap: 16px 24px; align-items: start; margin-top: 12px;
-  }
-  .head > :global(.head-kind) { grid-area: kind; margin-bottom: -10px; }
-  .head-main { grid-area: main; }
-  .head h1 { margin: 0 0 8px; }
+  /* 判定は取組のページの進捗状況と同じく、頭の中の帯にハンコと4年間のスタンプを横に並べる（題名は全幅で折り返す）。丸いハンコは施策の判定だけ */
+  .head { display: grid; gap: 12px; margin-top: 12px; }
+  .head > :global(.head-kind) { margin-bottom: -6px; }
+  .head h1 { margin: 0; }
   .report-no { white-space: nowrap; }
   .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .head-side { grid-area: side; display: grid; justify-items: center; gap: 14px; width: 232px; }
-  .stamp-big { display: grid; justify-items: center; gap: 4px; text-align: center; }
-  .stamp-big .circle {
-    display: grid; place-items: center; width: 108px; height: 108px; border-radius: 50%; border: 3px solid var(--line);
-    background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 4px 4px 0 var(--shadow); transform: rotate(-6deg);
+  .now { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 40px; padding: 12px 18px; }
+  .now-l { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .now .circle {
+    flex: none; display: grid; place-items: center; width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--line);
+    background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 3px 3px 0 var(--shadow); transform: rotate(-6deg);
   }
-  .stamp-big .k { font-family: var(--font-num); font-weight: 600; font-size: 2.6rem; line-height: 1; display: flex; align-items: center; gap: 6px; }
-  .stamp-big .lb { font-family: var(--font-display); font-weight: 700; line-height: 1.45; }
-  .stamp-big .sb { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; }
-  .head-years { width: 100%; }
-  .head-years .label { text-align: center; }
-  .says { grid-area: says; }
+  .now .k { font-family: var(--font-num); font-weight: 600; font-size: 2.1rem; line-height: 1; display: flex; align-items: center; gap: 4px; }
+  .now-t { display: grid; gap: 2px; min-width: 0; }
+  .lb { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; line-height: 1.45; }
+  .sb { font-size: 0.875rem; color: var(--ink-2); }
+  .now-years { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; max-width: 340px; }
+  .now-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .now-years :global(.stamps) { flex: 1; }
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
-    .head { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "kind" "main" "side" "says"; }
-    .head-side { width: auto; justify-items: start; }
-    .head-years { max-width: 280px; }
-    .head-years .label { text-align: left; }
-    .stamp-big { justify-items: start; grid-template-columns: auto minmax(0, 1fr); text-align: left; align-items: center; gap: 2px 16px; max-width: none; }
-    .stamp-big .circle { grid-row: span 2; width: 84px; height: 84px; }
-    .stamp-big .k { font-size: 2rem; }
+    .now { gap: 12px; padding: 12px 14px; }
+    .now .circle { width: 68px; height: 68px; }
+    .now .k { font-size: 1.8rem; }
+    .now-years { max-width: none; }
   }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
   .fact { display: grid; gap: 6px; align-content: start; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-  .tcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; margin-top: 18px; }
+  .tkey { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 8px 0 0; }
+  .tlist { margin-top: 12px; }
   .past { margin-top: 18px; }
   .rm-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 16px 0 0; }
   .ikcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 18px; margin-top: 14px; }
   .ik-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 8px; }
   .voice { margin-top: 16px; }
   .voice h3 { margin: 0 0 4px; font-size: 1.02rem; }
-  .cad { margin-top: 14px; }
+  .cads { margin-top: 18px; }
   .cad > summary { font-family: var(--font-display); color: var(--ink); font-size: 1rem; }
-  .cad h3 { font-size: 0.98rem; }
+  .cad-part { padding: 10px 14px; }
+  .cad-part + .cad-part { margin-top: 10px; }
+  .cad h3 { font-size: 1.02rem; margin: 0 0 4px; }
+  @media (max-width: 640px) {
+    .cads > li { padding: 10px 10px; }
+    .cad-part { padding: 8px 10px; }
+  }
 </style>

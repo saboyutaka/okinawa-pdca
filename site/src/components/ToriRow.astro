@@ -1,0 +1,57 @@
+---
+// 主な取組の一覧の1行（施策のページ。親は ul.row-list）。名前と、最新の年度の進捗状況の印（形と色）・活動指標の計画と実績、活動指標の名前。
+// 進捗状況は活動指標の計画に対する実績で決まるので、印と計画・実績を隣に置く（PC は名前の行の右、スマホは指標の名前の下の1行）。
+// 印の言葉（順調など）は一覧の上の凡例に1回だけ書き、行では読み上げだけにする（施策の一覧の判定のハンコと同じ。行に言葉の1行を取らないため）。
+// その年にやったことは畳む。4年分の進捗状況・予算・県の検証と改善案は取組のページで見せる（施策のページでは経年を出さず、一覧を短くする）。
+// 所管課・くらしのテーマ・対応する成果指標は取組のページに任せる（テーマと対応する成果指標は、施策のページではどの行も頭・成果指標の節と同じになる）
+import Icon from './Icon.astro';
+import { LATEST, yearLabel, statusOf, toneOfStatus, torikumiHref, type YearGroup } from '../lib/data.ts';
+import type { TorikumiRow } from '../lib/types.ts';
+
+interface Props { row: YearGroup<TorikumiRow>; shisakuId: string }
+const { row, shisakuId } = Astro.props;
+const t = row.latest;
+const href = torikumiHref(shisakuId, row.key);
+// 最新の年度の報告に無い取組（終了・名前の変更など）は、最後に報告された年度の進捗状況（読み上げでは年度も読む）
+const status = statusOf(t);
+const statusText = t.year === LATEST ? status : `${yearLabel(t.year)} ${status}`;
+// 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、組ごとに並べる
+const values = t.indicator ? (t.lines ? t.lines.map((l) => ({ target: l.target, actual: l.actual })) : [{ target: t.target, actual: t.actual }]) : [];
+---
+<li class="tr">
+  <a class="tr-name name-link" href={href}>{t.name}</a>
+  {t.indicator && <div class="tr-ind small secondary">{t.indicator}</div>}
+  <div class="tr-v small">
+    <Icon tone={toneOfStatus(status)} size={13} /><span class="sr-only">{statusText}{values.length > 0 && ': '}</span>
+    {values.length > 0 && <span class="tr-n">{values.map((v) => <span>計画 <b>{v.target || '—'}</b> → 実績 <b>{v.actual || '—'}</b></span>)}</span>}
+  </div>
+  {t.summary && (
+    <details class="tr-did small">
+      <summary>{yearLabel(t.year)}にやったこと</summary>
+      <p>{t.summary}</p>
+    </details>
+  )}
+</li>
+
+<style>
+  /* PC: 名前の行の右に印と計画・実績、名前の下に指標の名前。読み上げは 名前 → 指標の名前 → 進捗状況と計画・実績 の順 */
+  .tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name v" "ind v" "did did"; gap: 2px 24px; align-items: start; }
+  .tr-name { grid-area: name; }
+  .tr-ind { grid-area: ind; }
+  .tr-v { grid-area: v; display: flex; align-items: flex-start; gap: 8px; max-width: 24em; padding-top: 0.2em; }
+  /* PC では印を右端に置き、行ごとに印の位置をそろえる（計画・実績の幅は行ごとに違うため）。読み上げは印の言葉が先 */
+  .tr-v :global(.ic) { flex: none; margin-top: 0.3em; order: 2; }
+  .tr-n { display: grid; justify-items: end; text-align: right; }
+  .tr-n b { font-weight: 700; color: var(--ink); }
+  .tr-did { grid-area: did; margin-top: 2px; }
+  .tr-did > summary { font-size: 0.8125rem; padding: 0; }
+  .tr-did[open] > summary { margin-bottom: 2px; }
+  .tr-did p { margin: 0 0 4px; line-height: 1.7; }
+  /* スマホ: 名前 → 指標の名前 → 印と計画・実績 を縦に */
+  @media (max-width: 560px) {
+    .tr { grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "ind" "v" "did"; }
+    .tr-v { max-width: none; padding-top: 0; }
+    .tr-v :global(.ic) { order: 0; }
+    .tr-n { justify-items: start; text-align: left; }
+  }
+</style>

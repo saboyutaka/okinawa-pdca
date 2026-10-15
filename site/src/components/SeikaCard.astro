@@ -21,7 +21,7 @@ const u = x.unit;
   <SeikaRoute row={row} />
   {x.explanation && <SeikaSays r={x} />}
   <SeikaTable row={row} />
-  <a class="to-page" href={row.href}>この指標だけのページを見る</a>
+  <a class="to-page" href={row.href}>くわしく見る<span class="sr-only">: {row.name}</span></a>
 </article>
 
 <style>
