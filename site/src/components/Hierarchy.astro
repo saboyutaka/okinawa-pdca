@@ -1,8 +1,8 @@
 ---
 // ページの階層（パンくずの代わり）。いまのページの上の段（計画の体系なら 将来像 → 基本施策 → 施策展開 → 施策。lib/data.ts の planPath）を
-// 目次のように1段ずつ右へ下げて並べる。いまのページは入れず、すぐ下のページの頭のステッカーを、最後の段の ▼ から伸ばした線でつなぐ（いまのページがその下の段だと見せる）。
+// 目次のように1段ずつ右へ下げて並べる。いまのページは入れず、すぐ下のページの頭のステッカーを、最後の段から伸ばした線でつなぐ（いまのページがその下の段だと見せる）。
 // トップはヘッダーのタイトルから戻れるので入れない（上の階層の無いページには置かない）。
-// 段は線でつなぎ、どの段にも下に段が続く印の ▼ の丸を付ける（見た目だけの印。押しても何もしない）。報告書の番号（「(1)」「ア」「①」）は名前の前に薄い字で置く。
+// 段は木の形の線でつなぐ。報告書の番号（「(1)」「ア」「①」）は名前の前に薄い字で置く。
 // 計画の段（基本施策・施策）は太字、まとまりの名前（施策展開・一覧のページ）は細字にし、将来像は将来像の色の帯にする。ページの無い段（施策展開）はリンクにしない。
 // 検索エンジン向けに、ページのある段といまのページ（page）を構造化データ（BreadcrumbList。lib/seo.ts）でも出す
 import Sz from './Sz.astro';
@@ -21,7 +21,6 @@ const { items, page } = Astro.props;
       const name = it.href ? <a class="h-name" href={it.href}>{it.label}</a> : <span class="h-name">{it.label}</span>;
       return (
         <li class:list={['h-item', i === 0 && 'is-root', i > 0 && !it.href && 'is-group', it.sz && ['is-sz', `sz-${it.sz}`]]} style={`--lv: ${i}`}>
-          <span class="h-mk" aria-hidden="true" />
           {it.sz
             ? <span class="h-sz"><Sz id={it.sz} />{name}</span>
             : <span class="h-body">{it.kind && <span class="sr-only">{it.kind}</span>}{it.code && <span class="h-code" title={it.title}>{it.code}</span>}{name}</span>}
@@ -32,41 +31,37 @@ const { items, page } = Astro.props;
 </nav>
 
 <style>
-  /* --step は段の下げ幅、--mk は印の丸の大きさ、--gap は段のあいだ、--lw は線の太さ、--pb は箱の下の余白、--out は箱とページの頭のあいだ（下の #main の margin-top と同じ） */
+  /* --step は段の下げ幅、--in は段の頭から線までの幅（番号の下に線を通す）、--o は将来像の帯の下から線を出すときに下の段をずらす幅、
+     --gap は段のあいだ、--lw は線の太さ、--pb は箱の下の余白、--out は箱とページの頭のあいだ（下の #main の margin-top と同じ） */
   .hier {
-    --step: 26px; --mk: 22px; --gap: 8px; --lw: 2.5px; --pb: 14px; --out: 16px;
+    --step: 14px; --in: 5px; --o: 0px; --gap: 8px; --lw: 2.5px; --pb: 14px; --out: 16px;
     width: fit-content; max-width: 100%; margin-top: 18px; padding: 14px 20px var(--pb) 16px; font-size: 0.9375rem; line-height: 1.5;
   }
+  /* 将来像の帯の線は帯の丸の左寄り（帯の左の端から 14px）から出す（帯の丸い端から出ると線が途中で切れて見えるため） */
+  .hier:has(.is-sz) { --o: calc(14px - var(--in)); }
   /* すぐ下のページの頭のステッカーは、最後の段からの線の長さに合わせて離す */
   :global(#main) > .hier + :global(.sticker) { margin-top: 16px; }
   ol { list-style: none; margin: 0; padding: 0; }
-  .h-item {
-    position: relative; display: grid; grid-template-columns: var(--mk) minmax(0, 1fr); align-items: center; column-gap: 8px;
-    padding: var(--gap) 0 0 calc(var(--lv) * var(--step));
-  }
-  .h-item:first-child { padding-top: 0; }
+  .h-item { position: relative; display: grid; padding: var(--gap) 0 0 calc(var(--lv) * var(--step) + var(--o)); }
+  .h-item:first-child { padding: 0; }
 
-  /* 上の段の印から、この段の印へのカギ形の線。印は段の高さの真ん中に置くので、線もそこで曲げる */
+  /* 上の段の番号の下から、この段の1行目の頭へのカギ形の線 */
   .h-item:not(:first-child)::before {
-    content: ''; position: absolute; top: 0; bottom: calc(50% - var(--gap) / 2 - var(--lw) / 2);
-    left: calc((var(--lv) - 1) * var(--step) + var(--mk) / 2 - var(--lw) / 2); width: calc(var(--step) - var(--mk) / 2 + var(--lw) / 2);
-    border-left: var(--lw) solid var(--hair); border-bottom: var(--lw) solid var(--hair); border-bottom-left-radius: 10px;
+    content: ''; position: absolute; top: 0; height: calc(var(--gap) + 0.75em + var(--lw) / 2);
+    left: calc((var(--lv) - 1) * var(--step) + var(--o) + var(--in) - var(--lw) / 2); width: calc(var(--step) - var(--in) - 3px + var(--lw) / 2);
+    border-left: var(--lw) solid var(--hair); border-bottom: var(--lw) solid var(--hair); border-bottom-left-radius: 6px;
   }
-  /* 下の段へ続く線（印の真ん中から段の下の端まで。次の段の ::before につながる） */
+  /* 名前が折り返したときに、番号の下から段の下の端まで線を下ろす（次の段の ::before につながる。1行なら高さ0で出ない） */
   .h-item::after {
-    content: ''; position: absolute; top: calc(50% + var(--gap) / 2); bottom: 0;
-    left: calc(var(--lv) * var(--step) + var(--mk) / 2 - var(--lw) / 2); border-left: var(--lw) solid var(--hair);
+    content: ''; position: absolute; top: calc(var(--gap) + 1.5em); bottom: 0;
+    left: calc(var(--lv) * var(--step) + var(--o) + var(--in) - var(--lw) / 2); border-left: var(--lw) solid var(--hair);
   }
-  .h-item:first-child::after { top: 50%; }
+  .h-item:first-child::after { top: 1.5em; }
+  /* 将来像の帯は、帯の後ろから線を出す */
+  .h-item.is-sz::after { top: 50%; }
   /* 最後の段の線は、すぐ下がページの頭のステッカーのときだけ、箱の下の余白と枠を抜けてステッカーの上の枠まで伸ばす */
   .h-item:last-child::after { display: none; }
   .hier:has(+ :global(.sticker)) .h-item:last-child::after { display: block; bottom: calc(-1 * (var(--pb) + 2px + var(--out))); }
-
-  .h-mk {
-    position: relative; z-index: 1; display: grid; place-items: center; width: var(--mk); height: var(--mk);
-    border: 2px solid var(--line); border-radius: 50%; background: var(--paper);
-  }
-  .h-mk::before { content: ''; width: 9px; height: 7px; margin-top: 2px; background: var(--ink); clip-path: polygon(0 0, 100% 0, 50% 100%); }
 
   .h-body { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   .h-code { flex: none; font-family: var(--font-num); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
@@ -77,12 +72,12 @@ const { items, page } = Astro.props;
 
   /* 将来像は将来像の色の帯（styles/global.css の .sz-ribbon と同じ形） */
   .h-sz {
-    justify-self: start; display: flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 16px 4px 5px;
+    position: relative; z-index: 1; justify-self: start; display: flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 16px 4px 5px;
     background: var(--szw); border: 2px solid var(--line); border-radius: 999px; box-shadow: 2px 2px 0 var(--shadow);
   }
   .h-sz :global(.badge-sz) { width: 2em; height: 2em; font-size: 0.875rem; }
 
   @media (max-width: 640px) {
-    .hier { --step: 22px; width: auto; padding: 14px 14px var(--pb) 12px; }
+    .hier { width: auto; padding: 14px 14px var(--pb) 12px; }
   }
 </style>
