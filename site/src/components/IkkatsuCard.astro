@@ -1,11 +1,12 @@
 ---
 // 一括交付金（ソフト）の事業1つ（施策ページ）。年度ごとの評価（◎○△未）のスタンプ、最新年度の成果目標と予算の執行、県の今後の方針。
+// 一括交付金の札（.ik-tag）は付けない（施策のページの一括交付金の節の中だけで使い、節の見出しと同じになるため）
 // id（ikkatsuAnchor）は、一括交付金の事業をさがす・予算と財源・取組のページからの行き先
 import Stamps from './Stamps.astro';
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
 import { yearLabel, type YearGroup } from '../lib/data.ts';
-import { IKKATSU, gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
+import { gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../lib/types.ts';
 
@@ -24,7 +25,6 @@ const sheet = j.sheet_source ? planSourceLink('ikkatsu', j.sheet_source, j.sheet
 ---
 <article class="sticker ik anchor" id={ikkatsuAnchor(g.key)}>
   <div class="th">
-    <span class="ik-tag">{IKKATSU.short}</span>
     <h3>{j.name}</h3>
     <div class="small secondary">{j.dept || '担当部課の記載なし'}　計画期間 {j.period || '—'}</div>
   </div>

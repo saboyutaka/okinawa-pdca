@@ -1,33 +1,66 @@
 ---
-// 成果指標1つ（施策ページ）。①計画値に届いたか（1行） ②スタート → いま → ゴールの数字（時間の順） ③道のりの図 ④県の説明（吹き出しでいつも出す） ⑤年度ごとの表（畳む）
-// 同じ数字を何度も並べない。数字は②に1回だけ出し、図は形（計画の道すじとのずれ）を見せる。①〜③と⑤は成果指標のページと同じ部品。
+// 成果指標1つ（施策ページ）。①名前と達成率の札 ②スタート → いま → ゴールの値（1行。将来像のページの主要指標と同じ形） ③道のりの図と「表で見る」
+// ④県の説明（吹き出し。says={false} のときは出さない。施策のどの成果指標も同じ説明のときは、施策のページがカードの後ろに1回だけ出す）。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
+// その年度の計画値と県の見通しは、図と表に任せる。「計画値にまだ届いていません」の文は、札にマウスを乗せると出し、読み上げでは読む。
 // 見出しの名前は成果指標のページ（前の年度の県の説明・施策の主な取組の進み具合）へのリンク
-import SeikaGoal from './SeikaGoal.astro';
+import Icon from './Icon.astro';
 import SeikaRoute from './SeikaRoute.astro';
 import SeikaSays from './SeikaSays.astro';
-import SeikaTable from './SeikaTable.astro';
-import { LATEST, yearLabel, sectionHref, type SeikaGroupOfShisaku } from '../lib/data.ts';
+import { LATEST, yearLabel, sectionHref, withUnit, refText, seikaVerdict, type SeikaGroupOfShisaku } from '../lib/data.ts';
 
-interface Props { row: SeikaGroupOfShisaku }
-const { row } = Astro.props;
+interface Props { row: SeikaGroupOfShisaku; says?: boolean }
+const { row, says = true } = Astro.props;
 const x = row.latest;
 const u = x.unit;
+const verdict = seikaVerdict(x);
+const ref = refText(x.actual_ref_year);
+// 達成率は数を大きく出す。報告書の欄が「達成」「未達成」など数でないときは、その言葉だけ
+const rateNum = x.rate != null ? `${x.rate}%` : null;
+const vals = [
+  { label: 'スタート', v: withUnit(x.base_raw, u), y: '' },
+  { label: x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`, v: withUnit(x.actual_raw, u), y: ref, now: true },
+  { label: 'ゴール', v: withUnit(x.target_raw, u), y: x.target_year },
+];
 ---
 <article class="sticker scard">
-  <h3><a class="name-link" href={row.href}>{row.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
+  <div class="sc-head">
+    <h3><a class="name-link" href={row.href}>{row.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
+    <span class:list={['sc-rate', `tone-${verdict.tone || 'blank'}`]} title={verdict.text}>
+      <Icon tone={verdict.tone} size={14} />{rateNum ? <><span class="sc-rate-l">達成率</span><b>{rateNum}</b></> : <b class="word">{verdict.chip}</b>}<span class="sr-only">。{verdict.text}</span>
+    </span>
+  </div>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
-  <SeikaGoal row={row} />
+  <p class="sc-vals">
+    {vals.map((v, j) => (
+      <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
+    ))}
+  </p>
   <SeikaRoute row={row} />
-  {x.explanation && <SeikaSays r={x} />}
-  <SeikaTable row={row} />
-  <a class="to-page" href={row.href}>この指標だけのページを見る</a>
+  {says && x.explanation && <SeikaSays r={x} />}
+  <a class="to-page" href={row.href}>くわしく見る<span class="sr-only">: {row.name}</span></a>
 </article>
 
 <style>
   .scard { margin-top: 18px; }
-  .scard h3 { margin-top: 0; }
-  .meta { margin: -4px 0 4px; }
+  .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
+  .sc-head h3 { margin: 0; }
+  /* 達成率の札。数を大きく、区分の色の地と形で（取組のページの頭の進捗状況の札に近い形。ステッカーの中なので影は付けない） */
+  .sc-rate {
+    display: inline-flex; align-items: center; gap: 6px; padding: 2px 14px; border: 2px solid var(--line); border-radius: 999px; white-space: nowrap;
+    background-color: color-mix(in oklab, var(--tone) 22%, var(--paper));
+  }
+  .sc-rate-l { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .sc-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.35rem; line-height: 1.3; }
+  .sc-rate b.word { font-family: var(--font-display); font-size: 1rem; }
+  .meta { margin: 2px 0 4px; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
+  /* スタート → いま → ゴールの値を1行で（入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
+  .sc-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 6px 0 0; font-size: 0.9375rem; color: var(--ink-2); line-height: 1.6; }
+  .v-l { font-size: 0.75rem; font-weight: 700; }
+  .v-n { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+  .now .v-n { font-size: 1.1rem; }
+  .v-y { font-size: 0.75rem; white-space: nowrap; }
+  .arrow { color: var(--muted); margin-right: 3px; }
   .to-page { display: inline-block; margin-top: 10px; font-size: 0.875rem; font-weight: 700; }
 </style>

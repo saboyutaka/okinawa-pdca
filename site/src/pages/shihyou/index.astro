@@ -16,7 +16,7 @@ import ExtLink from '../../components/ExtLink.astro';
 
 const kihon = getKihonList();
 const shouraizou = getShouraizou();
-// 年度をまたいでまとめた成果指標。最新の報告（R7）にあるものと、R6 まで使われていたもの（中期実施計画で入れ替わった指標）
+// 年度をまたいでまとめた成果指標。最新の報告にあるものと、無いもの（前の年度まで使われていた指標。いまは R6 まで使われ、中期実施計画で入れ替わった指標）
 const rows = getSeikaGroups();
 const latestCount = rows.filter((r) => r.latest.year === LATEST).length;
 const pastCount = rows.length - latestCount;
@@ -24,7 +24,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
 ---
 <Base title="成果指標をさがす" description="沖縄県PDCAの成果指標（施策ごとの成果をはかる指標）を、キーワード・くらしのテーマ・将来像・達成率・見通し・担当部局でさがせます。">
   <h1>成果指標をさがす</h1>
-  <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、R6 まで使われていた{fmt(pastCount)}指標をさがせます。基本施策ごとの大きな数字（平均寿命・観光収入など）は、<Term word="主要指標" />として<a href="/future/">将来像</a>のページで見られます。</p>
+  <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、前の年度まで使われていた{fmt(pastCount)}指標をさがせます。基本施策ごとの大きな数字（平均寿命・観光収入など）は、<Term word="主要指標" />として<a href="/future/">将来像</a>のページで見られます。</p>
 
   <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）
@@ -64,7 +64,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
     <label data-label="対象">対象
       <select name="period">
         <option value="latest" selected>{yearLabel(LATEST)}の報告にある指標</option>
-        <option value="past">R6 まで使われていた指標</option>
+        <option value="past">{yearLabel(LATEST)}の報告に無い指標</option>
         <option value="">すべて</option>
       </select>
     </label>
@@ -73,7 +73,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
   <div class="active-filters" id="active" hidden></div>
   <p class="result-count" aria-live="polite" aria-atomic="true"><span id="count">{latestCount}</span>指標を表示</p>
   <p class="small secondary">
-    右の札は{yearLabel(LATEST)}の<Term word="達成率" />（R6 までの指標は R6）です。
+    右の札は{yearLabel(LATEST)}の<Term word="達成率" />（{yearLabel(LATEST)}の報告に無い指標は、最後に報告された年度のもの）です。
     ゴールの目標値は、R7 からの指標は<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>の R9、R6 までの指標は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>の R6 のものです。
   </p>
   <SeikaKey mini />

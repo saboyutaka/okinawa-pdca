@@ -941,14 +941,6 @@ export function seikaHrefByName(shisakuId: string, name: string | null | undefin
   const k = sameKey(nameKey(name || ''));
   return (list.find((r) => sameKey(nameKey(r.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.name)))?.href ?? null;
 }
-// 主な取組の対応する成果指標（取組のページ・施策ページの取組のカード）。部局票がある最新の年度の「対応する成果指標」（名前）を、
-// 同じ施策のその年度の成果指標の名前と比べ、当たる指標はすべて結ぶ（1つだけ結ぶと、区分の違う指標を落とすため）
-export function seikaOfTorikumi(shisakuId: string, row: YearGroup<TorikumiRow>) {
-  const year = [...YEARS].reverse().find((y) => row.years[y] && budgetOf(y, shisakuId, row.key));
-  const name = (year && budgetOf(year, shisakuId, row.key)?.seika_name) || '';
-  const groups = year && name ? seikaGroupsOf(shisakuId).filter((g) => g.years[year] && seikaNameMatches(name, g.years[year].name)) : [];
-  return { year, name, groups };
-}
 // 成果指標の施策の主な取組（成果指標のページ）。指標の最新の報告と同じ年度の報告にある取組で、並びは施策ページの取組の並び。
 // 部局票の「対応する成果指標」は、県が施策の成果指標をまとめて書いていて（同じ施策の取組はどれも同じ名前。test/integrity.test.ts）、
 // 取組ごとには分かれていないので、名前で結ばずに施策の取組をまとめて出す
