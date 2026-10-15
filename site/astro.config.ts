@@ -54,39 +54,6 @@ const rootFavicon: AstroIntegration = {
   },
 };
 
-// ページ（HTML）を配るときに、CSS と数字のフォントを Link ヘッダーでも知らせる（public/_headers に書き足す）。
-// Cloudflare の Early Hints（ダッシュボードの Speed で有効にする）は、このヘッダーを覚えておき、次からは HTML を用意しているあいだに
-// 103 で先に送るので、ブラウザは HTML を待たずに CSS とフォントを取りに行ける。
-// ファイル名には中身のハッシュが付いてビルドごとに変わるので、書き出したページから読む。CSS もフォントも全ページで同じものなので、
-// 全ページが同じかを確かめてから、ページのルール（/ と /*/）に1つずつ書く
-const earlyHints: AstroIntegration = {
-  name: 'early-hints',
-  hooks: {
-    'astro:build:done': async ({ pages, dir, logger }) => {
-      const linksOf = (html: string) => {
-        const head = html.slice(0, html.indexOf('</head>'));
-        const css = [...head.matchAll(/<link rel="stylesheet" href="(\/_astro\/[^"]+\.css)"/g)].map((m) => `<${m[1]}>; rel=preload; as=style`);
-        const font = [...head.matchAll(/<link rel="preload" href="(\/_astro\/[^"]+\.woff2)" as="font"/g)].map((m) => `<${m[1]}>; rel=preload; as=font; type="font/woff2"; crossorigin`);
-        return [...css, ...font].join(', ');
-      };
-      const paths = sitemapPaths(pages.map((p) => p.pathname));
-      const all = new Set(await Promise.all(paths.map(async (path) => linksOf(await readFile(new URL(`.${path}index.html`, dir), 'utf-8')))));
-      const [link] = all;
-      if (all.size !== 1 || !link) throw new Error(`ページによって CSS・フォントが違うか無いので、Link ヘッダーを1つにできない: ${[...all].join(' / ')}`);
-      // 同じパスのルールを後ろに足すと、前のルール（Cache-Control）が効かなくなる（wrangler 4.149.0 の wrangler dev で確かめた）ので、もとのルールの中に書き足す
-      const headers = new URL('_headers', dir);
-      let n = 0;
-      const text = (await readFile(headers, 'utf-8')).replace(/^(\/|\/\*\/)\n( {2}Cache-Control: [^\n]+\n)/gm, (_, path: string, cc: string) => {
-        n++;
-        return `${path}\n${cc}  Link: ${link}\n`;
-      });
-      if (n !== 2) throw new Error(`_headers のページのルール（/ と /*/）が ${n} 個しか見つからない`);
-      await writeFile(headers, text);
-      logger.info(`_headers にページの Link を書いた: ${link}`);
-    },
-  },
-};
-
 // 開発サーバー（make dev）のファイルの見張り。コンテナの中には、ホストで書き換えたファイルの変更の知らせ（inotify）が届かず、
 // 書き換えても前の中身を出し続ける（Docker Desktop for Mac で確かめた）。compose.yaml が WATCH_POLLING を渡したときだけ、一定の間隔でファイルを見に行く。
 // 書き出したサイト（dist。数千のファイル）は見に行かない
@@ -101,7 +68,7 @@ export default defineConfig({
   // inlineStylesheets: CSS をページの <style> に埋め込まず、/_astro/ のファイルにする（ずっとキャッシュされ、ページを移るたびに送り直さない）。
   // 埋め込むと、Astro はビルド全体の <style> のハッシュ（約40個）をどのページの CSP にも入れる（下の vite.build.cssCodeSplit と docs/site.md の 7章）
   build: { format: 'directory', concurrency: 4, inlineStylesheets: 'never' },
-  integrations: [sitemap, rootFavicon, cardCache, earlyHints],
+  integrations: [sitemap, rootFavicon, cardCache],
   // CSP（ページが読み込んで動かしてよいもの）を各ページの <meta> で出す。このサイトのファイルと、Astro が書き出したスクリプトのハッシュだけを許す（<style> は書き出さない）。
   // <script is:inline> のハッシュは Astro が足さないので layouts/Base.astro で足す。図や札の色に style 属性を使うので、style 属性だけはインラインを許す。
   // frame-ancestors は <meta> では効かないので public/_headers で出す。

@@ -12,7 +12,7 @@ const data = JSON.stringify({ unit: run.unit, years: run.years, here } satisfies
 const yearText = (r: ActivityRun['years'][number]) => (r.future
   ? `${yearLabel(r.y)} 計画 ${r.plan_raw}（年度別計画）`
   : `${yearLabel(r.y)} 計画 ${r.plan_raw || '—'}、実績 ${r.actual_raw || '—'}（${r.status}）`);
-const aria = `活動指標「${run.indicator}」の計画と実績。${run.years.map(yearText).join('。')}。左右の矢印キーで年度を移れます`;
+const aria = `活動指標「${run.indicator}」${run.part && `の${run.part}`}の計画と実績。${run.years.map(yearText).join('。')}。左右の矢印キーで年度を移れます`;
 const last = [...run.years].reverse().find((r) => !r.future);
 // 目標・実績が行ごとに分かれた値は1行にする
 const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');

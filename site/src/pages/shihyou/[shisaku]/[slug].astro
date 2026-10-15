@@ -22,7 +22,7 @@ import ExtLink from '../../../components/ExtLink.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, STATUSES, yearLabel, yearLong, sectionHref, sourceLink, statusOf, toneOfStatus, countBy, textGoalChartRow,
-  torikumiOfSeika, seikaAlias, seikaVerdict, planPath, type TorikumiGroup,
+  torikumiOfSeika, seikaAlias, seikaFormerNames, seikaVerdict, planPath, type TorikumiGroup,
 } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, kankoOfSeika } from '../../../lib/plans.ts';
 import { seikaHead } from '../../../lib/describe.ts';
@@ -62,6 +62,8 @@ const rm = kankoOfSeika(g.href);
 // 印字の名前が同じ指標と並んでいて見分けられないので、ほかの報告書の名前で出している年度（lib/data.ts の SEIKA_ALIASES）
 const aliased = [...present].reverse().filter((y) => seikaAlias(g.years[y]));
 const alias = aliased.length > 0 ? { printed: g.years[aliased[0]].name, from: seikaAlias(g.years[aliased[0]])!.from } : null;
+// 前の年度の報告での名前（名前が変わった指標も、同じ指標として年度をつないでいる。lib/renames.ts の SEIKA_RENAMES）
+const formers = seikaFormerNames(g).map((f) => ({ ...f, span: f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0]) }));
 // 目次に出す、計画値に届いたか（頭の SeikaGoal と同じ札）
 const verdict = seikaVerdict(x);
 ---
@@ -75,6 +77,7 @@ const verdict = seikaVerdict(x);
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}にも同じ指標</a>}
     </div>
     {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期<Term word="実施計画" />で入れ替わった指標）。</p>}
+    {formers.length > 0 && <p class="small notice-inline">{formers.map((f) => `${f.span}の報告では「${f.name}」という名前でした。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
     <div class="goal"><SeikaGoal row={g} /></div>
   </header>
 
