@@ -91,7 +91,17 @@ const NAV_SCROLL = `(() => {
   save();
   nav.addEventListener('scroll', save, { passive: true });
 })();`;
-for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
+// スマホの幅で、ページの階層（components/Hierarchy.astro）のあるページをリンクから開いたときは、ページの頭が画面の上にくる位置から始める
+// （ヘッダーと階層で、ページの頭が画面の半分近くまで下がるため）。戻る・進む・再読み込みはブラウザが位置を戻すので動かさず、# の付いた URL も動かさない。
+// main を読み終えたところで動かし（CSS が届くまで待つので位置が決まっている）、最初の描画からその位置で出す。html の scroll-behavior: smooth を使わず、すぐに移す
+const HEAD_SCROLL = `(() => {
+  const head = document.querySelector('#main > .hier + *');
+  if (!head || location.hash || !matchMedia('(max-width: 640px)').matches) return;
+  const nav = performance.getEntriesByType('navigation')[0];
+  if (nav && nav.type !== 'navigate') return;
+  scrollTo({ top: head.getBoundingClientRect().top + scrollY - 10, behavior: 'instant' });
+})();`;
+for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
 ---
 <!doctype html>
 <html lang="ja">
@@ -167,6 +177,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, SPECULATION_RULES]) Astro.csp?.inser
     <main class="wrap" id="main">
       <slot />
     </main>
+    <script is:inline set:html={HEAD_SCROLL}></script>
     <footer class="site-footer">
       <div class="wrap">
         {/* ナビに無いページへのリンクと、年の書き方・配色のボタン、作り手の1行（著作権の表示の代わりに、いちばん下に小さく） */}
