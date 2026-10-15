@@ -51,7 +51,7 @@ const dataPath = treeDataPath();
     {DEPTHS.map((d, i) => <button type="button" data-tree-depth={i} aria-controls="plan-tree" aria-pressed={i === START ? 'true' : 'false'}>{d}</button>)}
   </div>
   <div class="tree-box sticker">
-    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span></p>
+    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span><span class="tree-hint" aria-hidden="true">矢印キーで行を移り、開け閉めできます</span></p>
     <p class="tree-msg small secondary" role="status">目次を読み込んでいます…</p>
     <ul class="tree" id="plan-tree" data-tree aria-label="計画の目次。上下の矢印キーで行を移り、左右の矢印キーかスペースで開け閉めし、Enter でページを開きます" aria-busy="true" data-src={dataPath} data-fallback={TREE_DATA_FALLBACK}></ul>
     <noscript><p class="small">目次の表示には JavaScript が必要です。<a href="/shisaku/">施策をさがす</a>・<a href="/future/">5つの将来像</a>から、それぞれの施策・取組を見られます。</p></noscript>
@@ -133,6 +133,12 @@ const dataPath = treeDataPath();
   .tree-box .tree-root .tw { margin-top: calc(var(--c) - var(--tw) / 2); border: 0; background: none; }
   .tree-box .tree-root .tw::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
   .tree-box .tree-root::after { top: calc(var(--c) + 6px); }
+  /* キーボードで木に止まったときだけ、矢印キーで動かせることを根の行の右に出す（指標のマップと同じ。読み上げは木の aria-label で伝える） */
+  .tree-box .tree-hint {
+    display: none; position: absolute; right: 0; top: var(--c); translate: 0 -50%; padding: 0 8px; font-family: var(--font); font-size: 0.75rem; line-height: 1.6;
+    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
+  }
+  .tree-box:has(.tree :focus-visible) .tree-hint { display: block; }
 
   /* 開け閉めの丸。閉じているときは ▶、開いているときは ▼ */
   .tree-box .tw { display: grid; place-items: center; width: var(--tw); height: var(--tw); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
@@ -183,6 +189,8 @@ const dataPath = treeDataPath();
 
   @media (max-width: 640px) {
     .sticker.tree-box { padding: 12px 12px 14px 10px; }
+    /* 根の行の右に入らないので、箱の上の線に重ねる（箱の上の余白 12px と線の太さの半分だけ上へ） */
+    .tree-box .tree-hint { top: -13px; }
   }
   @media (prefers-reduced-motion: no-preference) {
     .tree-box .tree .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
