@@ -161,7 +161,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="torikumi">
     <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">県がこの施策で進めている{fmt(toriActive.length)}件の取組が、{yearLabel(LATEST)}にどこまで進んだかの一覧です。印は<Term word="進捗状況" />（押すと意味が出ます）、下の行は<Term word="活動指標" />の計画と実績。名前を押すと、4年間の歩みや予算、県の検証までたどれます。</p>
+    <p class="small secondary lead">名前の前の印は{yearLabel(LATEST)}の<Term word="進捗状況" />（押すと区分を出します）、名前の下は<Term word="活動指標" />とその計画と実績です。名前を押すと、4年分の進捗状況・活動内容・予算・県の検証と改善案を見られます。</p>
     <ul class="row-list tlist">
       {toriActive.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
     </ul>
