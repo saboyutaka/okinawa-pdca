@@ -10,7 +10,8 @@
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
 //  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
 //    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
-//    Home・End で最初・最後に移る。吹き出しが出ているときは Enter でその指標のページへ移る
+//    Home・End で最初・最後に移る。絞り込んでいるときは、条件に合うマスだけを移る（薄くしたマスは飛ばす。押せば選べる）。
+//    吹き出しが出ているときは Enter でその指標のページへ移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
@@ -308,8 +309,14 @@ function init(form: HTMLFormElement, root: HTMLElement) {
 
   // ---------------------------------------------------------------- 押す・キーボード
 
-  // 見えているマス（並びの順。年度に無いマス・隠した列のマスは除く）
-  const visible = (cs: HTMLElement[]) => cs.filter((c) => !c.hidden && c.offsetParent);
+  // キーで移れるマス（年度に無いマス・隠した列のマス・絞り込みの条件に合わないマスは除く）
+  const movable = (c: HTMLElement) => !c.hidden && !c.classList.contains('dim') && c.offsetParent !== null;
+  const visible = (cs: HTMLElement[]) => cs.filter(movable);
+  // 並び（cs）の中で cur から d の向きにある、いちばん近い移れるマス（cur は移れないマスでもよい。絞り込む前に選んだマス）
+  const step = (cs: HTMLElement[], cur: HTMLElement, d: number) => {
+    for (let k = cs.indexOf(cur) + d; k >= 0 && k < cs.length; k += d) if (movable(cs[k])) return cs[k];
+    return undefined;
+  };
   // 上下のマス（d は 1 で下、-1 で上）。画面の上で横に重なる箱（PC は同じ指標の列、スマホは縦に積んだ全部の箱）のマスのうち、
   // いちばん近い段の、横の位置がいちばん近いマス
   const vertical = (cur: HTMLElement, d: number) => {
@@ -333,27 +340,26 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     });
     return best;
   };
-  // 左右のマス（d は 1 で右、-1 で左）。同じ箱の同じ段の隣。段の端では、同じ将来像の行で画面の上でその向きに並ぶ隣の箱の、高さがいちばん近い段の端のマス。
-  // その向きに箱が無ければ（活動指標の右端・主要指標の左端、スマホで箱が縦に積まれているとき）、並びの順の前後（shown）
-  const horizontal = (cur: HTMLElement, d: number, shown: HTMLElement[]) => {
+  // 左右のマス（d は 1 で右、-1 で左）。同じ箱の同じ段の隣。段の端では、同じ将来像の行で画面の上でその向きに並ぶ隣の箱（移れるマスのある箱）の、高さがいちばん近い段の端のマス。
+  // その向きに箱が無ければ（活動指標の右端・主要指標の左端、スマホで箱が縦に積まれているとき）、並びの順の前後
+  const horizontal = (cur: HTMLElement, d: number) => {
     const r = cur.getBoundingClientRect();
     const block = cur.closest<HTMLElement>('.im-tier')!;
-    const own = visible([...block.querySelectorAll<HTMLElement>('.mc')]);
-    const nb = own[own.indexOf(cur) + d];
+    const nb = step([...block.querySelectorAll<HTMLElement>('.mc')], cur, d);
     if (nb && Math.abs(nb.getBoundingClientRect().top - r.top) <= 2) return nb;
     const b = block.getBoundingClientRect();
     const side = [...block.parentElement!.children]
-      .map((x) => ({ x, p: x.getBoundingClientRect() }))
-      .filter(({ x, p }) => x !== block && p.width > 0 && (d > 0 ? p.left >= b.right : p.right <= b.left))
+      .map((x) => ({ p: x.getBoundingClientRect(), cs: visible([...x.querySelectorAll<HTMLElement>('.mc')]) }))
+      .filter(({ p, cs }) => cs.length && (d > 0 ? p.left >= b.right : p.right <= b.left))
       .sort((m, n) => (m.p.left - n.p.left) * d)[0];
     if (side) {
-      const cs = visible([...side.x.querySelectorAll<HTMLElement>('.mc')]);
+      const { cs } = side;
       const tops = cs.map((c) => c.getBoundingClientRect().top);
       const top = tops.reduce((a, t) => (Math.abs(t - r.top) < Math.abs(a - r.top) ? t : a), Infinity);
       const line = cs.filter((_, i) => Math.abs(tops[i] - top) <= 2);
       if (line.length) return d > 0 ? line[0] : line.at(-1);
     }
-    return shown[shown.indexOf(cur) + d] ?? cur;
+    return step(allCells, cur, d) ?? cur;
   };
   const selectCell = (c: HTMLElement | null | undefined) => {
     const at = c && tierOf.get(c);
@@ -375,8 +381,8 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     const shown = visible(allCells);
     const cur = sel ? sel.t.cells[sel.i] : null;
     let next: HTMLElement | undefined;
-    if (e.key === 'ArrowRight') next = cur ? horizontal(cur, 1, shown) : shown[0];
-    else if (e.key === 'ArrowLeft') next = cur ? horizontal(cur, -1, shown) : shown.at(-1);
+    if (e.key === 'ArrowRight') next = cur ? horizontal(cur, 1) : shown[0];
+    else if (e.key === 'ArrowLeft') next = cur ? horizontal(cur, -1) : shown.at(-1);
     else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') next = cur ? (vertical(cur, e.key === 'ArrowDown' ? 1 : -1) ?? cur) : shown[0];
     else if (e.key === 'Home') next = shown[0];
     else if (e.key === 'End') next = shown.at(-1);
