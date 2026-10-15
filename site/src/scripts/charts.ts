@@ -144,10 +144,10 @@ function crosshair(wrap: HTMLElement, svg: SVGSVGElement, xs: number[], top: num
 }
 
 // 成果指標・活動指標の図の枠。横は報告年度で、計画期間（前期 R4〜R6・中期 R7〜R9）ごとに区切り、最新の報告の計画期間でない方は地の色の帯にする。
-// 縦の目盛りの文字の幅で左の余白を決めるので、svg を先に置いてから測る。帯・目盛り・年度の文字はここで描く（印より下に重ねるため）
+// 縦の目盛りの文字の幅で左の余白を決めるので、svg を先に置いてから測る（minLeft はその最小）。帯・目盛り・年度の文字はここで描く（印より下に重ねるため）
 type Period = { ys: number[]; cur: boolean };
 type TextW = (text: string, cls: string) => number;
-function yearFrame(wrap: HTMLElement, W: number, H: number, top: number, periods: Period[], ticks: number[], lo: number, hi: number, unit: string) {
+function yearFrame(wrap: HTMLElement, W: number, H: number, top: number, periods: Period[], ticks: number[], lo: number, hi: number, unit: string, minLeft = 0) {
   const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
   wrap.replaceChildren(svg);
   const textW: TextW = (text, cls) => {
@@ -160,7 +160,7 @@ function yearFrame(wrap: HTMLElement, W: number, H: number, top: number, periods
   // 目盛りの単位は1文字（%・人・件など）のときだけ付ける。長い単位はカードの見出しにある
   const u = (unit || '').normalize('NFKC');
   const tickText = (t: number) => `${nf.format(t)}${u.length === 1 ? u : ''}`;
-  const m = { l: Math.ceil(Math.max(...ticks.map((t) => textW(tickText(t), 'tick')))) + 14, r: 8, t: top, b: 30 };
+  const m = { l: Math.max(minLeft, Math.ceil(Math.max(...ticks.map((t) => textW(tickText(t), 'tick')))) + 14), r: 8, t: top, b: 30 };
   const slots = periods.flatMap((p) => p.ys);
   const ih = H - m.t - m.b;
   const sw = (W - m.l - m.r) / slots.length;
@@ -380,7 +380,8 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
 
 // 主な取組の活動指標の「計画と実績」。成果指標の図と同じ形で、横は報告年度、計画期間ごとに点線でつないだ白い丸がその年度の計画、青い点が実績。
 // 最新の報告にある取組は、部局票の年度別計画からこの先の年度の計画も白い丸で置く。活動の量なので縦の目盛りは0から。
-// 図の中の文字は「いまここ」だけにし、進捗状況と達成割合はツールチップと「表で見る」に出す
+// 図の中の文字は「いまここ」だけにし、進捗状況と達成割合はツールチップと「表で見る」に出す（最後の報告の年度の計画と実績は図の上の文。KatsudouChart.astro）。
+// 右の余白（m.r の 8px）も、表の右の余白と同じ
 function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: KatsudouData) {
   const num = (v: number | null): v is number => v != null && Number.isFinite(v);
   const done = years.filter((r) => !r.future);
@@ -396,8 +397,12 @@ function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: Katsu
   const ticks = niceTicks(lo, hi, 4);
   lo = Math.min(lo, ticks[0]);
   hi = Math.max(hi, ticks[ticks.length - 1]);
-  const H = W < 480 ? 190 : 220;
-  const { svg, textW, m, ih, slots, x, y } = yearFrame(wrap, W, H, 36, periods, ticks, lo, hi, unit);
+  // 取組のページで頭の数字の次に見る図なので、成果指標の図より低くする
+  const H = W < 480 ? 160 : 170;
+  // 左の余白は、下の「表で見る」の表の行の見出し（「達成割合」）が入る幅より狭くしない。決まった余白はカードに --plot-l で渡し、
+  // 表の列を図の年度にそろえる（取組のページの .progress.aligned）
+  const { svg, textW, m, ih, slots, x, y } = yearFrame(wrap, W, H, 36, periods, ticks, lo, hi, unit, 60);
+  wrap.parentElement?.style.setProperty('--plot-l', `${m.l}px`);
   const line = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
   const { mark, markPath, place } = placer(W, 24, m.t + ih + 2);
 

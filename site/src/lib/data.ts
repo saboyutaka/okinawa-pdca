@@ -793,7 +793,9 @@ export function repostsOf(g: TorikumiGroup) {
 
 // 名前が変わった（または分割・統合された）可能性のある取組。同じ施策で、この取組が最後に載った年度の翌年度から載り始めた取組（またはその逆）のうち、
 // 部局票に同じ予算事業名があるもの、または名前が似ているもの（文字の2つ組の一致率 0.5 以上）。年度をまたぐ照合は名前だけなので、その補い
-const NO_BUDGET = /^([ー―\-－]|なし|県事業なし|)$/;
+const NO_BUDGET = /^([ー―\-－‐—]|なし|県事業なし|)$/;
+// 予算事業の欄が「―」「なし」など、名前の無いもの（部局票の空欄の書き方）
+export const isNoBudgetName = (s: string | null | undefined) => NO_BUDGET.test(budgetKey(s));
 const budgetNameCache = new Map<string, Map<string, string>>();
 function budgetNamesOf(g: TorikumiGroup) {
   const k = `${g.shisaku.id}|${g.key}`;
@@ -802,7 +804,7 @@ function budgetNamesOf(g: TorikumiGroup) {
     for (const y of YEARS) {
       if (!g.years[y]) continue;
       for (const b of budgetOf(y, g.shisaku.id, g.key)?.budgets || []) {
-        for (const n of [b.name, b.name_next]) if (!NO_BUDGET.test(budgetKey(n))) m.set(budgetKey(n), n);
+        for (const n of [b.name, b.name_next]) if (!isNoBudgetName(n)) m.set(budgetKey(n), n);
       }
     }
     budgetNameCache.set(k, m);
