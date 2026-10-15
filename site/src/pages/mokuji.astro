@@ -151,6 +151,8 @@ const dataPath = treeDataPath();
   /* 階層ごとの字の大きさと、行の真ん中の高さ（--c）。将来像は帯（.sz-ribbon）にする */
   .tree-box .lv0 { --c: 23px; }
   .tree-box .lv0 + .lv0 { --pt: 10px; padding-top: var(--pt); }
+  /* 将来像の行の上の余白（--pt）は、中の行に受け継がせない（受け継ぐと、中の行の丸と線の曲がりがそのぶん下にずれる） */
+  .tree-box .lv0 li { --pt: 0px; }
   .tree-box .lv0 .sz-ribbon { display: inline-flex; vertical-align: middle; padding: 3px 14px 3px 4px; gap: 8px; }
   .tree-box .lv0 .sz-ribbon .badge-sz { width: 1.9em; height: 1.9em; font-size: 0.9rem; }
   .tree-box .lv0 .sz-ribbon .name-link { font-family: var(--font-display); font-size: 1rem; }
