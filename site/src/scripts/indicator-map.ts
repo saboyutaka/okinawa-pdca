@@ -9,7 +9,7 @@
 //  - 中身: マスを押す・矢印キーで移ると、マスの下（画面に入らなければ上）の吹き出しに、その年度の名前・親（基本施策・施策）・値を出す（キーワードに当たった字に印を付ける）。
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
 //  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
-//    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
+//    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
 //    Home・End で最初・最後に移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
@@ -310,9 +310,15 @@ function init(form: HTMLFormElement, root: HTMLElement) {
 
   // 見えているマス（並びの順。年度に無いマス・隠した列のマスは除く）
   const visible = (cs: HTMLElement[]) => cs.filter((c) => !c.hidden && c.offsetParent);
-  // 同じ指標の上下の行のマス（d は 1 で下、-1 で上）。画面の上での位置で、いちばん近い行の、横の位置がいちばん近いマス
+  // 上下のマス（d は 1 で下、-1 で上）。画面の上で横に重なる箱（PC は同じ指標の列、スマホは縦に積んだ全部の箱）のマスのうち、
+  // いちばん近い段の、横の位置がいちばん近いマス
   const vertical = (cur: HTMLElement, d: number) => {
-    const same = visible(tierOf.get(cur)!.t.cells);
+    const b = cur.closest<HTMLElement>('.im-tier')!.getBoundingClientRect();
+    const col = [...grid.querySelectorAll<HTMLElement>('.im-tier')].filter((x) => {
+      const p = x.getBoundingClientRect();
+      return p.width > 0 && p.left < b.right && p.right > b.left;
+    });
+    const same = visible(col.flatMap((x) => [...x.querySelectorAll<HTMLElement>('.mc')]));
     const r = cur.getBoundingClientRect();
     const rects = same.map((c) => c.getBoundingClientRect());
     const dys = rects.map((p) => (p.top - r.top) * d).filter((dy) => dy > 2);
