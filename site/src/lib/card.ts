@@ -11,11 +11,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, judgesOf, refText, sameScale, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, yearLabel, yearLong,
+  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
   type ActivityRun, type ActivityShare, type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import { fmt } from './format.ts';
-import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead, type Head } from './heads.ts';
+import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';
 import { PROJECT, SITE } from './links.ts';
 import { ROUTES, routePath } from './routes.ts';
@@ -93,7 +93,8 @@ function icon(tone: Tone | null | undefined, shape: Shape | null | undefined, si
   return img(svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="${size}" height="${size}">${inner}</svg>`), size);
 }
 
-// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）
+// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）。将来像のものなので、将来像と、「将来像Nの基本施策」の行だけに置き、
+// 施策・取組・基本施策の名前の前には置かない（その将来像の施策と読めないため）
 const sz = (id: number, size = 40) =>
   box({ width: size, height: size, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, background: color(`sz-${id}`), color: color(`sz-${id}-ink`), fontSize: size * 0.56, lineHeight: 1 }, String(id));
 
@@ -214,7 +215,8 @@ const heading = (kick: El, name: string, width: number, height: number) =>
 // 名前の上の「何のページか」の行
 const kicker = (...kids: Kid[]) => box({ alignItems: 'center', gap: 12, height: KICK_H, flexShrink: 0, fontSize: 26, color: color('ink-2') }, ...kids);
 
-// 親の札（施策・基本施策・取組）。lead は名前の前の印、kind（「この取組が入っている施策」など）は行の右端に小さく
+// 親の札（施策・基本施策・取組）。lead は名前の前の印（施策の札は施策の判定のハンコ。基本施策・取組の札は印を付けない）、
+// kind（「この取組が入っている施策」など）は行の右端に小さく
 const PARENT_H = 62;
 function parentBar(lead: Kid, name: string, kind: string) {
   return box(
@@ -225,7 +227,7 @@ function parentBar(lead: Kid, name: string, kind: string) {
   );
 }
 // 親の施策の札（施策の判定は小さな丸いハンコ）
-const parent = (s: Shisaku, kind: string) => parentBar([judgeStamp(s.judges[LATEST], 44), sz(s.shouraizou, 34)], s.name, kind);
+const parent = (s: Shisaku, kind: string) => parentBar(judgeStamp(s.judges[LATEST], 44), s.name, kind);
 
 // 区分（進捗状況・判定・達成率）
 interface Cat { key: string; label: string; tone: Tone; shape: Shape; hatch?: boolean }
@@ -299,7 +301,6 @@ const stats = (rows: Row[]) => inset({ rowGap: STATS_PAD.gap, height: statsHeigh
 
 const toriRow = (counts: Record<string, number>): Row => ({ label: '主な取組の進捗状況', unit: '件', cats: STATUS_CATS, counts });
 const judgeRow = (a: AreaHead, label = '施策の判定'): Row => ({ label, unit: '施策', cats: JUDGE_CATS, counts: judgeGroupCounts(a.judges) });
-const rateRow = (hd: Head): Row => ({ label: '成果指標の達成率', unit: '指標', cats: RATE_CATS, counts: hd.rates });
 
 // 下の帯: サイトの名前・（非公式）・作っている団体
 let logo: string | undefined;
@@ -334,28 +335,85 @@ const gap = (n: number) => box({ height: n, flexShrink: 0 });
 
 // ---------------------------------------------------------------- ページごとのカード
 
+// 施策（施策のページの頭と同じ形）。名前の下の箱に、県の判定のハンコと言葉、右に4年間の判定のスタンプ。細い線の下に判定のもとを2列で、
+// 成果指標（計画値に到達した数と、指標ごとの達成率の札）→ 主な取組（順調の数と、1件1つの四角）の順に置く
+const SQ = 26;
+const WHY_GAP = 32;
+function judgeStamps(s: Shisaku) {
+  const W = 96;
+  const kids: El[] = [];
+  YEARS.forEach((y, i) => {
+    const j = judgeOf(s.judges[y]);
+    const ui = j && JUDGE_UI[j.key];
+    if (i > 0) kids.push(box({ width: 24, marginTop: 48, borderTop: `4px ${j && judgeOf(s.judges[YEARS[i - 1]]) ? 'solid' : 'dashed'} ${color('line')}` }));
+    kids.push(box(
+      { flexDirection: 'column', alignItems: 'center', rowGap: 4, width: W },
+      txt({ fontSize: 18, color: color('ink-2') }, yearLabel(y)),
+      box(
+        {
+          width: 48, height: 48, alignItems: 'center', justifyContent: 'center', columnGap: 2, borderRadius: '50%', border: `3px solid ${color('line')}`,
+          backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26), backgroundImage: ui?.hatch ? hatch() : undefined,
+        },
+        j ? [icon(j.tone, ui!.shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
+      ),
+      txt({ fontSize: 16, lineHeight: 1.25, textAlign: 'center', width: W }, ui ? ui.short : y === YEARS[0] ? '未公表' : '判定なし'),
+    ));
+  });
+  return box({ alignItems: 'flex-start', flexShrink: 0 }, kids);
+}
 function shisakuCard(s: Shisaku) {
   const hd = shisakuHead(s);
   const j = judgeOf(hd.judge);
-  const rows = [toriRow(hd.tori), rateRow(hd)];
-  // 上の段（何のページか・名前と、右の判定のハンコ）
-  const top = BODY_H - 12 - statsHeight(rows);
-  const STAMP_W = 230;
-  const stamp = Math.min(128, top - 72);
+  const seika = seikaGroupsOf(s.id).filter((r) => r.latest.year === LATEST).map((r) => seikaVerdict(r.latest));
+  const tori = torikumiCells(s);
+  const ok = tori.filter((t) => t.key === '順調').length;
+  // 判定のもとの列の幅と、札・四角が何行になるか（入らなければ折り返す）
+  const COL_W = (INNER_W - 2 * STATS_PAD.x - WHY_GAP) / 2;
+  const chipW = (c: string) => 20 + 6 + widthOf(c, 20) + 14;
+  const chipLines = seika.reduce((acc, v) => {
+    const w = chipW(v.chip);
+    return acc.x + w > COL_W ? { n: acc.n + 1, x: w } : { n: acc.n, x: acc.x + w };
+  }, { n: 1, x: 0 }).n;
+  const sqLines = Math.max(1, Math.ceil(tori.length / Math.floor((COL_W + 4) / (SQ + 4))));
+  const lines = Math.max(chipLines, sqLines);
+  // 高さ: 頭の行（4年間のスタンプの言葉は2行まで）、区切り（上のあき・線・下のあき）、判定のもと（見出し・数・札か四角の行）
+  const TOP_H = 116;
+  const RULE_H = 14 + 3 + 14;
+  const WHY_H = 26 + 4 + 44 + 4 + 6 + lines * 30 + (lines - 1) * 4;
+  const INSET_H = 2 * STATS_PAD.y + TOP_H + RULE_H + WHY_H;
+  const why = (label: string, num: string, after: string, itemGap: number, items: Kid) => box(
+    { flexDirection: 'column', rowGap: 4, width: COL_W, flexShrink: 0 },
+    txt({ fontSize: 20, color: color('ink-2'), height: 26 }, label),
+    box({ alignItems: 'baseline', columnGap: 6, height: 44 }, txt({ fontSize: 36 }, num), txt({ fontSize: 22 }, after)),
+    box({ flexWrap: 'wrap', alignItems: 'center', rowGap: 4, columnGap: itemGap, marginTop: 6 }, items),
+  );
   return frame(
     color('paper'),
-    box(
-      { height: top, flexShrink: 0, columnGap: 28 },
-      box({ flex: 1 }, heading(kicker(sz(s.shouraizou), '施策'), s.name, INNER_W - 28 - STAMP_W, top)),
+    heading(kicker('施策'), s.name, INNER_W, BODY_H - 12 - INSET_H),
+    gap(12),
+    inset(
+      { height: INSET_H },
       box(
-        { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: STAMP_W, flexShrink: 0 },
-        judgeStamp(hd.judge, stamp),
-        txt({ fontSize: 26, marginTop: 12 }, j ? `${j.key} ${JUDGE_UI[j.key].short}` : '判定なし'),
-        txt({ fontSize: 18, color: color('ink-2') }, `${yearLong(LATEST)}の県の判定`),
+        { alignItems: 'center', justifyContent: 'space-between', columnGap: 20, height: TOP_H, flexShrink: 0 },
+        box(
+          { alignItems: 'center', columnGap: 18, minWidth: 0, flex: 1 },
+          judgeStamp(hd.judge, 88),
+          box(
+            { flexDirection: 'column', rowGap: 2, minWidth: 0 },
+            txt({ fontSize: 30 }, j ? `${j.key} ${JUDGE_UI[j.key].short}` : '判定なし'),
+            txt({ fontSize: 18, color: color('ink-2') }, `${yearLong(LATEST)}の県の判定`),
+          ),
+        ),
+        box({ alignItems: 'center', columnGap: 10, flexShrink: 0 }, txt({ fontSize: 18, color: color('ink-2') }, '4年間'), judgeStamps(s)),
+      ),
+      box(
+        { columnGap: WHY_GAP, marginTop: 14, paddingTop: 14, borderTop: `3px solid ${color('grid')}`, flexShrink: 0 },
+        why('成果指標', `${fmt(hd.reached)}/${fmt(seika.length)}`, 'が計画値に到達', 14,
+          seika.map((v) => box({ alignItems: 'center', columnGap: 6, height: 30 }, icon(v.tone, null, 20), txt({ fontSize: 20 }, v.chip)))),
+        why('主な取組', `${fmt(ok)}/${fmt(tori.length)}`, '件が順調', 4,
+          tori.map((t) => box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, background: color(STATUSES.find((x) => x.key === t.key)?.tone || 'blank') }))),
       ),
     ),
-    gap(12),
-    stats(rows),
   );
 }
 
@@ -647,9 +705,12 @@ function seikaCard(g: SeikaGroupOfShisaku) {
   );
 }
 
-// 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま
-const DIGITS = /([-△]?[\d０-９][\d０-９,.，．]*)/;
-function valueText(text: string, unit = ''): El {
+// 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま。
+// 報告書の印字は全角と半角の数字がまじる（計画「１施設」・実績「1施設」）ので、並べたときに数字の位置と幅がそろうよう、数字・カンマ・ピリオド・％は半角にする
+const DIGITS = /([-△]?\d[\d,.]*)/;
+const halfWidth = (s: string) => s.replace(/[０-９，．％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+function valueText(raw: string, unit = ''): El {
+  const text = halfWidth(raw);
   if (!DIGITS.test(text)) return txt({ fontSize: 24, flexShrink: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text, 1);
   const ps = [...text.split(DIGITS).filter(Boolean), ...(unit ? [unit] : [])];
   return box({ alignItems: 'baseline', columnGap: 2, flexShrink: 1, minWidth: 0, overflow: 'hidden' }, ps.map((t) => txt({ fontSize: DIGITS.test(t) ? 34 : 20, flexShrink: 0, whiteSpace: 'nowrap' }, t)));
@@ -715,7 +776,7 @@ function shuyouCard(g: ShuyouGroupOfKihon) {
   }
   return frame(
     color('paper'),
-    parentBar(sz(g.kihon.shouraizou, 34), g.kihon.name, 'この指標の基本施策'),
+    parentBar(null, g.kihon.name, 'この指標の基本施策'),
     gap(8),
     heading(kicker('主要指標'), x.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
@@ -737,7 +798,7 @@ function katsudouCard(a: ActivityShare) {
   const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
   return frame(
     color('paper'),
-    parentBar(sz(g.shisaku.shouraizou, 34), g.latest.name, 'この指標の取組'),
+    parentBar(null, g.latest.name, 'この指標の取組'),
     gap(8),
     heading(kicker('活動指標'), a.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
