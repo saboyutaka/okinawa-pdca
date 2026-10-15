@@ -180,9 +180,9 @@ const KIND = {
   .imap .im-tl { display: none; margin: 0 0 3px; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
   .imap .im-cells { display: flex; flex-wrap: wrap; gap: var(--gap); }
 
-  /* マス。色は区分（.tone-*）。地との差が 3:1 未満の色には、内訳の棒の区間と同じ内側の縁を付ける（--tone-edge。黄は付けない）。選んだマスは太い縁、条件に合わないマスは薄くする */
+  /* マス。色は区分（.tone-*）。地との差が 3:1 未満の色には、内訳の棒の区間と同じ内側の縁を付ける（--tone-edge。黄と灰は付けない）。選んだマスは太い縁、条件に合わないマスは薄くする */
   :is(.imap, .map-key) .mc { display: block; flex: none; width: var(--cell, 12px); height: var(--cell, 12px); border-radius: 3px; background: var(--tone); box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
-  :is(.imap, .map-key) .mc.tone-warning { box-shadow: none; }
+  :is(.imap, .map-key) .mc:is(.tone-warning, .tone-blank) { box-shadow: none; }
   .imap .im-cells .mc { cursor: pointer; }
   .imap .mc.dim { opacity: 0.16; }
   .imap .mc.sel { outline: 2.5px solid var(--ink); outline-offset: 1.5px; opacity: 1; }
