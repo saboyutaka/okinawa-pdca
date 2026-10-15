@@ -2,7 +2,8 @@
 // SNS のシェアパネル。「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky のアイコンだけのボタンを1つの枠にまとめる。
 // X・Threads・Bluesky は #okinawa_miraima（lib/iken.ts の HASHTAG）を付けた投稿画面を開く（lib/share.ts）。
 // アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
-// 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
+// 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない。ツールチップは「〇〇 でシェア」だけにし、
+// 「別のタブで開きます」は読み上げの文字にだけ付ける。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる。
 // path を渡すと、そのページ（指標のシェア用のページ。components/IndicatorShare.astro）の URL を入れる。
 // compact はシェアの枠（ShareBox.astro）用。スマホ（520px 以下）では、いいねと1行に並ぶように「シェア」の文字を隠してアイコンだけにする。
@@ -19,7 +20,7 @@ const url = absUrl(path ?? (link === 'top' ? '/' : Astro.url.pathname));
   <ul class="share-list">
     {SNS.map((s) => (
       <li>
-        <a class="share-ic" href={shareHref(s.id, { text, url })} target="_blank" rel="noopener" data-tip-value={`${s.label} でシェア`} data-tip-label="別のタブで開きます">
+        <a class="share-ic" href={shareHref(s.id, { text, url })} target="_blank" rel="noopener" data-tip-value={`${s.label} でシェア`}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d={SHARE_ICONS[s.id]} /></svg>
           <span class="sr-only">{s.label} でシェア（別のタブで開きます）</span>
         </a>
