@@ -9,7 +9,6 @@ import Stamps from '../../components/Stamps.astro';
 import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import SeikaSays from '../../components/SeikaSays.astro';
-import SeikaKey from '../../components/SeikaKey.astro';
 import ToriRow from '../../components/ToriRow.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
@@ -17,10 +16,9 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, judgeOf, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict,
   getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents, torikumiCells,
 } from '../../lib/data.ts';
-import type { SeikaRow } from '../../lib/types.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
 import { themesOf } from '../../lib/themes.ts';
 import { joinLines, firstSentence } from '../../lib/text.ts';
@@ -55,8 +53,7 @@ const sharedSays = (rows: typeof sRows) => (rows.length > 0 && rows[0].latest.ex
 const seikaSays = sharedSays(seikaLatest);
 const seikaPastSays = sharedSays(seikaPast);
 const { reached } = head;
-const toneOfBin = (x: SeikaRow) => RATE_BINS.find((b) => b.key === rateBin(x))?.tone;
-const rateText = (x: SeikaRow) => (x.rate != null ? `${x.rate}%` : x.rate_raw || '—');
+// 達成率の札は、成果指標のカードと同じ言い方（lib/data.ts の seikaVerdict。報告書の欄が「達成」「未達成」のものは言葉だけ）
 
 const j = judgeOf(s.judges[LATEST]);
 const judgeStamps = YEARS.map((y) => {
@@ -102,7 +99,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         <div class="why">
           <div class="why-l"><Term word="成果指標" /></div>
           <div class="why-v"><b>{fmt(reached)}/{fmt(seikaLatest.length)}</b> が計画値に到達</div>
-          {seikaLatest.length > 0 && <div class="chips">{seikaLatest.map((r) => <Chip tone={toneOfBin(r.latest)} text={`達成率 ${rateText(r.latest)}`} />)}</div>}
+          {seikaLatest.length > 0 && <div class="chips">{seikaLatest.map((r) => { const v = seikaVerdict(r.latest); return <Chip tone={v.tone} text={v.chip} />; })}</div>}
         </div>
         <div class="why">
           <div class="why-l"><Term word="主な取組" /></div>
@@ -144,10 +141,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
-    <p class="small secondary lead">スタートからゴールまで、点線の計画どおりに進んでいるかを青い点の実績値で見ます。</p>
-    {sRows.length > 0 && (
-      <SeikaKey plan={sRows.some((r) => Object.values(r.years).some((y) => y.target != null))} />
-    )}
+    <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
     {seikaPast.length > 0 && (
@@ -161,7 +155,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="torikumi">
     <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">名前の前の印は{yearLabel(LATEST)}の<Term word="進捗状況" />（押すと区分を出します）、名前の下は<Term word="活動指標" />とその計画と実績です。名前を押すと、4年分の進捗状況・活動内容・予算・県の検証と改善案を見られます。</p>
+    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と<Term word="活動指標" />の計画・実績を一覧で確かめられます。名前を押すと、4年間の歩みや予算、県の検証と改善案まで見られます。</p>
     <ul class="row-list tlist">
       {toriActive.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
     </ul>
