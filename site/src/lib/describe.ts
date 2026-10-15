@@ -47,19 +47,46 @@ export function shisakuDescription(o: { name: string; judge: string | null | und
 export const torikumiTitle = (o: { name: string; code: string; reposted: boolean }) =>
   `${o.name}（沖縄県の主な取組${o.reposted ? `・施策 ${o.code}` : ''}）`;
 
-// 主な取組: 進捗状況 R4 順調・R5 概ね順調・R6 順調・R7 順調。R7にやったこと: 〇〇。所管 〇〇部〇〇課。沖縄県PDCAの施策「〇〇」の主な取組。…
+// 進捗状況は年度の順に並べ、同じ区分が続く年度はまとめる（R4〜R6 順調・R7 概ね順調）。報告の無い年度（null）はとばし、そこで区切る
+export function statusRuns(statuses: (string | null)[]): string[] {
+  const runs: { from: number; to: number; status: string }[] = [];
+  YEARS.forEach((y, i) => {
+    const status = statuses[i];
+    if (!status) return;
+    const last = runs.at(-1);
+    if (last && last.status === status && last.to === YEARS[i - 1]) last.to = y;
+    else runs.push({ from: y, to: y, status });
+  });
+  return runs.map((r) => `${yearLabel(r.from)}${r.to !== r.from ? `〜${yearLabel(r.to)}` : ''} ${r.status}`);
+}
+
+// 「やったこと」は 50字ほどまで。長ければ、読点・句点のところで切って「…」を付ける（検索結果と SNS のカードで、そのあとの施策の名前まで見えるように）。
+// 10字ほどの超えなら切らない（切った「…」のほうが長くなるため）
+export const SUMMARY_MAX = 50;
+export function shorten(s: string, max = SUMMARY_MAX): string {
+  const chars = [...s];
+  if (chars.length <= max + 10) return s;
+  const head = chars.slice(0, max).join('');
+  // 句点は3分の1より後ろ、読点は半分より後ろにあればそこで切る（前のほうの読点で切ると「〇〇では、△△が…」のように何も残らない）。無ければ 50字で切る
+  const period = head.lastIndexOf('。');
+  const comma = head.lastIndexOf('、');
+  const at = period >= max / 3 ? period : comma >= max / 2 ? comma : head.length;
+  return `${head.slice(0, at)}…`;
+}
+
+// 主な取組: 進捗状況 R4〜R6 順調・R7 概ね順調。R7にやったこと: 〇〇。所管 〇〇部〇〇課。沖縄県PDCAの施策「〇〇」の主な取組。活動指標「〇〇」。
 // statuses は年度の順の進捗状況（報告の無い年度は null。lib/data.ts の TorikumiGroup の statuses）。最新の年度の報告に無い取組はそうと書く。
-// 同じ施策で所管課と進捗状況が同じ取組も説明文が同じにならないように、最新の報告の「やったこと」（総括報告書の活動概要。100字ほどまで）と
-// 活動指標の名前を入れる（県が複数の取組に同じ活動概要を書いていることもあるので、活動指標でも見分ける）。取組の名前は題名にあるので入れない
+// 同じ施策で所管課と進捗状況が同じ取組も説明文が同じにならないように、最新の報告の「やったこと」（総括報告書の活動概要。shorten で短くする）と
+// 活動指標の名前を入れる（県が複数の取組に同じ活動概要を書いていることもあるので、活動指標でも見分ける）。取組の名前は題名にあるので入れない。
+// 説明文は検索結果で 120字ほどで切れるので、ページにあるもの（計画と実績・予算・検証）の案内は書かず、取組を見分ける文だけにする
 export function torikumiDescription(o: { statuses: (string | null)[]; year: number; summary: string; indicator: string; section: string; shisaku: string }) {
-  const st = YEARS.flatMap((y, i) => (o.statuses[i] ? [`${yearLabel(y)} ${o.statuses[i]}`] : []));
   const ended = o.statuses.at(-1) ? '' : `（${yearLabel(LATEST)}の報告には無い）`;
   // 「-」だけの欄は書かない
   const text = (v: string) => oneLine(v).trim().replace(/^[-―ー－—]+$/, '');
-  const did = text(o.summary);
+  const did = shorten(text(o.summary));
   const didText = did ? `${yearLabel(o.year)}にやったこと: ${did}${did.endsWith('。') ? '' : '。'}` : '';
   const indicator = text(o.indicator);
-  return `進捗状況 ${st.join('・')}${ended}。${didText}${o.section ? `所管 ${o.section}。` : ''}沖縄県PDCAの施策「${o.shisaku}」の主な取組。${indicator ? `活動指標「${indicator}」の計画と実績` : '活動指標'}・予算・県の検証と改善案。`;
+  return `進捗状況 ${statusRuns(o.statuses).join('・')}${ended}。${didText}${o.section ? `所管 ${o.section}。` : ''}沖縄県PDCAの施策「${o.shisaku}」の主な取組。${indicator ? `活動指標「${indicator}」。` : ''}`;
 }
 
 // 成果指標の題名。name は lib/data.ts の SeikaGroup の name（印字で見分けられない指標は内訳の名前）

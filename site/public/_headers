@@ -31,7 +31,8 @@
 # 公開し直してから5分までは、前に開いたページが古いまま見えることがある（再読み込みで新しくなる）。
 # 5分を過ぎても1日までは、ブラウザが手元のページをすぐに出し、裏で取り直す（stale-while-revalidate。次に開いたときから新しくなる）。
 # 同じヘッダーを2つのルールで付けると値がつながるので、/_astro/* や data.json に当たる書き方にしない。
-# CSS とフォントの Link ヘッダーは、ファイル名がビルドごとに変わるので、ビルドで書き足す（astro.config.ts の earlyHints）
+# CSS とフォントを Link ヘッダー（Cloudflare の Early Hints 用）で知らせるのはやめた。Cloudflare は 103 の中身を URL ごとに覚えたままにし、
+# 公開し直したあとも前のビルドの（もう無い）CSS の名前を先に送り続けていたため（2026-10-15 に本番で確認）。ダッシュボードの Early Hints も切っておく
 /
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
 /*/
