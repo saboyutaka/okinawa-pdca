@@ -33,10 +33,12 @@ interface Props {
   q?: string;
   /** 主要指標の行き先（将来像のページは同じページの基本施策の節 `#kihon`） */
   shuyouHref?: string;
+  /** 成果指標の行き先。成果指標だけの一覧は無いので、指標のマップ（くらしのテーマのページは `/map/?theme=…`） */
+  seikaHref?: string;
   /** 主要指標を1指標1つの四角で並べ、押すと中身を出す（将来像のページ） */
   shuyouCells?: boolean;
 }
-const { shuyou, seika, tori, q = '', shuyouHref = '/future/', shuyouCells = false } = Astro.props;
+const { shuyou, seika, tori, q = '', shuyouHref = '/future/', seikaHref = '/map/', shuyouCells = false } = Astro.props;
 const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
@@ -54,7 +56,7 @@ const shuyouRung = (rows: ShuyouStatus[]): Rung => {
 const rungs: Rung[] = [
   ...(shuyou ? [shuyouRung(shuyou)] : []),
   {
-    id: 'seika', kind: '初期アウトカム', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: href('/shihyou/'), measure: '達成率',
+    id: 'seika', kind: '初期アウトカム', q: ['施策の成果は、', '計画どおりに', '出た？'], term: '成果指標', n: sum(seika), unit: '指標', href: seikaHref, measure: '達成率',
     cats: RATE_BINS.map((b) => ({ key: b.key, tone: b.tone, n: seika[b.key] || 0 })),
     ans: { label: '計画値に到達', n: seika['100%以上'] || 0 },
   },

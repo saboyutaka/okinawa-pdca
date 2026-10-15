@@ -51,7 +51,7 @@ const shuyou = getShuyouStatus().filter((r) => r.kihon.shouraizou === v.id);
 const trend = trendPoints((t) => t.shisaku_id.startsWith(pre), (s) => s.shisaku_id.startsWith(pre));
 
 // 基本施策ごと。基本施策の名前の下に、主要指標（達成状況の札とスタート → いま → ゴールの値）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
-// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・成果指標をさがすにある）
+// 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・指標のマップにある）
 const kihonRows = kihon.map((k) => {
   const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
   return {

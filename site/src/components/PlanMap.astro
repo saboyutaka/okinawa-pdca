@@ -68,7 +68,7 @@ const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜$
       <p class="pm-d">分野ごとの取り組みのまとまり。県が毎年付ける<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />で決まる</p>
     </div>
     <div class="pm-i i3">
-      <p class="pm-h"><a class="name-link" href="/shihyou/">成果指標</a><span class="pm-n">{fmt(seika.length)}</span></p>
+      <p class="pm-h"><a class="name-link" href="/map/">成果指標</a><span class="pm-n">{fmt(seika.length)}</span></p>
       <p class="pm-d">施策の成果（くらしや地域の変化）をはかる（1つの施策に {range(seika, (s) => s.shisaku_id)}）</p>
     </div>
     <p class="pm-c c3">1つの施策に <span class="nw">主な取組 {range(torikumi, (t) => t.shisaku_id)}</span></p>

@@ -64,7 +64,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
     <div class="t-kicker">くらしのテーマ</div>
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
     <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
-    <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
+    <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} seikaHref={`/map/?theme=${t.id}`} />
   </header>
 
   <Toc
@@ -121,7 +121,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
         {seika.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
       </ul>
       {seika.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="theme-seika" hidden>さらに表示（残り {fmt(seika.length - SEIKA_SHOW)}指標）</button></p>}
-      <p class="small secondary after">このテーマの施策の成果指標のほか、名前にこのテーマの言葉を含む、ほかの施策の成果指標も入れています。<a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
+      <p class="small secondary after">このテーマの施策の成果指標のほか、名前にこのテーマの言葉を含む、ほかの施策の成果指標も入れています。<a href={`/map/?theme=${t.id}`}>指標のマップ</a>で、達成率や担当部局でさらに絞り込めます。</p>
     </section>
   )}
 
