@@ -1,18 +1,23 @@
-// 指標のシェアのボタン（components/IndicatorShare.astro）。開いた枠が左にはみ出すときは左の端をそろえ、ほかの場所を押す・Esc で閉じ、
+// シェアのボタン（components/ShareMenu.astro）。開いた枠が画面の左右にはみ出すときは内側へずらし、ほかの場所を押す・Esc で閉じ、
 // 1つ開くとほかは閉じる。「リンクをコピー」はシェア用のページの URL をクリップボードに入れ、読み上げにも伝える
-const shares = [...document.querySelectorAll<HTMLDetailsElement>('[data-ishare]')];
+const shares = [...document.querySelectorAll<HTMLDetailsElement>('[data-share-menu]')];
 const COPIED_MS = 2000;
+// 画面の端からあける幅
+const EDGE = 8;
 
 for (const d of shares) {
-  const pop = d.querySelector<HTMLElement>('.ishare-pop');
+  const pop = d.querySelector<HTMLElement>('.share-menu-pop');
   const btn = d.querySelector<HTMLButtonElement>('[data-copy]');
-  const input = d.querySelector<HTMLInputElement>('.ishare-copy input');
+  const input = d.querySelector<HTMLInputElement>('.share-menu-copy input');
   const status = d.querySelector<HTMLElement>('[role="status"]');
   d.addEventListener('toggle', () => {
     if (!d.open || !pop) return;
     for (const o of shares) if (o !== d) o.open = false;
-    pop.classList.remove('left');
-    if (pop.getBoundingClientRect().left < 8) pop.classList.add('left');
+    pop.style.translate = '';
+    const r = pop.getBoundingClientRect();
+    const right = document.documentElement.clientWidth - EDGE;
+    const dx = r.left < EDGE ? EDGE - r.left : r.right > right ? right - r.right : 0;
+    if (dx) pop.style.translate = `${Math.round(dx)}px 0`;
   });
   if (!btn || !status) continue;
   const label = btn.textContent;

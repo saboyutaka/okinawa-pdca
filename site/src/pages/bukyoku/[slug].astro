@@ -18,6 +18,7 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import ShareMenu from '../../components/ShareMenu.astro';
 import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
@@ -136,7 +137,7 @@ const sources = deptSourcePages(dept.name);
 ---
 <Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, head)} ogType="article">
   <header class="sticker lift d-head">
-    <div class="kind">沖縄県の部局</div>
+    <div class="kind"><span>沖縄県の部局</span><ShareMenu kind="部局" name={dept.name} /></div>
     <h1>{dept.name}</h1>
     <HeadStats items={[
       { label: '課', n: sections.length, href: '#ka' },
@@ -366,7 +367,8 @@ const sources = deptSourcePages(dept.name);
 <style>
   .d-head { display: grid; gap: 4px; margin-top: 12px; }
   .d-head h1 { margin: 2px 0 8px; }
-  .kind { font-size: 0.9375rem; color: var(--ink-2); }
+  /* 「沖縄県の部局」の行の右端にシェアのボタン（components/ShareMenu.astro。施策などのページの頭の HeadKind と同じ場所） */
+  .kind { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: 0.9375rem; color: var(--ink-2); }
   .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }

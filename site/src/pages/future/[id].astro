@@ -16,6 +16,7 @@ import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import ShareBox from '../../components/ShareBox.astro';
+import ShareMenu from '../../components/ShareMenu.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import {
@@ -73,7 +74,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="hero-badge" />
     {/* 番号は印にあるので「将来像」の後ろの番号は読み上げだけ */}
-    <div class="v-kicker"><span><Term word="将来像" /><span class="sr-only">{v.id}</span></span><span class="tag">{yearLong(LATEST)}の結果</span></div>
+    <div class="v-kicker"><span><Term word="将来像" /><span class="sr-only">{v.id}</span></span><span class="tag">{yearLong(LATEST)}の結果</span><ShareMenu kind="将来像" name={`${v.id} ${v.name}`} /></div>
     <h1>{v.name}</h1>
     <HeadStats items={[
       { label: '基本施策', n: kihon.length, href: '#kihon' },
@@ -136,6 +137,8 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   }
   .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
   .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
+  /* 行の右端にシェアのボタン（components/ShareMenu.astro。施策などのページの頭の HeadKind と同じ場所） */
+  .v-kicker > :global(.share-menu) { margin-left: auto; }
   .v-hero h1 { grid-area: name; margin: 4px 0 10px; }
   .v-hero :global(.head-stats) { grid-area: stats; }
   .v-hero :global(.ladder) { grid-area: ladder; }

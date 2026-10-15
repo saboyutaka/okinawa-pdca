@@ -12,7 +12,7 @@ import './tree.ts';
 import './indicator-map.ts';
 import './cell-pop.ts';
 import './like.ts';
-import './indicator-share.ts';
+import './share-menu.ts';
 import './tooltip.ts';
 import './theme.ts';
 import './era.ts';

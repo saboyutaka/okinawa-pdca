@@ -58,5 +58,5 @@ export const TAG_PAGES = [
 export const shortName = (s: string, max = 40) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
 
 // シェアの投稿の本文（施策「〇〇」 | おきなわ、みらい、いま）。どこの何かが分かるよう、サイトの名前を後ろに添える。
-// シェアの枠（components/ShareBox.astro）と指標のシェアのボタン（components/IndicatorShare.astro）が使う
+// シェアの枠（components/ShareBox.astro）とシェアのボタン（components/ShareMenu.astro）が使う
 export const shareText = (kind: string, name: string) => `${kind}「${shortName(name)}」 | ${SITE.name}`;

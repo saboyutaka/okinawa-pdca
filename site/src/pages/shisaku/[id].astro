@@ -14,6 +14,7 @@ import ToriRow from '../../components/ToriRow.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
 import HeadKind from '../../components/HeadKind.astro';
+import ShareMenu from '../../components/ShareMenu.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
@@ -94,7 +95,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 <Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
   <Hierarchy items={planParents({ shisaku: s.id })} page={s.name} />
   <header class="sticker lift head">
-    <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)} />
+    <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)}><ShareMenu kind="施策" name={s.name} /></HeadKind>
     <h1>{s.name}</h1>
     <div class="meta">
       <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>

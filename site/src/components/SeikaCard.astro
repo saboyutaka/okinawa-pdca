@@ -8,7 +8,7 @@ import Icon from './Icon.astro';
 import SeikaRoute from './SeikaRoute.astro';
 import SeikaSays from './SeikaSays.astro';
 import SeikaPastSays from './SeikaPastSays.astro';
-import IndicatorShare from './IndicatorShare.astro';
+import ShareMenu from './ShareMenu.astro';
 import { LATEST, yearLabel, sectionHref, withUnit, refText, seikaVerdict, seikaFormerNames, seikaPastSays, type SeikaGroupOfShisaku } from '../lib/data.ts';
 import { KANKO, RM_LATEST, kankoOfSeika } from '../lib/plans.ts';
 
@@ -37,7 +37,7 @@ const rm = kankoOfSeika(row.href);
       <span class:list={['sc-rate', `tone-${verdict.tone || 'blank'}`]} title={verdict.text}>
         <Icon tone={verdict.tone} size={14} />{rateNum ? <><span class="sc-rate-l">達成率</span><b>{rateNum}</b></> : <b class="word">{verdict.chip}</b>}<span class="sr-only">。{verdict.text}</span>
       </span>
-      <IndicatorShare path={row.share} kind="成果指標" name={row.name} />
+      <ShareMenu path={row.share} kind="成果指標" name={row.name} />
     </div>
   </div>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>

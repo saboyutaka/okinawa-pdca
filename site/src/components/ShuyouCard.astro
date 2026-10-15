@@ -7,7 +7,7 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import ExtLink from './ExtLink.astro';
-import IndicatorShare from './IndicatorShare.astro';
+import ShareMenu from './ShareMenu.astro';
 import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, sameScale, type Cell, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
 import { oneLine } from '../lib/text.ts';
 
@@ -39,7 +39,7 @@ const pieces = (c: Cell, p: ShuyouPart) => {
 <article class="sticker scard" id={row.anchor}>
   <div class="sc-head">
     <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
-    <IndicatorShare path={row.share} kind="主要指標" name={x.name} />
+    <ShareMenu path={row.share} kind="主要指標" name={x.name} />
   </div>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
 
@@ -122,7 +122,7 @@ const pieces = (c: Cell, p: ShuyouPart) => {
 <style>
   .scard { margin-top: 18px; }
   .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
-  .sc-head > :global(.ishare) { margin-left: auto; }
+  .sc-head > :global(.share-menu) { margin-left: auto; }
   .scard h3 { margin: 0; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   /* 男性・女性のように分けた部分は、細い線で区切って名前の見出しを付ける */

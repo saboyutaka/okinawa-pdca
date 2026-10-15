@@ -1,6 +1,7 @@
 ---
 // ページの頭の1行目。左に何のページか（区分。押すと用語の説明）と報告書での番号、右端にくらしのテーマ
-// term={false} は区分を用語にしない（観光ロードマップの施策展開。用語の説明は沖縄県PDCA の施策展開のもの）。plan は番号の後ろに置く個別計画の札
+// term={false} は区分を用語にしない（観光ロードマップの施策展開。用語の説明は沖縄県PDCA の施策展開のもの）。plan は番号の後ろに置く個別計画の札。
+// 中身（シェアのボタン。components/ShareMenu.astro）を渡すと、右端のテーマの後ろに置く
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
 
@@ -13,13 +14,18 @@ const { kind, term = true, plan, code, codeTitle = '県の報告書での番号'
     {code && <span class="code-no" title={codeTitle}>{code}</span>}
     {plan && <span class="plan-tag">{plan}</span>}
   </span>
-  {themes.length > 0 && <ThemeTags ids={themes} label={false} />}
+  {(themes.length > 0 || Astro.slots.has('default')) && (
+    <span class="hk-r">
+      {themes.length > 0 && <ThemeTags ids={themes} label={false} />}
+      <slot />
+    </span>
+  )}
 </div>
 
 <style>
   .head-kind { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
-  /* 区分と番号の後ろに入りきらず折り返したときも、テーマは右端に置く（スマホの幅の主な取組など） */
-  .head-kind > :global(.ttags) { margin-left: auto; }
+  /* 区分と番号の後ろに入りきらず折り返したときも、テーマとシェアのボタンは右端に置く（スマホの幅の主な取組など） */
+  .hk-r { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 12px; margin-left: auto; }
   .hk { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
   .hk-kind { font-family: var(--font-display); font-weight: 700; font-size: 1.125rem; line-height: 1.5; }
 </style>

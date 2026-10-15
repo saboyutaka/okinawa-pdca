@@ -15,7 +15,7 @@ import Hierarchy from '../../../components/Hierarchy.astro';
 import HeadKind from '../../../components/HeadKind.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
-import IndicatorShare from '../../../components/IndicatorShare.astro';
+import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
@@ -161,7 +161,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 <Base {...torikumiHead(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift head">
-    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)} />
+    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)}><ShareMenu kind="主な取組" name={t.name} /></HeadKind>
     <h1>{t.name}</h1>
     <div class="meta">
       <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
@@ -264,7 +264,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
           {!split && i > 0 && <div class="k-span">{runSpan(run)}の活動指標</div>}
           <div class="k-head">
             {split ? <h4 class="k-part">{run.part}{unit}</h4> : <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{unit}</h3>}
-            {sh.name && <IndicatorShare path={sh.share} kind="活動指標" name={sh.name} />}
+            {sh.name && <ShareMenu path={sh.share} kind="活動指標" name={sh.name} />}
           </div>
           <KatsudouChart run={run} here={i > 0 ? '' : t.year === LATEST ? 'いまここ' : '最後の報告'} />
           {!split && run.formers.length > 0 && <p class="small secondary k-former">{formerText(run)}同じ活動指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
@@ -556,7 +556,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .k-name { margin: 0; }
   .k-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
-  .k-head > :global(.ishare) { margin-left: auto; }
+  .k-head > :global(.share-menu) { margin-left: auto; }
   .k-former { margin: 6px 0 0; }
   .k-group { margin-top: 12px; }
   .k-group > p { margin: 4px 0 0; }
