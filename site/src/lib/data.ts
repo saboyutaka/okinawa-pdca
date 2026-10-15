@@ -137,7 +137,7 @@ export function rateBin(s: Rate) {
 export const rateText = (s: Rate) => (s.rate != null ? `${s.rate}%` : s.rate_raw === '達成' || s.rate_raw === '未達成' ? s.rate_raw : 'なし');
 export const rateTone = (s: Rate) => RATE_BINS.find((b) => b.key === rateBin(s))?.tone;
 
-// 成果指標1つが計画値に届いたか（施策ページのカード・成果指標のページの頭の components/SeikaGoal.astro と、SNS のカードの画像 lib/card.ts）。
+// 成果指標1つが計画値に届いたか（施策ページのカードと、SNS のカードの画像 lib/card.ts）。
 // 札（chip）の色と形は達成率の区分（RATE_BINS）、文（text）は区分ごとに言い切る
 type GoalRow = Pick<SeikaRow, 'year' | 'rate' | 'rate_raw' | 'base' | 'actual' | 'target'>;
 export function seikaVerdict(x: GoalRow) {
@@ -428,6 +428,38 @@ export function shuyouRows(kihonId: string): ShuyouGroup[] {
 // 基本施策ページの主要指標のカードの id（#shuyou-1, #shuyou-2 …。shuyouRows の順で、最新の報告の指標が先）。将来像のページの主要指標の名前から飛ぶ
 export const shuyouAnchor = (groups: ShuyouGroup[], g: ShuyouGroup) => `shuyou-${groups.indexOf(g) + 1}`;
 
+// すべての基本施策の主要指標。href は基本施策のページのカード（anchor はその id）、share はシェア用のページ
+// （/shuyou/<基本施策ID>/<key のハッシュ8桁>/。key は基本施策の中の最新の報告の名前で、同じ名前が2つあれば #2。年度をまたいで同じで、名前が変わると別の URL）
+export interface ShuyouGroupOfKihon extends ShuyouGroup {
+  kihon: KihonRow;
+  key: string;
+  anchor: string;
+  href: string;
+  share: string;
+}
+let shuyouGroups: ShuyouGroupOfKihon[] | undefined;
+export function getShuyouGroups() {
+  if (shuyouGroups) return shuyouGroups;
+  shuyouGroups = getKihonList().flatMap((k) => {
+    const groups = shuyouRows(k.id);
+    const seen = new Map<string, number>();
+    return groups.map((g) => {
+      const base = `${k.id}|${nameKey(g.latest.name)}`;
+      const n = (seen.get(base) || 0) + 1;
+      seen.set(base, n);
+      const key = `${base}#${n}`;
+      const anchor = shuyouAnchor(groups, g);
+      return { ...g, kihon: k, key, anchor, href: `/kihon/${k.id}/#${anchor}`, share: `/shuyou/${k.id}/${keySlug(key)}/` };
+    });
+  });
+  const shares = new Set<string>();
+  for (const g of shuyouGroups) {
+    if (shares.has(g.share)) throw new Error(`主要指標のシェア用のページの URL が重複している: ${g.share}`);
+    shares.add(g.share);
+  }
+  return shuyouGroups;
+}
+
 // ---------------------------------------------------------------- 主要指標の達成状況（概要版）
 
 // 主要指標の達成状況の区分（概要版「主要指標の達成状況1」の表と同じ。前進のうち 100%以上・60%以上・60%未満、横ばい、後退、その他）。
@@ -569,7 +601,7 @@ export interface PathItem {
   sz?: number; // 将来像の番号（色の丸で出す）
 }
 
-// 計画の体系での、将来像から at の段まで（将来像 → 基本施策 → 施策展開 → 施策）。主な取組・成果指標のページの階層は、入っている施策までのこれ。
+// 計画の体系での、将来像から at の段まで（将来像 → 基本施策 → 施策展開 → 施策）。主な取組のページの階層は、入っている施策までのこれ。
 // 基本施策・施策のページは自身を除いた planParents。将来像のページは上の段が無いので階層を置かない
 export function planPath(at: { kihon: string } | { shisaku: string }): PathItem[] {
   const s = 'shisaku' in at ? getShisaku(at.shisaku) : undefined;
@@ -638,7 +670,7 @@ interface SeikaAlias {
   printed: string; // 印字の名前
   field: 'base_raw' | 'target_raw';
   names: Record<string, string>; // field の値 → 出す名前
-  from: string; // 出す名前を取った報告書（成果指標のページの出典に書く）
+  from: string; // 出す名前を取った報告書（施策ページの出典に書く）
 }
 export const SEIKA_ALIASES: SeikaAlias[] = [
   // R7 は3つとも内訳の無い名前。R4〜R6 は（大学）（短大）（専門学校）を付けて、同じ基準値で載っている
@@ -701,8 +733,13 @@ export function seikaFormerNames(g: YearGroup<SeikaRow>) {
   }
   return [...m].map(([name, years]) => ({ name, years }));
 }
-// 成果指標のページの URL: /shihyou/<施策ID>/<指標名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ。SEIKA_RENAMES でまとめた指標は新しい名前のページ）
-export const seikaHref = (shisakuId: string, key: string) => `/shihyou/${shisakuId}/${keySlug(key)}/`;
+// 成果指標は施策のページのカードで見せる。カードの id は seika-<指標名の key のハッシュ8桁>。年度をまたいで同じ（名前が変わると別の id。SEIKA_RENAMES でまとめた指標は新しい名前の id）
+export const seikaAnchor = (key: string) => `seika-${keySlug(key)}`;
+export const seikaHref = (shisakuId: string, key: string) => `/shisaku/${shisakuId}/#${seikaAnchor(key)}`;
+// 成果指標のシェア用のページの URL: /shihyou/<施策ID>/<指標名の key のハッシュ8桁>/（もとは成果指標のページ。docs/site.md の 4章のシェア用のページ）
+export const seikaShareHref = (shisakuId: string, key: string) => `/shihyou/${shisakuId}/${keySlug(key)}/`;
+// 成果指標の前の年度の県による説明（最新の報告より前の年度で、説明のあるもの。新しい年度から）
+export const seikaPastSays = (g: YearGroup<SeikaRow>) => [...YEARS].reverse().filter((y) => y < g.latest.year && g.years[y]?.explanation).map((y) => g.years[y]);
 // 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
 export function seikaGroupOf(row: SeikaRow) {
   return seikaGroupsOf(row.shisaku_id).find((r) => r.years[row.year] === row);
@@ -766,7 +803,7 @@ export function getTorikumiGroups() {
   return torikumiGroups;
 }
 
-// 名前の key のハッシュ8桁。取組・成果指標のページの URL と、観光ロードマップ・一括交付金のカードの id に使う
+// 名前の key のハッシュ8桁。取組のページ・指標のシェア用のページの URL と、成果指標・観光ロードマップ・一括交付金のカードの id に使う
 export const keySlug = (key: string) => crypto.createHash('sha1').update(key).digest('hex').slice(0, 8);
 // 取組のページの URL: /torikumi/<施策ID>/<取組名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
 export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${keySlug(key)}/`;
@@ -913,19 +950,22 @@ export function formerNames(g: YearGroup<TorikumiRow>) {
 }
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
+// href は施策のページのカード（anchor はその id）、share はシェア用のページ
 export interface SeikaGroupOfShisaku extends SeikaGroup {
   shisaku: Shisaku;
+  anchor: string;
   href: string;
+  share: string;
 }
 let seikaGroups: SeikaGroupOfShisaku[] | undefined;
 let seikaGroupsByShisaku: Map<string, SeikaGroupOfShisaku[]> | undefined;
 export function getSeikaGroups() {
   if (seikaGroups) return seikaGroups;
-  seikaGroups = getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s, href: seikaHref(s.id, row.key) })));
+  seikaGroups = getShisakuList().flatMap((s) => seikaRows(s).map((row) => ({ ...row, shisaku: s, anchor: seikaAnchor(row.key), href: seikaHref(s.id, row.key), share: seikaShareHref(s.id, row.key) })));
   const hrefs = new Set<string>();
   for (const g of seikaGroups) {
-    if (hrefs.has(g.href)) throw new Error(`成果指標のページの URL が重複している: ${g.href}`);
-    hrefs.add(g.href);
+    if (hrefs.has(g.share)) throw new Error(`成果指標のシェア用のページの URL が重複している: ${g.share}`);
+    hrefs.add(g.share);
   }
   return seikaGroups;
 }
@@ -961,25 +1001,11 @@ export function seikaNameMatches(seikaName: string | null | undefined, name: str
   const head = sameKey(nameKey(name.replace(NAME_TAIL, '')));
   return a.includes(b) || b.includes(a) || inOrder(b, a) || (Boolean(head) && inOrder(head, a));
 }
-// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のページを探す（ページの名前 SeikaGroup の name で比べ、同じ名前の指標があればそれを先に）
+// 名前（観光ロードマップの報告書の「沖縄県PDCAの成果指標」など）から、同じ施策の成果指標のカード（施策のページ）を探す（SeikaGroup の name で比べ、同じ名前の指標があればそれを先に）
 export function seikaHrefByName(shisakuId: string, name: string | null | undefined) {
   const list = seikaGroupsOf(shisakuId);
   const k = sameKey(nameKey(name || ''));
   return (list.find((r) => sameKey(nameKey(r.name)) === k) ?? list.find((r) => seikaNameMatches(name, r.name)))?.href ?? null;
-}
-// 成果指標の施策の主な取組（成果指標のページ）。指標の最新の報告と同じ年度の報告にある取組で、並びは施策ページの取組の並び。
-// 部局票の「対応する成果指標」は、県が施策の成果指標をまとめて書いていて（同じ施策の取組はどれも同じ名前。test/integrity.test.ts）、
-// 取組ごとには分かれていないので、名前で結ばずに施策の取組をまとめて出す
-let torikumiByShisaku: Map<string, TorikumiGroup[]> | undefined;
-export function torikumiOfSeika(row: SeikaGroupOfShisaku) {
-  if (!torikumiByShisaku) {
-    torikumiByShisaku = new Map();
-    for (const g of getTorikumiGroups()) {
-      if (!torikumiByShisaku.has(g.shisaku.id)) torikumiByShisaku.set(g.shisaku.id, []);
-      torikumiByShisaku.get(g.shisaku.id)!.push(g);
-    }
-  }
-  return (torikumiByShisaku.get(row.shisaku.id) || []).filter((g) => g.years[row.latest.year]);
 }
 
 // ---------------------------------------------------------------- 部局
@@ -1553,6 +1579,50 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
       };
     });
   });
+}
+
+// 活動指標の見せる場所（取組のページの図のカード。anchor はその id）とシェア用のページ（/katsudou/<施策ID>/<key のハッシュ8桁>/）。取組のページの図1つ（activityRuns の run）に1つ。
+// key は取組の key と活動指標の名前の key（katsudouKey。書き方の違いと KATSUDOU_RENAMES の読み替えをそろえたもの）と、行ごとに分けた run は行の札で、
+// 同じ取組に同じものが2つあれば #2。年度をまたいで同じ（取組か活動指標の名前が変わると別の URL）
+export interface ActivityShare {
+  torikumi: TorikumiGroup;
+  run: ActivityRun;
+  name: string; // 活動指標の名前（行ごとに分けた run は「名前（行の札）」。活動指標の記載が無ければ ''）
+  key: string;
+  anchor: string;
+  href: string;
+  share: string;
+}
+const activitySharesOf = new Map<TorikumiGroup, ActivityShare[]>();
+// activityRuns と同じ並び
+export function activityShares(g: TorikumiGroup): ActivityShare[] {
+  const hit = activitySharesOf.get(g);
+  if (hit) return hit;
+  const seen = new Map<string, number>();
+  const out = activityRuns(g).map((run) => {
+    const base = `${g.key}|${katsudouKey(g, run.indicator)}|${nameKey(run.part)}`;
+    const n = (seen.get(base) || 0) + 1;
+    seen.set(base, n);
+    const key = `${base}#${n}`;
+    const slug = keySlug(key);
+    const anchor = `katsudou-${slug}`;
+    const name = run.indicator && run.part ? `${run.indicator}（${run.part}）` : run.indicator;
+    return { torikumi: g, run, name, key, anchor, href: `${g.href}#${anchor}`, share: `/katsudou/${g.shisaku.id}/${slug}/` };
+  });
+  activitySharesOf.set(g, out);
+  return out;
+}
+// すべての取組の活動指標のうち、シェア用のページを作るもの（活動指標の記載が無いものは作らない）
+let activityShareList: ActivityShare[] | undefined;
+export function getActivityShares() {
+  if (activityShareList) return activityShareList;
+  activityShareList = getTorikumiGroups().flatMap((g) => activityShares(g).filter((a) => a.name));
+  const shares = new Set<string>();
+  for (const a of activityShareList) {
+    if (shares.has(a.share)) throw new Error(`活動指標のシェア用のページの URL が重複している: ${a.share}`);
+    shares.add(a.share);
+  }
+  return activityShareList;
 }
 
 // 予算事業の金額を1行ずつに平らにしたもの

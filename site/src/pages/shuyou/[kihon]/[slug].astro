@@ -1,0 +1,17 @@
+---
+// 主要指標のシェア用のページ（docs/site.md の 4章）。SNS のカードは指標の道のり（lib/card.ts の shuyouCard）で、開いた人は基本施策のページのその指標のカードへ移る
+import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../../lib/routes.ts';
+import Base from '../../../layouts/Base.astro';
+import ShareJump from '../../../components/ShareJump.astro';
+import { shuyouHead } from '../../../lib/describe.ts';
+
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['shuyou/[kihon]/[slug]'];
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { g } = Astro.props;
+---
+<Base {...shuyouHead(g)} ogType="article" jump={g.href}>
+  <ShareJump kind="主要指標" name={g.latest.name} to={g.href} place={`基本施策「${g.kihon.name}」のページ`} />
+</Base>

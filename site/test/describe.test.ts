@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import {
   breakdown, toriText, seikaText, judgesText,
   shisakuDescription, torikumiDescription, seikaDescription, kihonDescription, futureDescription, deptDescription, themeDescription,
-  torikumiTitle, seikaTitle, torikumiHead, seikaHead, statusRuns, shorten,
+  torikumiTitle, seikaTitle, torikumiHead, seikaHead, shuyouHead, katsudouHead, statusRuns, shorten,
 } from '../src/lib/describe.ts';
-import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getShuyouGroups, getActivityShares, getTorikumiGroups } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
 
 const STATUS_KEYS = STATUSES.map((s) => s.key);
@@ -95,7 +95,7 @@ test('主な取組の題名: 複数の施策に載っている取組だけ、施
 
 test('成果指標: 最新の報告の実績値・達成率・目標値を先に書く', () => {
   const x = { name: '待機児童数', year: 2025, unit: '人', actual_raw: '120', rate: 80, rate_raw: '80%', target_raw: '0', target_year: 'R9' } as SeikaRow;
-  assert.equal(seikaDescription(x, x.name), 'R7の実績値 120人（達成率 80%）、目標値 0人（R9）。沖縄県PDCAの成果指標「待機児童数」の基準値からの道のり・県による説明・かかわる主な取組。');
+  assert.equal(seikaDescription(x, x.name), 'R7の実績値 120人（達成率 80%）、目標値 0人（R9）。沖縄県PDCAの成果指標「待機児童数」の基準値からの道のりと県による説明。');
   assert.equal(seikaTitle('待機児童数'), '待機児童数（沖縄県の成果指標）');
 });
 
@@ -113,10 +113,23 @@ test('取組のページの題名と説明文は、ほかの取組のページ�
   for (const h of heads) assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
 });
 
-test('成果指標のページの題名と説明文は、ほかの成果指標のページと同じにならない', () => {
+test('成果指標のシェア用のページの題名と説明文は、ほかの成果指標と同じにならない', () => {
   const heads = getSeikaGroups().map(seikaHead);
   assert.deepEqual(dupes(heads, 'title'), []);
   assert.deepEqual(dupes(heads, 'description'), []);
+});
+
+test('主要指標・活動指標のシェア用のページ: 題名に指標の名前（活動指標は取組の名前も）、説明文に最新の報告の値と名前が入る', () => {
+  for (const g of getShuyouGroups()) {
+    const h = shuyouHead(g);
+    assert.ok(h.title.startsWith(g.latest.name) && h.description.includes(`「${g.latest.name}」`), h.description);
+    assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
+  }
+  for (const a of getActivityShares()) {
+    const h = katsudouHead(a);
+    assert.ok(h.title.startsWith(a.name) && h.description.includes(`「${a.name}」`), h.description);
+    assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
+  }
 });
 
 test('基本施策・将来像・部局・くらしのテーマ: 最新の年度の件数を先に書く', () => {

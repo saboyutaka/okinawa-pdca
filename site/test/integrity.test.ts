@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
+  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
   seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf,
 } from '../src/lib/data.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
@@ -59,9 +59,10 @@ test('取組のページの URL が重複しない', () => {
   assert.equal(new Set(hrefs).size, hrefs.length);
 });
 
-test('成果指標のページの URL が重複せず、どの成果指標（各年度の行）もどれかのページに入る', () => {
+test('成果指標のカードの id とシェア用のページの URL が重複せず、どの成果指標（各年度の行）もどれかのまとまりに入る', () => {
   const groups = getSeikaGroups();
   assert.equal(new Set(groups.map((g) => g.href)).size, groups.length);
+  assert.equal(new Set(groups.map((g) => g.share)).size, groups.length);
   const inGroups = new Set(groups.flatMap((g) => Object.values(g.years)));
   none(load('seika').filter((x) => !inGroups.has(x)), (x) => `${x.year} ${x.shisaku_id} ${x.name}`);
 });
@@ -84,19 +85,14 @@ test('印字の名前で見分けられない成果指標は、どれも内訳�
 });
 
 test('部局票の「対応する成果指標」は、その施策のその年度の成果指標すべてに当たる（県は施策の成果指標をまとめて書いている）', () => {
-  // 取組ごとに分かれていないので、成果指標のページは施策の取組をまとめて出す（torikumiOfSeika）。
+  // 取組ごとに分かれていないので、成果指標と取組を名前で結び付けない（成果指標は施策のページで、施策の取組と並べて出す）。
   // 「〜及び〜」「野菜・果樹・花き類の〜」「〜児童生徒の割合」のようにまとめた名前でも、内訳の指標に当たること（seikaNameMatches）。
-  // 県が取組ごとに書き分けるようになったら、ここが落ちる。そのときは成果指標のページの取組の出し方を見直す
+  // 県が取組ごとに書き分けるようになったら、ここが落ちる。そのときは成果指標と取組を結び付けて見せるかを考える
   const bad = load('bukyoku/torikumi').flatMap((b) =>
     seikaGroupsOf(b.shisaku_id).filter((x) => x.years[b.year] && !seikaNameMatches(b.seika_name, x.years[b.year].name)).map((x) => [b, x] as const));
   none(bad, ([b, x]) => `${b.year} ${b.shisaku_id} ${b.name}: 「${b.seika_name}」→「${x.years[b.year].name}」`);
 });
 
-test('成果指標のページの施策の主な取組は、指標の最新の報告と同じ年度にある、同じ施策の取組', () => {
-  none(getSeikaGroups().flatMap((x) => torikumiOfSeika(x).filter((g) => g.shisaku.id !== x.shisaku.id || !g.years[x.latest.year]).map((g) => [x, g] as const)), ([x, g]) => `${x.href} ${g.href}`);
-  // 施策の取組が1件も無い成果指標のページは無い
-  none(getSeikaGroups().filter((x) => !torikumiOfSeika(x).length), (x) => `${x.href} ${x.latest.name}`);
-});
 
 test('どの施策も、いずれかのくらしのテーマに入る', () => {
   none(unthemed(), (s) => `${s.id} ${s.name}`);

@@ -1,21 +1,24 @@
 ---
 // 成果指標1つのゴールまでの道のりの図と、そのすぐ下の「表で見る」（SeikaTable）、図を読むのに要る注意（目標値が文・基準値を検証票で補った）。
-// 施策ページのカード（SeikaCard）と成果指標のページで使う。凡例（SeikaKey）は使う側で1回だけ出す。
-// 中期実施計画で基準値・目標値が新しくなったことは、表の計画期間ごとの基準値・目標値で見られるので書かない。open は表を開いて出すとき（図を描けない指標）
+// 施策ページのカード（SeikaCard）で使う。凡例（SeikaKey）は使う側で1回だけ出す。
+// 中期実施計画で基準値・目標値が新しくなったことは、表の計画期間ごとの基準値・目標値で見られるので書かない。図を描けない指標（目標が「〜との差の縮小」など）は、表を開いて出す
 import SeikaChart from './SeikaChart.astro';
 import SeikaTable from './SeikaTable.astro';
 import { sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup; open?: boolean }
-const { row, open = false } = Astro.props;
+interface Props { row: SeikaGroup }
+const { row } = Astro.props;
 const x = row.latest;
 // 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする
 const textGoal = textGoalChartRow(row);
+// 図を描けるか（SeikaChart と同じ決め方）
+const rows = Object.values(row.years);
+const drawn = Boolean(textGoal) || (rows.some((r) => r.actual != null) && rows.some((r) => r.target != null));
 // 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
 const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
 <SeikaChart row={textGoal || row} unit={x.unit} drawable={textGoal ? true : undefined} />
-<SeikaTable row={row} open={open} />
+<SeikaTable row={row} open={!drawn} />
 {textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
 {x.base_fix && (
   <p class="small secondary note">

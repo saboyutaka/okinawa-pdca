@@ -1,0 +1,22 @@
+---
+// 成果指標の、前の年度の県による説明（畳む。新しい年度から）。施策ページのカード（SeikaCard）と、どの成果指標も同じ説明のときに施策ページがカードの後ろに1回だけ出すもの
+import Term from './Term.astro';
+import SeikaSays from './SeikaSays.astro';
+import { yearLabel } from '../lib/data.ts';
+import type { SeikaRow } from '../lib/types.ts';
+
+// rows は前の年度の行（新しい年度から）、year は最新の報告の年度
+interface Props { rows: SeikaRow[]; year: number }
+const { rows, year } = Astro.props;
+---
+{rows.length > 0 && (
+  <details class="past-says">
+    <summary>前の年度の県による説明（{rows.map((r) => yearLabel(r.year)).join('・')}）</summary>
+    {rows.some((r) => r.year <= 2024) && year >= 2025 && <p class="small secondary">R6までは前期<Term word="実施計画" />の基準値・計画値に対する説明です。</p>}
+    {rows.map((r) => <SeikaSays r={r} />)}
+  </details>
+)}
+
+<style>
+  .past-says { margin-top: 12px; }
+</style>

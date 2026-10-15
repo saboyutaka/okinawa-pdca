@@ -1,15 +1,19 @@
 ---
-// 成果指標1つ（施策ページ）。①名前と達成率の札 ②スタート → いま → ゴールの値（1行。将来像のページの主要指標と同じ形） ③道のりの図と「表で見る」
-// ④県の説明（吹き出し。says={false} のときは出さない。施策のどの成果指標も同じ説明のときは、施策のページがカードの後ろに1回だけ出す）。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
+// 成果指標1つ（施策ページ）。①名前と達成率の札・シェアのボタン ②スタート → いま → ゴールの値（1行。将来像のページの主要指標と同じ形） ③道のりの図と「表で見る」
+// ④県の説明（吹き出し。says={false} のときは出さない。施策のどの成果指標も同じ説明のときは、施策のページがカードの後ろに1回だけ出す）と、前の年度の説明（畳む。past={false} のときは出さない）
+// ⑤観光ロードマップの同じ指標。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
 // その年度の計画値と県の見通しは、図と表に任せる。「計画値にまだ届いていません」の文は、札にマウスを乗せると出し、読み上げでは読む。
-// 見出しの名前は成果指標のページ（前の年度の県の説明・施策の主な取組の進み具合）へのリンク
+// カードの id（row.anchor）は、成果指標の一覧・指標のマップ・計画の目次・シェア用のページから飛ぶ先
 import Icon from './Icon.astro';
 import SeikaRoute from './SeikaRoute.astro';
 import SeikaSays from './SeikaSays.astro';
-import { LATEST, yearLabel, sectionHref, withUnit, refText, seikaVerdict, type SeikaGroupOfShisaku } from '../lib/data.ts';
+import SeikaPastSays from './SeikaPastSays.astro';
+import ShareMenu from './ShareMenu.astro';
+import { LATEST, yearLabel, sectionHref, withUnit, refText, seikaVerdict, seikaFormerNames, seikaPastSays, type SeikaGroupOfShisaku } from '../lib/data.ts';
+import { KANKO, RM_LATEST, kankoOfSeika } from '../lib/plans.ts';
 
-interface Props { row: SeikaGroupOfShisaku; says?: boolean }
-const { row, says = true } = Astro.props;
+interface Props { row: SeikaGroupOfShisaku; says?: boolean; past?: boolean }
+const { row, says = true, past = true } = Astro.props;
 const x = row.latest;
 const u = x.unit;
 const verdict = seikaVerdict(x);
@@ -21,16 +25,24 @@ const vals = [
   { label: x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`, v: withUnit(x.actual_raw, u), y: ref, now: true },
   { label: 'ゴール', v: withUnit(x.target_raw, u), y: x.target_year },
 ];
+// 前の年度の報告での名前（名前が変わった指標も、同じ指標として年度をつないでいる。lib/renames.ts の SEIKA_RENAMES）
+const formers = seikaFormerNames(row).map((f) => ({ ...f, span: f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0]) }));
+// 観光ロードマップ（個別計画）でも同じ成果指標で評価しているもの
+const rm = kankoOfSeika(row.href);
 ---
-<article class="sticker scard">
+<article class="sticker scard" id={row.anchor}>
   <div class="sc-head">
-    <h3><a class="name-link" href={row.href}>{row.name}</a>{u && <span class="secondary small">（{u}）</span>}</h3>
-    <span class:list={['sc-rate', `tone-${verdict.tone || 'blank'}`]} title={verdict.text}>
-      <Icon tone={verdict.tone} size={14} />{rateNum ? <><span class="sc-rate-l">達成率</span><b>{rateNum}</b></> : <b class="word">{verdict.chip}</b>}<span class="sr-only">。{verdict.text}</span>
-    </span>
+    <h3>{row.name}{u && <span class="secondary small">（{u}）</span>}</h3>
+    <div class="sc-acts">
+      <span class:list={['sc-rate', `tone-${verdict.tone || 'blank'}`]} title={verdict.text}>
+        <Icon tone={verdict.tone} size={14} />{rateNum ? <><span class="sc-rate-l">達成率</span><b>{rateNum}</b></> : <b class="word">{verdict.chip}</b>}<span class="sr-only">。{verdict.text}</span>
+      </span>
+      <ShareMenu path={row.share} kind="成果指標" name={row.name} />
+    </div>
   </div>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yearLabel(x.year)}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
+  {formers.length > 0 && <p class="small notice-inline">{formers.map((f) => `${f.span}の報告では「${f.name}」という名前でした。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
   <p class="sc-vals">
     {vals.map((v, j) => (
       <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
@@ -38,13 +50,20 @@ const vals = [
   </p>
   <SeikaRoute row={row} />
   {says && x.explanation && <SeikaSays r={x} />}
-  <a class="to-page" href={row.href}>くわしく見る<span class="sr-only">: {row.name}</span></a>
+  {past && <SeikaPastSays rows={seikaPastSays(row)} year={x.year} />}
+  {rm.length > 0 && (
+    <p class="small rm-note">
+      <span class="plan-tag">{KANKO.short}</span> 県の観光の<a href="/keikaku/">個別計画</a>でも、同じ成果指標で評価しています（沖縄県PDCAとは別の評価）:
+      {rm.map((r, i) => <>{i > 0 && '、'}<a href={r.href}>{r.latest.name}</a>（{yearLabel(RM_LATEST)}の達成状況: {r.judgement}）</>)}
+    </p>
+  )}
 </article>
 
 <style>
   .scard { margin-top: 18px; }
   .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
   .sc-head h3 { margin: 0; }
+  .sc-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   /* 達成率の札。数を大きく、区分の色の地と形で（取組のページの頭の進捗状況の札に近い形。ステッカーの中なので影は付けない） */
   .sc-rate {
     display: inline-flex; align-items: center; gap: 6px; padding: 2px 14px; border: 2px solid var(--line); border-radius: 999px; white-space: nowrap;
@@ -62,5 +81,5 @@ const vals = [
   .now .v-n { font-size: 1.1rem; }
   .v-y { font-size: 0.75rem; white-space: nowrap; }
   .arrow { color: var(--muted); margin-right: 3px; }
-  .to-page { display: inline-block; margin-top: 10px; font-size: 0.875rem; font-weight: 700; }
+  .rm-note { margin: 12px 0 0; }
 </style>

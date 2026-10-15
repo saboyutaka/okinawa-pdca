@@ -1,0 +1,66 @@
+---
+// 指標（成果指標・主要指標・活動指標）のカードの右上に置く、その指標のシェアのボタン。押すと、SNS のシェアパネル（Share.astro）とリンクのコピーを入れた小さな枠を開く。
+// シェアするのは指標のシェア用のページの URL（lib/routes.ts の SHARE_ROUTES）で、SNS には指標のカードの画像が出て、開いた人はこの指標の場所に着く。
+// ページ（施策・取組など）のシェアは、ページの終わりのシェアの枠（ShareBox.astro）で行い、ページの頭には置かない。
+// 開け閉めは details（キーボードと読み上げでもそのまま使える）。ほかの場所を押す・Esc で閉じ、1つ開くとほかは閉じる（scripts/share-menu.ts）。
+// コピーのボタンはスクリプトで動く（scripts/copy-link.ts。スクリプトが動かないときはボタンを出さず、リンクの欄から写せる）。印刷では出さない
+import Share from './Share.astro';
+import { absUrl } from '../lib/seo.ts';
+import { shareText } from '../lib/iken.ts';
+
+// path はシェア用のページの URL、kind は「成果指標」など、name は指標の名前
+interface Props { path: string; kind: string; name: string }
+const { path, kind, name } = Astro.props;
+const url = absUrl(path);
+---
+<details class="share-menu" data-share-menu>
+  <summary class="share-menu-btn">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>
+    シェア<span class="sr-only">: {kind}「{name}」</span>
+  </summary>
+  <div class="share-menu-pop" data-copy-box>
+    <p class="share-menu-h">この{kind}をシェア</p>
+    <Share text={shareText(kind, name)} path={path} label={`${kind}「${name}」を SNS でシェア`} />
+    <div class="share-menu-copy">
+      <input type="text" readonly value={url} aria-label={`${kind}「${name}」のリンク`} />
+      <button type="button" class="share-menu-copy-btn" data-copy={url}><span class="copy-label">リンクをコピー</span></button>
+    </div>
+    <span class="sr-only" role="status"></span>
+  </div>
+</details>
+
+<style>
+  .share-menu { position: relative; flex: none; }
+  /* 小さな白い札（カードの中なので影は付けない）。開いているあいだは地の色を付ける */
+  .share-menu-btn {
+    list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px 0 11px; margin: 0;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; color: var(--ink); background: var(--paper);
+    border: 2px solid var(--line); border-radius: 999px; white-space: nowrap;
+  }
+  .share-menu-btn::-webkit-details-marker { display: none; }
+  .share-menu-btn:hover, .share-menu[open] > .share-menu-btn { background: var(--sky); }
+  .share-menu-btn svg { fill: none; stroke: currentColor; stroke-width: 2; }
+  .share-menu[open] > .share-menu-btn { margin-bottom: 0; }
+  /* 枠はボタンの下に、右の端をそろえて出す（画面の左右にはみ出すときは、スクリプトが translate で内側へずらす） */
+  /* 幅はどこでも同じにし、文字は置いた場所（ページの頭の太字の行など）から受け継がず本文の書き方にそろえる */
+  .share-menu-pop {
+    position: absolute; z-index: 40; right: 0; top: calc(100% + 8px); display: grid; gap: 10px; width: min(340px, calc(100vw - 16px));
+    padding: 12px 14px; background: var(--paper); border: 2.5px solid var(--line); border-radius: 16px; box-shadow: 4px 4px 0 var(--shadow);
+    font-family: var(--font); font-weight: 400; font-size: 1rem; line-height: 1.6; color: var(--ink); text-align: left; white-space: normal;
+  }
+  .share-menu-h { margin: 0; font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; }
+  /* 枠の中のシェアパネルは、枠と見出しがあるので、パネルの線と「シェア」の文字を外してアイコンだけにする */
+  .share-menu-pop :global(.share-panel) { border: 0; padding: 0; background: none; }
+  .share-menu-pop :global(.share-label) { display: none; }
+  .share-menu-copy { display: flex; gap: 6px; }
+  .share-menu-copy input {
+    flex: 1; width: 0; min-width: 0; font: inherit; font-size: 0.8125rem; color: var(--ink-2); background: var(--bg);
+    border: 1.5px solid var(--hair); border-radius: 8px; padding: 6px 8px;
+  }
+  .share-menu-copy-btn {
+    flex: none; min-height: 36px; padding: 0 12px; font: inherit; font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem;
+    color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; cursor: pointer;
+  }
+  .share-menu-copy-btn:hover { background: var(--sky); }
+  :global(html:not(.js)) .share-menu-copy-btn { display: none; }
+</style>

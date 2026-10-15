@@ -45,10 +45,9 @@ import { LIKE_FROM, LIKE_THANKS } from '../lib/like.ts';
   .like-btn[aria-pressed="true"] .heart path { fill: var(--logo-body); stroke: var(--logo-ink); }
   /* スマホでは、シェアパネル（compact）と1行に並ぶように、ハートだけの丸にする（高さはシェアパネルと同じ） */
   @media (max-width: 520px) {
-    .like-btn { justify-content: center; width: 52px; min-height: 52px; padding: 0; }
+    .like-btn { justify-content: center; width: 48px; min-height: 48px; padding: 0; }
     .like-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   }
-  @media (max-width: 360px) { .like-btn { width: 48px; min-height: 48px; } }
 
   /* お礼のポップアップ。ボタンの上に、尾をハートに向けて出す（用語の説明 .termpop と同じ線と影。出る・消える動きは styles/global.css の「動き」で、尾のほうからふくらむ） */
   .like-pop {

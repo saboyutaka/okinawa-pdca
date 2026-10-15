@@ -160,7 +160,7 @@ export function kankoSeikaList() {
   );
 }
 export type KankoSeikaListRow = ReturnType<typeof kankoSeikaList>[number];
-// 沖縄県PDCA の成果指標（ページの URL）が、観光ロードマップのどの成果指標と同じか（観光ロードマップの報告書の「沖縄県PDCAの成果指標」の欄で結ぶ）。成果指標のページで使う
+// 沖縄県PDCA の成果指標（施策ページのカードの URL）が、観光ロードマップのどの成果指標と同じか（観光ロードマップの報告書の「沖縄県PDCAの成果指標」の欄で結ぶ）。施策ページの成果指標のカードで使う
 export const kankoOfSeika = (seikaHref: string) => kankoSeikaList().filter((g) => g.pdca.some((p) => p.href === seikaHref));
 
 // 観光ロードマップの取組には自分のページが無いので、施策展開のページの取組のカードを行き先にする

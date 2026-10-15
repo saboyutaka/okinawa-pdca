@@ -5,7 +5,7 @@ import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
-  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
   shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
@@ -232,10 +232,11 @@ test('JUDGE_TRENDS: 最新の年度まで3年続けて C〜G', () => {
   assert.deepEqual(trendsOf(null, null, 'C', 'C'), []);
 });
 
-test('取組・成果指標のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
+test('取組のページ・成果指標のシェア用のページの URL と成果指標のカードの id は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
   assert.equal(keySlug('abc'), 'a9993e36');
   assert.equal(torikumiHref('1-1-a-1', 'abc'), '/torikumi/1-1-a-1/a9993e36/');
-  assert.equal(seikaHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
+  assert.equal(seikaShareHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
+  assert.equal(seikaHref('1-1-a-1', 'abc'), '/shisaku/1-1-a-1/#seika-a9993e36');
 });
 
 test('seikaNameMatches: 部局票の「対応する成果指標」は、空白・記号の違いを無視し、含む・含まれるか、指標の名前の字が同じ順で出てくれば当たり', () => {
