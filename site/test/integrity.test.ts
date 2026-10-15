@@ -280,11 +280,12 @@ test('取組の4年間の進捗状況は、報告の年度の順に並ぶ', () =
 test('取組の活動指標のまとまりは、報告の年度を1回ずつ含み、この先の年度の計画は最新の報告にある取組のいまの活動指標にだけ付く', () => {
   const bad: string[] = [];
   for (const g of getTorikumiGroups()) {
-    const runs = activityRuns(g);
+    // 2行以上の活動指標は行ごとの run（part）になるので、同じ活動指標（group）の最初の run だけで見る
+    const runs = activityRuns(g).filter((r, i, all) => all.findIndex((x) => x.group === r.group) === i);
     // 新しい活動指標が先なので、まとまりを古い順に並べ直すと報告の年度の順になる
     const reported = [...runs].reverse().flatMap((r) => r.years.filter((y) => !y.future).map((y) => y.y));
     if (reported.join() !== YEARS.filter((y) => g.years[y]).join()) bad.push(`${g.href} 年度 ${reported.join()}`);
-    const future = runs.flatMap((r, i) => r.years.filter((y) => y.future).map((y) => ({ i, y: y.y })));
+    const future = runs.flatMap((r) => r.years.filter((y) => y.future).map((y) => ({ i: r.group, y: y.y })));
     if (future.some((f) => f.i > 0 || f.y <= LATEST || g.latest.year !== LATEST)) bad.push(`${g.href} この先の年度 ${future.map((f) => f.y).join()}`);
     // 図に置く値は、まとまりの単位でそろっている（単位の違う値は null）
     if (runs.some((r) => r.chart !== r.years.some((y) => y.actual != null))) bad.push(`${g.href} 図の有無`);

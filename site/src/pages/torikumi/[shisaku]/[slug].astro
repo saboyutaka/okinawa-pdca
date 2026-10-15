@@ -64,8 +64,12 @@ const toneOfPct = (p: number): Tone => (p >= 90 ? 'good' : p >= 75 ? 'warning' :
 const latestAch = activityAchievement(g, t.year);
 // 活動指標の表が2つ以上ある取組の、表ごとの達成割合
 const latestAchs = activityAchievements(g, t.year);
-// 活動指標の計画と実績。活動指標が途中で変わった取組は、活動指標ごとに図と表を分ける（新しい活動指標が先）。前の活動指標は畳む（施策ページの「R6まで使われていた成果指標」と同じ）
-const [run0, ...pastRuns] = activityRuns(g);
+// 活動指標の計画と実績。活動指標が途中で変わった取組は、活動指標ごとに図と表を分ける（新しい活動指標が先）。前の活動指標は畳む（施策ページの「R6まで使われていた成果指標」と同じ）。
+// 目標・実績が2行以上の活動指標（「５回／200名」）は行ごとの run（part）になるので、同じ活動指標（group）のカードを1つの見出しの下に並べる
+const runGroups = activityRuns(g).reduce((m, run) => m.set(run.group, [...(m.get(run.group) ?? []), run]), new Map<number, ActivityRun[]>());
+// 頭に出す最新の報告の行ごとの値（2行以上の活動指標だけ。1行なら t.target・t.actual をそのまま出す）
+const headRuns = runGroups.get(0) ?? [];
+const headParts = headRuns.length > 1 ? headRuns.map((p) => [p, p.years.find((y) => y.y === t.year)!] as const) : null;
 const runSpan = (run: ActivityRun) => {
   const ys = run.years.filter((r) => !r.future).map((r) => r.y);
   return ys.length > 1 ? `${yearLabel(ys[0])}〜${yearLabel(ys[ys.length - 1])}` : yearLabel(ys[0]);
@@ -169,13 +173,14 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       </div>
       <div class="now-act">
         <div class="act-name"><span class="act-l"><Term word="活動指標" /></span>{t.indicator || tr?.indicator_name || '—'}</div>
-        {t.lines ? (
-          <ul class="act-lines">{t.lines.map((l) => <li>計画 <b>{l.target || '—'}</b> → 実績 <b>{l.actual || '—'}</b></li>)}</ul>
+        {headParts ? (
+          // 2行以上の活動指標は、行ごとの札（小学校・北部…）を頭に付けて並べ、行ごとの達成割合（部局票の表ごとの値）を同じ行に書く。計画が数で無い行（「－」）は割合を出さない
+          <ul class="act-lines">{headParts.map(([p, y]) => <li><span class="act-part">{p.part}</span><span class="act-v">計画 <b>{y.plan_raw || '—'}</b> → 実績 <b>{y.actual_raw || '—'}</b></span>{y.ach && y.plan != null && <span class="act-sub act-v">達成割合 {y.ach}</span>}</li>)}</ul>
         ) : (
           <div class="act-vals">計画 <b>{t.target || '—'}</b> → 実績 <b>{t.actual || '—'}</b></div>
         )}
-        {latestAchs.length > 0 && <ul class="act-lines act-sub">{latestAchs.map((x) => <li>{x.name}: 達成割合 {x.text || '—'}</li>)}</ul>}
-        {latestAch && (
+        {!headParts && latestAchs.length > 0 && <ul class="act-lines act-sub">{latestAchs.map((x) => <li>{x.name}: 達成割合 {x.text || '—'}</li>)}</ul>}
+        {!headParts && latestAch && (
           <div class="act-ach">
             <Chunk frac={latestAch.pct / 100} tone={toneOfPct(latestAch.pct)} label={`活動指標の達成割合 ${latestAch.text}`} />
             <span class="act-sub">達成割合 {latestAch.text}{latestAch.pct >= 100 && '　計画クリア'}</span>
@@ -228,7 +233,10 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 
   <section aria-labelledby="katsudou">
     <h2 id="katsudou" class="anchor">活動指標の計画と実績</h2>
-    {[run0, ...pastRuns].map((run, i) => {
+    {[...runGroups.values()].map((runs, i) => {
+      const run0 = runs[0];
+      const split = runs.length > 1;
+      const cards = runs.map((run) => {
       // 図の描き方とこの先の年度の計画の出どころの注記は、表の後ろに置く（図の下に並べると図が長くなるため）
       const notes = [
         run.cumulative && '図は、かっこの前に書かれたその年度の数で描いています（かっこの中は累計や内訳）。',
@@ -240,16 +248,17 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       const cols = run.years;
       const curPeriod = periodOf(cols.filter((r) => !r.future).at(-1)!.y);
       const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodOf(cols[k].y) !== periodOf(cols[k - 1].y) && 'sep', periodOf(cols[k].y) !== curPeriod && 'off'];
-      const card = (
+      const unit = run.unit && <span class="secondary small">（{run.unit}）</span>;
+      return (
         <div class="sticker kcard">
-          {i > 0 && <div class="k-span">{runSpan(run)}の活動指標</div>}
-          <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{run.unit && <span class="secondary small">（{run.unit}）</span>}</h3>
+          {!split && i > 0 && <div class="k-span">{runSpan(run)}の活動指標</div>}
+          {split ? <h4 class="k-part">{run.part}{unit}</h4> : <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{unit}</h3>}
           <KatsudouChart run={run} here={i > 0 ? '' : t.year === LATEST ? 'いまここ' : '最後の報告'} />
           <details open={!run.chart}>
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
             <div class="table-wrap">
               <table class:list={['progress', run.chart && 'aligned']}>
-                <caption class="sr-only">{run.indicator}の年度ごとの計画と実績{new Set(cols.map((r) => periodOf(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+                <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodOf(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
                 <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
                 <thead>
                   <tr><td></td>{cols.map((r, k) => <th scope="col" class:list={cell(k)}>{yearLabel(r.y)}{r.future && <small class="secondary">年度別計画</small>}</th>)}</tr>
@@ -266,7 +275,17 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
           </details>
         </div>
       );
-      if (i > 0) return <details class="past"><summary>{runSpan(run)}に使われていた活動指標</summary>{card}</details>;
+      });
+      // 行ごとに分けた活動指標は、名前を1回だけ見出しにして、行のカードを下に並べる（「開催数」「参加者数（累計）」のように、行の札がカードの見出し）
+      const card = split ? (
+        <div class="k-group">
+          {i > 0 && <div class="k-span">{runSpan(run0)}の活動指標</div>}
+          <h3 class="k-name">{run0.indicator || '活動指標の記載なし'}</h3>
+          <p class="small secondary">計画と実績が{runs.length}つの値で書かれているので、値ごとに図と表を分けています。</p>
+          {cards}
+        </div>
+      ) : cards[0];
+      if (i > 0) return <details class="past"><summary>{runSpan(run0)}に使われていた活動指標</summary>{card}</details>;
       return (
         <>
           {card}
@@ -489,6 +508,9 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .act-l { margin-right: 10px; font-family: var(--font); font-size: 0.875rem; color: var(--ink-2); }
   .act-vals b, .act-lines b { font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; }
   .act-lines { margin: 0; padding-left: 1.2em; }
+  /* 行の札・「計画 → 実績」・達成割合は、それぞれかたまりで折り返す（スマホで札が長いとき、数の途中で折れないように） */
+  .act-part { display: inline-block; min-width: 4em; margin-right: 10px; font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; }
+  .act-v { display: inline-block; margin-right: 10px; }
   .act-sub { font-size: 0.875rem; color: var(--ink-2); }
   .act-ach { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
   .act-ach :global(.chunk) { flex: 0 1 320px; min-width: 160px; }
@@ -519,6 +541,9 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .kcard { margin-top: 12px; }
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .k-name { margin: 0; }
+  .k-group { margin-top: 12px; }
+  .k-group > p { margin: 4px 0 0; }
+  .k-part { margin: 0; font-size: 1rem; }
   .note { margin: 6px 0 0; }
   .bud-meta { display: grid; gap: 4px; margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1.5px solid var(--grid); font-size: 0.9375rem; }
   .bud-meta > div { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px; }
