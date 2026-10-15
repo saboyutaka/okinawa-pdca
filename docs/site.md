@@ -4,7 +4,7 @@
 
 ## 1. データの読み込みと数え方
 
-- 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
+- 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。年度をまたいで同じ取組かは `torikumiKey`（名前の key に、表記ゆれと、県が名前を変えた取組の読み替え `lib/renames.ts` を当てたもの）で比べる。取組のページには、前の年度の報告での名前（`formerNames`）を出す。
 - ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。計画の目次（`/mokuji/`）も同じく、目次の木（名前とリンクだけ。中身は `lib/tree-data.ts`）を `/mokuji/data-<ハッシュ>.json`（控えは `/mokuji/data.json`）から描く（7章）。指標のマップ（`/map/`）のマスを押したときの中身（名前・ページ・年度ごとの値。中身は `lib/map-data.ts`）も、指標ごとの `/map/<指標>-<ハッシュ>.json`（控えは `/map/<指標>.json`）を押したときに読み、キーワードで探す文字は `/map/search-<ハッシュ>.json`（控えは `/map/search.json`）をキーワードの欄に入ったときに読む（7章）。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
@@ -28,7 +28,7 @@
 
 ## 3. lib とスクリプト
 
-- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`map-data.ts`（指標のマップのマスと、押したときに読む JSON）・`cell-pop.ts`（押せる四角の中身の HTML。下の `cell-pop.ts`）・`map-label.ts`（指標のマップのマス目の読み上げ。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
+- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`map-data.ts`（指標のマップのマスと、押したときに読む JSON）・`cell-pop.ts`（押せる四角の中身の HTML。下の `cell-pop.ts`）・`map-label.ts`（指標のマップのマス目の読み上げ。ブラウザでも読み込む）、`format.ts`（数の書き方）、`renames.ts`（名前が変わっても同じ取組とみなす取組の一覧。[data.md](data.md) の8章）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
 - `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の1章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
 - `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。例外は、年を西暦で表示するときに読む `/era-<ハッシュ>.js`（`lib/era.ts` の `ERA_JS`。7章）。
