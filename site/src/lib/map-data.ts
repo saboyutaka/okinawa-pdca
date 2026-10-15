@@ -1,7 +1,6 @@
 // 指標のマップ（/map/。pages/map.astro）の材料。主要指標・成果指標・活動指標を、1マス＝1指標で将来像ごとに並べ、選んだ年度の県の区分で色分けする。
-// 3つの指標は区分の意味が違う（主要指標は R9 の目標値に対する前進・後退、成果指標はその年度の計画値に対する達成率、活動指標は主な取組の進捗状況）ので、
-// 1つのマス目にまとめず、指標ごとに区分と凡例の違うマップにする（docs/design.md の1章）。
-// - マス（ページの HTML に書く。mapGroups）: 年度ごとの区分の番号と、絞り込みに使う部局・くらしのテーマ。最新の年度の色と、最新の報告に無いマスを隠すのは書き出すときに決める
+// 区分は指標ごと（MAP_KINDS）で、マスは指標ごとの箱に分ける（見せ方は pages/map.astro）。
+// - マス（ページの HTML に書く。mapRows）: 年度ごとの区分の番号と、絞り込みに使う部局・くらしのテーマ。最新の年度の色と、最新の報告に無いマスを隠すのは書き出すときに決める
 // - 中身（JSON。マスを押したときにブラウザが読む。mapDataJson）: 名前・ページ・親（基本施策・施策）・年度ごとの値。
 //   約2,000マスの名前と値を HTML に書くと重いので、指標ごとのファイルにして、押したときに読む（ファイルの名前に中身のハッシュを入れ、ずっとキャッシュさせる。public/_headers）
 // 並びは報告書の順（将来像 → 基本施策・施策の番号 → 施策の中の並び）で、良い・悪いで並べ替えない。
@@ -148,7 +147,7 @@ const all = () => (built ??= { shuyou: buildShuyou(), seika: buildSeika(), katsu
 export const mapCells = (kind: MapKind) => all()[kind].cells;
 
 // マスの HTML。約2,000個あるので、Astro が範囲をしぼるための属性を付けず、短く書くため文字列にする（見た目は pages/map.astro の全体の CSS）。
-// 最新の年度の色を付け、最新の報告に無いマスは隠す（スクリプトが動かないときは、最新の年度のマップのまま見える）
+// 最新の年度の色を付け、最新の報告に無いマスは隠す（スクリプトが動かないときは、最新の年度のまま見える）
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const LATEST_AT = YEARS.indexOf(LATEST);
 export function cellHtml(kind: MapKind, c: MapCell) {
@@ -156,14 +155,17 @@ export function cellHtml(kind: MapKind, c: MapCell) {
   const tone = k === '-' ? 'blank' : infoOf(kind).cats[Number(k)].tone;
   return `<i class="mc tone-${tone}" data-c="${c.c}"${c.dept ? ` data-d="${esc(c.dept)}"` : ''}${c.themes.length ? ` data-t="${c.themes.join(' ')}"` : ''}${k === '-' ? ' hidden' : ''}></i>`;
 }
-// 将来像ごとのマス（報告書の順のまま、将来像で区切る）。n は年度をまたいだマスの数、latest は最新の報告にあるマスの数
-export function mapGroups(kind: MapKind) {
-  const cells = mapCells(kind);
-  const ids = [...new Set(cells.map((c) => c.s))];
-  return ids.map((s) => {
-    const cs = cells.filter((c) => c.s === s);
-    return { s, n: cs.length, latest: cs.filter((c) => c.c[LATEST_AT] !== '-').length, html: cs.map((c) => cellHtml(kind, c)).join('') };
-  });
+// 将来像ごとの行。行の中に主要指標・成果指標・活動指標のマスを並べる（どの指標も報告書の順のまま将来像で区切るので、行をまたいでも報告書の順）。
+// n は年度をまたいだマスの数、latest は最新の報告にあるマスの数
+export function mapRows() {
+  const ids = [...new Set(MAP_KINDS.flatMap(({ kind }) => mapCells(kind).map((c) => c.s)))].sort((a, b) => a - b);
+  return ids.map((s) => ({
+    s,
+    tiers: MAP_KINDS.map(({ kind }) => {
+      const cs = mapCells(kind).filter((c) => c.s === s);
+      return { kind, n: cs.length, latest: cs.filter((c) => c.c[LATEST_AT] !== '-').length, html: cs.map((c) => cellHtml(kind, c)).join('') };
+    }),
+  }));
 }
 // 年度ごとのマスの数（YEARS の順）
 export const mapCounts = (kind: MapKind) => YEARS.map((_, i) => mapCells(kind).filter((c) => c.c[i] !== '-').length);

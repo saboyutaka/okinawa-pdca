@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import {
-  MAP_KINDS, cellHtml, mapCells, mapCheck, mapCounts, mapDataHash, mapDataJson, mapDataPath, mapGroups, type MapData, type MapKind,
+  MAP_KINDS, cellHtml, mapCells, mapCheck, mapCounts, mapDataHash, mapDataJson, mapDataPath, mapRows, type MapData, type MapKind,
 } from '../src/lib/map-data.ts';
 import { mapLabel } from '../src/lib/map-label.ts';
 import { YEARS, LATEST, SHUYOU_COUNT, getSeika, getTorikumi, getShuyouStatus, shuyouCounts, rateBin, statusOf, countBy, RATE_BINS, STATUSES } from '../src/lib/data.ts';
@@ -48,12 +48,14 @@ test('中身の JSON はマスと同じ並び・同じ数で、報告の無い�
   }
 });
 
-test('将来像ごとのまとまりはマスを報告書の順のまま区切ったもので、最新の報告に無いマスは隠して書く', () => {
+test('将来像ごとの行は、どの指標のマスも報告書の順のまま将来像で区切ったもので、最新の報告に無いマスは隠して書く', () => {
+  const rows = mapRows();
+  assert.deepEqual(rows.map((r) => r.s), [1, 2, 3, 4, 5]);
   for (const { kind } of MAP_KINDS) {
-    const groups = mapGroups(kind);
-    assert.deepEqual(groups.map((g) => g.s), [1, 2, 3, 4, 5]);
-    assert.equal(groups.reduce((s, g) => s + g.n, 0), mapCells(kind).length);
-    assert.equal(groups.reduce((s, g) => s + g.latest, 0), mapCounts(kind)[at]);
+    const tiers = rows.map((r) => r.tiers.find((t) => t.kind === kind)!);
+    assert.equal(tiers.map((t) => t.html).join(''), mapCells(kind).map((c) => cellHtml(kind, c)).join(''), kind);
+    assert.equal(tiers.reduce((s, t) => s + t.n, 0), mapCells(kind).length);
+    assert.equal(tiers.reduce((s, t) => s + t.latest, 0), mapCounts(kind)[at]);
   }
   assert.equal(cellHtml('seika', { s: 1, c: '30-0', dept: '環境部', themes: ['eco', 'shizen'] }), '<i class="mc tone-good" data-c="30-0" data-d="環境部" data-t="eco shizen"></i>');
   assert.equal(cellHtml('katsudou', { s: 1, c: '000-', dept: '', themes: [] }), '<i class="mc tone-blank" data-c="000-" hidden></i>');
@@ -66,10 +68,13 @@ test('書き出す場所の名前は、中身の SHA-256 の先頭8桁', () => {
   }
 });
 
-test('マス目の読み上げは、区分ごとの数を県の並びのまま（0 の区分は省く）', () => {
+test('マス目の読み上げは、指標ごとに区分ごとの数を県の並びのまま（0 の区分は省く）', () => {
   assert.equal(
-    mapLabel('成果指標', 'R7', [['100%以上', 1200], ['60%以上100%未満', 0], ['0%以下', 3]], '指標', null),
-    '成果指標のマップ（R7、1,203指標）。100%以上 1,200指標、0%以下 3指標。矢印キーでマスを移ると、下に中身を出します',
+    mapLabel('R7', [
+      { term: '主要指標', unit: '指標', counts: [['目標値に到達', 2], ['後退', 1]], hit: null },
+      { term: '活動指標', unit: '件', counts: [['順調', 1200], ['やや遅れ', 0], ['大幅遅れ', 3]], hit: 5 },
+    ]),
+    '指標のマップ（R7）。主要指標 3指標（目標値に到達 2指標、後退 1指標）。活動指標 1,203件（順調 1,200件、大幅遅れ 3件。絞り込みの条件に合うのは 5件）。矢印キーでマスを移ると、その中身を出します',
   );
-  assert.match(mapLabel('活動指標', 'R4', [['順調', 2]], '件', 1), /。絞り込みの条件に合うのは 1件。矢印キー/);
+  assert.match(mapLabel('R5', [{ term: '主要指標', unit: '指標', counts: [['後退', 0]], hit: null }]), /主要指標はR5の分を出していません/);
 });
