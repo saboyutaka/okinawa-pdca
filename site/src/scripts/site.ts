@@ -13,6 +13,7 @@ import './indicator-map.ts';
 import './cell-pop.ts';
 import './like.ts';
 import './share-menu.ts';
+import './copy-link.ts';
 import './tooltip.ts';
 import './theme.ts';
 import './era.ts';
