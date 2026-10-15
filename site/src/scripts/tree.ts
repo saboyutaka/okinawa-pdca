@@ -1,9 +1,9 @@
 // 計画の目次（/mokuji/。pages/mokuji.astro）。
 //  - 描く: ul[data-tree] の data-src（名前にハッシュの付いた JSON。読めなければ data-fallback の控え）を読み、目次を描く（データの形は lib/tree-data.ts）。
 //    URL に q があれば、さがしてから一度で描く。描く HTML の形と見た目の決まりは pages/mokuji.astro の頭の説明と CSS
-//  - 開く深さ: [data-tree-depth="i"] のボタンを押すと、木の details のうち階層（data-level。将来像が 0）が i 未満のものを開き、ほかは閉じる。
-//    いまの開き方がどれかのボタンの形にそろっているときだけ、そのボタンを押した形（aria-pressed）にする
-//    （1つずつ開け閉めしてそろわなくなったら、どれも押していない形。印刷の前後に scripts/print.ts が開け閉めしたときも同じ）
+//  - 開く深さ: select[data-tree-depth] で i を選ぶと、木の details のうち階層（data-level。将来像が 0）が i 未満のものを開き、ほかは閉じる。
+//    いまの開き方がどれかの深さにそろっているときはその深さを、そろっていないときは「ばらばら」（値が空。選べない）を選んだ形にする
+//    （1つずつ開け閉めしたとき・キーワードでさがしたとき。印刷の前後に scripts/print.ts が開け閉めしたときも同じ。同じ深さを選び直せるように）
 //  - キーワード: form[data-tree-search="木の id"] の言葉で、施策・取組・成果指標の名前（li[data-q] の .qn）を部分一致でさがす
 //    （全角・半角と表記ゆれは lib/search.ts でそろえる）。当たった行とその親の行・当たった行の中だけを見せ、当たった行の親を開いて、当たった字に印を付ける。
 //    成果指標は、PC の幅では施策の行の名前の横にあるので（同じ指標の .qn が2つある。data-qk）、施策の行が当たったことにする。
@@ -93,7 +93,7 @@ async function init(tree: HTMLElement) {
   const form = document.querySelector<HTMLFormElement>(`form[data-tree-search="${tree.id}"]`);
   const input = form?.querySelector<HTMLInputElement>('input[name="q"]') ?? null;
   const hits = document.querySelector<HTMLElement>(`[data-tree-hits="${tree.id}"] > span`);
-  const btns = [...document.querySelectorAll<HTMLButtonElement>(`[data-tree-depth][aria-controls="${tree.id}"]`)];
+  const depth = document.querySelector<HTMLSelectElement>(`select[data-tree-depth][aria-controls="${tree.id}"]`);
   const urlQ = () => new URLSearchParams(location.search).get('q') || '';
   // 成果指標を施策の名前の横に出す幅（pages/mokuji.astro の CSS と同じ）
   const wide = matchMedia('(min-width: 760px)');
@@ -130,8 +130,8 @@ async function init(tree: HTMLElement) {
     if (msg) msg.textContent = '目次を読み込めませんでした。時間をおいて、ページを再読み込みしてください。';
     return;
   }
-  // はじめに押してあるボタンの深さまで開く（pages/mokuji.astro の START）
-  const startDepth = Number(btns.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.treeDepth ?? 1);
+  // はじめに選んである深さまで開く（pages/mokuji.astro の START。読み直したときにブラウザが戻した選択は使わない）
+  const startDepth = Number([...(depth?.options ?? [])].find((o) => o.defaultSelected)?.value ?? 1);
   tree.innerHTML = data.visions.map(visionRow).join('');
   const nodes = [...tree.querySelectorAll<HTMLDetailsElement>('details[data-level]')];
   const saved = savedOf(src);
@@ -269,13 +269,14 @@ async function init(tree: HTMLElement) {
   });
 
   // ---------------------------------------------------------------- 開く深さ
-  const opensAt = (b: HTMLButtonElement) => (d: HTMLDetailsElement) => Number(d.dataset.level) < Number(b.dataset.treeDepth);
+  const opensAt = (n: number) => (d: HTMLDetailsElement) => Number(d.dataset.level) < n;
+  const depths = [...(depth?.options ?? [])].filter((o) => o.value).map((o) => Number(o.value));
   // キーワードでさがす前の開き方（さがしているあいだだけ持つ）
   let before: boolean[] | null = null;
   let queued = false;
   const sync = () => {
     queued = false;
-    for (const b of btns) b.setAttribute('aria-pressed', String(nodes.every((d) => d.open === opensAt(b)(d))));
+    if (depth) depth.value = String(depths.find((n) => nodes.every((d) => d.open === opensAt(n)(d))) ?? '');
     describe();
   };
   // toggle は泡立たないので、木で捕まえて受ける。一度にたくさん開け閉めしたときも、そろったかを見るのは1回だけにする
@@ -284,15 +285,14 @@ async function init(tree: HTMLElement) {
     queued = true;
     requestAnimationFrame(sync);
   }, true);
-  for (const b of btns) {
-    b.addEventListener('click', () => {
-      const open = opensAt(b);
-      for (const d of nodes) d.open = open(d);
-      // さがしているあいだに押したときは、言葉を消したあともその開き方にする
-      if (before) before = nodes.map(open);
-      sync();
-    });
-  }
+  depth?.addEventListener('change', () => {
+    if (!depth.value) return;
+    const open = opensAt(Number(depth.value));
+    for (const d of nodes) d.open = open(d);
+    // さがしているあいだに選んだときは、言葉を消したあともその開き方にする
+    if (before) before = nodes.map(open);
+    sync();
+  });
 
   // ---------------------------------------------------------------- キーワード
   const lis = [...tree.querySelectorAll<HTMLLIElement>('li')];
