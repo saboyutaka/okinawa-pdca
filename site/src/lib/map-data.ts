@@ -117,7 +117,7 @@ function buildShuyou(): Built {
   return { cells, data: { parents: parents.list, items } };
 }
 
-// 成果指標。マスは年度をまたいだ指標のまとまり（施策のページのカードと同じ）。部局とくらしのテーマは、部局・くらしのテーマのページの成果指標の一覧と同じ決め方
+// 成果指標。マスは年度をまたいだ指標のまとまり（成果指標をさがすの行と同じ）。部局とくらしのテーマも成果指標をさがすと同じ決め方
 function seikaValues(x: SeikaRow): MapYear['v'] {
   const ref = refText(x.actual_ref_year);
   return [

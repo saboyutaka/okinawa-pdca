@@ -60,12 +60,13 @@ const visions = getShouraizou().map((v) => {
         </ul>
       </div>
       <div class="v-stats">
-        {/* 計画の階層（将来像 → 基本施策 → 施策・取組）に合わせ、基本施策の図の下に置く。
+        {/* 計画の階層（将来像 → 基本施策 → 施策・取組・成果指標）に合わせ、基本施策の図の下に置く。
             札は押すとその将来像で絞った一覧を開くので、何の札かを頭に1回だけ書く。並びはヘッダーのナビと同じ */}
         <span class="v-l">この将来像でさがす:</span>
         <HeadStats items={[
           { label: '施策', n: v.shisaku, href: `/shisaku/?s=${v.id}` },
           { label: '取組', n: v.n, href: `/torikumi/?s=${v.id}` },
+          { label: '成果指標', n: v.seika, href: `/shihyou/?s=${v.id}` },
         ]} />
       </div>
     </section>

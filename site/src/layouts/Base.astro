@@ -33,15 +33,15 @@ const ogImage = card
   ? { url: absUrl(card.image), ...CARD_SIZE, alt: `${card.alt}（${SITE.name}・非公式）` }
   : { url: absUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
 // サイト内のナビ。トップはヘッダーのタイトルから戻れるので置かない。県民がふだんの言葉から入れるくらしのテーマ（このサイト独自の分類。一覧 /theme/ のページの頭でそう書く）を先に、
-// 計画の3つの段（docs/design.md の1章）を上から（将来像 → 施策 → 取組）、その後ろに部局・予算、3つの段をまとめて見る計画の目次と指標のマップを置く。
-// まとまりのあいだには区切りの線を置く。物差しは「もの」と同じページで見せる（基本施策と主要指標は5つの将来像のページ、成果指標は施策のページ、
-// 活動指標は取組のページ）ので、物差しの項目は置かない。
+// 計画の3つの段（docs/design.md の1章）を上から、段ごとに「もの」とそれをはかる物差しを隣にしてまとめ（将来像 → 施策・成果指標 → 取組）、
+// その後ろに部局・予算、3つの段をまとめて見る計画の目次と指標のマップを置く。
+// まとまりのあいだには区切りの線を置く。基本施策と主要指標は5つの将来像のページに、活動指標は取組のページの中にあるので、項目を置かない。
 // 個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。
 // also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV: { href: string; label: string; also?: string[] }[][] = [
   [{ href: '/theme/', label: 'テーマ' }],
   [{ href: '/future/', label: '将来像', also: ['/kihon/'] }],
-  [{ href: '/shisaku/', label: '施策' }],
+  [{ href: '/shisaku/', label: '施策' }, { href: '/shihyou/', label: '成果指標' }],
   [{ href: '/torikumi/', label: '取組' }],
   [{ href: '/bukyoku/', label: '部局' }, { href: '/yosan/', label: '予算' }],
   [{ href: '/mokuji/', label: '目次' }, { href: '/map/', label: '指標マップ' }],
