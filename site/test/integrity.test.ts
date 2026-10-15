@@ -6,8 +6,9 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
+  seikaKey, seikaFormerNames, seikaHref,
 } from '../src/lib/data.ts';
-import { TORIKUMI_RENAMES } from '../src/lib/renames.ts';
+import { SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -195,6 +196,40 @@ test('書き方の違いだけで名前が変わった取組・成果指標（R7
   const s = getSeikaGroups().find((x) => x.shisaku.id === '2-1-a-1' && x.latest.name === 'こどもの貧困対策支援員による支援人数');
   assert.ok(s);
   assert.deepEqual(YEARS.filter((y) => s.years[y]), YEARS);
+});
+
+test('名前が変わった成果指標（SEIKA_RENAMES）は、前の名前の年度と新しい名前の年度が1つの指標にまとまる', () => {
+  const rows = load('seika');
+  const rowsOf = (shisaku: string, name: string) => rows.filter((x) => x.shisaku_id === shisaku && sameKey(nameKey(x.name)) === sameKey(nameKey(name)));
+  for (const r of SEIKA_RENAMES) {
+    const from = rowsOf(r.shisaku, r.from);
+    const to = rowsOf(r.shisaku, r.to);
+    assert.ok(from.length && to.length, `${r.shisaku}: ${r.from} → ${r.to} が報告に無い`);
+    // 前の名前の報告が終わった後に、新しい名前の報告が始まる（同じ年度に両方は載っていない）。担当部課は同じ
+    assert.ok(Math.max(...from.map((x) => x.year)) < Math.min(...to.map((x) => x.year)), `${r.shisaku}: ${r.from} と ${r.to} の年度が重なる`);
+    const last = from.reduce((a, b) => (b.year > a.year ? b : a));
+    assert.equal(seikaDept(last), seikaDept(to[0]), `${r.shisaku}: ${r.to} の担当部課`);
+    // 新しい名前のまとまりに、前の名前の年度も入り、ページは新しい名前の key のもの
+    const g = seikaGroupsOf(r.shisaku).find((x) => x.latest.name === r.to);
+    assert.ok(g, `${r.shisaku}: ${r.to}`);
+    assert.deepEqual(from.filter((x) => g.years[x.year]?.name !== r.from), [], `${r.shisaku}: ${r.from}`);
+    assert.equal(g.href, seikaHref(r.shisaku, `${seikaKey(r.shisaku, nameKey(r.from))}#1`));
+    assert.deepEqual(seikaFormerNames(g), [{ name: r.from, years: from.map((x) => x.year).sort() }]);
+  }
+  // 1つのまとまりに、同じ年度の指標が2つ入らない（2つの指標を同じ新しい名前に読み替えていない。同じ印字の名前で並ぶ指標は SEIKA_ALIASES で分けるので除く）
+  const seen = new Map<string, number>();
+  for (const x of rows) {
+    if (seikaAlias(x)) continue;
+    const k = `${x.year}|${x.shisaku_id}|${seikaKey(x.shisaku_id, nameKey(x.name))}`;
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  none([...seen].filter(([, n]) => n > 1), ([k]) => k);
+  // 例: 1-1-b-1 の「一般廃棄物のリサイクル率」は R4〜R6 の「一般廃棄物及び産業廃棄物のリサイクル率（一般廃棄物のリサイクル率）」と4年分つながる
+  const g = getSeikaGroups().find((x) => x.shisaku.id === '1-1-b-1' && x.name === '一般廃棄物のリサイクル率');
+  assert.ok(g);
+  assert.deepEqual(YEARS.filter((y) => g.years[y]), YEARS);
+  // 読み替えの無い指標には前の名前が無い
+  assert.deepEqual(seikaFormerNames(getSeikaGroups().find((x) => x.shisaku.id === '1-1-a-1')!), []);
 });
 
 test('名前が変わった取組（TORIKUMI_RENAMES）は、前の名前の年度と新しい名前の年度が1つの取組にまとまる', () => {

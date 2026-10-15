@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
-import { TORIKUMI_RENAMES } from './renames.ts';
+import { SEIKA_RENAMES, TORIKUMI_RENAMES } from './renames.ts';
 import type {
   AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
@@ -610,6 +610,13 @@ export function torikumiKey(shisakuId: string, key: string) {
   const k = sameKey(key);
   return renameMap.get(`${shisakuId}|${k}`) ?? k;
 }
+// 年度をまたいで同じ成果指標かを比べる key。sameKey に、県が名前を変えた成果指標の読み替え（lib/renames.ts の SEIKA_RENAMES）を足したもの
+let seikaRenameMap: Map<string, string> | undefined;
+export function seikaKey(shisakuId: string, key: string) {
+  seikaRenameMap ??= new Map(SEIKA_RENAMES.map((r) => [`${r.shisaku}|${sameKey(nameKey(r.from))}`, sameKey(nameKey(r.to))]));
+  const k = sameKey(key);
+  return seikaRenameMap.get(`${shisakuId}|${k}`) ?? k;
+}
 
 // 同じ施策の同じ年度の報告書に、同じ名前で2つ以上載っている成果指標（内訳の名前が印字に無いもの）。名前だけでは見分けられず、ページの題名も同じになるので、
 // 内訳の名前で載っているほかの報告書の名前で出し、年度をまたいでその名前の指標とまとめる。どの内訳かは、ほかの報告書と同じ値の欄（field）で選ぶ。
@@ -662,7 +669,7 @@ export function seikaRows(shisaku: Shisaku) {
   const sorted = [...shisaku.seika].sort((a, b) => b.year - a.year);
   for (const s of sorted) {
     const name = seikaName(s);
-    const base = sameKey(nameKey(name));
+    const base = seikaKey(shisaku.id, nameKey(name));
     const n = (seen.get(`${s.year}|${base}`) || 0) + 1;
     seen.set(`${s.year}|${base}`, n);
     const k = `${base}#${n}`;
@@ -672,7 +679,17 @@ export function seikaRows(shisaku: Shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
-// 成果指標のページの URL: /shihyou/<施策ID>/<指標名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ）
+// 前の年度の報告での成果指標の名前（名前の変更でまとめた指標の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度（取組の formerNames と同じ形）
+export function seikaFormerNames(g: YearGroup<SeikaRow>) {
+  const m = new Map<string, number[]>();
+  const latest = sameKey(nameKey(seikaName(g.latest)));
+  for (const y of YEARS) {
+    const r = g.years[y];
+    if (r && sameKey(nameKey(seikaName(r))) !== latest) m.set(seikaName(r), [...(m.get(seikaName(r)) || []), y]);
+  }
+  return [...m].map(([name, years]) => ({ name, years }));
+}
+// 成果指標のページの URL: /shihyou/<施策ID>/<指標名の key のハッシュ8桁>/。年度をまたいで同じ（名前が変わると別のページ。SEIKA_RENAMES でまとめた指標は新しい名前のページ）
 export const seikaHref = (shisakuId: string, key: string) => `/shihyou/${shisakuId}/${keySlug(key)}/`;
 // 成果指標1件（seika.json の行）から、年度をまたいだまとまりを求める
 export function seikaGroupOf(row: SeikaRow) {
