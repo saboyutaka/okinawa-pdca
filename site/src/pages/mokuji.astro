@@ -13,11 +13,13 @@ import { fmt } from '../lib/format.ts';
 // 基本施策には主要指標、施策には成果指標を付ける。PC の幅では名前の横に並べ、スマホでは開いた中に主な取組より先に並べる（同じ指標を2か所に書き、幅で片方だけを出す）。
 // 指標は名前だけで、値や達成率は出さない（形を見るページにし、良い・悪いの一覧にしない）。
 // 名前はそれぞれのページへのリンクで、▶ の丸（summary）を押すと開け閉めする。
-// summary の中にリンクを置くと押せるものが入れ子になるので、名前は summary の外に置き、summary は丸だけにする。施策展開にはページが無いので、行ごと summary にする。
+// summary の中にリンクを置くと押せるものが入れ子になるので、名前は summary の外に置き、summary は丸だけにする。施策展開にはページが無いので、名前の行を押しても開け閉めする。
+// キーボードと読み上げでは、木（role="tree"）として動かす（scripts/tree.ts）。
 // 番号は、通しの番号（1-(2)-イ）ではなく、その階層の中の番号（基本施策 (2)・施策展開 イ・施策 ①・主な取組は施策の中の報告書の番号 1, 2, …）を名前の頭に置く（木の形で上の階層が分かるため）。
 // 閉じている行にだけ、すぐ下に並ぶものの数（「取組 6・成果指標 2」）を名前の後ろに出す（開いたら下に並ぶので出さない。CSS で切り替える。指標の数は、指標を名前の横に出す PC では出さない）。
-// 頭の「開く深さ」は、押した階層まで一度に開く。はじめは将来像だけを開いて、基本施策まで見せる（はじめに押してあるボタン）。
-// キーワードは、施策・取組・成果指標の名前（li[data-q] の中の .qn）を部分一致でさがし、当たった行とその親だけを残して開く
+// 頭の「開く深さ」（セレクト）は、選んだ階層まで一度に開く。はじめは将来像だけを開いて、基本施策まで見せる（はじめに選んである深さ）。
+// キーワードは、施策・取組・成果指標の名前（li[data-q] の中の .qn）を部分一致でさがし、当たった行とその親だけを残して開く。
+// 開く深さとキーワードは小さく1行に並べ、キーワードを後ろに置く（キーワードの欄から Tab 1回で木に入れるように）
 const tree = getPlanTree();
 const kihonAll = tree.flatMap((v) => v.kihon);
 const tenkaiAll = kihonAll.flatMap((k) => k.tenkai);
@@ -26,7 +28,7 @@ const total = (xs: { length: number }[]) => xs.reduce((n, x) => n + x.length, 0)
 const nTorikumi = total(shisakuAll.map((s) => s.torikumi));
 const nShuyou = total(kihonAll.map((k) => k.shuyou));
 const nSeika = total(shisakuAll.map((s) => s.seika));
-// 「開く深さ」のボタン。i 番目は、i より上の階層（details の data-level が i 未満）を開き、その下は閉じる
+// 「開く深さ」の選択肢。i 番目は、i より上の階層（details の data-level が i 未満）を開き、その下は閉じる
 const DEPTHS = ['将来像だけ', '基本施策まで', '施策展開まで', '施策まで', '主な取組まで'];
 const START = 1;
 // 目次のデータ。名前に中身のハッシュが付く（lib/tree-data.ts）
@@ -39,20 +41,23 @@ const dataPath = treeDataPath();
   <p class="secondary lead">
     「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>の{tree.length}つの<Term word="将来像" />から、{kihonAll.length}の<Term word="基本施策" />、{tenkaiAll.length}の<Term word="施策展開" />、{shisakuAll.length}の<Term word="施策" />、{fmt(nTorikumi)}件の<Term word="主な取組" />までを、成果をはかる<Term word="主要指標" />（{nShuyou}）・<Term word="成果指標" />（{nSeika}）と一緒にたどれます。
   </p>
-  <form class="filters sticker tree-search" role="search" aria-label="目次の中をさがす" data-tree-search="plan-tree">
-    <label class="q">キーワード（施策・取組・成果指標の名前）
-      <input type="search" name="q" placeholder="例: 離島、子ども、観光" />
+  <form class="filters tree-search" role="search" aria-label="目次の中をさがす" data-tree-search="plan-tree">
+    <label class="tree-depth">開く深さ
+      {/* 1つずつ開け閉めして、どの深さにもそろっていないときは「ばらばら」（選べない）にする（scripts/tree.ts） */}
+      <select data-tree-depth aria-controls="plan-tree" autocomplete="off">
+        {DEPTHS.map((d, i) => <option value={String(i)} selected={i === START}>{d}</option>)}
+        <option value="" disabled hidden>ばらばら</option>
+      </select>
+    </label>
+    <label class="q">キーワード
+      <input type="search" name="q" placeholder="施策・取組・成果指標の名前（例: 離島）" />
     </label>
   </form>
   <p class="result-count tree-hits" data-tree-hits="plan-tree" aria-live="polite"><span id="tree-hits"></span></p>
-  <div class="tree-depth" role="group" aria-labelledby="tree-depth-l">
-    <span class="td-l" id="tree-depth-l">開く深さ</span>
-    {DEPTHS.map((d, i) => <button type="button" data-tree-depth={i} aria-controls="plan-tree" aria-pressed={i === START ? 'true' : 'false'}>{d}</button>)}
-  </div>
   <div class="tree-box sticker">
-    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span></p>
+    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span><span class="tree-hint" aria-hidden="true">矢印キーで行を移り、開け閉めできます</span></p>
     <p class="tree-msg small secondary" role="status">目次を読み込んでいます…</p>
-    <ul class="tree" id="plan-tree" data-tree aria-busy="true" data-src={dataPath} data-fallback={TREE_DATA_FALLBACK}></ul>
+    <ul class="tree" id="plan-tree" data-tree aria-label="計画の目次。上下の矢印キーで行を移り、左右の矢印キーかスペースで開け閉めし、Enter でページを開きます" aria-busy="true" data-src={dataPath} data-fallback={TREE_DATA_FALLBACK}></ul>
     <noscript><p class="small">目次の表示には JavaScript が必要です。<a href="/shisaku/">施策をさがす</a>・<a href="/future/">5つの将来像</a>から、それぞれの施策・取組を見られます。</p></noscript>
   </div>
   <p class="small secondary">施策・指標・主な取組は{yearLong(LATEST)}の報告にあるものです。主要指標は、県の概要版の数え方（男女別などを分けて数える）です。主な取組は延べ件数で、いくつかの施策に載る取組は、それぞれの施策の下に出ます。</p>
@@ -62,28 +67,20 @@ const dataPath = treeDataPath();
   /* 計画の目次の見た目。目次の行はスクリプト（scripts/tree.ts）が描くので、Astro が範囲をしぼるための属性（data-astro-cid-…）が付かず、
      ページの <style>（scoped）では当たらない。.tree-box などの名前の下に書いた全体の CSS にする */
 
-  /* キーワードと開く深さ。スクリプトでしか動かないので、スクリプトが動くとき（html.js）だけ出す。いまの開き方にそろっているボタンを押した形にする（scripts/tree.ts） */
-  .filters.tree-search { margin-bottom: 0; }
+  /* 開く深さとキーワード。小さく1行に並べる（箱に入れない）。スクリプトでしか動かないので、スクリプトが動くとき（html.js）だけ出す */
+  .filters.tree-search { flex-wrap: nowrap; gap: 10px; margin: 16px 0 0; }
+  .tree-search .tree-depth { flex: none; }
+  .tree-search .q { flex: 1 1 auto; min-width: 0; }
+  :root:not(.js) .tree-search { display: none; }
   p.tree-hits { margin: 10px 0 0; }
   /* 件数の文字が無いときは場所を取らない（件数を読み上げるため、p（aria-live）は出したままにする） */
   p.tree-hits:has(> span:empty) { margin: 0; }
   .tree-hits > span:empty { display: none; }
-  .tree-depth { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; }
-  :root:not(.js) :is(.tree-search, .tree-depth) { display: none; }
   /* 目次のデータが届くまで（scripts/tree.ts が描くまで）、目次の場所を画面の高さぶん取っておく。空のままだと下の注記が最初の画面に見え、
      描くと押し出されてずれるため（取組をさがすと同じ。docs/site.md の 7章）。スクリプトが動かないときは「読み込んでいます」を出さず、場所も取らない */
   :root.js .tree-box .tree[aria-busy='true'] { min-height: 100vh; }
   :root:not(.js) .tree-box .tree-msg { display: none; }
   .tree-box .tree-msg { margin: 4px 0 4px calc(var(--tw) + 8px); }
-  .tree-depth .td-l { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); margin-right: 4px; }
-  .tree-depth button {
-    display: inline-flex; align-items: center; gap: 4px; font: inherit; font-family: var(--font-display); font-size: 0.875rem; color: var(--ink);
-    background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 4px 12px; min-height: 38px; cursor: pointer;
-  }
-  .tree-depth button:hover { background: var(--sky); }
-  .tree-depth button[aria-pressed="true"] { background: var(--sky); font-weight: 700; box-shadow: 2px 2px 0 var(--shadow); }
-  .tree-depth button[aria-pressed="true"]::before { content: "✓"; }
-  .tree-depth button:active { transform: translate(1px, 1px); box-shadow: none; }
 
   /* 木の線: 親の ▶ の丸の真ん中から線を下ろし、子の行の真ん中へ └ の形で曲げて、子の丸（取組は番号）の 1px 手前まで引く（最後の子より下へは伸ばさない）。
      線の太さと曲がりはページの階層（components/Hierarchy.astro）とそろえる。
@@ -107,9 +104,9 @@ const dataPath = treeDataPath();
   .tree-box .cnt { font-size: 0.8125rem; color: var(--ink-2); white-space: nowrap; margin-left: 4px; }
   .tree-box .cnt > span + span::before { content: '・'; }
   .tree-box .cnt b { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
-  .tree-box details[open] > summary .cnt, .tree-box .nd:has(> details[open]) > .tb .cnt { display: none; }
+  .tree-box .nd:has(> details[open]) > .tb .cnt { display: none; }
 
-  /* リンクのある行（.nd）: 名前は summary の外に置き、summary（.tg）は ▶ の丸だけにして、名前の左の列（--col）に重ねる。
+  /* 取組・指標より上の段の行（.nd）: 名前は summary の外に置き、summary（.tg）は ▶ の丸だけにして、名前の左の列（--col）に重ねる。
      押せる所は丸より広く取る（32px）。子の並びは、その列のぶん左へ戻して、ほかの行と同じ所から線を引く */
   .tree-box .tree .nd { padding-left: var(--col); }
   .tree-box .nd > .tb { position: relative; }
@@ -118,34 +115,40 @@ const dataPath = treeDataPath();
   .tree-box .tree summary::-webkit-details-marker { display: none; }
   .tree-box .tree details[open] > summary { margin-bottom: 0; }
   .tree-box .tree .tg { position: absolute; left: calc(var(--tw) / 2 - 16px); top: calc(var(--pt, 0px) + var(--c) - 16px); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; }
-  /* 施策展開（ページが無い）は、行ごと summary（.sum）にする */
-  .tree-box .tree .sum { position: relative; display: grid; grid-template-columns: var(--tw) minmax(0, 1fr); column-gap: 8px; align-items: start; padding: var(--pad) 0; }
-  .tree-box .sum > .tb { padding: 0; }
-  .tree-box .sum > .tw { margin-top: calc(var(--c) - var(--pad) - var(--tw) / 2); }
+  /* 施策展開（ページが無い）は、名前の行を押しても開け閉めする（scripts/tree.ts） */
+  .tree-box .lv2 > .tb { cursor: pointer; }
 
   /* 開いているときは、丸の下から子の並びの頭まで線をつなぐ（名前が何行かに折り返しても切れないように） */
-  .tree-box .tree-root::after, .tree-box details[open] > .sum::after, .tree-box .nd:has(> details[open]) > .tb::after {
+  .tree-box .tree-root::after, .tree-box .nd:has(> details[open]) > .tb::after {
     content: ''; position: absolute; top: calc(var(--c) + var(--tw) / 2); bottom: 0; border-left: var(--lw) solid var(--hair);
   }
-  .tree-box .tree-root::after, .tree-box details[open] > .sum::after { left: calc(var(--tw) / 2 - var(--lw) / 2); }
+  .tree-box .tree-root::after { left: calc(var(--tw) / 2 - var(--lw) / 2); }
   .tree-box .nd:has(> details[open]) > .tb::after { left: calc(var(--tw) / 2 - var(--col) - var(--lw) / 2); }
   /* 根（計画そのもの）。開け閉めはしないので、丸の代わりに小さな点を置く（線は点の真ん中から下ろす） */
   .tree-box .tree-root { --c: 13px; position: relative; margin: 0; padding-bottom: 4px; display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-display); font-weight: 700; line-height: 1.6; }
   .tree-box .tree-root .tw { margin-top: calc(var(--c) - var(--tw) / 2); border: 0; background: none; }
   .tree-box .tree-root .tw::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
   .tree-box .tree-root::after { top: calc(var(--c) + 6px); }
+  /* キーボードで木に止まったときだけ、矢印キーで動かせることを根の行の右に出す（指標のマップと同じ。読み上げは木の aria-label で伝える） */
+  .tree-box .tree-hint {
+    display: none; position: absolute; right: 0; top: var(--c); translate: 0 -50%; padding: 0 8px; font-family: var(--font); font-size: 0.75rem; line-height: 1.6;
+    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
+  }
+  .tree-box:has(.tree :focus-visible) .tree-hint { display: block; }
 
   /* 開け閉めの丸。閉じているときは ▶、開いているときは ▼ */
   .tree-box .tw { display: grid; place-items: center; width: var(--tw); height: var(--tw); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
   .tree-box .tree .tw::before { content: ''; border-left: 7px solid var(--ink); border-block: 4.5px solid transparent; translate: 1px 0; }
   .tree-box .tree details[open] > summary .tw::before { rotate: 90deg; translate: 0 1px; }
-  .tree-box .tree summary:hover .tw { background: var(--sky); }
+  .tree-box .tree summary:hover .tw, .tree-box .lv2 > .tb:hover + details > summary .tw { background: var(--sky); }
   .tree-box .tree .tw-none { border-style: dashed; border-color: var(--hair); }
   .tree-box .tree .tw-none::before { display: none; }
 
   /* 階層ごとの字の大きさと、行の真ん中の高さ（--c）。将来像は帯（.sz-ribbon）にする */
   .tree-box .lv0 { --c: 23px; }
   .tree-box .lv0 + .lv0 { --pt: 10px; padding-top: var(--pt); }
+  /* 将来像の行の上の余白（--pt）は、中の行に受け継がせない（受け継ぐと、中の行の丸と線の曲がりがそのぶん下にずれる） */
+  .tree-box .lv0 li { --pt: 0px; }
   .tree-box .lv0 .sz-ribbon { display: inline-flex; vertical-align: middle; padding: 3px 14px 3px 4px; gap: 8px; }
   .tree-box .lv0 .sz-ribbon .badge-sz { width: 1.9em; height: 1.9em; font-size: 0.9rem; }
   .tree-box .lv0 .sz-ribbon .name-link { font-family: var(--font-display); font-size: 1rem; }
@@ -154,7 +157,7 @@ const dataPath = treeDataPath();
   .tree-box .lv1:last-child { padding-bottom: 6px; }
   /* 施策展開はページが無いので、名前はリンクにせず、見出しの丸ゴシックにする（基本施策のページの施策の並びの見出しと同じ） */
   .tree-box .lv2 { --c: 15px; }
-  .tree-box .lv2 > details > .sum { font-size: 0.9375rem; }
+  .tree-box .lv2 > .tb { font-size: 0.9375rem; }
   .tree-box .tk-name { font-family: var(--font-display); font-weight: 700; }
   .tree-box .lv3 { --c: 15px; }
   .tree-box .lv3 > .tb { font-size: 0.9375rem; }
@@ -184,11 +187,10 @@ const dataPath = treeDataPath();
 
   @media (max-width: 640px) {
     .sticker.tree-box { padding: 12px 12px 14px 10px; }
+    /* 根の行の右に入らないので、箱の上の線に重ねる（箱の上の余白 12px と線の太さの半分だけ上へ） */
+    .tree-box .tree-hint { top: -13px; }
   }
   @media (prefers-reduced-motion: no-preference) {
     .tree-box .tree .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
-  }
-  @media print {
-    .tree-depth { display: none; }
   }
 </style>
