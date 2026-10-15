@@ -5,7 +5,7 @@
 //    （隠さずに、全体の中のどこにあるかを見せる）。主要指標は部局・テーマに分けていないので、その条件ではどれも薄くなる（枠の中にそう書く）。
 //    キーワードは計画の目次と同じ探し方（lib/search.ts。すべての言葉を含むもの）で、指標の名前・活動指標の名前・親の名前を探す。探す文字は1つの JSON（lib/map-data.ts の
 //    mapSearchJson）で、キーワードの欄に入ったとき（URL に q があれば初めから）読む。届くまでは件数の行に「読み込んでいます」と書き、キーワード以外の条件だけで薄くする
-//  - 条件は URL のクエリに残し、テーマ・部局・区分は一覧の上に × で外せる札を並べる（scripts/list-filter.ts と同じ形）。条件に合う数は件数の行（aria-live）に書く。年度は最新のときは書かない
+//  - 条件は URL のクエリに残し、テーマ・部局・区分は一覧の上に × で外せる札を並べる（scripts/list-filter.ts と同じ形）。条件に合う数は列の見出しの数に書き、件数の行（aria-live）で読み上げる（画面には出さない）。年度は最新のときは書かない
 //  - 中身: マスを押す・矢印キーで移ると、マスの下（画面に入らなければ上）の吹き出しに、その年度の名前・親（基本施策・施策）・値を出す（キーワードに当たった字に印を付ける）。
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
 //  - キーボード: マス目で Tab は1回だけ止まり、← → で前後のマス（並びの順。行の中では主要指標 → 成果指標 → 活動指標）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
@@ -230,8 +230,9 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       t.head.classList.toggle('empty', shown === 0);
       if (t.kind === 'shuyou' && shown === 0) emptyShuyou = true;
       const count = t.head.querySelector<HTMLElement>('[data-map-count]')!;
-      if (count.textContent !== nf.format(shown)) {
-        count.textContent = nf.format(shown);
+      const n = nf.format(filtered ? hit : shown);
+      if (count.textContent !== n) {
+        count.textContent = n;
         if (ready) bump(count);
       }
       parts.push({ term: t.term, unit: t.unit, counts: t.cats.map((c, i) => [c[1], counts[i]]), hit: filtered ? hit : null });
@@ -240,11 +241,12 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = yl(y);
     root.querySelector<HTMLElement>('[data-map-empty]')!.hidden = !emptyShuyou;
     root.querySelector<HTMLElement>('[data-map-nofilter]')!.hidden = !(theme || dept) || emptyShuyou;
-    // 条件に合う数（件数の行）。キーワードの文字を読んでいるあいだ・読めなかったときは、そう書く
+    // 条件に合う数（件数の行。読み上げだけ）。キーワードの文字を読んでいるあいだ・読めなかったときは、画面にもそう書く
     if (result) {
       const hits = parts.filter((p) => p.hit != null && p.counts.some(([, n]) => n > 0));
       const state = words.length ? { loading: 'キーワードで探す文字を読み込んでいます…', error: 'キーワードで探す文字を読み込めませんでした。', stale: 'サイトが新しくなったため、キーワードで探せません。ページを読み込み直してください。' }[searchState as string] : '';
       result.textContent = state || (hits.length ? `条件に合う指標: ${hits.map((p) => `${p.term} ${nf.format(p.hit!)}${p.unit}`).join('・')}` : '');
+      result.classList.toggle('sr-only', !state);
     }
     if (sel) {
       const c = sel.t.cells[sel.i];
