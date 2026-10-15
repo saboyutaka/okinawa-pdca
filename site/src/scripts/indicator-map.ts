@@ -8,7 +8,8 @@
 //  - 条件は URL のクエリに残し、テーマ・部局・区分は一覧の上に × で外せる札を並べる（scripts/list-filter.ts と同じ形）。条件に合う数は列の見出しの数に書き、件数の行（aria-live）で読み上げる（画面には出さない）。年度は最新のときは書かない
 //  - 中身: マスを押す・矢印キーで移ると、マスの下（画面に入らなければ上）の吹き出しに、その年度の名前・親（基本施策・施策）・値を出す（キーワードに当たった字に印を付ける）。
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
-//  - キーボード: マス目で Tab は1回だけ止まり、← → で前後のマス（並びの順。行の中では主要指標 → 成果指標 → 活動指標）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
+//  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
+//    ← → で前後のマス（並びの順。行の中では主要指標 → 成果指標 → 活動指標）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
 //    Home・End で最初・最後に移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
@@ -331,11 +332,11 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (at) select(at.t, at.i);
   };
 
-  grid.addEventListener('pointerenter', () => { for (const t of tiers) void load(t).catch(() => {}); }, { once: true });
+  for (const ev of ['pointerenter', 'focus']) grid.addEventListener(ev, () => { for (const t of tiers) void load(t).catch(() => {}); }, { once: true });
   grid.addEventListener('click', (e) => selectCell((e.target as Element).closest<HTMLElement>('.mc')));
-  // キーボードで入ったとき（マウスで押したときは除く）は、選んでいるマスか最初のマスの中身を出す
-  grid.addEventListener('focus', () => {
-    if (grid.matches(':focus-visible') && !sel) selectCell(visible(allCells)[0]);
+  // フォーカスがマス目・吹き出し・絞り込みの外へ出たら閉じる（絞り込みでは、年度を変えて同じマスの中身を見られるように閉じない）
+  document.addEventListener('focusin', (e) => {
+    if (sel && ![grid, pop, form, summary].some((x) => x?.contains(e.target as Node))) close();
   });
   grid.addEventListener('keydown', (e) => {
     const shown = visible(allCells);

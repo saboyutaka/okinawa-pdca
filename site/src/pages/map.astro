@@ -93,6 +93,7 @@ const KIND = {
             <span class="im-name"><Term word={k.term} note={outcomeNote(k)} /><span class="im-n">(<b data-map-count>{fmt(n[k.kind])}</b><span class="sr-only">{k.unit}</span>)</span></span>
           </div>
         ))}
+        <span class="im-hint" aria-hidden="true">矢印キーでマスを移れます</span>
       </div>
       <div class="im-grid" tabindex="0" role="img" data-map-grid
         aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
@@ -171,6 +172,12 @@ const KIND = {
   .imap .im-n b { display: inline-block; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; color: var(--ink); margin-left: 1px; }
   .imap .im-grid { margin-top: 2px; padding: 0 4px 2px; margin-inline: -4px; border-radius: 8px; }
   .imap .im-grid:focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
+  /* キーボードでマス目に止まったときだけ、矢印キーで移れることを見出しの右に出す（読み上げはマス目の aria-label の終わりで伝える） */
+  .imap .im-hint {
+    display: none; position: absolute; right: 0; bottom: 6px; padding: 0 8px; font-size: 0.75rem; font-weight: 700; line-height: 1.6;
+    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
+  }
+  .imap:has(.im-grid:focus-visible) .im-hint { display: block; }
   .imap .im-row { padding: 5px 0; }
   .imap .im-row + .im-row { border-top: 1.5px solid var(--grid); }
   .imap .im-tiers { flex: 1 1 0; min-width: 0; }
@@ -229,8 +236,9 @@ const KIND = {
   /* スマホ: 列の見出しは横に流し、行の頭に「将来像N」を書いて、行の中では指標を縦に積んで名前を添える */
   @media (max-width: 640px) {
     .imap { --cell: 14px; padding: 14px 14px 12px; }
-    .imap .im-cols { position: static; flex-wrap: wrap; gap: 0 14px; }
+    .imap .im-cols { position: relative; flex-wrap: wrap; gap: 0 14px; }
     .imap .im-cg { display: none; }
+    .imap .im-hint { bottom: auto; top: calc(100% + 10px); }
     .imap .im-row { display: block; padding: 8px 0 10px; }
     .imap .im-gt { width: auto; margin: 0 0 6px; }
     .imap .im-gn { display: inline; }
