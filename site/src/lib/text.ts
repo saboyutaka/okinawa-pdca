@@ -29,6 +29,24 @@ export function sections(text: string | null | undefined) {
   return parts.filter((p) => p.head || p.body.join('').trim()).map((p) => ({ head: p.head, body: p.body.join('\n') }));
 }
 
+// 節の中の行を、県の様式の小見出しと文章に分ける。小見出しは2段:
+// group は分析の分け方（「内部要因の分析」「外部環境の分析」「改善余地の検証等」）、factor はその下の要因・改善の項目
+// （「④社会・経済情勢の変化」「⑤情報発信等の強化・改善」。丸数字で始まり、句点の無い30字までの行）。続く文章の行は1つにまとめる
+export type ProseBlock = { kind: 'group' | 'factor' | 'text'; text: string };
+const PROSE_GROUP = /^(内部要因の分析|外部環境の分析|改善余地の検証等)$/;
+const PROSE_FACTOR = /^[①-⑳][^。]{1,30}$/;
+export function proseBlocks(body: string) {
+  const out: ProseBlock[] = [];
+  for (const line of body.split('\n')) {
+    const s = line.trim();
+    const kind = PROSE_GROUP.test(s) ? 'group' : PROSE_FACTOR.test(s) ? 'factor' : 'text';
+    const last = out.at(-1);
+    if (kind === 'text' && last?.kind === 'text') last.text += `\n${line}`;
+    else if (kind !== 'text' || s) out.push({ kind, text: kind === 'text' ? line : s });
+  }
+  return out;
+}
+
 // 最初の一文（「施策の方向」の要約に使う）
 export function firstSentence(text: string | null | undefined) {
   const t = (text || '').replace(/\n/g, '').replace(/^[・\s]+/, '');

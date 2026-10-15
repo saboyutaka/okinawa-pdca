@@ -1,6 +1,7 @@
 ---
-// 県の分析などの長い文章。「[主な取組]」などの行を小見出しにする
-import { sections } from '../lib/text.ts';
+// 県の分析などの長い文章。「[主な取組]」などの行を小見出しにし、その中の県の様式の小見出し（「外部環境の分析」「④社会・経済情勢の変化」）も
+// 文章と分けて見せる（lib/text.ts の proseBlocks）。小見出しは読み上げの見出しの並びには入れない（数が多く、見出しで移るとうるさいため）
+import { sections, proseBlocks } from '../lib/text.ts';
 
 interface Props { text: string; level?: 'h4' | 'h5' }
 const { text, level = 'h4' } = Astro.props;
@@ -9,11 +10,16 @@ const H = level;
 {sections(text).map((p) => (
   <>
     {p.head && <H class="prose-head">{p.head}</H>}
-    <p class="prose">{p.body}</p>
+    {proseBlocks(p.body).map((b) => <p class={b.kind === 'text' ? 'prose' : `prose-${b.kind}`}>{b.text}</p>)}
   </>
 ))}
 
 <style>
-  .prose-head { font-size: 0.98rem; margin: 1em 0 0.2em; }
+  /* 段は「[主な取組]」の見出し（線で区切る） > 分析の分け方（小さな灰色の字） > 要因・改善の項目（太字） > 文章 */
+  .prose-head { font-size: 1.02rem; margin: 1.1em 0 0.3em; padding-top: 0.7em; border-top: 1.5px solid var(--hair); }
+  /* 見出し（年度の「ふりかえり」など）のすぐ後ろから始まるときは線を引かない */
+  :global(h3) + .prose-head, :global(h4) + .prose-head { margin-top: 0.4em; padding-top: 0; border-top: 0; }
   p.prose { margin: 0 0 6px; }
+  .prose-group { margin: 0.8em 0 0; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+  .prose-factor { margin: 0.4em 0 0.1em; font-size: 0.9375rem; font-weight: 700; }
 </style>

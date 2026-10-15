@@ -1,7 +1,7 @@
 // PDF から読んだ文章の整形（lib/text.js）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { oneLine, joinLines, sections, firstSentence } from '../src/lib/text.ts';
+import { oneLine, joinLines, sections, proseBlocks, firstSentence } from '../src/lib/text.ts';
 
 // 21字（joinLines は20字以下の行を見出しとみなして改行を残す）
 const LONG = 'あいうえおかきくけこさしすせそたちつてと、';
@@ -41,6 +41,28 @@ test('sections: 最初の見出しより前の文章は見出しなしの節に�
   ]);
   assert.deepEqual(sections('[主な取組]'), [{ head: '主な取組', body: '' }]);
   assert.deepEqual(sections(''), []);
+});
+
+test('proseBlocks: 分析の分け方と丸数字の項目を小見出しにし、続く文章の行はまとめる', () => {
+  assert.deepEqual(proseBlocks('外部環境の分析\n④社会・経済情勢の変化\n・一つ目。\n・二つ目。\n改善余地の検証等\n⑦その他内部要因\n・三つ目。'), [
+    { kind: 'group', text: '外部環境の分析' },
+    { kind: 'factor', text: '④社会・経済情勢の変化' },
+    { kind: 'text', text: '・一つ目。\n・二つ目。' },
+    { kind: 'group', text: '改善余地の検証等' },
+    { kind: 'factor', text: '⑦その他内部要因' },
+    { kind: 'text', text: '・三つ目。' },
+  ]);
+});
+
+test('proseBlocks: 丸数字で始まっても、句点のある行・長い行は文章のまま', () => {
+  assert.deepEqual(proseBlocks('①計画どおり進んだ。'), [{ kind: 'text', text: '①計画どおり進んだ。' }]);
+  const long = `②${'あ'.repeat(31)}`;
+  assert.deepEqual(proseBlocks(long), [{ kind: 'text', text: long }]);
+  assert.deepEqual(proseBlocks('当該施策は順調である。\n⑮その他個別要因(外部要因)'), [
+    { kind: 'text', text: '当該施策は順調である。' },
+    { kind: 'factor', text: '⑮その他個別要因(外部要因)' },
+  ]);
+  assert.deepEqual(proseBlocks(''), []);
 });
 
 test('firstSentence: 最初の一文。頭の「・」と改行は除く', () => {
