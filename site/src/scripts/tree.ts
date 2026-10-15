@@ -12,8 +12,9 @@
 //    離れるときに開き方とスクロールの位置を history.state に残し、描いたあとに戻す
 //  - キーボード: 木（role="tree"）では Tab は1回だけ止まり（前にいた行。はじめは最初の行）、↑ ↓ で見えている行を移り、Home・End で最初・最後の行へ。
 //    → は閉じた行を開き、開いた行では最初の子へ。← は開いた行を閉じ、ほかでは親の行へ。Space は開け閉め、Enter は名前のページを開く
-//    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。PC の幅で名前の横に並べる指標は、その行の最初の子として移る。
-//    フォーカスするのは名前のリンク（施策展開は名前）で、▶ の丸（summary）は Tab で止めない（マウスと、読み上げソフトでタップして開け閉めするため）
+//    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。
+//    フォーカスするのは名前のリンク（施策展開は名前）で、▶ の丸（summary）は Tab で止めない（マウスと、読み上げソフトでタップして開け閉めするため）。
+//    指標（PC では名前の横、スマホでは開いた中の行）にも止まらない（マウスで押すリンクにする）
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
 import { bump, reveal } from './motion.ts';
@@ -30,43 +31,44 @@ const said = (cs: Count[]) => cs.filter(([, n, ind]) => n > 0 && !ind).map(([l, 
 // 開け閉めの丸（summary）。Tab では止めない（キーボードでは名前の行で開け閉めする）
 const toggle = (level: number, cs: Count[]) =>
   `<details data-level="${level}"><summary class="tg" tabindex="-1"><span class="tw" aria-hidden="true"></span><span class="sr-only">${said(cs)}</span></summary>`;
-// 木の項目（treeitem）。キーボードで移る先で、Tab で止まるのはいまの項目の1つだけ（下のキーボード）。level は将来像が 1。open は下の段があるもの
+// 木の項目（treeitem）。キーボードで移る先で、Tab で止まるのはいまの項目の1つだけ（下のキーボード）。level は将来像が 1。open は下の段があるもの。
+// li は項目にせず（role="none"）、中の名前を項目にする
 const ti = (level: number, open = false) => `role="treeitem" tabindex="-1" aria-level="${level}"${open ? ' aria-expanded="false"' : ''}`;
 // 読み上げの名前の頭に、段の名前と番号を足す（画面の番号と「指標」の札は読ませない。ページの階層と同じく、番号だけでは何の段か分からないため）。
 // キーワードでさがす名前（.qn）はこの外に置く
 const sr = (s: string) => `<span class="sr-only">${esc(s)}　</span>`;
 // 指標。q はキーワードでさがすもの（成果指標）。名前の横（PC）と開いた中の行（スマホ）の2か所に書く
 const indName = (name: string, href: string, q: boolean) => (q ? `<span class="qn" data-qk="${esc(href)}">${esc(name)}</span>` : esc(name));
-const inds = (links: TreeLink[], kind: string, level: number, q: boolean) =>
+const inds = (links: TreeLink[], kind: string, q: boolean) =>
   links.length
-    ? `<span class="inds">${links.map(([name, href]) => `<span class="ind-i"><span class="ind" aria-hidden="true">指標</span><a class="sub-link" href="${esc(href)}" ${ti(level)}>${sr(kind)}${indName(name, href, q)}</a></span>`).join('')}</span>`
+    ? `<span class="inds">${links.map(([name, href]) => `<span class="ind-i"><span class="ind" aria-hidden="true">指標</span><a class="sub-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></span>`).join('')}</span>`
     : '';
-const indRow = ([name, href]: TreeLink, kind: string, level: number, q: boolean) =>
-  `<li class="leaf leaf-ind"${q ? ' data-q="成果指標"' : ''}><div class="tb"><span class="no ind" aria-hidden="true">指標</span><a class="name-link" href="${esc(href)}" ${ti(level)}>${sr(kind)}${indName(name, href, q)}</a></div></li>`;
+const indRow = ([name, href]: TreeLink, kind: string, q: boolean) =>
+  `<li role="none" class="leaf leaf-ind"${q ? ' data-q="成果指標"' : ''}><div class="tb"><span class="no ind" aria-hidden="true">指標</span><a class="name-link" href="${esc(href)}" tabindex="-1">${sr(kind)}${indName(name, href, q)}</a></div></li>`;
 
 function shisakuRow(s: TreeShisaku) {
   const cs: Count[] = [['取組', s.torikumi.length], ['成果指標', s.seika.length, true]];
   const rows = [
-    ...s.seika.map((l) => indRow(l, '成果指標', 5, true)),
-    ...s.torikumi.map(([no, name, href]) => `<li class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a></div></li>`),
+    ...s.seika.map((l) => indRow(l, '成果指標', true)),
+    ...s.torikumi.map(([no, name, href]) => `<li role="none" class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a></div></li>`),
   ];
-  return `<li class="nd lv3" id="s-${esc(s.id)}" data-q="施策"><div class="tb"><span class="no" aria-hidden="true">${esc(s.no)}</span><span class="nm"><a class="name-link" href="/shisaku/${esc(s.id)}/" ${ti(4, rows.length > 0)}>${sr(`施策${s.no}`)}<span class="qn">${esc(s.name)}</span></a>${inds(s.seika, '成果指標', 5, true)} ${counts(cs)}</span></div>${
+  return `<li role="none" class="nd lv3" id="s-${esc(s.id)}" data-q="施策"><div class="tb"><span class="no" aria-hidden="true">${esc(s.no)}</span><span class="nm"><a class="name-link" href="/shisaku/${esc(s.id)}/" ${ti(4, rows.length > 0)}>${sr(`施策${s.no}`)}<span class="qn">${esc(s.name)}</span></a>${inds(s.seika, '成果指標', true)} ${counts(cs)}</span></div>${
     rows.length ? `${toggle(3, cs)}<ul role="group">${rows.join('')}</ul></details>` : '<span class="tg" aria-hidden="true"><span class="tw tw-none"></span></span>'
   }</li>`;
 }
 // 施策展開にはページが無いので、名前はリンクにせず、名前の行を押しても開け閉めする
 function tenkaiRow(t: TreeTenkai) {
   const cs: Count[] = [['施策', t.shisaku.length]];
-  return `<li class="nd lv2" id="t-${esc(t.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(t.no)}</span><span class="nm"><span class="tk-name" ${ti(3, true)}>${sr(`施策展開${t.no}`)}${esc(t.name)}</span> ${counts(cs)}</span></div>${toggle(2, cs)}<ul role="group">${t.shisaku.map(shisakuRow).join('')}</ul></details></li>`;
+  return `<li role="none" class="nd lv2" id="t-${esc(t.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(t.no)}</span><span class="nm"><span class="tk-name" ${ti(3, true)}>${sr(`施策展開${t.no}`)}${esc(t.name)}</span> ${counts(cs)}</span></div>${toggle(2, cs)}<ul role="group">${t.shisaku.map(shisakuRow).join('')}</ul></details></li>`;
 }
 function kihonRow(k: TreeKihon) {
   const cs: Count[] = [['施策展開', k.tenkai.length], ['主要指標', k.shuyou.length, true]];
-  return `<li class="nd lv1" id="k-${esc(k.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(k.no)}</span><span class="nm"><a class="name-link" href="/kihon/${esc(k.id)}/" ${ti(2, true)}>${sr(`基本施策${k.no}`)}${esc(k.name)}</a>${inds(k.shuyou, '主要指標', 3, false)} ${counts(cs)}</span></div>${toggle(1, cs)}<ul role="group">${k.shuyou.map((l) => indRow(l, '主要指標', 3, false)).join('')}${k.tenkai.map(tenkaiRow).join('')}</ul></details></li>`;
+  return `<li role="none" class="nd lv1" id="k-${esc(k.id)}"><div class="tb"><span class="no" aria-hidden="true">${esc(k.no)}</span><span class="nm"><a class="name-link" href="/kihon/${esc(k.id)}/" ${ti(2, true)}>${sr(`基本施策${k.no}`)}${esc(k.name)}</a>${inds(k.shuyou, '主要指標', false)} ${counts(cs)}</span></div>${toggle(1, cs)}<ul role="group">${k.shuyou.map((l) => indRow(l, '主要指標', false)).join('')}${k.tenkai.map(tenkaiRow).join('')}</ul></details></li>`;
 }
 // 将来像は帯にする（番号の印は components/Sz.astro と同じ形）
 function visionRow(v: TreeVision) {
   const cs: Count[] = [['基本施策', v.kihon.length]];
-  return `<li class="nd lv0" id="v-${v.id}"><div class="tb"><span class="nm"><span class="sz-ribbon sz-${v.id}"><span class="badge-sz sz-${v.id}" aria-hidden="true">${v.id}</span><a class="name-link" href="/future/${v.id}/" ${ti(1, true)}>${sr(`将来像${v.id}`)}${esc(v.name)}</a></span> ${counts(cs)}</span></div>${toggle(0, cs)}<ul role="group">${v.kihon.map(kihonRow).join('')}</ul></details></li>`;
+  return `<li role="none" class="nd lv0" id="v-${v.id}"><div class="tb"><span class="nm"><span class="sz-ribbon sz-${v.id}"><span class="badge-sz sz-${v.id}" aria-hidden="true">${v.id}</span><a class="name-link" href="/future/${v.id}/" ${ti(1, true)}>${sr(`将来像${v.id}`)}${esc(v.name)}</a></span> ${counts(cs)}</span></div>${toggle(0, cs)}<ul role="group">${v.kihon.map(kihonRow).join('')}</ul></details></li>`;
 }
 
 // ---------------------------------------------------------------- 読み込み
@@ -138,30 +140,25 @@ async function init(tree: HTMLElement) {
   tree.setAttribute('role', 'tree');
 
   // ---------------------------------------------------------------- キーボード
-  // 木の行。item はフォーカスする名前、side は PC の幅で名前の横に並べる指標、ind は開いた中の指標の行（PC の幅では出さない）
-  interface Row { li: HTMLLIElement; item: HTMLElement; side: HTMLElement[]; details: HTMLDetailsElement | null; kids: Row[]; parent: Row | null; ind: boolean }
-  const rowOf = new Map<Element, Row>(); // 項目（名前・名前の横の指標）と li から行へ
+  // 木の行（指標の行は除く）。item はフォーカスする名前
+  interface Row { li: HTMLLIElement; item: HTMLElement; details: HTMLDetailsElement | null; kids: Row[]; parent: Row | null }
+  const rowOf = new Map<Element, Row>(); // 名前と li から行へ
   const rows = (ul: Element, parent: Row | null): Row[] =>
-    [...ul.children].map((li) => {
+    [...ul.children].filter((li) => !li.classList.contains('leaf-ind')).map((li) => {
       const details = li.querySelector<HTMLDetailsElement>(':scope > details');
-      const r: Row = {
-        li: li as HTMLLIElement,
-        item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!,
-        side: [...li.querySelectorAll<HTMLElement>(':scope > .tb .inds [role="treeitem"]')],
-        details, kids: [], parent, ind: li.classList.contains('leaf-ind'),
-      };
-      for (const el of [li, r.item, ...r.side]) rowOf.set(el, r);
+      const r: Row = { li: li as HTMLLIElement, item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!, details, kids: [], parent };
+      rowOf.set(li, r).set(r.item, r);
       if (details) r.kids = rows(details.querySelector(':scope > ul')!, r);
       return r;
     });
   const roots = rows(tree, null);
-  const seen = (r: Row) => !r.li.hidden && !(r.ind && wide.matches);
+  const seen = (r: Row) => !r.li.hidden;
   // 見えている項目（画面の並びの順）
   const visible = () => {
     const out: HTMLElement[] = [];
     const walk = (rs: Row[]) => {
       for (const r of rs.filter(seen)) {
-        out.push(r.item, ...(wide.matches ? r.side : []));
+        out.push(r.item);
         if (r.details?.open) walk(r.kids);
       }
     };
@@ -178,12 +175,12 @@ async function init(tree: HTMLElement) {
     current = el;
   };
   // 読み上げの開け閉め（aria-expanded）と兄弟の中の何番目か（aria-posinset・aria-setsize）を、いまの見え方にそろえる。
-  // いまの項目が見えなくなったら（親を閉じた・キーワードで隠した・幅が変わった）、見えているいちばん近い親（無ければ最初の行）にする
+  // いまの項目が見えなくなったら（親を閉じた・キーワードで隠した）、見えているいちばん近い親（無ければ最初の行）にする
   const put = (el: Element, k: string, v: string) => { if (el.getAttribute(k) !== v) el.setAttribute(k, v); };
   const describe = () => {
     const shown = new Set<HTMLElement>();
-    const walk = (side: HTMLElement[], rs: Row[]) => {
-      const sibs = [...(wide.matches ? side : []), ...rs.filter(seen).map((r) => r.item)];
+    const walk = (rs: Row[]) => {
+      const sibs = rs.filter(seen).map((r) => r.item);
       sibs.forEach((el, i) => {
         put(el, 'aria-posinset', String(i + 1));
         put(el, 'aria-setsize', String(sibs.length));
@@ -191,13 +188,12 @@ async function init(tree: HTMLElement) {
       });
       for (const r of rs.filter(seen)) {
         if (r.details) put(r.item, 'aria-expanded', String(r.details.open));
-        walk(r.side, r.details?.open ? r.kids : []);
+        if (r.details?.open) walk(r.kids);
       }
     };
-    walk([], roots);
+    walk(roots);
     if (shown.has(current)) return;
-    const r = rowOf.get(current)!;
-    let p = r.item === current ? r.parent : r;
+    let p = rowOf.get(current)!.parent;
     while (p && !shown.has(p.item)) p = p.parent;
     const next = p?.item ?? visible()[0];
     if (next) point(next);
@@ -220,8 +216,6 @@ async function init(tree: HTMLElement) {
     const tg = (e.target as Element).closest('summary');
     const r = rowOf.get(tg ? tg.closest('li')! : (e.target as Element));
     if (!r) return;
-    const at = tg ? r.item : (e.target as HTMLElement);
-    const isSide = at !== r.item;
     let next: HTMLElement | undefined;
     switch (e.key) {
       case 'ArrowDown':
@@ -229,24 +223,24 @@ async function init(tree: HTMLElement) {
       case 'Home':
       case 'End': {
         const list = visible();
-        const i = list.indexOf(at);
+        const i = list.indexOf(r.item);
         next = { ArrowDown: list[i + 1], ArrowUp: list[i - 1], Home: list[0], End: list.at(-1) }[e.key];
         break;
       }
       case 'ArrowRight':
-        if (isSide || !r.details) break;
+        if (!r.details) break;
         if (!r.details.open) openRow(r, true);
-        else next = (wide.matches ? r.side[0] : undefined) ?? r.kids.find(seen)?.item;
+        else next = r.kids.find(seen)?.item;
         break;
       case 'ArrowLeft':
-        if (!isSide && r.details?.open) openRow(r, false);
-        else next = (isSide ? r : r.parent)?.item;
+        if (r.details?.open) openRow(r, false);
+        else next = r.parent?.item;
         break;
       case ' ':
       case 'Enter':
         if (tg) return;
-        if (r.details && !isSide && (e.key === ' ' || !(at instanceof HTMLAnchorElement))) openRow(r, !r.details.open);
-        else if (e.key === ' ') at.click();
+        if (r.details && (e.key === ' ' || !(r.item instanceof HTMLAnchorElement))) openRow(r, !r.details.open);
+        else if (e.key === ' ') r.item.click();
         else return;
         break;
       default:
@@ -415,11 +409,8 @@ async function init(tree: HTMLElement) {
     }
   }
 
-  // 幅が変わって成果指標の出る場所が変わったら、さがし直す（キーボードで移る項目も変わる）
-  wide.addEventListener('change', () => {
-    if (input?.value.trim()) run();
-    else describe();
-  });
+  // 幅が変わって成果指標の出る場所が変わったら、さがし直す
+  wide.addEventListener('change', () => { if (input?.value.trim()) run(); });
   // bfcache から戻したとき。ブラウザによっては、木の見た目はそのままで欄だけを空にし、それを pageshow より後に別の処理として行う（WebKit）ので、
   // 少しあとにもう一度そろえる
   window.addEventListener('pageshow', (e) => {
