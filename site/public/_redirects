@@ -72,3 +72,8 @@
 /shihyou/5-2-c-2/f7bbf1fc/ /shihyou/5-2-c-2/c8a2a8df/ 301
 /shihyou/5-3-b-2/269b0924/ /shihyou/5-3-b-2/dc715730/ 301
 /shihyou/3-5-b-2/1ec6c051/ /shihyou/3-5-b-2/0b6be094/ 301
+# R7で名前が変わった取組を同じ取組としてまとめたため（2026-10-15、site/src/lib/renames.ts の TORIKUMI_RENAMES）、R4〜R6 の名前のページを新しい名前のページへ
+/torikumi/1-2-b-5/c865718a/ /torikumi/1-2-b-5/09a2ba2c/ 301
+/torikumi/3-2-d-4/b59884e5/ /torikumi/3-2-d-4/bdc27619/ 301
+/torikumi/3-9-a-1/a8c7ecda/ /torikumi/3-9-a-1/fa2a8b61/ 301
+/torikumi/3-9-b-1/8ea0feb5/ /torikumi/3-9-b-1/b552d9c8/ 301

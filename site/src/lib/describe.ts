@@ -3,7 +3,7 @@
 // 検索エンジンに重複とみなされないよう、題名と説明文はページごとに違うものにする（test/describe.test.ts で確かめ、ビルドでも同じページを数える）。
 // 数はページが表示している数をそのまま受け取る（数え方は lib/data.ts の1か所。ここでは数えない）。
 // 内訳は県の区分の並びのまま、0でない区分を全部同じ重みで並べる（遅れだけを書いたり、遅れを先に書いたりしない。docs/design.md の1章）
-import { YEARS, LATEST, STATUSES, JUDGES, yearLabel, yearLong, judgeOf, withUnit, rateText, repostsOf, type ActivityShare, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
+import { YEARS, LATEST, STATUSES, JUDGES, yearLabel, yearLong, judgeOf, withUnit, rateText, sameNameElsewhere, type ActivityShare, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
 import type { SeikaRow } from './types.ts';
 import { fmt } from './format.ts';
 import { oneLine } from './text.ts';
@@ -43,7 +43,7 @@ export function shisakuDescription(o: { name: string; judge: string | null | und
   return `${judge}${rest && `${rest}。`}沖縄県PDCAの施策「${o.name}」の${SPAN}の成果指標と主な取組。`;
 }
 
-// 主な取組の題名。同じ取組が複数の施策に載っている（総括報告書の「再掲」）と施策ごとにページがあるので、題名が同じにならないように施策の番号を足す。
+// 主な取組の題名。同じ取組が複数の施策に載っている（総括報告書の「再掲」。年度の途中で施策を移ったものも）と施策ごとにページがあるので、題名が同じにならないように施策の番号を足す。
 // 番号は名前より目立たせないので、後ろに置く（docs/design.md の3章）
 export const torikumiTitle = (o: { name: string; code: string; reposted: boolean }) =>
   `${o.name}（沖縄県の主な取組${o.reposted ? `・施策 ${o.code}` : ''}）`;
@@ -101,7 +101,7 @@ export function seikaDescription(x: SeikaRow, name: string) {
 
 // 取組のページ・成果指標のシェア用のページの題名と説明文（ページと、ほかのページと同じにならないかのテストで同じものを使う）
 export const torikumiHead = (g: TorikumiGroup) => ({
-  title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: repostsOf(g).length > 0 }),
+  title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: sameNameElsewhere(g) }),
   description: torikumiDescription({ statuses: g.statuses, year: g.latest.year, summary: g.latest.summary, indicator: g.latest.indicator, section: g.section, shisaku: g.shisaku.name }),
 });
 export const seikaHead = (g: SeikaGroup) => ({ title: seikaTitle(g.name), description: seikaDescription(g.latest, g.name) });
