@@ -10,7 +10,7 @@
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
 //  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
 //    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
-//    Home・End で最初・最後に移る
+//    Home・End で最初・最後に移る。吹き出しが出ているときは Enter でその指標のページへ移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
@@ -359,6 +359,11 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     const at = c && tierOf.get(c);
     if (at) select(at.t, at.i);
   };
+  // 選んだマスの指標のページへ移る。中身を読んでいるあいだに押したときは、読めてから移る（読めない・ページと合わない・ほかのマスに移ったときは移らない）
+  const open = async ({ t, i }: { t: Tier; i: number }) => {
+    const data = await load(t).catch(() => undefined);
+    if (data && data.check === t.head.dataset.check && sel?.t === t && sel.i === i) location.assign(data.items[i].h);
+  };
 
   for (const ev of ['pointerenter', 'focus']) grid.addEventListener(ev, () => { for (const t of tiers) void load(t).catch(() => {}); }, { once: true });
   grid.addEventListener('click', (e) => selectCell((e.target as Element).closest<HTMLElement>('.mc')));
@@ -378,6 +383,10 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     else if (e.key === 'Escape' && sel) {
       e.preventDefault();
       close();
+      return;
+    } else if (e.key === 'Enter' && sel) {
+      e.preventDefault();
+      void open(sel);
       return;
     } else return;
     e.preventDefault();
