@@ -79,7 +79,7 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
       { label: '基本施策', n: kihon.length, href: '#kihon' },
       { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
     ]} />
-    <Ladder shuyou={shuyou} seika={countBy(seika, rateBin, RATE_BINS.map((b) => b.key))} tori={countBy(tori, statusOf, statusKeys)} q={`s=${v.id}`} shuyouHref="#kihon" />
+    <Ladder shuyou={shuyou} seika={countBy(seika, rateBin, RATE_BINS.map((b) => b.key))} tori={countBy(tori, statusOf, statusKeys)} q={`s=${v.id}`} shuyouHref="#kihon" shuyouCells />
   </header>
 
   <Toc

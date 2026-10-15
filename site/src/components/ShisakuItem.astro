@@ -1,6 +1,8 @@
 ---
 // 施策の一覧の1行（施策をさがす・くらしのテーマ。親は ul.row-list）。
 // 1行目に判定の小さなハンコと名前、2行目に取組の進みと成果指標の達成率を並べる。
+// 取組は1施策に1〜14件と少ないので、指標のマップのマスのような1件1つの四角を並べる（何件のうち何件かを、文字の「6/6」と同じく図でも見せる）。
+// 四角を押すと、その取組の名前と進捗状況を吹き出しに出す（StatusBar の pop。一覧なので Tab では止めない）。
 // 判定はハンコだけで出し、言い方（A〜G の意味）は一覧の上の凡例（JudgeLegend）に1回だけ書く。前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
 // 一覧は将来像・基本施策ごとに見出しを立てているので、見出しと同じこと（将来像・基本施策）は行に書かない。
 // 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）。
@@ -8,7 +10,7 @@
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone, type Shisaku } from '../lib/data.ts';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone, torikumiCells, type Shisaku } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
 
 interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean }
@@ -33,7 +35,7 @@ const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : 
     {Astro.slots.has('sub') ? <span class="kihon"><slot name="sub" /></span> : kihon && <span class="kihon">基本施策 {kihon.name}</span>}
     <span class="tori">
       取組 <b>{ok}/{latestTori.length}</b>順調
-      {latestTori.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} 主な取組 `} size="mini" />}
+      {latestTori.length > 0 && <StatusBar categories={STATUSES} context={`${s.name} 主な取組 `} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
     </span>
     <span class="seika">
       成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}
@@ -50,6 +52,5 @@ const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : 
   .facts b { color: var(--ink); }
   .kihon { flex-basis: 100%; }
   .tori, .seika { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
-  .tori :global(.sbar) { width: 88px; }
   .seika :global(.chip) { gap: 4px; }
 </style>

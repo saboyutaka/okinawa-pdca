@@ -10,6 +10,7 @@ import './torikumi-search.ts';
 import './show-more.ts';
 import './tree.ts';
 import './indicator-map.ts';
+import './cell-pop.ts';
 import './like.ts';
 import './tooltip.ts';
 import './theme.ts';
