@@ -5,10 +5,11 @@
 //    （隠さずに、全体の中のどこにあるかを見せる）。主要指標は部局・テーマに分けていないので、その条件ではどれも薄くなる（枠の中にそう書く）。
 //    キーワードは計画の目次と同じ探し方（lib/search.ts。すべての言葉を含むもの）で、指標の名前・活動指標の名前・親の名前を探す。探す文字は1つの JSON（lib/map-data.ts の
 //    mapSearchJson）で、キーワードの欄に入ったとき（URL に q があれば初めから）読む。届くまでは件数の行に「読み込んでいます」と書き、キーワード以外の条件だけで薄くする
-//  - 条件は URL のクエリに残し、テーマ・部局・区分は一覧の上に × で外せる札を並べる（scripts/list-filter.ts と同じ形）。条件に合う数は件数の行（aria-live）に書く。年度は最新のときは書かない
+//  - 条件は URL のクエリに残し、テーマ・部局・区分は一覧の上に × で外せる札を並べる（scripts/list-filter.ts と同じ形）。条件に合う数は列の見出しの数に書き、件数の行（aria-live）で読み上げる（画面には出さない）。年度は最新のときは書かない
 //  - 中身: マスを押す・矢印キーで移ると、マスの下（画面に入らなければ上）の吹き出しに、その年度の名前・親（基本施策・施策）・値を出す（キーワードに当たった字に印を付ける）。
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
-//  - キーボード: マス目で Tab は1回だけ止まり、← → で前後のマス（並びの順。行の中では主要指標 → 成果指標 → 活動指標）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
+//  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
+//    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
 //    Home・End で最初・最後に移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
@@ -230,8 +231,9 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       t.head.classList.toggle('empty', shown === 0);
       if (t.kind === 'shuyou' && shown === 0) emptyShuyou = true;
       const count = t.head.querySelector<HTMLElement>('[data-map-count]')!;
-      if (count.textContent !== nf.format(shown)) {
-        count.textContent = nf.format(shown);
+      const n = nf.format(filtered ? hit : shown);
+      if (count.textContent !== n) {
+        count.textContent = n;
         if (ready) bump(count);
       }
       parts.push({ term: t.term, unit: t.unit, counts: t.cats.map((c, i) => [c[1], counts[i]]), hit: filtered ? hit : null });
@@ -240,11 +242,12 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = yl(y);
     root.querySelector<HTMLElement>('[data-map-empty]')!.hidden = !emptyShuyou;
     root.querySelector<HTMLElement>('[data-map-nofilter]')!.hidden = !(theme || dept) || emptyShuyou;
-    // 条件に合う数（件数の行）。キーワードの文字を読んでいるあいだ・読めなかったときは、そう書く
+    // 条件に合う数（件数の行。読み上げだけ）。キーワードの文字を読んでいるあいだ・読めなかったときは、画面にもそう書く
     if (result) {
       const hits = parts.filter((p) => p.hit != null && p.counts.some(([, n]) => n > 0));
       const state = words.length ? { loading: 'キーワードで探す文字を読み込んでいます…', error: 'キーワードで探す文字を読み込めませんでした。', stale: 'サイトが新しくなったため、キーワードで探せません。ページを読み込み直してください。' }[searchState as string] : '';
       result.textContent = state || (hits.length ? `条件に合う指標: ${hits.map((p) => `${p.term} ${nf.format(p.hit!)}${p.unit}`).join('・')}` : '');
+      result.classList.toggle('sr-only', !state);
     }
     if (sel) {
       const c = sel.t.cells[sel.i];
@@ -307,9 +310,15 @@ function init(form: HTMLFormElement, root: HTMLElement) {
 
   // 見えているマス（並びの順。年度に無いマス・隠した列のマスは除く）
   const visible = (cs: HTMLElement[]) => cs.filter((c) => !c.hidden && c.offsetParent);
-  // 同じ指標の上下の行のマス（d は 1 で下、-1 で上）。画面の上での位置で、いちばん近い行の、横の位置がいちばん近いマス
+  // 上下のマス（d は 1 で下、-1 で上）。画面の上で横に重なる箱（PC は同じ指標の列、スマホは縦に積んだ全部の箱）のマスのうち、
+  // いちばん近い段の、横の位置がいちばん近いマス
   const vertical = (cur: HTMLElement, d: number) => {
-    const same = visible(tierOf.get(cur)!.t.cells);
+    const b = cur.closest<HTMLElement>('.im-tier')!.getBoundingClientRect();
+    const col = [...grid.querySelectorAll<HTMLElement>('.im-tier')].filter((x) => {
+      const p = x.getBoundingClientRect();
+      return p.width > 0 && p.left < b.right && p.right > b.left;
+    });
+    const same = visible(col.flatMap((x) => [...x.querySelectorAll<HTMLElement>('.mc')]));
     const r = cur.getBoundingClientRect();
     const rects = same.map((c) => c.getBoundingClientRect());
     const dys = rects.map((p) => (p.top - r.top) * d).filter((dy) => dy > 2);
@@ -324,24 +333,45 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     });
     return best;
   };
+  // 左右のマス（d は 1 で右、-1 で左）。同じ箱の同じ段の隣。段の端では、同じ将来像の行で画面の上でその向きに並ぶ隣の箱の、高さがいちばん近い段の端のマス。
+  // その向きに箱が無ければ（活動指標の右端・主要指標の左端、スマホで箱が縦に積まれているとき）、並びの順の前後（shown）
+  const horizontal = (cur: HTMLElement, d: number, shown: HTMLElement[]) => {
+    const r = cur.getBoundingClientRect();
+    const block = cur.closest<HTMLElement>('.im-tier')!;
+    const own = visible([...block.querySelectorAll<HTMLElement>('.mc')]);
+    const nb = own[own.indexOf(cur) + d];
+    if (nb && Math.abs(nb.getBoundingClientRect().top - r.top) <= 2) return nb;
+    const b = block.getBoundingClientRect();
+    const side = [...block.parentElement!.children]
+      .map((x) => ({ x, p: x.getBoundingClientRect() }))
+      .filter(({ x, p }) => x !== block && p.width > 0 && (d > 0 ? p.left >= b.right : p.right <= b.left))
+      .sort((m, n) => (m.p.left - n.p.left) * d)[0];
+    if (side) {
+      const cs = visible([...side.x.querySelectorAll<HTMLElement>('.mc')]);
+      const tops = cs.map((c) => c.getBoundingClientRect().top);
+      const top = tops.reduce((a, t) => (Math.abs(t - r.top) < Math.abs(a - r.top) ? t : a), Infinity);
+      const line = cs.filter((_, i) => Math.abs(tops[i] - top) <= 2);
+      if (line.length) return d > 0 ? line[0] : line.at(-1);
+    }
+    return shown[shown.indexOf(cur) + d] ?? cur;
+  };
   const selectCell = (c: HTMLElement | null | undefined) => {
     const at = c && tierOf.get(c);
     if (at) select(at.t, at.i);
   };
 
-  grid.addEventListener('pointerenter', () => { for (const t of tiers) void load(t).catch(() => {}); }, { once: true });
+  for (const ev of ['pointerenter', 'focus']) grid.addEventListener(ev, () => { for (const t of tiers) void load(t).catch(() => {}); }, { once: true });
   grid.addEventListener('click', (e) => selectCell((e.target as Element).closest<HTMLElement>('.mc')));
-  // キーボードで入ったとき（マウスで押したときは除く）は、選んでいるマスか最初のマスの中身を出す
-  grid.addEventListener('focus', () => {
-    if (grid.matches(':focus-visible') && !sel) selectCell(visible(allCells)[0]);
+  // フォーカスがマス目・吹き出し・絞り込みの外へ出たら閉じる（絞り込みでは、年度を変えて同じマスの中身を見られるように閉じない）
+  document.addEventListener('focusin', (e) => {
+    if (sel && ![grid, pop, form, summary].some((x) => x?.contains(e.target as Node))) close();
   });
   grid.addEventListener('keydown', (e) => {
     const shown = visible(allCells);
     const cur = sel ? sel.t.cells[sel.i] : null;
-    const at = cur ? shown.indexOf(cur) : -1;
     let next: HTMLElement | undefined;
-    if (e.key === 'ArrowRight') next = shown[at + 1] ?? shown[at];
-    else if (e.key === 'ArrowLeft') next = at < 0 ? shown.at(-1) : shown[Math.max(at - 1, 0)];
+    if (e.key === 'ArrowRight') next = cur ? horizontal(cur, 1, shown) : shown[0];
+    else if (e.key === 'ArrowLeft') next = cur ? horizontal(cur, -1, shown) : shown.at(-1);
     else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') next = cur ? (vertical(cur, e.key === 'ArrowDown' ? 1 : -1) ?? cur) : shown[0];
     else if (e.key === 'Home') next = shown[0];
     else if (e.key === 'End') next = shown.at(-1);

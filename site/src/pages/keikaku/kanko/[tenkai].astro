@@ -6,6 +6,7 @@ import Base from '../../../layouts/Base.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
+import HeadKind from '../../../components/HeadKind.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import Prose from '../../../components/Prose.astro';
 import RmSeika from '../../../components/RmSeika.astro';
@@ -37,7 +38,7 @@ const next = all[i + 1];
   ]} page={t.name} />
 
   <header class="sticker lift head">
-    <span class="code-no code-corner" title="観光ロードマップの報告書での番号">施策展開 {t.code}</span>
+    <HeadKind kind="施策展開" term={false} plan={KANKO.short} code={t.code} codeTitle="観光ロードマップの報告書での番号" />
     <h1>{t.name}</h1>
   </header>
 
@@ -121,7 +122,7 @@ const next = all[i + 1];
 </Base>
 
 <style>
-  .head { position: relative; display: grid; gap: 6px; margin-top: 12px; padding-top: 30px; }
+  .head { display: grid; gap: 6px; margin-top: 12px; }
   .head h1 { margin: 0; }
   .rm-shisaku { margin-top: 36px; padding-top: 4px; border-top: 2.5px solid var(--line); }
   .rm-shisaku > .name-row { margin-top: 18px; }

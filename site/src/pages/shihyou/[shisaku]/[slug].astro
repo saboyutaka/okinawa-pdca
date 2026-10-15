@@ -8,7 +8,7 @@ import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import Term from '../../../components/Term.astro';
-import ThemeTags from '../../../components/ThemeTags.astro';
+import HeadKind from '../../../components/HeadKind.astro';
 import SeikaGoal from '../../../components/SeikaGoal.astro';
 import SeikaKey from '../../../components/SeikaKey.astro';
 import SeikaRoute from '../../../components/SeikaRoute.astro';
@@ -69,11 +69,10 @@ const verdict = seikaVerdict(x);
 <Base {...seikaHead(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={g.name} />
   <header class="sticker lift head">
-    <div class="kind"><Term word="成果指標" /></div>
+    <HeadKind kind="成果指標" themes={themeIdsOfItem(s.id, x.name)} />
     <h1>{g.name}{u && <span class="unit secondary">（{u}）</span>}</h1>
     <div class="meta">
       <span>担当: {secHref ? <a class="sub-link" href={secHref}>{x.dept}</a> : (x.dept || '—')}</span>
-      <ThemeTags ids={themeIdsOfItem(s.id, x.name)} />
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}にも同じ指標</a>}
     </div>
     {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期<Term word="実施計画" />で入れ替わった指標）。</p>}
@@ -183,7 +182,7 @@ const verdict = seikaVerdict(x);
   .head { display: grid; gap: 12px; }
   .head h1 { margin: 0; }
   .unit { font-size: 0.6em; font-weight: 400; }
-  .kind { font-size: 0.9375rem; font-weight: 700; color: var(--ink-2); margin-bottom: -6px; }
+  .head > :global(.head-kind) { margin-bottom: -6px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .notice-inline { justify-self: start; margin: 0; background: var(--pink); border-radius: 10px; padding: 4px 10px; }
   .goal :global(.verdict) { margin-top: 0; }
