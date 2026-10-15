@@ -13,7 +13,8 @@ import { LINKS } from '../lib/links.ts';
 import { fmt } from '../lib/format.ts';
 
 // 指標のマップ。主要指標・成果指標・活動指標（主な取組）を、1マス＝1指標で並べ、選んだ年度の県の区分で色分けする（材料は lib/map-data.ts、動きは scripts/indicator-map.ts）。
-// 3つを1つの枠にまとめ、将来像ごとの行に「主要指標｜成果指標｜活動指標」を横に並べる（PC。上に貼り付く列の見出し。スマホでは行の中で縦に積み、指標の名前を添える）。
+// 3つを1つの枠にまとめ、将来像ごとの行に「主要指標｜成果指標｜活動指標」を横に並べる（PC。全部のマスが1画面に入るよう、将来像は行の左の丸の番号にし、列の見出しは上に貼り付ける。
+// スマホでは行の頭に「将来像N」を書き、行の中で縦に積んで指標の名前を添える）。
 // 3つは区分の意味が違う（主要指標は R9 の目標値に対する前進・後退、成果指標はその年度の計画値に対する達成率、活動指標は主な取組の進捗状況）ので、
 // 凡例はマップの下の別の箱に、指標ごとの行で並べる（色でそろえた表にすると、別の区分が同じ意味に読めるため。docs/design.md の1章）。主要指標の凡例と札は形を付けない（2章）。
 // マス目は1つの画像として読み、Tab で1回だけ止まって矢印キーでマスを移る。マスを押す・移ると、マスの下（入らなければ上）の吹き出しに中身を出す。
@@ -77,49 +78,52 @@ const KIND = {
   <div class="active-filters" id="map-active" hidden></div>
   <p class="result-count" aria-live="polite" data-map-result></p>
 
-  <div class="imap sticker" data-map-root>
-    <p class="im-note small secondary" data-map-empty hidden>主要指標は、R5 の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
-    <p class="im-note small secondary" data-map-nofilter hidden>主要指標は基本施策ごとの指標で、部局・くらしのテーマに分けていないので、その条件ではどれも薄くなります。</p>
-    <div class="im-cols">
-      {MAP_KINDS.map((k) => (
-        <div class="im-col" data-tier={k.kind} data-tier-head={k.kind} data-param={k.param} data-term={k.term} data-unit={k.unit} data-parent={KIND[k.kind].parent} data-shapes={String(k.shapes)}
-          data-cats={JSON.stringify(k.cats.map((c) => [c.key, c.label, c.tone]))} data-src={mapDataPath(k.kind)} data-fallback={mapDataFallback(k.kind)} data-check={mapCheck(k.kind)}>
-          <span class="im-out"><Term word={k.outcome} /></span>
-          <span class="im-name">{k.term}<span class="im-n"><b data-map-count>{fmt(n[k.kind])}</b>{k.unit}</span></span>
-        </div>
-      ))}
-    </div>
-    <div class="im-grid" tabindex="0" role="img" data-map-grid
-      aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
-      {rows.map((r) => (
-        <div class="im-row">
-          <p class="im-gt"><Sz id={r.s} sr={false} />将来像{r.s}</p>
-          <div class="im-tiers">
-            {r.tiers.map((t) => (
-              <div class="im-tier" data-tier={t.kind}>
-                <p class="im-tl">{MAP_KINDS.find((k) => k.kind === t.kind)!.term}</p>
-                <div class="im-cells" set:html={t.html} />
-              </div>
-            ))}
+  <div class="map-wide">
+    <div class="imap sticker" data-map-root>
+      <p class="im-note small secondary" data-map-empty hidden>主要指標は、R5 の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
+      <p class="im-note small secondary" data-map-nofilter hidden>主要指標は基本施策ごとの指標で、部局・くらしのテーマに分けていないので、その条件ではどれも薄くなります。</p>
+      <div class="im-cols">
+        <span class="im-cg" aria-hidden="true">将来像</span>
+        {MAP_KINDS.map((k) => (
+          <div class="im-col" data-tier={k.kind} data-tier-head={k.kind} data-param={k.param} data-term={k.term} data-unit={k.unit} data-parent={KIND[k.kind].parent} data-shapes={String(k.shapes)}
+            data-cats={JSON.stringify(k.cats.map((c) => [c.key, c.label, c.tone]))} data-src={mapDataPath(k.kind)} data-fallback={mapDataFallback(k.kind)} data-check={mapCheck(k.kind)}>
+            <span class="im-out"><Term word={k.outcome} /></span>
+            <span class="im-name">{k.term}<span class="im-n"><b data-map-count>{fmt(n[k.kind])}</b>{k.unit}</span></span>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div class="im-grid" tabindex="0" role="img" data-map-grid
+        aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
+        {rows.map((r) => (
+          <div class="im-row">
+            <p class="im-gt"><Sz id={r.s} sr={false} /><span class="im-gn">将来像{r.s}</span></p>
+            <div class="im-tiers">
+              {r.tiers.map((t) => (
+                <div class="im-tier" data-tier={t.kind}>
+                  <p class="im-tl">{MAP_KINDS.find((k) => k.kind === t.kind)!.term}</p>
+                  <div class="im-cells" set:html={t.html} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="im-pop" data-map-pop aria-live="polite" hidden></div>
     </div>
-    <div class="im-pop" data-map-pop aria-live="polite" hidden></div>
-  </div>
 
-  <section class="map-key sticker" aria-labelledby="map-key-h">
-    <h2 class="mk-title" id="map-key-h">色の見方</h2>
-    <p class="mk-lead small secondary">色は<span data-map-year>{yl}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
-    <dl class="mk-list small">
-      {MAP_KINDS.map((k) => (
-        <div class="mk-row">
-          <dt>{k.term}の{k.kind === 'katsudou' ? <Term word="進捗状況" /> : <Term word={k.measure} label="達成率" />}</dt>
-          <dd><ul aria-label={`${k.term}の区分`}>{k.cats.map((c) => <li><i class={`mc tone-${c.tone}`} aria-hidden="true"></i>{k.shapes ? <Chip tone={c.tone} text={c.label} /> : c.label}</li>)}</ul></dd>
-        </div>
-      ))}
-    </dl>
-  </section>
+    <section class="map-key sticker" aria-labelledby="map-key-h">
+      <h2 class="mk-title" id="map-key-h">色の見方</h2>
+      <p class="mk-lead small secondary">色は<span data-map-year>{yl}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
+      <dl class="mk-list small">
+        {MAP_KINDS.map((k) => (
+          <div class="mk-row">
+            <dt>{k.term}の{k.kind === 'katsudou' ? <Term word="進捗状況" /> : <Term word={k.measure} label="達成率" />}</dt>
+            <dd><ul aria-label={`${k.term}の区分`}>{k.cats.map((c) => <li><i class={`mc tone-${c.tone}`} aria-hidden="true"></i>{k.shapes ? <Chip tone={c.tone} text={c.label} /> : c.label}</li>)}</ul></dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  </div>
 
   <p class="small secondary note">
     並びは報告書の順です。R4〜R6 は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7 からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で、R7 に指標と目標値が見直されたので、年度を変えるとマスの数が変わります。
@@ -140,33 +144,44 @@ const KIND = {
 <style is:global>
   /* 指標のマップ。マス（.mc）は lib/map-data.ts が文字列で書き、吹き出しの中身はスクリプト（scripts/indicator-map.ts）が描くので、
      Astro が範囲をしぼるための属性が付かない。.imap・.map-key の下に書いた全体の CSS にする */
-  .imap { position: relative; margin-top: 12px; --cell: 13px; --gap: 2px; --pitch: calc(var(--cell) + var(--gap)); --w-shuyou: calc(7 * var(--pitch) - var(--gap)); --w-seika: calc(15 * var(--pitch) - var(--gap)); }
+  /* 全部のマスが1画面に入るよう、広い画面ではマップと凡例を本文の幅（.wrap）より広げ、画面の幅（最大 1440px）にする */
+  @media (min-width: 1100px) {
+    .map-wide { --mw: min(100vw - 32px, 1440px); width: var(--mw); margin-inline: calc((100% - var(--mw)) / 2); }
+  }
+  .imap {
+    position: relative; margin-top: 12px; padding: 14px 18px 12px;
+    --cell: 13px; --gap: 2px; --pitch: calc(var(--cell) + var(--gap)); --w-gt: 2.25rem; --w-shuyou: calc(7 * var(--pitch) - var(--gap));
+  }
   .imap .im-note { margin: 0 0 6px; }
 
   /* 列の見出し（指標の名前と数）と、将来像ごとの行。PC では列の幅を見出しと行でそろえ、見出しはマップを読むあいだ上に貼り付ける。
-     主要指標と成果指標は列の数で幅を決め、活動指標は残りの幅いっぱいに並べる */
-  .imap .im-cols, .imap .im-tiers { display: flex; gap: 0 24px; align-items: flex-start; }
-  .imap .im-cols { position: sticky; top: 0; z-index: 3; padding: 0 0 6px; background: var(--paper); border-bottom: 1.5px solid var(--grid); }
+     左の細い列が将来像の丸の番号。主要指標は列の数で幅を決め、残りを成果指標と活動指標で 22:78 に分ける（数の比で、どの幅でも将来像ごとの行の高さがほぼそろう） */
+  .imap .im-cols, .imap .im-row, .imap .im-tiers { display: flex; gap: 0 16px; align-items: flex-start; }
+  .imap .im-cols { position: sticky; top: 0; z-index: 3; padding: 0 0 4px; background: var(--paper); border-bottom: 1.5px solid var(--grid); }
+  .imap .im-cg { flex: none; width: var(--w-gt); align-self: flex-end; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; line-height: 1.5; color: var(--ink-2); }
   .imap :is(.im-col, .im-tier)[data-tier="shuyou"] { flex: none; width: var(--w-shuyou); }
-  .imap :is(.im-col, .im-tier)[data-tier="seika"] { flex: none; width: var(--w-seika); }
-  .imap :is(.im-col, .im-tier)[data-tier="katsudou"] { flex: 1 1 0; min-width: 0; }
+  .imap :is(.im-col, .im-tier)[data-tier="seika"] { flex: 22 1 0; min-width: 0; }
+  .imap :is(.im-col, .im-tier)[data-tier="katsudou"] { flex: 78 1 0; min-width: 0; }
   .imap .im-col { display: grid; min-width: 0; }
   .imap :is(.im-col, .im-tier).empty { display: none; }
   .imap .im-out { font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; line-height: 1.5; color: var(--ink-2); }
   .imap .im-name { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1.4; }
   .imap .im-n { display: inline-block; margin-left: 6px; font-family: var(--font); font-weight: 400; font-size: 0.8125rem; color: var(--ink-2); }
   .imap .im-n b { display: inline-block; font-family: var(--font-num); font-weight: 600; font-size: 0.9375rem; color: var(--ink); margin-right: 1px; }
-  .imap .im-grid { margin-top: 4px; padding: 2px 4px 4px; margin-inline: -4px; border-radius: 8px; }
+  .imap .im-grid { margin-top: 2px; padding: 0 4px 2px; margin-inline: -4px; border-radius: 8px; }
   .imap .im-grid:focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
-  .imap .im-row { padding: 8px 0 10px; }
+  .imap .im-row { padding: 5px 0; }
   .imap .im-row + .im-row { border-top: 1.5px solid var(--grid); }
-  .imap .im-gt { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; }
+  .imap .im-tiers { flex: 1 1 0; min-width: 0; }
+  .imap .im-gt { flex: none; width: var(--w-gt); display: flex; align-items: center; gap: 6px; margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; }
   .imap .im-gt .badge-sz { width: 1.6em; height: 1.6em; font-size: 0.8rem; }
+  .imap .im-gn { display: none; }
   .imap .im-tl { display: none; margin: 0 0 3px; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
   .imap .im-cells { display: flex; flex-wrap: wrap; gap: var(--gap); }
 
-  /* マス。色は区分（.tone-*）。地との差が 3:1 未満の色には、内訳の棒の区間と同じ内側の縁を付ける（--tone-edge）。選んだマスは太い縁、条件に合わないマスは薄くする */
+  /* マス。色は区分（.tone-*）。地との差が 3:1 未満の色には、内訳の棒の区間と同じ内側の縁を付ける（--tone-edge。黄は付けない）。選んだマスは太い縁、条件に合わないマスは薄くする */
   :is(.imap, .map-key) .mc { display: block; flex: none; width: var(--cell, 12px); height: var(--cell, 12px); border-radius: 3px; background: var(--tone); box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
+  :is(.imap, .map-key) .mc.tone-warning { box-shadow: none; }
   .imap .im-cells .mc { cursor: pointer; }
   .imap .mc.dim { opacity: 0.16; }
   .imap .mc.sel { outline: 2.5px solid var(--ink); outline-offset: 1.5px; opacity: 1; }
@@ -210,12 +225,15 @@ const KIND = {
   .map-key ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
   .map-key li { display: inline-flex; align-items: center; gap: 5px; }
 
-  /* スマホ: 列の見出しは数だけを1行に流し、行の中では指標を縦に積んで名前を添える */
+  /* スマホ: 列の見出しは数だけを1行に流し、行の頭に「将来像N」を書いて、行の中では指標を縦に積んで名前を添える */
   @media (max-width: 640px) {
-    .imap { --cell: 14px; }
+    .imap { --cell: 14px; padding: 14px 14px 12px; }
     .imap .im-cols { position: static; flex-wrap: wrap; gap: 0 14px; }
     .imap .im-col { display: block; }
-    .imap .im-out { display: none; }
+    .imap :is(.im-out, .im-cg) { display: none; }
+    .imap .im-row { display: block; padding: 8px 0 10px; }
+    .imap .im-gt { width: auto; margin: 0 0 6px; }
+    .imap .im-gn { display: inline; }
     .imap .im-tiers { flex-direction: column; gap: 8px; }
     .imap :is(.im-col, .im-tier)[data-tier] { flex: none; width: auto; max-width: 100%; }
     .imap .im-tl { display: block; }
