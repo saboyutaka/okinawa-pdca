@@ -627,8 +627,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
   }
-  /* 用語の吹き出しは出るときに少しふくらむ。ツールチップは薄く出す */
-  .termpop:not([hidden]) { animation: m-pop-in 0.14s ease-out; transform-origin: 16px 0; }
+  /* 用語の吹き出し・計画の目次の出す指標の吹き出しは出るときに少しふくらむ。ツールチップは薄く出す */
+  .termpop:not([hidden]), .tree-show-pop:not([hidden]) { animation: m-pop-in 0.14s ease-out; transform-origin: 16px 0; }
   .tooltip:not([hidden]) { animation: m-fade 0.1s ease-out; }
   /* 畳んだ内容を押して開いたとき（scripts/disclosure.ts が details に m-opening を付ける）と「さらに表示」で出した行（scripts/show-more.ts が m-in を付ける）は、すっと出す。
      高さは動かさない（中身は一度に場所を取り、見た目だけを変える）。# の行き先・印刷で開いたときは動かさない */
