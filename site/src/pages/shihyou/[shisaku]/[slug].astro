@@ -13,7 +13,6 @@ import SeikaGoal from '../../../components/SeikaGoal.astro';
 import SeikaKey from '../../../components/SeikaKey.astro';
 import SeikaRoute from '../../../components/SeikaRoute.astro';
 import SeikaSays from '../../../components/SeikaSays.astro';
-import SeikaTable from '../../../components/SeikaTable.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Chip from '../../../components/Chip.astro';
 import Stamps from '../../../components/Stamps.astro';
@@ -97,8 +96,7 @@ const verdict = seikaVerdict(x);
     {drawn && plan && <p class="small secondary lead">スタートからゴールまで、点線の計画どおりに進んでいるかを青い点の実績値で見ます。</p>}
     {drawn && <SeikaKey plan={plan} />}
     <div class="sticker route">
-      <SeikaRoute row={g} />
-      <SeikaTable row={g} open={!drawn} />
+      <SeikaRoute row={g} open={!drawn} />
     </div>
   </section>
 

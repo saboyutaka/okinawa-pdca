@@ -298,9 +298,12 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
   const ticks = niceTicks(lo, hi, 4);
   lo = Math.min(lo, ticks[0]);
   hi = Math.max(hi, ticks[ticks.length - 1]);
-  // スマホ幅では低くして、カード1枚が1画面に収まるようにする
-  const H = W < 480 ? 200 : 240;
-  const { svg, textW, m, ih, sw, slots, x, y, left } = yearFrame(wrap, W, H, W < 480 ? 44 : 50, periods, ticks, lo, hi, unit);
+  // 施策ページのカードで値の1行の次に見る図なので、取組のページの活動指標の図に近い高さにする（スマホ幅はさらに低く）
+  const H = W < 480 ? 170 : 190;
+  // 左の余白は、下の「表で見る」の表の行の見出し（「基準値」など）が入る幅より狭くしない。決まった余白は親に --plot-l で渡し、
+  // 表の列を図の年度にそろえる（components/SeikaTable.astro の .aligned。取組のページの活動指標の図と同じ）
+  const { svg, textW, m, ih, sw, slots, x, y, left } = yearFrame(wrap, W, H, 40, periods, ticks, lo, hi, unit, 52);
+  wrap.parentElement?.style.setProperty('--plot-l', `${m.l}px`);
   const line = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
   const { mark, markPath, place } = placer(W, 24, m.t + ih + 2);
 
