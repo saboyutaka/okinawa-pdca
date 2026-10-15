@@ -6,9 +6,9 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, torikumiOfSeika, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  seikaKey, seikaFormerNames, seikaHref,
+  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf,
 } from '../src/lib/data.ts';
-import { SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
+import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -266,6 +266,69 @@ test('名前が変わった取組（TORIKUMI_RENAMES）は、前の名前の年�
   const ict = getTorikumiGroups().find((x) => x.shisaku.id === '3-2-a-1' && x.latest.name === 'ICTを活用した観光危機情報の収集・発信');
   assert.ok(ict);
   assert.deepEqual(formerNames(ict), []);
+});
+
+const groupOf = (shisaku: string, name: string) => getTorikumiGroups().find((x) => x.shisaku.id === shisaku && x.latest.name === name)!;
+
+test('名前が変わった活動指標（KATSUDOU_RENAMES）は、前の名前の年度と新しい名前の年度が1つの図と表にまとまる', () => {
+  for (const r of KATSUDOU_RENAMES) {
+    for (const s of r.shisaku) {
+      const g = groupOf(s, r.torikumi);
+      assert.ok(g, `${s}: ${r.torikumi}`);
+      // 前の名前の年度が終わった後に、新しい名前の年度が始まる（同じ年度に両方は載っていない）
+      const yearsOf = (name: string) => YEARS.filter((y) => g.years[y] && katsudouNameKey(indicatorOf(g, y)) === katsudouNameKey(name));
+      const [from, to] = [yearsOf(r.from), yearsOf(r.to)];
+      assert.ok(from.length && to.length, `${s} ${r.torikumi}: ${r.from} → ${r.to} が報告に無い`);
+      assert.ok(Math.max(...from) < Math.min(...to), `${s} ${r.torikumi}: ${r.from} と ${r.to} の年度が重なる`);
+      // いまの活動指標（group 0）に前の名前の年度も入り、見出しは新しい名前、前の名前は formers に残る
+      const run = activityRuns(g).find((x) => x.group === 0)!;
+      assert.deepEqual([...from, ...to].filter((y) => !run.years.some((x) => x.y === y)), [], `${s} ${r.torikumi}`);
+      assert.equal(katsudouNameKey(run.indicator), katsudouNameKey(r.to));
+      assert.ok(run.formers.some((f) => katsudouNameKey(f.name) === katsudouNameKey(r.from)), `${s} ${r.torikumi}: 前の名前`);
+    }
+  }
+});
+
+test('活動指標は、書き方の違いと「（累計）」「（内訳）」の付け外しをそろえて年度をつなぎ、測るものが変わったものは分ける', () => {
+  const runs = (s: string, name: string) => activityRuns(groupOf(s, name)).filter((r, i, all) => all.findIndex((x) => x.group === r.group) === i);
+  // 「子供の居場所の箇所数（内訳）」→「こどもの居場所の箇所数（内訳）」は書き方の違いだけなので、前の名前を出さずに4年分つなぐ
+  const kodomo = runs('2-1-b-1', '沖縄こどもの貧困緊急対策事業（市町村事業）');
+  assert.equal(kodomo.length, 1);
+  assert.deepEqual(kodomo[0].years.filter((y) => !y.future).map((y) => y.y), YEARS);
+  assert.deepEqual(kodomo[0].formers, []);
+  // R6 の「〜支援数（内訳）」と R7 の「〜支援数（累計）」は同じ活動指標。前の名前を出す
+  const gan = runs('3-7-c-5', '含蜜糖振興対策（設備更新）');
+  assert.equal(gan.length, 1);
+  assert.deepEqual(gan[0].formers.map((f) => f.name), ['含蜜糖製造事業者への支援数（内訳）']);
+  // 測るものが変わった活動指標（サポート・相談対応件数 → 実証実験支援件数）は、別の図と表のまま
+  assert.equal(runs('3-3-a-2', 'デジタル技術・サービスを活用した実証実験に対する支援').length, 2);
+});
+
+test('別の施策に移った取組は、関係がありそうな取組に出し、同じ施策の再掲には出さない', () => {
+  // R6 まで 3-(9)-ア-③、R7 から 3-(9)-イ-③ に載っている（予算事業「スポーツイベント支援事業」と活動指標が同じ）
+  const ev6 = groupOf('3-9-a-3', 'スポーツイベント開催支援');
+  const ev7 = groupOf('3-9-b-3', 'スポーツイベント開催の支援');
+  assert.ok(renameCandidates(ev6).some((c) => c.group === ev7 && c.moved && c.after));
+  assert.ok(renameCandidates(ev7).some((c) => c.group === ev6 && c.moved && !c.after));
+  // 同じ名前で施策を移った「沖縄平和賞の開催」は、年度が重ならないので再掲ではない
+  const p6 = groupOf('4-1-a-2', '沖縄平和賞の開催');
+  const p7 = groupOf('4-1-a-1', '沖縄平和賞の開催');
+  assert.deepEqual(repostsOf(p6), []);
+  assert.ok(renameCandidates(p6).some((c) => c.group === p7 && c.moved));
+  // 別の施策の候補は、同じ予算事業があり、境目の年度の活動指標が同じもの
+  for (const g of getTorikumiGroups()) {
+    for (const c of renameCandidates(g).filter((x) => x.moved)) {
+      const [a, b] = c.after ? [indicatorOf(g, g.latest.year), indicatorOf(c.group, firstYearOf(c.group))] : [indicatorOf(g, firstYearOf(g)), indicatorOf(c.group, c.group.latest.year)];
+      assert.ok(c.shared.length && katsudouNameKey(a) === katsudouNameKey(b), `${g.href} → ${c.group.href}`);
+    }
+  }
+});
+
+test('主要指標は、基準値の年が同じで基準値が違えば、名前が変わった年度を別の指標にする', () => {
+  // 5-(2) の「将来の夢や目標を持ち、〜」は R7 で設問が変わった（R3 の基準値が 小学校82.3% → 78.3%）
+  assert.deepEqual(shuyouRows('5-2').map((g) => Object.keys(g.years).map(Number)), [[2025], [2022, 2023, 2024]]);
+  // 名前が変わっても、基準値の年が変わった指標（2-(7) の都市公園面積）・基準値が同じ指標（2-(1) のこども調査）は4年分つなぐ
+  for (const k of ['2-1', '2-7']) assert.deepEqual(shuyouRows(k).map((g) => Object.keys(g.years).length), [4], k);
 });
 
 test('主要指標の達成状況の行き先（基本施策ページのカードの id）は、基本施策ごとに重ならず、最新の報告の指標が先に並ぶ', () => {
