@@ -9,7 +9,7 @@
 //  - 中身: マスを押す・矢印キーで移ると、マスの下（画面に入らなければ上）の吹き出しに、その年度の名前・親（基本施策・施策）・値を出す（キーワードに当たった字に印を付ける）。
 //    × か Esc、吹き出しの外を押すと閉じる。中身は指標ごとの JSON（lib/map-data.ts）で、初めてマス目にマウスを乗せた・押した・フォーカスしたときに読む
 //  - キーボード: マス目で Tab は1回だけ止まり（止まっただけでは開かず、矢印キーで移れることをマス目の上に小さく出す）、マス目と吹き出し・絞り込みの外へ出ると閉じる。
-//    ← → で前後のマス（並びの順。行の中では主要指標 → 成果指標 → 活動指標）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
+//    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で同じ指標の上下の行のいちばん近いマス、
 //    Home・End で最初・最後に移る
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
@@ -327,6 +327,28 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     });
     return best;
   };
+  // 左右のマス（d は 1 で右、-1 で左）。同じ箱の同じ段の隣。段の端では、同じ将来像の行で画面の上でその向きに並ぶ隣の箱の、高さがいちばん近い段の端のマス。
+  // その向きに箱が無ければ（活動指標の右端・主要指標の左端、スマホで箱が縦に積まれているとき）、並びの順の前後（shown）
+  const horizontal = (cur: HTMLElement, d: number, shown: HTMLElement[]) => {
+    const r = cur.getBoundingClientRect();
+    const block = cur.closest<HTMLElement>('.im-tier')!;
+    const own = visible([...block.querySelectorAll<HTMLElement>('.mc')]);
+    const nb = own[own.indexOf(cur) + d];
+    if (nb && Math.abs(nb.getBoundingClientRect().top - r.top) <= 2) return nb;
+    const b = block.getBoundingClientRect();
+    const side = [...block.parentElement!.children]
+      .map((x) => ({ x, p: x.getBoundingClientRect() }))
+      .filter(({ x, p }) => x !== block && p.width > 0 && (d > 0 ? p.left >= b.right : p.right <= b.left))
+      .sort((m, n) => (m.p.left - n.p.left) * d)[0];
+    if (side) {
+      const cs = visible([...side.x.querySelectorAll<HTMLElement>('.mc')]);
+      const tops = cs.map((c) => c.getBoundingClientRect().top);
+      const top = tops.reduce((a, t) => (Math.abs(t - r.top) < Math.abs(a - r.top) ? t : a), Infinity);
+      const line = cs.filter((_, i) => Math.abs(tops[i] - top) <= 2);
+      if (line.length) return d > 0 ? line[0] : line.at(-1);
+    }
+    return shown[shown.indexOf(cur) + d] ?? cur;
+  };
   const selectCell = (c: HTMLElement | null | undefined) => {
     const at = c && tierOf.get(c);
     if (at) select(at.t, at.i);
@@ -341,10 +363,9 @@ function init(form: HTMLFormElement, root: HTMLElement) {
   grid.addEventListener('keydown', (e) => {
     const shown = visible(allCells);
     const cur = sel ? sel.t.cells[sel.i] : null;
-    const at = cur ? shown.indexOf(cur) : -1;
     let next: HTMLElement | undefined;
-    if (e.key === 'ArrowRight') next = shown[at + 1] ?? shown[at];
-    else if (e.key === 'ArrowLeft') next = at < 0 ? shown.at(-1) : shown[Math.max(at - 1, 0)];
+    if (e.key === 'ArrowRight') next = cur ? horizontal(cur, 1, shown) : shown[0];
+    else if (e.key === 'ArrowLeft') next = cur ? horizontal(cur, -1, shown) : shown.at(-1);
     else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') next = cur ? (vertical(cur, e.key === 'ArrowDown' ? 1 : -1) ?? cur) : shown[0];
     else if (e.key === 'Home') next = shown[0];
     else if (e.key === 'End') next = shown.at(-1);
