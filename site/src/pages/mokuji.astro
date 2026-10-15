@@ -85,13 +85,14 @@ const dataPath = treeDataPath();
   .tree-depth button[aria-pressed="true"]::before { content: "✓"; }
   .tree-depth button:active { transform: translate(1px, 1px); box-shadow: none; }
 
-  /* 木の線: 親の ▶ の丸の真ん中から線を下ろし、子の行の真ん中へ └ の形で曲げる（最後の子より下へは伸ばさない）。
-     --tw は丸の大きさ、--gap は親の線から子の丸までの幅、--c は行の頭から丸の真ん中まで（階層ごとに字の大きさが違うので、それぞれで決める） */
-  .sticker.tree-box { --tw: 22px; --gap: 14px; --pad: 3px; --col: calc(var(--tw) + 8px); margin-top: 12px; padding: 16px 20px 18px 16px; }
-  .tree-box .tree, .tree-box .tree ul { list-style: none; margin: 0; padding: 0 0 0 calc(var(--tw) / 2 + var(--gap)); }
+  /* 木の線: 親の ▶ の丸の真ん中から線を下ろし、子の行の真ん中へ └ の形で曲げて、子の丸（取組は番号）の 1px 手前まで引く（最後の子より下へは伸ばさない）。
+     線の太さと曲がりはページの階層（components/Hierarchy.astro）とそろえる。
+     --tw は丸の大きさ、--step は段の下げ幅、--lw は線の太さ、--c は行の頭から丸の真ん中まで（階層ごとに字の大きさが違うので、それぞれで決める） */
+  .sticker.tree-box { --tw: 22px; --step: calc(var(--tw) / 2 + 5px); --lw: 2px; --pad: 3px; --col: calc(var(--tw) + 8px); margin-top: 12px; padding: 16px 20px 18px 16px; }
+  .tree-box .tree, .tree-box .tree ul { list-style: none; margin: 0; padding: 0 0 0 var(--step); }
   .tree-box .tree li { position: relative; }
-  .tree-box .tree li::before, .tree-box .tree li:not(:last-child)::after { content: ''; position: absolute; left: calc(-1 * var(--gap) - 1px); top: 0; border: 0 solid var(--hair); border-left-width: 2px; }
-  .tree-box .tree li::before { width: calc(var(--gap) - 3px); height: calc(var(--pt, 0px) + var(--c)); border-bottom-width: 2px; border-bottom-left-radius: 8px; }
+  .tree-box .tree li::before, .tree-box .tree li:not(:last-child)::after { content: ''; position: absolute; left: calc(var(--tw) / 2 - var(--step) - var(--lw) / 2); top: 0; border: 0 solid var(--hair); border-left-width: var(--lw); }
+  .tree-box .tree li::before { width: calc(var(--step) - var(--tw) / 2 + var(--lw) / 2 - 1px + var(--lead, 0px)); height: calc(var(--pt, 0px) + var(--c) + var(--lw) / 2); border-bottom-width: var(--lw); border-bottom-left-radius: 3px; }
   .tree-box .tree li:not(:last-child)::after { bottom: 0; }
   /* キーワードで後ろの行を隠したときは、見えている最後の行より下へ線を伸ばさない */
   .tree-box .tree li:not(:has(~ li:not([hidden])))::after { display: none; }
@@ -124,10 +125,10 @@ const dataPath = treeDataPath();
 
   /* 開いているときは、丸の下から子の並びの頭まで線をつなぐ（名前が何行かに折り返しても切れないように） */
   .tree-box .tree-root::after, .tree-box details[open] > .sum::after, .tree-box .nd:has(> details[open]) > .tb::after {
-    content: ''; position: absolute; top: calc(var(--c) + var(--tw) / 2); bottom: 0; border-left: 2px solid var(--hair);
+    content: ''; position: absolute; top: calc(var(--c) + var(--tw) / 2); bottom: 0; border-left: var(--lw) solid var(--hair);
   }
-  .tree-box .tree-root::after, .tree-box details[open] > .sum::after { left: calc(var(--tw) / 2 - 1px); }
-  .tree-box .nd:has(> details[open]) > .tb::after { left: calc(var(--tw) / 2 - var(--col) - 1px); }
+  .tree-box .tree-root::after, .tree-box details[open] > .sum::after { left: calc(var(--tw) / 2 - var(--lw) / 2); }
+  .tree-box .nd:has(> details[open]) > .tb::after { left: calc(var(--tw) / 2 - var(--col) - var(--lw) / 2); }
   /* 根（計画そのもの）。開け閉めはしないので、丸の代わりに小さな点を置く（線は点の真ん中から下ろす） */
   .tree-box .tree-root { --c: 13px; position: relative; margin: 0; padding-bottom: 4px; display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-display); font-weight: 700; line-height: 1.6; }
   .tree-box .tree-root .tw { margin-top: calc(var(--c) - var(--tw) / 2); border: 0; background: none; }
@@ -157,7 +158,8 @@ const dataPath = treeDataPath();
   .tree-box .tk-name { font-family: var(--font-display); font-weight: 700; }
   .tree-box .lv3 { --c: 15px; }
   .tree-box .lv3 > .tb { font-size: 0.9375rem; }
-  .tree-box .leaf { --c: 13px; padding: 2px 0 2px 4px; }
+  /* 下に段の無い行（取組・指標）は、行を --lead だけ右へずらし、横の線もそのぶん長くする */
+  .tree-box .leaf { --c: 13px; --lead: 6px; padding: 2px 0 2px var(--lead); }
   .tree-box .leaf > .tb { font-size: 0.875rem; padding: 0; }
   /* 取組の番号は右にそろえ、名前の頭を縦にそろえる（1つの施策に取組は多くて十数件） */
   .tree-box .leaf .no { min-width: 1.2em; text-align: right; font-family: var(--font-num); font-weight: 600; }
@@ -181,7 +183,7 @@ const dataPath = treeDataPath();
   .tree-box .tree li[id] { scroll-margin-top: 16px; }
 
   @media (max-width: 640px) {
-    .sticker.tree-box { --gap: 10px; padding: 12px 12px 14px 10px; }
+    .sticker.tree-box { padding: 12px 12px 14px 10px; }
   }
   @media (prefers-reduced-motion: no-preference) {
     .tree-box .tree .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
