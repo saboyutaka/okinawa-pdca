@@ -4,11 +4,12 @@
 // ファイルの名前に中身のハッシュを入れ（/mokuji/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
 import { createHash } from 'node:crypto';
-import { getPlanTree } from './data.ts';
+import { budgetOf, getPlanTree } from './data.ts';
 
 // JSON の形（ブラウザのスクリプト scripts/tree.ts もこの型で読む）。木の並び・中身は lib/data.ts の getPlanTree と同じ
 export type TreeLink = [name: string, href: string];
-export interface TreeShisaku { id: string; no: string; name: string; seika: TreeLink[]; torikumi: [no: number, name: string, href: string][] }
+// 取組の act は活動指標の名前（取組のページの頭と同じく、総括報告書の欄、無ければ部局の検証票。どちらにも無ければ ''）
+export interface TreeShisaku { id: string; no: string; name: string; seika: TreeLink[]; torikumi: [no: number, name: string, href: string, act: string][] }
 export interface TreeTenkai { id: string; no: string; name: string; shisaku: TreeShisaku[] }
 export interface TreeKihon { id: string; no: string; name: string; shuyou: TreeLink[]; tenkai: TreeTenkai[] }
 export interface TreeVision { id: number; name: string; kihon: TreeKihon[] }
@@ -36,7 +37,7 @@ function build(): TreeData {
             no: localNo(s.shisaku.code),
             name: s.shisaku.name,
             seika: s.seika.map((g) => [g.name, g.href]),
-            torikumi: s.torikumi.map((g) => [g.latest.no, g.latest.name, g.href]),
+            torikumi: s.torikumi.map((g) => [g.latest.no, g.latest.name, g.href, g.latest.indicator || budgetOf(g.latest.year, g.shisaku.id, g.key)?.indicator_name || '']),
           })),
         })),
       })),
