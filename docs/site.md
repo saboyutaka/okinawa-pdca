@@ -46,7 +46,7 @@
 
 ## 4. ページ
 
-トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/mokuji/`（計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組（最新の年度）を、開け閉めできる `details` の入れ子で並べ（木は HTML に書かず、`scripts/tree.ts` が JSON から描く。7章）、基本施策には主要指標、施策には成果指標を付ける（PC の幅では名前の横に、スマホでは開いた中の行に。同じ指標を2か所に書き、幅で片方だけを出す）。木の中身は `lib/data.ts` の `getPlanTree`。名前のリンクは `summary` の外に置き、`summary` は ▶ の丸だけにする（`summary` の中にリンクを置くと、押せるものが入れ子になる）。入口はいまはフッターだけ）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`、`/map/`（指標のマップ。主要指標・成果指標・活動指標を1マス＝1指標で将来像ごとに並べ、年度ごとの県の区分で色分けする。入口はいまはフッターだけ）。公開した URL は変えない（8章）。
+トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/mokuji/`（計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組（最新の年度）を、開け閉めできる `details` の入れ子で並べ（木は HTML に書かず、`scripts/tree.ts` が JSON から描く。7章）、基本施策には主要指標、施策には成果指標を付ける（PC の幅では名前の横に、スマホでは開いた中の行に。同じ指標を2か所に書き、幅で片方だけを出す）。木の中身は `lib/data.ts` の `getPlanTree`。名前のリンクは `summary` の外に置き、`summary` は ▶ の丸だけにする（`summary` の中にリンクを置くと、押せるものが入れ子になる））、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`、`/map/`（指標のマップ。主要指標・成果指標・活動指標を1マス＝1指標で将来像ごとに並べ、年度ごとの県の区分で色分けする）。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 
