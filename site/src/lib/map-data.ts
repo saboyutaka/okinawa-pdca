@@ -9,7 +9,7 @@
 import { createHash } from 'node:crypto';
 import {
   YEARS, LATEST, STATUSES, RATE_BINS, SHUYOU_BINS, load, yearLabel, planIndex, withUnit, refText, eraRef, halfWidth, sameScale,
-  getShuyouStatus, shuyouBin, shuyouRateText, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
+  getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
   getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
 import { themeIdsOfItem } from './themes.ts';
@@ -70,7 +70,8 @@ function parentTable() {
 
 interface Built { cells: MapCell[]; data: Omit<MapData, 'check'> }
 
-// 主要指標。マスは最新の報告の概要版の表の行で、ほかの年度は表の順（no）で結ぶ（どの年度も基本施策ごとの行の数は同じ）。R5 は概要版の表が画像で読めない（docs/data.md）
+// 主要指標。マスは最新の報告の概要版の表の行で、ほかの年度は表の順（no）で結ぶ（どの年度も基本施策ごとの行の数は同じ）。R5 は概要版の表が画像で読めない（docs/data.md）。
+// R7で入れ替わった指標は、R6までのマスを別に作る（buildShuyou）
 const half = (raw: string) => halfWidth(raw).replace(/％/g, '%');
 const withRef = (v: string, ref: string | null) => (v && eraRef(ref) ? `${v}（${eraRef(ref)}）` : v || '—');
 function shuyouValues(x: ShuyouGaiyouRow): MapYear['v'] {
@@ -85,15 +86,32 @@ export const shuyouCells = (rows: ShuyouStatus[]): CellItem[] => rows.map((r) =>
 }));
 function buildShuyou(): Built {
   const rows = load('shuyou_gaiyou');
+  const kihon = new Map(getKihonList().map((k) => [k.id, k]));
   const parents = parentTable();
+  // 年度は概要版の行の番号でつなぐ。R7で別の指標に入れ替わった番号（4-(1) の No.38、5-(2) の No.44・45）の前の年度は、別の指標なので
+  // 基本施策ページのカードと同じく別のマスにし、基本施策の中で最新の報告の指標の後ろに置く（成果指標のマスと同じく、最新の年度では隠れる）
+  const used = new Set<ShuyouGaiyouRow>();
+  const take = (head: ShuyouGaiyouRow) => {
+    const ys = YEARS.map((y) => rows.find((x) => !used.has(x) && x.year === y && x.no === head.no && x.kihon_id === head.kihon_id && sameShuyouCard(x, head)) ?? null);
+    for (const x of ys) if (x) used.add(x);
+    return ys;
+  };
+  const entries = getShuyouStatus().map(take);
+  for (const r of [...rows].sort((a, b) => b.year - a.year || a.no - b.no)) {
+    if (used.has(r)) continue;
+    const ys = take(r);
+    const at = entries.findLastIndex((e) => e.some((x) => x?.kihon_id === r.kihon_id));
+    entries.splice(at + 1, 0, ys);
+  }
   const cells: MapCell[] = [];
   const items: MapItem[] = [];
-  for (const r of getShuyouStatus()) {
-    const ys = YEARS.map((y) => rows.find((x) => x.year === y && x.no === r.no && x.kihon_id === r.kihon_id) ?? null);
-    cells.push({ s: r.kihon.shouraizou, c: codes('shuyou', ys, shuyouBin), dept: '', themes: [] });
+  for (const ys of entries) {
+    const head = ys.findLast((x) => x != null)!;
+    const k = kihon.get(head.kihon_id)!;
+    cells.push({ s: k.shouraizou, c: codes('shuyou', ys, shuyouBin), dept: '', themes: [] });
     items.push({
-      n: r.name, h: r.href, p: parents.of(r.kihon.code, r.kihon.name, `/kihon/${r.kihon.id}/`),
-      y: ys.map((x) => x && { ...(x.name !== r.name && { n: x.name }), v: shuyouValues(x) }),
+      n: head.name, h: shuyouCardHref(head), p: parents.of(k.code, k.name, `/kihon/${k.id}/`),
+      y: ys.map((x) => x && { ...(x.name !== head.name && { n: x.name }), v: shuyouValues(x) }),
     });
   }
   return { cells, data: { parents: parents.list, items } };

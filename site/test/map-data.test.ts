@@ -17,11 +17,20 @@ const latestCounts = (kind: MapKind) => {
 };
 
 test('マスの数は、年度ごとの報告の指標の数（主要指標は概要版の49指標・成果指標・主な取組の延べ件数）', () => {
-  const shuyou = mapCounts('shuyou');
-  assert.equal(shuyou[at], SHUYOU_COUNT[LATEST]);
-  assert.equal(shuyou[YEARS.indexOf(2023)], 0); // R5 は概要版の表が画像で読めない
+  // R5 は概要版の表が画像で読めない。R7で入れ替わった指標（4-(1) と 5-(2)）は、R6までの指標のマスを別に作るので、どの年度も49
+  assert.deepEqual(mapCounts('shuyou'), YEARS.map((y) => (y === 2023 ? 0 : SHUYOU_COUNT[y])));
   assert.deepEqual(mapCounts('seika'), YEARS.map((y) => getSeika(y).length));
   assert.deepEqual(mapCounts('katsudou'), YEARS.map((y) => getTorikumi(y).length));
+});
+
+test('主要指標で R7 に入れ替わった番号は、R6までの指標と R7 の指標を別のマスにする', () => {
+  const d = data('shuyou');
+  const yearsOf = (name: string) => YEARS.filter((_, i) => d.items.find((x) => x.n === name)!.y[i] != null);
+  assert.deepEqual(yearsOf('平和構築に貢献する地域間協力のネットワーク数'), [2025]);
+  assert.deepEqual(yearsOf('平和祈念資料館の入館者数'), [2022, 2024]);
+  // 名前だけが変わった指標（2-(7)）は1つのマスで、前の年度に前の名前を書く
+  const park = d.items.find((x) => x.n === '一人当たり都市公園面積')!;
+  assert.equal(park.y[YEARS.indexOf(2024)]?.n, '都市計画区域における一人当たりの都市公園面積');
 });
 
 test('最新の年度の区分ごとの数は、ほかのページの数え方と同じ', () => {
