@@ -182,3 +182,23 @@ export const mapDataHash = (kind: MapKind) => sha8(mapDataJson(kind));
 export const mapDataPath = (kind: MapKind) => `/map/${kind}-${mapDataHash(kind)}.json`;
 // 名前の変わらない控え。公開し直した直後に、キャッシュした前のページ（5分）から開くと、前のハッシュのファイルはもう無いので、こちらを読む
 export const mapDataFallback = (kind: MapKind) => `/map/${kind}.json`;
+
+// キーワードで探す文字（JSON の形。scripts/indicator-map.ts もこの型で読む）。指標ごとに、マスと同じ並びで、名前（年度で変わった名前も）・活動指標の名前・
+// 親（基本施策・施策）の番号と名前を空白でつないだもの。中身の JSON を3つとも読むと重い（gzip で約220KB）ので、探す文字だけを1つのファイルにし、キーワードの欄に入ったときに読む
+export type MapSearch = Record<MapKind, { check: string; texts: string[] }>;
+function buildSearch(): MapSearch {
+  const of = (kind: MapKind) => {
+    const { parents, items } = all()[kind].data;
+    const texts = items.map((x) => {
+      const ys = x.y.filter((y): y is MapYear => y != null);
+      const [code, name] = parents[x.p];
+      return [...new Set([x.n, ...ys.map((y) => y.n), ...ys.map((y) => y.sub)].filter(Boolean))].concat(code, name).join(' ');
+    });
+    return { check: mapCheck(kind), texts };
+  };
+  return { shuyou: of('shuyou'), seika: of('seika'), katsudou: of('katsudou') };
+}
+let searchJson: string | undefined;
+export const mapSearchJson = () => (searchJson ??= JSON.stringify(buildSearch()));
+export const mapSearchPath = () => `/map/search-${sha8(mapSearchJson())}.json`;
+export const MAP_SEARCH_FALLBACK = '/map/search.json';

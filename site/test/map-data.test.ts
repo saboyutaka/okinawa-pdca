@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import {
-  MAP_KINDS, cellHtml, mapCells, mapCheck, mapCounts, mapDataHash, mapDataJson, mapDataPath, mapRows, type MapData, type MapKind,
+  MAP_KINDS, cellHtml, mapCells, mapCheck, mapCounts, mapDataHash, mapDataJson, mapDataPath, mapRows, mapSearchJson, mapSearchPath, type MapData, type MapSearch, type MapKind,
 } from '../src/lib/map-data.ts';
 import { mapLabel } from '../src/lib/map-label.ts';
 import { YEARS, LATEST, SHUYOU_COUNT, getSeika, getTorikumi, getShuyouStatus, shuyouCounts, rateBin, statusOf, countBy, RATE_BINS, STATUSES } from '../src/lib/data.ts';
@@ -59,6 +59,22 @@ test('将来像ごとの行は、どの指標のマスも報告書の順のま�
   }
   assert.equal(cellHtml('seika', { s: 1, c: '30-0', dept: '環境部', themes: ['eco', 'shizen'] }), '<i class="mc tone-good" data-c="30-0" data-d="環境部" data-t="eco shizen"></i>');
   assert.equal(cellHtml('katsudou', { s: 1, c: '000-', dept: '', themes: [] }), '<i class="mc tone-blank" data-c="000-" hidden></i>');
+});
+
+test('キーワードで探す文字は、マスと同じ並びで、名前・活動指標の名前・親の番号と名前を含む', () => {
+  const search = JSON.parse(mapSearchJson()) as MapSearch;
+  for (const { kind } of MAP_KINDS) {
+    const d = data(kind);
+    assert.equal(search[kind].check, mapCheck(kind));
+    assert.equal(search[kind].texts.length, d.items.length, kind);
+    d.items.forEach((item, i) => {
+      const text = search[kind].texts[i];
+      const [code, name] = d.parents[item.p];
+      assert.ok(text.startsWith(item.n) && text.endsWith(`${code} ${name}`), `${kind} ${item.n}`);
+      for (const y of item.y) if (y?.sub) assert.ok(text.includes(y.sub), `${kind} ${item.n} の活動指標`);
+    });
+  }
+  assert.equal(mapSearchPath(), `/map/search-${createHash('sha256').update(mapSearchJson()).digest('hex').slice(0, 8)}.json`);
 });
 
 test('書き出す場所の名前は、中身の SHA-256 の先頭8桁', () => {
