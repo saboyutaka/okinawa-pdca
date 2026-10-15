@@ -1,15 +1,17 @@
 ---
 // くらしのテーマのラベル（このサイト独自の分類）。押すとテーマのページを開く。カードの中など、リンクを重ねられない所では link={false}
+// label={false} は「テーマ」の文字を付けない（ページの頭の1行目など）。そのときは、このサイト独自の分類だということを札にマウスを乗せると出す
 import { getThemes } from '../lib/themes.ts';
 
 interface Props { ids: string[]; link?: boolean; label?: boolean }
 const { ids, link = true, label = true } = Astro.props;
 const byId = new Map(getThemes().map((t) => [t.id, t]));
 const items = ids.map((id) => byId.get(id)).filter((t) => t != null);
+const title = label ? undefined : 'くらしのテーマ（このサイト独自の分類です。県の計画の分類ではありません）';
 ---
 {items.length > 0 && (
   <span class="ttags">
     {label ? <span class="ttags-l" title="このサイト独自の分類です（県の計画の分類ではありません）">テーマ<span class="sr-only">（このサイト独自の分類）:</span></span> : <span class="sr-only">くらしのテーマ（このサイト独自の分類）:</span>}
-    {items.map((t) => (link ? <a class="ttag" href={`/theme/${t.id}/`}>{t.label}</a> : <span class="ttag">{t.label}</span>))}
+    {items.map((t) => (link ? <a class="ttag" href={`/theme/${t.id}/`} title={title}>{t.label}</a> : <span class="ttag" title={title}>{t.label}</span>))}
   </span>
 )}

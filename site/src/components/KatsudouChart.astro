@@ -1,7 +1,8 @@
 ---
 // 主な取組の活動指標の「計画と実績」の図（横は報告年度）。点線でつないだ白い丸がその年度の計画、青い点が実績で、成果指標の図（SeikaChart）と同じ形。
-// この先の年度は、部局票の年度別計画の計画だけを置く。図は scripts/charts.ts が表示幅で描く。凡例は取組ページの節の頭に1回だけ、値は「表で見る」にもある
-import { yearLabel, type ActivityRun } from '../lib/data.ts';
+// この先の年度は、部局票の年度別計画の計画だけを置く。図は scripts/charts.ts が表示幅で描く。凡例は置かず、図の上に最後の報告の年度の計画と実績を図と同じ印を付けて書く（docs/design.md の 1章）
+import Term from './Term.astro';
+import { yearLabel, yearLong, type ActivityRun } from '../lib/data.ts';
 import type { KatsudouData } from '../scripts/charts.ts';
 
 // here は最後の実績に添える札（「いまここ」「最後の報告」。前の活動指標の図は ''）
@@ -12,13 +13,29 @@ const yearText = (r: ActivityRun['years'][number]) => (r.future
   ? `${yearLabel(r.y)} 計画 ${r.plan_raw}（年度別計画）`
   : `${yearLabel(r.y)} 計画 ${r.plan_raw || '—'}、実績 ${r.actual_raw || '—'}（${r.status}）`);
 const aria = `活動指標「${run.indicator}」の計画と実績。${run.years.map(yearText).join('。')}。左右の矢印キーで年度を移れます`;
+const last = [...run.years].reverse().find((r) => !r.future);
+// 目標・実績が行ごとに分かれた値は1行にする
+const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
 ---
 {run.chart && (
-  <div class="chart katsudou-chart" data-chart="katsudou" tabindex="0" role="img" aria-label={aria}>
-    <script type="application/json" is:inline set:html={data}></script>
-  </div>
+  <>
+    {last && (
+      <p class="k-now">
+        <span class="k-yr"><Term word="年度" label={yearLabel(last.y)} note={`${yearLong(last.y)}は${last.y}年4月〜${last.y + 1}年3月です。`} /></span>
+        <span class="k-item"><span class="k-ring" aria-hidden="true"></span>計画 <b>{one(last.plan_raw)}</b></span>→
+        <span class="k-item"><span class="k-dot" style="--k:var(--pop)" aria-hidden="true"></span>実績 <b>{one(last.actual_raw)}</b></span>
+      </p>
+    )}
+    <div class="chart katsudou-chart" data-chart="katsudou" tabindex="0" role="img" aria-label={aria}>
+      <script type="application/json" is:inline set:html={data}></script>
+    </div>
+  </>
 )}
 
 <style>
-  .katsudou-chart { margin-top: 10px; }
+  .k-now { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 0; }
+  .k-yr { font-size: 0.875rem; font-weight: 700; color: var(--ink-2); }
+  .k-item { display: inline-flex; align-items: center; gap: 6px; }
+  .k-now b { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; }
+  .katsudou-chart { margin-top: 6px; }
 </style>

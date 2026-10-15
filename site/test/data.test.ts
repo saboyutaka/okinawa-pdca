@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
-  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey,
+  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
   shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale,
   type JudgeTrend, type Pattern,
@@ -180,6 +180,11 @@ test('fundOf: 財源の欄を6つの区分に寄せる', () => {
 test('budgetKey: 予算事業名の空白と全角の違いを無くす', () => {
   assert.equal(budgetKey('　Ａ事業 推進\n費'), 'A事業推進費');
   assert.equal(budgetKey(null), '');
+});
+
+test('isNoBudgetName: 予算事業の欄の「―」「なし」などは名前の無いものとし、長音を含む名前は名前とする', () => {
+  for (const s of ['―', '－', '-', 'ー', 'ｰ', '‐', '—', ' ― ', '', null, 'なし', '県事業なし']) assert.equal(isNoBudgetName(s), true, String(s));
+  for (const s of ['エネルギー対策事業', 'ー事業']) assert.equal(isNoBudgetName(s), false, s);
 });
 
 // 取組の4年間の様子。statuses は R4〜R7 の順（報告の無い年度は null）

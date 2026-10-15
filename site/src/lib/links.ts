@@ -24,9 +24,6 @@ export const SITE = {
   url: 'https://okinawa-miraima.com/',
 };
 
-// まだ検索エンジンに載せない（noindex）。載せてよくなったら false にし、public/_headers の X-Robots-Tag も外す
-export const NOINDEX = true;
-
 // このサイトを作っている団体と管理者、制作に協力してくれた人
 export const PROJECT = {
   org: 'Code for Okinawa',
