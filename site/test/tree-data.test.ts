@@ -40,3 +40,12 @@ test('目次のデータは lib/data.ts の getPlanTree と同じ並び・同じ
   const seikaHrefs = shisaku.flatMap((s) => s.seika.map(([, href]) => href));
   assert.equal(new Set(seikaHrefs).size, seikaHrefs.length);
 });
+
+test('取組の活動指標は、総括報告書の欄の名前（空なら部局の検証票の名前）で、名前の無い取組は無い', () => {
+  const tori = data().visions.flatMap((v) => v.kihon.flatMap((k) => k.tenkai.flatMap((t) => t.shisaku.flatMap((s) => s.torikumi))));
+  const groups = getPlanTree().flatMap((v) => v.kihon.flatMap((k) => k.tenkai.flatMap((t) => t.shisaku.flatMap((s) => s.torikumi))));
+  groups.forEach((g, i) => {
+    if (g.latest.indicator) assert.equal(tori[i][3], g.latest.indicator, g.href);
+  });
+  assert.deepEqual(tori.filter(([, , , act]) => !act).map(([, , href]) => href), []);
+});
