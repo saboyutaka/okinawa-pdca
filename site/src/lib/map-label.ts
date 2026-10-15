@@ -14,5 +14,5 @@ export function mapLabel(year: string, tiers: TierCount[]) {
     const cats = counts.filter(([, n]) => n > 0).map(([label, n]) => `${label} ${nf.format(n)}${unit}`).join('、');
     return `${term} ${nf.format(total)}${unit}（${cats}${hit != null ? `。絞り込みの条件に合うのは ${nf.format(hit)}${unit}` : ''}）`;
   };
-  return `指標のマップ（${year}）。${tiers.map(part).join('。')}。矢印キーでマスを移ると、その中身を出します`;
+  return `指標のマップ（${year}）。${tiers.map(part).join('。')}。矢印キーでマスを移ると、その中身を出します。Enter でその指標のページを開きます`;
 }
