@@ -91,7 +91,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     {shuyouLatest.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
-        <summary>R6まで使われていた主要指標（{shuyouPast.length}）</summary>
+        <summary>{yearLabel(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
         {shuyouPast.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
       </details>
     )}
