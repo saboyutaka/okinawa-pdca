@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
+import { TORIKUMI_RENAMES } from './renames.ts';
 import type {
   AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
@@ -582,12 +583,12 @@ export const planParents = (at: { kihon: string } | { shisaku: string }) => plan
 // 施策の最新の年度の判定の内訳（A〜G。判定の無い施策は「なし」）。判定のマス目（トップ・将来像・部局・テーマ）とページの説明文で同じものを使う
 export const countJudges = (list: Pick<Shisaku, 'judges'>[]) => countBy(list, (s) => s.judges[LATEST] ?? 'なし', JUDGES.map((j) => j.key));
 
-// 年度をまたいで同じ取組を1行にまとめる。名前（sameKey）が同じものを同じ取組とみなす
+// 年度をまたいで同じ取組を1行にまとめる。名前（torikumiKey）が同じものを同じ取組とみなす
 export function torikumiRows(shisaku: Shisaku) {
   const rows = new Map<string, YearGroup<TorikumiRow>>();
   const sorted = [...shisaku.torikumi].sort((a, b) => b.year - a.year || a.no - b.no);
   for (const t of sorted) {
-    const k = sameKey(t.key);
+    const k = torikumiKey(shisaku.id, t.key);
     if (!rows.has(k)) rows.set(k, { key: t.key, latest: t, years: {} });
     rows.get(k)!.years[t.year] = t;
   }
@@ -601,6 +602,14 @@ export const nameKey = (s: string) => s.normalize('NFKC').replace(/[\s・･、�
 // 年度をまたいで同じ取組・成果指標かを比べる key。名前の key の表記ゆれ（R7からの「こども」の書き方など。lib/search.ts）をそろえたもの。
 // 同じ年度の中の照合（部局票との結び付けなど）も、年度をまたいだまとまりから引くときはこれで比べる
 export const sameKey = (key: string) => foldVariants(key);
+// 年度をまたいで同じ取組かを比べる key。sameKey に、県が名前を変えた取組の読み替え（lib/renames.ts の TORIKUMI_RENAMES）を足したもの。
+// 前の名前は、その施策でだけ新しい名前に読み替える。部局票・観光ロードマップとの結び付けも、施策が分かるところはこれで比べる
+let renameMap: Map<string, string> | undefined;
+export function torikumiKey(shisakuId: string, key: string) {
+  renameMap ??= new Map(TORIKUMI_RENAMES.flatMap((r) => r.shisaku.map((s) => [`${s}|${sameKey(nameKey(r.from))}`, sameKey(nameKey(r.to))])));
+  const k = sameKey(key);
+  return renameMap.get(`${shisakuId}|${k}`) ?? k;
+}
 
 // 同じ施策の同じ年度の報告書に、同じ名前で2つ以上載っている成果指標（内訳の名前が印字に無いもの）。名前だけでは見分けられず、ページの題名も同じになるので、
 // 内訳の名前で載っているほかの報告書の名前で出し、年度をまたいでその名前の指標とまとめる。どの内訳かは、ほかの報告書と同じ値の欄（field）で選ぶ。
@@ -734,11 +743,11 @@ export const keySlug = (key: string) => crypto.createHash('sha1').update(key).di
 export const torikumiHref = (shisakuId: string, key: string) => `/torikumi/${shisakuId}/${keySlug(key)}/`;
 
 // 取組のページがあれば、その URL（部局票にしか無い施策・取組名の組み合わせには、ページが無い）。
-// key はどの年度の名前でもよい（表記ゆれで名前が変わった取組も、まとめたページへ）
+// key はどの年度の名前でもよい（表記ゆれや名前の変更でまとめた取組も、まとめたページへ）
 let groupHrefs: Map<string, string> | undefined;
 export function torikumiPage(shisakuId: string, key: string) {
-  groupHrefs ??= new Map(getTorikumiGroups().map((g) => [`${g.shisaku.id}|${sameKey(g.key)}`, g.href]));
-  return groupHrefs.get(`${shisakuId}|${sameKey(key)}`) ?? null;
+  groupHrefs ??= new Map(getTorikumiGroups().map((g) => [`${g.shisaku.id}|${torikumiKey(g.shisaku.id, g.key)}`, g.href]));
+  return groupHrefs.get(`${shisakuId}|${torikumiKey(shisakuId, key)}`) ?? null;
 }
 
 // 計画の目次（/mokuji/）の木。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組で、どれも報告書の順。
@@ -837,6 +846,15 @@ export function renameCandidates(g: TorikumiGroup) {
     if (shared.length || sim >= 0.5) out.push({ group: o, after, shared, sim });
   }
   return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
+}
+// 前の年度の報告での名前（書き方の違い・名前の変更でまとめた取組の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度
+export function formerNames(g: YearGroup<TorikumiRow>) {
+  const m = new Map<string, number[]>();
+  for (const y of YEARS) {
+    const r = g.years[y];
+    if (r && r.key !== g.latest.key) m.set(r.name, [...(m.get(r.name) || []), y]);
+  }
+  return [...m].map(([name, years]) => ({ name, years }));
 }
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
@@ -1011,8 +1029,8 @@ export function deptSourcePages(deptName: string) {
 // その年度の取組を、最新の報告での所管部局で数えるための部局（docs/data.md 7.2）
 let currentDept: Map<string, string> | undefined;
 export function currentDeptOf(year: number, shisakuId: string, key: string) {
-  currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${sameKey(g.key)}`, g.dept])));
-  return currentDept.get(`${year}|${shisakuId}|${sameKey(key)}`) || '';
+  currentDept ??= new Map(getTorikumiGroups().flatMap((g) => Object.keys(g.years).map((y) => [`${y}|${g.shisaku.id}|${torikumiKey(g.shisaku.id, g.key)}`, g.dept])));
+  return currentDept.get(`${year}|${shisakuId}|${torikumiKey(shisakuId, key)}`) || '';
 }
 
 // R4の旧部局の課 → R5でその課の取組が最も多く移った先の課（成果指標の担当部課の読み替えに使う）
@@ -1178,7 +1196,7 @@ export function getBudgetRecords() {
   }
   return budgetRecords;
 }
-// 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける（名前は sameKey で比べるので、年度をまたいだまとまりの key で引いてもよい）。
+// 総括報告書の取組に対応する部局票の記載。施策コードと取組名で結び付ける（名前は torikumiKey で比べるので、年度をまたいだまとまりの key で引いてもよい）。
 // 総括報告書で別の施策に再掲された取組は、部局票では元の施策にしか載っていないことがあるので、
 // 同じ年度に同じ名前の取組が部局票に1件だけなら名前で結び付ける（matchedByName）
 let budgetIndex: { exact: Map<string, BukyokuTorikumiRow>; byName: Map<string, BukyokuTorikumiRow | null> } | undefined;
@@ -1187,15 +1205,15 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
     const exact = new Map<string, BukyokuTorikumiRow>();
     const byName = new Map<string, BukyokuTorikumiRow | null>();
     for (const b of getBudgetRecords()) {
-      exact.set(`${b.year}|${b.shisaku_id}|${sameKey(b.key)}`, b);
-      const k = `${b.year}|${sameKey(b.key)}`;
+      exact.set(`${b.year}|${b.shisaku_id}|${torikumiKey(b.shisaku_id, b.key)}`, b);
+      const k = `${b.year}|${torikumiKey(b.shisaku_id, b.key)}`;
       byName.set(k, byName.has(k) ? null : b); // 2件以上あれば null（名前だけでは決められない）
     }
     budgetIndex = { exact, byName };
   }
-  const hit = budgetIndex.exact.get(`${year}|${shisakuId}|${sameKey(key)}`);
+  const hit = budgetIndex.exact.get(`${year}|${shisakuId}|${torikumiKey(shisakuId, key)}`);
   if (hit) return hit;
-  const named = budgetIndex.byName.get(`${year}|${sameKey(key)}`);
+  const named = budgetIndex.byName.get(`${year}|${torikumiKey(shisakuId, key)}`);
   return named ? { ...named, matchedByName: true } : undefined;
 }
 
