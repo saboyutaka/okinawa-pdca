@@ -152,6 +152,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     const closeBtn = '<button type="button" class="imp-close" data-map-close aria-label="閉じる">×</button>';
     pop.hidden = false;
     pop.innerHTML = head + '<p class="imp-sub small secondary">読み込んでいます…</p>' + closeBtn;
+    window.era?.fix(pop); // 西暦で表示しているときは、大きさを測る前に書き換える（lib/era.ts）
     place();
     let body: string;
     try {
@@ -177,6 +178,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       body = '<p class="imp-sub small">中身を読み込めませんでした。通信を確かめて、もう一度マスを押してください。</p>';
     }
     pop.innerHTML = head + body + closeBtn;
+    window.era?.fix(pop);
     place();
     reveal([pop]);
   };
