@@ -1,6 +1,6 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
-// 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①いまの状態（進捗状況と、それを決める活動指標の計画と実績。成果指標のページの頭と同じく、状態の理由まで頭で答える）
+// 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①いまの状態（進捗状況と、それを決める活動指標の計画と実績。施策のページの頭と同じく、状態の理由まで頭で答える）
 // ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算の推移（予算事業と財源も）。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
@@ -15,11 +15,12 @@ import Hierarchy from '../../../components/Hierarchy.astro';
 import HeadKind from '../../../components/HeadKind.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
+import IndicatorShare from '../../../components/IndicatorShare.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, renameCandidates, repostsOf, firstYearOf, formerNames, AMOUNT_KINDS, activityRuns, activityAchievement, activityAchievements, planPath,
+  sectionHref, sourceLink, renameCandidates, repostsOf, firstYearOf, formerNames, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
   isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -66,7 +67,10 @@ const latestAch = activityAchievement(g, t.year);
 const latestAchs = activityAchievements(g, t.year);
 // 活動指標の計画と実績。活動指標が途中で変わった取組は、活動指標ごとに図と表を分ける（新しい活動指標が先）。前の活動指標は畳む（施策ページの「R6まで使われていた成果指標」と同じ）。
 // 目標・実績が2行以上の活動指標（「５回／200名」）は行ごとの run（part）になるので、同じ活動指標（group）のカードを1つの見出しの下に並べる
-const runGroups = activityRuns(g).reduce((m, run) => m.set(run.group, [...(m.get(run.group) ?? []), run]), new Map<number, ActivityRun[]>());
+// 図のカードごとに、id とシェアのボタン（活動指標のシェア用のページ。lib/data.ts の activityShares）を付ける
+const shares = activityShares(g);
+const shareOf = new Map(shares.map((a) => [a.run, a]));
+const runGroups = shares.map((a) => a.run).reduce((m, run) => m.set(run.group, [...(m.get(run.group) ?? []), run]), new Map<number, ActivityRun[]>());
 // 頭に出す最新の報告の行ごとの値（2行以上の活動指標だけ。1行なら t.target・t.actual をそのまま出す）
 const headRuns = runGroups.get(0) ?? [];
 const headParts = headRuns.length > 1 ? headRuns.map((p) => [p, p.years.find((y) => y.y === t.year)!] as const) : null;
@@ -82,7 +86,7 @@ const parenSplit = (raw: string) => {
   const i = raw.search(/[（(]/);
   return i > 0 ? [raw.slice(0, i).trimEnd(), raw.slice(i)] : [raw, ''];
 };
-// 最新の報告の「進捗の判定の根拠」は活動指標の図のすぐ後に県の吹き出しで出し、その年度の PDCA の D には出さない（成果指標のページの「道のり → 県による説明」と同じ並び）
+// 最新の報告の「進捗の判定の根拠」は活動指標の図のすぐ後に県の吹き出しで出し、その年度の PDCA の D には出さない（施策ページの成果指標のカードの「道のり → 県による説明」と同じ並び）
 const latestBasis = tr?.basis;
 // 閉じた年度に出す、その年度にやったことの1文目（部局票が無い年度は総括報告書の活動概要）
 const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].summary);
@@ -249,10 +253,14 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       const curPeriod = periodOf(cols.filter((r) => !r.future).at(-1)!.y);
       const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodOf(cols[k].y) !== periodOf(cols[k - 1].y) && 'sep', periodOf(cols[k].y) !== curPeriod && 'off'];
       const unit = run.unit && <span class="secondary small">（{run.unit}）</span>;
+      const sh = shareOf.get(run)!;
       return (
-        <div class="sticker kcard">
+        <div class="sticker kcard" id={sh.anchor}>
           {!split && i > 0 && <div class="k-span">{runSpan(run)}の活動指標</div>}
-          {split ? <h4 class="k-part">{run.part}{unit}</h4> : <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{unit}</h3>}
+          <div class="k-head">
+            {split ? <h4 class="k-part">{run.part}{unit}</h4> : <h3 class="k-name">{run.indicator || '活動指標の記載なし'}{unit}</h3>}
+            {sh.name && <IndicatorShare path={sh.share} kind="活動指標" name={sh.name} />}
+          </div>
           <KatsudouChart run={run} here={i > 0 ? '' : t.year === LATEST ? 'いまここ' : '最後の報告'} />
           <details open={!run.chart}>
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
@@ -541,6 +549,8 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .kcard { margin-top: 12px; }
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .k-name { margin: 0; }
+  .k-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
+  .k-head > :global(.ishare) { margin-left: auto; }
   .k-group { margin-top: 12px; }
   .k-group > p { margin: 4px 0 0; }
   .k-part { margin: 0; font-size: 1rem; }

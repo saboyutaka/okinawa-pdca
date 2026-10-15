@@ -17,8 +17,8 @@ test('カードの画像のフォントに、カードで使う字が全部入�
   assert.deepEqual(missing, [], `フォントに無い字: ${missing.join('')}（make card-font で切り出し直す）`);
 });
 
-test('施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページには、どれもカードがある', () => {
-  const kinds = /^\/(shisaku|kihon|future|theme|bukyoku|torikumi|shihyou)\/.+\/$/;
+test('施策・基本施策・将来像・くらしのテーマ・部局・主な取組のページと、指標のシェア用のページには、どれもカードがある', () => {
+  const kinds = /^\/(shisaku|kihon|future|theme|bukyoku|torikumi|shihyou|shuyou|katsudou)\/.+\/$/;
   const pages = pagePaths().filter((p) => kinds.test(p));
   const cards = getCards();
   assert.deepEqual(pages.filter((p) => !cards.has(p)), []);

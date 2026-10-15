@@ -699,7 +699,7 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
+  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, .ishare, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .card, .row-list { box-shadow: none !important; }

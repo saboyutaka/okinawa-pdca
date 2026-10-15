@@ -16,14 +16,17 @@ import faviconIco from '../assets/favicon.ico';
 import appleTouchIcon from '../assets/apple-touch-icon.png';
 
 // canonical: false は、どの URL にも出る 404 のページのためのもの（canonical と og:url を出さない）
-// ogType: 'article' は、1つのもの（施策・取組・成果指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページ。一覧・トップ・サイトの説明は 'website'
-interface Props { title?: string; description?: string; canonical?: boolean; ogType?: 'website' | 'article' }
-const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true, ogType = 'website' } = Astro.props;
+// ogType: 'article' は、1つのもの（施策・取組・指標・基本施策・将来像・くらしのテーマ・部局・観光ロードマップ）を見せるページ。一覧・トップ・サイトの説明は 'website'
+// jump はシェア用のページ（lib/routes.ts の SHARE_ROUTES）の、指標を見せる場所の URL。検索に載せず（noindex）、開いた人をすぐにそこへ移す。
+// SNS がリンクのカードを作るときはスクリプトを動かさないので、このページの og:image（指標のカード）が使われる。og:url と canonical もこのページの URL のままにする
+// （Facebook は og:url の URL を読み直すため）
+interface Props { title?: string; description?: string; canonical?: boolean; ogType?: 'website' | 'article'; jump?: string }
+const { title, description = '沖縄県が毎年公表している「沖縄県PDCA実施結果」を、施策ごとに見やすく整理した非公式サイトです。', canonical = true, ogType = 'website', jump } = Astro.props;
 const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | ${SITE.tagline}`;
 const path = Astro.url.pathname;
 // 本番のドメインでのこのページの URL（クエリを除く）。プレビュー（workers.dev）・絞り込みのクエリ付きの URL も、このページとして扱ってもらう
 const url = absUrl(path);
-// SNS のカードの画像。施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページは、そのページの名前と様子を入れた画像（lib/card.ts）、
+// SNS のカードの画像。施策・基本施策・将来像・くらしのテーマ・部局・主な取組のページと指標のシェア用のページは、そのページの名前と様子を入れた画像（lib/card.ts）、
 // ほかのページはサイト共通の画像（lib/seo.ts の OG_IMAGE）
 const card = canonical ? cardMeta(path) : null;
 const ogImage = card
@@ -103,13 +106,17 @@ const HEAD_SCROLL = `(() => {
   if (nav && nav.type !== 'navigate') return;
   scrollTo({ top: head.getBoundingClientRect().top + scrollY - 10, behavior: 'instant' });
 })();`;
-for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
+// シェア用のページの移り先は、スクリプトの data-to に入れる（中身を同じにして、CSP のハッシュを1つにする）。戻るで戻ったときにまた移らないよう replace にする
+const JUMP = 'location.replace(document.currentScript.dataset.to);';
+for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES, ...(jump ? [JUMP] : [])]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
 ---
 <!doctype html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {jump && <script is:inline data-to={jump} set:html={JUMP}></script>}
+    {jump && <meta name="robots" content="noindex" />}
     <meta name="color-scheme" content="light" />
     <script is:inline set:html={THEME_INIT}></script>
     <title>{fullTitle}</title>

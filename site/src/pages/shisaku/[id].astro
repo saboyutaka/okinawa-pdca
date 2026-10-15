@@ -9,6 +9,7 @@ import Stamps from '../../components/Stamps.astro';
 import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import SeikaSays from '../../components/SeikaSays.astro';
+import SeikaPastSays from '../../components/SeikaPastSays.astro';
 import ToriRow from '../../components/ToriRow.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
@@ -16,7 +17,7 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias,
   getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents, torikumiCells,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -51,7 +52,23 @@ const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
 // 報告に無くなった指標（畳んだ中）も、同じ年度の同じ説明ならまとめる
 const sharedSays = (rows: typeof sRows) => (rows.length > 0 && rows[0].latest.explanation && rows.every((r) => r.latest.year === rows[0].latest.year && r.latest.explanation === rows[0].latest.explanation) ? rows[0].latest : null);
 const seikaSays = sharedSays(seikaLatest);
-const seikaPastSays = sharedSays(seikaPast);
+const endedSays = sharedSays(seikaPast);
+// 前の年度の説明も、最新の説明をまとめたときに、どの指標も年度ごとに同じ説明なら1回だけ出す
+const pastKey = (r: (typeof sRows)[number]) => seikaPastSays(r).map((x) => `${x.year}|${x.explanation}`).join('\n');
+const sharedPast = (rows: typeof sRows) => (rows.length > 0 && rows.every((r) => pastKey(r) === pastKey(rows[0])) ? seikaPastSays(rows[0]) : null);
+const pastSays = seikaSays ? sharedPast(seikaLatest) : null;
+const endedPastSays = endedSays ? sharedPast(seikaPast) : null;
+// 成果指標の出典（総括報告書の成果指標の表のページ）。年度ごとに、同じページは1回だけ
+const seikaSources = (y: number) => [...new Map(sRows.flatMap((r) => {
+  const x = r.years[y];
+  const a = x && sourceLink(x.source, x.page);
+  return a ? [[a.href, a] as const] : [];
+})).values()];
+// 印字の名前が同じ指標と並んでいて見分けられないので、ほかの報告書の名前で出している指標（lib/data.ts の SEIKA_ALIASES）
+const aliases = sRows.flatMap((r) => {
+  const ys = YEARS.filter((y) => r.years[y] && seikaAlias(r.years[y]));
+  return ys.length ? [{ ys, printed: r.years[ys[0]].name, from: seikaAlias(r.years[ys[0]])!.from, name: r.name }] : [];
+});
 const { reached } = head;
 // 達成率の札は、成果指標のカードと同じ言い方（lib/data.ts の seikaVerdict。報告書の欄が「達成」「未達成」のものは言葉だけ）
 
@@ -142,13 +159,15 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   <section aria-labelledby="seika">
     <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
     <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
-    {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} />)}
+    {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} past={!pastSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
+    {pastSays && <SeikaPastSays rows={pastSays} year={LATEST} />}
     {seikaPast.length > 0 && (
       <details class="past">
         <summary>{yearLabel(LATEST)}の報告に無い成果指標（{seikaPast.length}）</summary>
-        {seikaPast.map((row) => <SeikaCard row={row} says={!seikaPastSays} />)}
-        {seikaPastSays && <SeikaSays r={seikaPastSays} />}
+        {seikaPast.map((row) => <SeikaCard row={row} says={!endedSays} past={!endedPastSays} />)}
+        {endedSays && <SeikaSays r={endedSays} />}
+        {endedPastSays && endedSays && <SeikaPastSays rows={endedPastSays} year={endedSays.year} />}
       </details>
     )}
   </section>
@@ -251,10 +270,12 @@ const rmShisaku = kankoOfPdcaShisaku(s);
           <li>
             {yearLong(y)}: {a ? <ExtLink href={a.href}>施策検証票（{a.label}）</ExtLink> : '—'}
             {b && <>、<ExtLink href={b.href}>施策総括表（{b.label}）</ExtLink></>}
+            {seikaSources(y).map((c) => <>、<ExtLink href={c.href}>成果指標の総括報告書（{c.label}）</ExtLink></>)}
           </li>
         );
       })}
     </ul>
+    {aliases.map((al) => <p class="small">{al.ys.map(yearLabel).join('・')}の報告書では、成果指標「{al.name}」は「{al.printed}」の名前で、同じ名前のほかの指標と並んで載っています。このサイトでは、{al.from}での名前で出しています。</p>)}
   </section>
 </Base>
 

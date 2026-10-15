@@ -5,7 +5,7 @@
 // 図のスタートと同じく左に、ゴールと同じく右に寄せる。計画値・基準値・目標値は、図と同じく計画期間の最後の報告の値。
 // 図があるときは（open でないとき）、PC の幅で列を図の年度にそろえ（左の列は図の左の余白 --plot-l。scripts/charts.ts の drawSeika が入れる）、
 // 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。
-// open は図を描けない指標（目標が「〜との差の縮小」など）の成果指標のページで、表を開いて出すとき
+// open は図を描けない指標（目標が「〜との差の縮小」など）で、表を開いて出すとき
 import { LATEST, yearLabel, planIndex, withUnit, refText, type SeikaGroup } from '../lib/data.ts';
 
 interface Props { row: SeikaGroup; open?: boolean }

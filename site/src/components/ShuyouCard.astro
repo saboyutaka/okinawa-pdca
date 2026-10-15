@@ -1,5 +1,5 @@
 ---
-// 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①県の見通し ②スタート → いま → ゴールの数字（時間の順） ③道のりの図
+// 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①名前とシェアのボタン・県の見通し ②スタート → いま → ゴールの数字（時間の順） ③道のりの図
 // ④4年間の見通し ⑤年度ごとの表（畳む）。主要指標には達成率と年度ごとの計画値がないので、①は県の見通しにし、図には計画の道すじを引かない。
 // 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに①〜④を並べる（分け方と、図に置く数の読み取りは lib/data.ts の shuyouRows）
 import SeikaChart from './SeikaChart.astro';
@@ -7,12 +7,13 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import ExtLink from './ExtLink.astro';
-import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, sameScale, type Cell, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+import IndicatorShare from './IndicatorShare.astro';
+import { YEARS, LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, sameScale, type Cell, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
 import { oneLine } from '../lib/text.ts';
 
-// id は主要指標の一覧の行から飛ぶ先（lib/data.ts の shuyouAnchor）
-interface Props { row: ShuyouGroup; id: string }
-const { row, id } = Astro.props;
+// カードの id（row.anchor）は、将来像のページ・指標のマップ・計画の目次・シェア用のページから飛ぶ先
+interface Props { row: ShuyouGroupOfKihon }
+const { row } = Astro.props;
 const x = row.latest;
 const yl = yearLabel(x.year);
 const yearsDesc = [...YEARS].reverse();
@@ -35,8 +36,11 @@ const pieces = (c: Cell, p: ShuyouPart) => {
   return !c.unit && p.scale === 1 && p.unit ? [...out, { t: p.unit, n: false }] : out;
 };
 ---
-<article class="sticker scard" id={id}>
-  <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+<article class="sticker scard" id={row.anchor}>
+  <div class="sc-head">
+    <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+    <IndicatorShare path={row.share} kind="主要指標" name={x.name} />
+  </div>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
 
   {row.parts.map((p) => {
@@ -117,7 +121,9 @@ const pieces = (c: Cell, p: ShuyouPart) => {
 
 <style>
   .scard { margin-top: 18px; }
-  .scard h3 { margin-top: 0; }
+  .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
+  .sc-head > :global(.ishare) { margin-left: auto; }
+  .scard h3 { margin: 0; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   /* 男性・女性のように分けた部分は、細い線で区切って名前の見出しを付ける */
   .part + .part { margin-top: 16px; padding-top: 4px; border-top: 2px solid var(--hair); }
