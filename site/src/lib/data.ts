@@ -741,6 +741,18 @@ export function torikumiPage(shisakuId: string, key: string) {
   return groupHrefs.get(`${shisakuId}|${sameKey(key)}`) ?? null;
 }
 
+// 四角を押すと出す1件の中身（components/StatusBar.astro の pop）。key は区分（棒の categories の key）、sub は名前の下の補足（「基本施策 〇〇」）、vals は値の名前と値
+export interface CellItem {
+  key: string;
+  name: string;
+  href: string;
+  sub?: { label: string; name: string; href: string; code: string };
+  vals?: [label: string, value: string][];
+}
+// 施策の最新の報告の主な取組（報告書の順）を、進捗状況・名前・取組のページの四角にする（施策の行と施策のページの頭）
+export const torikumiCells = (s: Shisaku): CellItem[] =>
+  s.torikumi.filter((t) => t.year === LATEST).map((t) => ({ key: statusOf(t), name: t.name, href: torikumiPage(s.id, t.key) ?? torikumiHref(s.id, t.key) }));
+
 // 計画の目次（/mokuji/）の木。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組で、どれも報告書の順。
 // 施策展開は施策の行の tenkai_id・tenkai_name で、番号は施策の番号から最後の「-①」を外したもの（1-(1)-ア）。
 // 基本施策には主要指標（概要版の表の行。男女別などを分けた県の数え方で、名前は概要版の印字）、施策には成果指標を付ける。

@@ -423,6 +423,32 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .termpop a { font-size: 0.875rem; }
 .termpop-close { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
 
+/* 押せる四角の中身の吹き出し（components/StatusBar.astro の pop、scripts/cell-pop.ts）。指標のマップの吹き出し（pages/map.astro の .im-pop）と同じ形で、
+   押した四角の下（画面に入らなければ上）に出し、尾（--ax は四角の真ん中の位置）で四角を指す */
+.cellpop {
+  position: absolute; z-index: 45; width: min(380px, calc(100vw - 16px)); padding: 10px 40px 12px 14px;
+  background: var(--paper); color: var(--ink); border: 2.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--shadow);
+}
+.cellpop::before {
+  content: ''; position: absolute; left: calc(var(--ax, 50%) - 8px); top: -9px; width: 14px; height: 14px; background: var(--paper);
+  border: solid var(--line); border-width: 2.5px 0 0 2.5px; transform: rotate(45deg); border-radius: 3px 0 0 0;
+}
+.cellpop.above::before { top: auto; bottom: -9px; transform: rotate(225deg); }
+.cellpop .cp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin: 0; }
+.cellpop .cp-term { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+.cellpop .cp-year { font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; color: var(--ink-2); }
+/* 主要指標の札は形を付けず、四角と同じ色の四角にする（docs/design.md の2章） */
+.cellpop .cp-sq { display: block; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--tone); box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
+.cellpop .cp-name { margin: 4px 0 0; font-size: 0.9375rem; line-height: 1.6; }
+.cellpop .cp-sub { margin: 2px 0 0; }
+/* 値は「基準値 45.2%」の組を横に流す（吹き出しを小さく保つ） */
+.cellpop .cp-vals { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 6px 0 0; font-size: 0.8125rem; line-height: 1.6; }
+.cellpop .cp-vals div { display: flex; gap: 6px; min-width: 0; }
+.cellpop .cp-vals dt { flex: none; font-weight: 700; color: var(--ink-2); }
+.cellpop .cp-vals dd { margin: 0; overflow-wrap: anywhere; }
+.cellpop .cp-close { position: absolute; top: 4px; right: 4px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
+.cellpop .cp-close:hover { background: var(--sky); }
+
 /* 一覧の絞り込み（scripts/list-filter.ts）。フィルタは一覧の上に並べる */
 .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
 .filters label, .fgroup-label { display: grid; gap: 4px; font-size: 0.875rem; color: var(--ink-2); font-weight: 700; }
@@ -673,7 +699,7 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip { display: none !important; }
+  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .card, .row-list { box-shadow: none !important; }
