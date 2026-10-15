@@ -95,6 +95,7 @@
 /kihon/5-3/
 /kihon/5-4/
 /kihon/5-5/
+/map/
 /mokuji/
 /shihyou/
 /shihyou/1-1-a-1/9396c87b/

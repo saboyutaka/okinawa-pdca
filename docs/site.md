@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルド時に静的 HTML として書き出す（`output: 'static'`、`trailingSlash: 'always'`）。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（取組の年度をまたいだまとまり `getTorikumiGroups`、部局票との結び付け `budgetOf`、予算の重複除去 `amountEntries` など）。
-- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。計画の目次（`/mokuji/`）も同じく、目次の木（名前とリンクだけ。中身は `lib/tree-data.ts`）を `/mokuji/data-<ハッシュ>.json`（控えは `/mokuji/data.json`）から描く（7章）。
+- ブラウザにデータ全体は配らない。例外は取組の検索で、ビルド時に書き出した `/torikumi/data-<ハッシュ>.json`（一覧と絞り込み）と `/torikumi/summary-<ハッシュ>.json`（キーワードで探すときだけ使う「やったこと」。7章）をブラウザで読む（中身は `lib/search-data.ts`）。名前に中身のハッシュが付くのでずっとキャッシュさせ（`public/_headers`）、名前の変わらない控えの `/torikumi/data.json`・`summary.json` は、公開し直した直後に前のページから開いたとき（前のハッシュのファイルはもう無い）だけ読む。計画の目次（`/mokuji/`）も同じく、目次の木（名前とリンクだけ。中身は `lib/tree-data.ts`）を `/mokuji/data-<ハッシュ>.json`（控えは `/mokuji/data.json`）から描く（7章）。指標のマップ（`/map/`）のマスを押したときの中身（名前・ページ・年度ごとの値。中身は `lib/map-data.ts`）も、指標ごとの `/map/<指標>-<ハッシュ>.json`（控えは `/map/<指標>.json`）を押したときに読み、キーワードで探す文字は `/map/search-<ハッシュ>.json`（控えは `/map/search.json`）をキーワードの欄に入ったときに読む（7章）。
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、部局の「前の年度からの変化」が使う。
@@ -28,13 +28,14 @@
 
 ## 3. lib とスクリプト
 
-- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
+- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`map-data.ts`（指標のマップのマスと、押したときに読む JSON）・`map-label.ts`（指標のマップのマス目の読み上げ。ブラウザでも読み込む）、`format.ts`（数の書き方）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
 - `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の1章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
 - `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。例外は、年を西暦で表示するときに読む `/era-<ハッシュ>.js`（`lib/era.ts` の `ERA_JS`。7章）。
   - `charts.ts`: `[data-chart]` の JSON から表示幅に合わせて SVG の図を描く（固定幅の SVG を縮めるとスマホで文字が小さくなりすぎるため）。一覧の行の小さな図 `components/SeikaSpark.astro` は文字が無いのでビルド時に SVG にする。
   - `list-filter.ts`: `form[data-filter]` の入力の name と、一覧の `[data-item]` の `data-<name>` を比べて絞り込む。条件は URL のクエリに残す。キーワード以外の条件は `components/FilterMore.astro` で畳む（開け閉めは `filter-more.ts`）。
   - `torikumi-search.ts`: 取組をさがす（`#tf`）の検索と一覧。検索用のデータを読んで一覧を描く（7章）。`shisaku-trend.ts`: 施策の一覧の頭の「判定の移り変わり」のリンクで絞り込みを変える。`like.ts`: いいねのボタン（`components/Like.astro`）。`tree.ts`: 計画の目次（`/mokuji/`）の木を JSON から描き、「開く深さ」のボタン（押した階層まで木を開く）と、キーワード（施策・取組・成果指標の名前を部分一致でさがし、当たった行とその親だけを残して開き、当たった字に `<mark>` を付ける。言葉は URL の `q` に残す。当たった所は `lib/search.ts` の `matchRanges`）。
+  - `indicator-map.ts`: 指標のマップ（`/map/`）の年度の切り替え・キーワードと絞り込み・マスを押したときの中身。
   - `show-more.ts`: `ul[data-more="N"]` の N 件より後を隠し、「さらに表示」で出す（スクリプトが動かないときは全部見える。残りが2件以下なら畳まない）。
   - `disclosure.ts`（# の行き先の details を開く・押して開いたときの動き）、`print.ts`（印刷の直前に details を開き、ダークをライトにし、`html.printing` でページを紙の幅にそろえる。印刷が終わったら戻す。`charts.ts` より前に読み込み、図は印刷の前後に描き直す）、`scroll-hint.ts`（横にすべらせる帯の端をぼかす）、`table-scroll.ts`（横にすべらせる表の箱 `.table-wrap` を、表が入りきらないときだけ Tab で止まる名前つきの region にする）、`toc.ts`（ページ内の目次 `components/Toc.astro` で、いま読んでいる節に印を付ける。目次が上に貼り付いたら、何のページかの1行を出す。貼り付いたかは、目次の前の目印 `.toc-mark` が画面の上から出たかをスクロールのたびに見る。IntersectionObserver は # のリンクで画面の下から上へ一度に跳ぶと知らせないため）、`tooltip.ts`・`tip.ts`・`terms.ts`・`theme.ts`。
   - `era.ts`: 年の書き方（和暦・西暦）の切り替えボタン（フッター）。書き換えは `lib/era.ts` の `ERA_JS`（別のファイル）が受け持ち、`window.era` を置く。和暦のままの人が押したときは、ここでそのファイルを読み込んでから切り替える。図（`charts.ts`）は描く文字を `window.era.text` で西暦にしてから幅を測り（入れたあとで書き換わると札が重なる）、切り替えたら描き直す。吹き出し（`tip.ts`・`terms.ts`）は中身を入れたら `window.era.fix` で書き換えてから大きさを測る。
@@ -45,7 +46,7 @@
 
 ## 4. ページ
 
-トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/mokuji/`（計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組（最新の年度）を、開け閉めできる `details` の入れ子で並べ（木は HTML に書かず、`scripts/tree.ts` が JSON から描く。7章）、基本施策には主要指標、施策には成果指標を付ける（PC の幅では名前の横に、スマホでは開いた中の行に。同じ指標を2か所に書き、幅で片方だけを出す）。木の中身は `lib/data.ts` の `getPlanTree`。名前のリンクは `summary` の外に置き、`summary` は ▶ の丸だけにする（`summary` の中にリンクを置くと、押せるものが入れ子になる）。入口はいまはフッターだけ）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`。公開した URL は変えない（8章）。
+トップ、`/theme/`（くらしのテーマの一覧とテーマ）、`/future/`（将来像）、`/kihon/<id>/`（基本施策）、`/shisaku/`（施策）、`/torikumi/`（取組の検索と取組。URL は `key` の SHA-1 の先頭8桁）、`/shihyou/`（成果指標の一覧と成果指標。URL は取組と同じく `/shihyou/<施策ID>/<key の SHA-1 の先頭8桁>/`。`lib/data.ts` の `keySlug`・`seikaHref`）、`/bukyoku/`（部局）、`/mokuji/`（計画の目次。将来像 → 基本施策 → 施策展開 → 施策 → 主な取組（最新の年度）を、開け閉めできる `details` の入れ子で並べ（木は HTML に書かず、`scripts/tree.ts` が JSON から描く。7章）、基本施策には主要指標、施策には成果指標を付ける（PC の幅では名前の横に、スマホでは開いた中の行に。同じ指標を2か所に書き、幅で片方だけを出す）。木の中身は `lib/data.ts` の `getPlanTree`。名前のリンクは `summary` の外に置き、`summary` は ▶ の丸だけにする（`summary` の中にリンクを置くと、押せるものが入れ子になる）。入口はいまはフッターだけ）、`/keikaku/`（個別計画。観光ロードマップ）、`/yosan/`（予算と財源、`zaigen/`・`ikkatsu/`）、`/about/`、`/code-for-okinawa/`、`/iken/`、`/map/`（指標のマップ。主要指標・成果指標・活動指標を1マス＝1指標で将来像ごとに並べ、年度ごとの県の区分で色分けする。入口はいまはフッターだけ）。公開した URL は変えない（8章）。
 
 ## 5. くらしのテーマの定義
 
@@ -79,6 +80,7 @@
 - ページの先読みは Speculation Rules（`layouts/Base.astro` の `SPECULATION`）。サイトの中のリンクにマウスを乗せる・押し始めると行き先の HTML を先に取る（いまは Chrome・Edge だけ）。スクリプトは使わない。`<script type="speculationrules">` も CSP のハッシュが要るので、3章の `<script is:inline>` と同じように足す。
 - 動き（[design.md](design.md) の8章）は見た目だけを動かし（transform・opacity などで、レイアウトのやり直しをしない）、読み込んだときの動き（ドーナツ・スタンプ）は CSS だけで動かす（スクリプトの読み込みを待たず、止まっても必ず終わる）。外のライブラリは使わない。足したとき（2026-10）は、CPU を4倍遅くしたスマホ幅と PC 幅で、トップ・施策・将来像・成果指標をさがす・取組をさがすの CLS・LCP・長いタスク・50ms を超えたコマの数を前と比べ、測るたびのぶれの中で変わらないことを確かめた（CLS はどれも 0〜0.012 のまま）。
 - ページから `<head>` に足すものは `<link slot="head" ...>` で渡す（取組をさがすの検索用データ `data-<ハッシュ>.json`・計画の目次のデータの preload）。
+- 指標のマップ（`/map/`）は、約2,000のマス（色と年度ごとの区分の番号、絞り込みの部局・テーマ）だけを HTML に書き（約230KB、gzip で約18KB）、名前と値は指標ごとの JSON にして、マス目にマウスを乗せた・押した・フォーカスしたときに読む（gzip で主要指標 約6KB・成果指標 約59KB・活動指標 約154KB。2026-10-15）。キーワードで探す文字は gzip で約77KB。中身を全部 HTML に書くと1MB を超えるため。
 - 計画の目次（`/mokuji/`）は約2,500行あり、HTML に書くと 750KB（gzip で約87KB）になった。ブラウザのスクリプトはページを読み終えてから動くので、戻る・進むで読み直したとき（bfcache を使わないとき）に、絞り込む前の目次と空の言葉の欄がしばらく見えてから描き直していた。いまは HTML（約12KB）には目次を書かず、名前とリンクだけの JSON（約225KB、gzip で約63KB。`lib/tree-data.ts`）を preload して `scripts/tree.ts` が描く。
   - URL に `q` があれば、さがしてから一度で描く。データが届くまでは目次の場所を画面の高さぶん取り（取組をさがすと同じ）、言葉の欄は URL の `q` で先に埋める。
   - 描き直しで開き方とスクロールの位置が失われないよう、離れるとき（`pagehide`）に `history.state` の `tree` に残し、描いたあとに戻す（データのファイルが変わったら使わない）。
