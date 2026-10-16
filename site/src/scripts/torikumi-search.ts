@@ -154,7 +154,7 @@ function search(form: HTMLFormElement) {
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
-      // ほかの取組とのつながりも、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
+      // 再掲も、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
       if (link && !r[13].includes(link)) return false;
       // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
@@ -188,17 +188,23 @@ function search(form: HTMLFormElement) {
   function renderActive() {
     const chips: HTMLElement[] = [];
     for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
-      if (!input.value) continue;
+      const box = input instanceof HTMLInputElement && input.type === 'checkbox' ? input : null;
+      if (box ? !box.checked : !input.value) continue;
       const i = chips.length;
       const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
-      const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : `「${input.value}」`;
+      const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : box ? box.dataset.text : `「${input.value}」`;
       const b = el('button', 'active-chip', `${label}: ${text}`) as HTMLButtonElement;
       b.type = 'button';
       b.setAttribute('aria-label', `${label} ${text} の条件を外す`);
       const x = el('span', '', '×');
       x.setAttribute('aria-hidden', 'true');
       b.append(x);
-      b.addEventListener('click', () => { input.value = ''; refocus = i; apply(); });
+      b.addEventListener('click', () => {
+        if (box) box.checked = false;
+        else input.value = '';
+        refocus = i;
+        apply();
+      });
       chips.push(b);
     }
     active.hidden = chips.length === 0;
@@ -209,9 +215,11 @@ function search(form: HTMLFormElement) {
     }
   }
 
+  // チェックボックスは、URL の値がその値のときだけ入れる（?link=repost。前にあった ?link=before などは入れない）
   for (const [k, v] of new URLSearchParams(location.search)) {
     const input = form.elements.namedItem(k) as HTMLInputElement | null;
-    if (input) input.value = v;
+    if (input?.type === 'checkbox') input.checked = input.value === v;
+    else if (input) input.value = v;
   }
   // 絞り込み中の札は、URL の条件からデータを待たずに出す（データが届いてから出すと、そのぶん件数と一覧が下にずれる）
   renderActive();

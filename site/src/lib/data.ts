@@ -995,13 +995,11 @@ export function renameCandidates(g: TorikumiGroup) {
   return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
 }
 // 取組のページの頭に出す、ほかの取組とのつながり。前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・再掲（別の施策にも載っている同じ取組）。
-// 取組をさがすの「ほかの取組とのつながり」も、これで決める（ページに出る取組と、絞り込みの件数をそろえるため）
+// 取組をさがすの再掲の絞り込みも、これで決める（ページに出る再掲と、絞り込みの件数をそろえるため）
 export function relatedOf(g: TorikumiGroup) {
   const cs = renameCandidates(g);
   return { before: cs.filter((c) => !c.after), after: cs.filter((c) => c.after), repost: repostsOf(g) };
 }
-export type TorikumiLink = keyof ReturnType<typeof relatedOf>;
-export const torikumiLinks = (g: TorikumiGroup) => (Object.entries(relatedOf(g)) as [TorikumiLink, unknown[]][]).filter(([, xs]) => xs.length > 0).map(([k]) => k);
 // 前の年度の報告での名前（書き方の違い・名前の変更でまとめた取組の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度
 export function formerNames(g: YearGroup<TorikumiRow>) {
   const m = new Map<string, number[]>();

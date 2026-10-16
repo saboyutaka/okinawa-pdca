@@ -5,7 +5,7 @@
 // ファイルの名前に中身のハッシュを入れ（/torikumi/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
 import { createHash } from 'node:crypto';
-import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, torikumiLinks } from './data.ts';
+import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, relatedOf } from './data.ts';
 import { getThemes, themeIdsOf } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
@@ -70,7 +70,7 @@ function build(): SearchData {
       themeIdsOf(g.shisaku.id).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
-      torikumiLinks(g), // ほかの取組とのつながり（前回までの取組・後続の取組・再掲があるか。lib/data.ts の relatedOf）
+      relatedOf(g).repost.length ? ['repost'] : [], // 別の施策にも載っているか（再掲。取組のページの頭と同じ lib/data.ts の relatedOf）
     ]),
     summary: searchSummary().hash,
   };

@@ -47,15 +47,12 @@ test('JSON はすべての取組を、fields の並びで持つ', () => {
   for (const r of d.rows) assert.equal(r.length, d.fields.length);
 });
 
-test('ほかの取組とのつながり（links）は、取組のページの頭に出るもの（relatedOf）と同じ', () => {
+test('再掲（links）は、取組のページの頭に出るもの（relatedOf）と同じ', () => {
   const d = data();
   const groups = getTorikumiGroups();
   const li = d.fields.indexOf('links');
-  d.rows.forEach((r, i) => {
-    const rel = relatedOf(groups[i]);
-    assert.deepEqual(r[li], (['before', 'after', 'repost'] as const).filter((k) => rel[k].length > 0), groups[i].href);
-  });
-  for (const k of ['before', 'after', 'repost']) assert.ok(d.rows.some((r) => (r[li] as string[]).includes(k)), k);
+  d.rows.forEach((r, i) => assert.deepEqual(r[li], relatedOf(groups[i]).repost.length ? ['repost'] : [], groups[i].href));
+  assert.ok(d.rows.some((r) => (r[li] as string[]).length > 0));
 });
 
 test('やったことは data の行と同じ並びで、data が同じ版のやったことの hash を持つ', () => {
