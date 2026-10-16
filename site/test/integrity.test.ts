@@ -483,6 +483,7 @@ test('「R7から」の札（施策のページの取組の行）は、取組を
   assert.ok(tagged.size > 0);
   // 例: R7の報告から載っている「公共交通機関のオープンデータ整備」
   const g = getTorikumiGroups().find((x) => x.shisaku.id === '3-2-d-4' && x.latest.name === '公共交通機関のオープンデータ整備');
-  assert.ok(g?.patterns.includes('new'));
+  assert.ok(g);
+  assert.ok(g.patterns.includes('new'));
   assert.equal(firstYearOf(g), LATEST);
 });
