@@ -5,7 +5,7 @@
 // ファイルの名前に中身のハッシュを入れ（/torikumi/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
 import { createHash } from 'node:crypto';
-import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups } from './data.ts';
+import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, torikumiLinks } from './data.ts';
 import { getThemes, themeIdsOfItem } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
@@ -20,7 +20,7 @@ export interface SearchData {
   fields: string[];
   rows: [
     shisaku_id: string, name: string, section: string, dept: string, statuses: (number | null)[], indicator: string, target: string, actual: string,
-    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[],
+    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[], links: string[],
   ][];
   // 同じビルドの「やったこと」（SearchSummary）の hash。読み込んだやったことが、このデータと同じ版かを確かめる
   summary: string;
@@ -52,7 +52,7 @@ function build(): SearchData {
     depts: Object.fromEntries(DEPTS.map((d) => [d.name, d.slug])), // 部局名 → 部局ページの slug
     shisaku: Object.fromEntries(getShisakuList().map((s) => [s.id, [s.code, s.name, s.shouraizou]])),
     themes: themes.map((t) => [t.id, t.label]), // くらしのテーマ（このサイト独自の分類）
-    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans'],
+    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans', 'links'],
     rows: getTorikumiGroups().map((g) => [
       g.shisaku.id,
       g.latest.name,
@@ -70,6 +70,7 @@ function build(): SearchData {
       themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
+      torikumiLinks(g), // ほかの取組とのつながり（前回までの取組・後続の取組・関連の取組があるか。lib/data.ts の relatedOf）
     ]),
     summary: searchSummary().hash,
   };

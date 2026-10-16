@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, getShuyouGroups, shuyouStatusOfCard,
+  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
@@ -300,7 +300,7 @@ test('活動指標は、書き方の違いと「（累計）」「（内訳）�
   assert.equal(runs('3-3-a-2', 'デジタル技術・サービスを活用した実証実験に対する支援').length, 2);
 });
 
-test('別の施策に移った取組は、関係がありそうな取組に出し、同じ施策の再掲には出さない', () => {
+test('別の施策に移った取組は、前回までの取組・後続の取組に出し、同じ施策の再掲には出さない', () => {
   // R6 まで 3-(9)-ア-③、R7 から 3-(9)-イ-③ に載っている（予算事業「スポーツイベント支援事業」と活動指標が同じ）
   const ev6 = groupOf('3-9-a-3', 'スポーツイベント開催支援');
   const ev7 = groupOf('3-9-b-3', 'スポーツイベント開催の支援');
@@ -489,4 +489,16 @@ test('計画の目次の木の指標は、最新の年度の主要指標（概�
   assert.equal(seika.length, getSeika(LATEST).length);
   assert.equal(new Set(seika.map(({ g }) => g.href)).size, seika.length);
   none(seika.filter(({ s, g }) => g.shisaku.id !== s.shisaku.id || g.latest.year !== LATEST), ({ g }) => g.href);
+});
+
+test('「R7から」の札（施策のページの取組の行）は、取組をさがすの「R7で新しく出た」と同じ取組に付く', () => {
+  const tagged = new Set(getShisakuList().flatMap((s) => torikumiRows(s).filter((r) => PATTERNS.new(statusesOf(r))).map((r) => `${s.id}|${r.key}`)));
+  const filtered = new Set(getTorikumiGroups().filter((g) => g.patterns.includes('new')).map((g) => `${g.shisaku.id}|${g.key}`));
+  assert.deepEqual([...tagged].sort(), [...filtered].sort());
+  assert.ok(tagged.size > 0);
+  // 例: R7の報告から載っている「公共交通機関のオープンデータ整備」
+  const g = getTorikumiGroups().find((x) => x.shisaku.id === '3-2-d-4' && x.latest.name === '公共交通機関のオープンデータ整備');
+  assert.ok(g);
+  assert.ok(g.patterns.includes('new'));
+  assert.equal(firstYearOf(g), LATEST);
 });

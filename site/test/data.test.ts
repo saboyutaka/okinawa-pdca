@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -15,6 +15,11 @@ test('shouraizouName: 将来像の名前は語尾の「を目指して」を外�
   assert.equal(shouraizouName('心豊かで、安全・安心に暮らせる島を目指して'), '心豊かで、安全・安心に暮らせる島');
   assert.equal(shouraizouName('世界に開かれた交流と共生の島'), '世界に開かれた交流と共生の島');
   assert.equal(shouraizouName('〜を目指して進める島'), '〜を目指して進める島');
+});
+
+test('formerText: 前の名前を、その名前で載っていた年度（続く年度は「〜」でまとめる）と並べる', () => {
+  assert.equal(formerText([{ name: '旧名', years: [2022, 2023, 2024] }]), 'R4〜R6の報告では「旧名」');
+  assert.equal(formerText([{ name: 'A', years: [2022] }, { name: 'B', years: [2023, 2024] }]), 'R4の報告では「A」、R5〜R6の報告では「B」');
 });
 
 test('年度の書き方', () => {

@@ -17,7 +17,7 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
   getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents, torikumiCells,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -68,6 +68,11 @@ const seikaSources = (y: number) => [...new Map(sRows.flatMap((r) => {
 const aliases = sRows.flatMap((r) => {
   const ys = YEARS.filter((y) => r.years[y] && seikaAlias(r.years[y]));
   return ys.length ? [{ ys, printed: r.years[ys[0]].name, from: seikaAlias(r.years[ys[0]])!.from, name: r.name }] : [];
+});
+// 名前が変わっても同じ指標として年度をつないだ成果指標（lib/renames.ts の SEIKA_RENAMES）。前の名前は出典に書く
+const renamed = sRows.flatMap((r) => {
+  const fs = seikaFormerNames(r);
+  return fs.length ? [{ name: r.name, fs }] : [];
 });
 const { reached } = head;
 // 達成率の札は、成果指標のカードと同じ言い方（lib/data.ts の seikaVerdict。報告書の欄が「達成」「未達成」のものは言葉だけ）
@@ -275,6 +280,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         );
       })}
     </ul>
+    {renamed.length > 0 && <p class="small">{renamed.map((x) => `成果指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
     {aliases.map((al) => <p class="small">{al.ys.map(yearLabel).join('・')}の報告書では、成果指標「{al.name}」は「{al.printed}」の名前で、同じ名前のほかの指標と並んで載っています。このサイトでは、{al.from}での名前で出しています。</p>)}
   </section>
 </Base>

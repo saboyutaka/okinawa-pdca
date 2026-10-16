@@ -61,6 +61,14 @@ const dataPath = searchDataPath();
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
+    <label data-label="つながり">ほかの取組とのつながり
+      <select name="link">
+        <option value="">すべて</option>
+        <option value="before">前回までの取組がある</option>
+        <option value="after">後続の取組がある</option>
+        <option value="repost">関連の取組（再掲）がある</option>
+      </select>
+    </label>
     <label data-label="個別計画">個別計画
       <select name="plan">
         <option value="">すべて</option>
@@ -75,7 +83,7 @@ const dataPath = searchDataPath();
   <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={SEARCH_DATA_FALLBACK} data-summary-src={searchSummaryPath()} data-summary-fallback={SEARCH_SUMMARY_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <p class="small secondary">
-    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（「子ども」「こども」のような書き方の違いは同じ名前とみなします。R7の中期実施計画で名前が変わった取組などは別の行）。キーワードは「子ども」「子供」「こども」・「障害」「障がい」のどの書き方でも同じように探せます。部局は最新の報告での所管部局です。
+    同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています（「子ども」「こども」のような書き方の違いは同じ名前とみなします。R7の中期実施計画で名前が変わった取組などは別の行。前後の年度で関係のありそうな取組は、取組のページの頭に前回までの取組・後続の取組として出しています）。キーワードは「子ども」「子供」「こども」・「障害」「障がい」のどの書き方でも同じように探せます。部局は最新の報告での所管部局です。
     絞り込みの「遅れ」は「やや遅れ」「大幅遅れ」「未着手」で、「4年とも遅れ」「3年以上遅れ」は4年とも報告にある取組だけを数えています。進捗状況の理由は、取組のページの「年度ごとの活動と検証」にあります。
     観光ロードマップにしか無い取組は、<a href={KANKO_TORIKUMI_HREF}>{KANKO.short}の取組をさがす</a>で見られます。
   </p>

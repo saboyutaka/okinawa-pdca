@@ -47,7 +47,6 @@ const valsOf = (p: ShuyouPart) => {
   {tags.head.length > 1 && (
     <ul class="sc-tags">{tags.head.map((r) => <li><span class="small secondary">{r.name}</span><ShuyouStatusTag r={r} /></li>)}</ul>
   )}
-  {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
   {row.parts.map((p, i) => (
       <div class="part">
         {split && <div class="part-head"><h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>{tags.parts[i].map((r) => <ShuyouStatusTag r={r} />)}</div>}
@@ -73,7 +72,6 @@ const valsOf = (p: ShuyouPart) => {
   /* 概要版の行と部分が対応しない指標の札: 行ごとに名前と札 */
   .sc-tags { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }
   .sc-tags li { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
-  .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   /* 男性・女性のように分けた部分は、細い線で区切って名前の見出しを付ける */
   .part + .part { margin-top: 16px; padding-top: 4px; border-top: 2px solid var(--hair); }
   .part-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin: 10px 0 0; }

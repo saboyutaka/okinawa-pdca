@@ -58,7 +58,19 @@ function search(form: HTMLFormElement) {
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
-    main.append(n, s);
+    // 最新の年度の報告から新しく載った取組（「R7から」）と、最新の年度の報告に無い取組（「R6まで」）の札（components/YearTag.astro と同じ形）
+    const kind = row[11].includes('new') ? 'new' : row[11].includes('ended') ? 'ended' : '';
+    if (kind) {
+      const yl = `R${latestYear - 2018}`;
+      const tag = el('span', `year-tag ${kind}`, kind === 'new' ? `${yl}から` : `${yl}まで`);
+      tag.title = kind === 'new' ? `${yl}の報告から新しく載った取組` : `${yl}の報告まで載っていた取組`;
+      tag.append(el('span', 'sr-only', kind === 'new' ? '新しく載った取組' : '載っていた取組'));
+      const head = el('div');
+      head.append(n, ' ', tag);
+      main.append(head, s);
+    } else {
+      main.append(n, s);
+    }
     // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
     if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
@@ -123,6 +135,7 @@ function search(form: HTMLFormElement) {
     const pat = String(f.get('pat') || '');
     const theme = String(f.get('theme') || '');
     const plan = String(f.get('plan') || '');
+    const link = String(f.get('link') || '');
     const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
     if (words.length && !texts.length) {
@@ -141,6 +154,8 @@ function search(form: HTMLFormElement) {
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
+      // ほかの取組とのつながりも、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
+      if (link && !r[13].includes(link)) return false;
       // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;

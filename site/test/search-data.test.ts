@@ -8,7 +8,7 @@ import {
   searchSummaryJson, searchSummaryHash, searchSummaryPath, SEARCH_SUMMARY_FALLBACK,
   type SearchData, type SearchSummary,
 } from '../src/lib/search-data.ts';
-import { getTorikumiGroups } from '../src/lib/data.ts';
+import { getTorikumiGroups, relatedOf } from '../src/lib/data.ts';
 import { treeDataPath, TREE_DATA_FALLBACK } from '../src/lib/tree-data.ts';
 
 const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
@@ -45,6 +45,17 @@ test('JSON はすべての取組を、fields の並びで持つ', () => {
   const d = data();
   assert.equal(d.rows.length, getTorikumiGroups().length);
   for (const r of d.rows) assert.equal(r.length, d.fields.length);
+});
+
+test('ほかの取組とのつながり（links）は、取組のページの頭に出るもの（relatedOf）と同じ', () => {
+  const d = data();
+  const groups = getTorikumiGroups();
+  const li = d.fields.indexOf('links');
+  d.rows.forEach((r, i) => {
+    const rel = relatedOf(groups[i]);
+    assert.deepEqual(r[li], (['before', 'after', 'repost'] as const).filter((k) => rel[k].length > 0), groups[i].href);
+  });
+  for (const k of ['before', 'after', 'repost']) assert.ok(d.rows.some((r) => (r[li] as string[]).includes(k)), k);
 });
 
 test('やったことは data の行と同じ並びで、data が同じ版のやったことの hash を持つ', () => {

@@ -21,9 +21,6 @@ const cell = (k: number, ...more: (string | false)[]) => [...more, k > 0 && cols
 const span = (q: (typeof periods)[number], ...more: (string | false)[]) => [...more, q !== periods[0] && 'sep', !q.cur && 'off'];
 const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? joinCell(raw) : null);
 const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.years[y].page);
-// R7で名前が少し変わった指標は、前の名前とその年度を表の下に書く
-const renamed = [...Object.values(row.years).filter((r) => r.name !== row.latest.name)
-  .reduce((m, r) => m.set(r.name, [...(m.get(r.name) || []), r.year]), new Map<string, number[]>())];
 ---
 <details open={!aligned}>
   <summary>表で見る</summary>
@@ -46,7 +43,6 @@ const renamed = [...Object.values(row.years).filter((r) => r.name !== row.latest
       </tbody>
     </table>
   </div>
-  {renamed.map(([name, ys]) => <p class="small secondary note">{ys.map(yearLabel).join('・')}の報告での名前は「{name}」です。</p>)}
 </details>
 
 <style>
@@ -77,5 +73,4 @@ const renamed = [...Object.values(row.years).filter((r) => r.name !== row.latest
     .aligned .paren { font-size: 0.75rem; }
     .aligned :global(.chip) { font-size: 0.8125rem; }
   }
-  .note { margin: 6px 0 0; }
 </style>

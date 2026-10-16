@@ -21,7 +21,7 @@ import { kihonDescription } from '../../lib/describe.ts';
 import { kihonHead } from '../../lib/heads.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getShisakuList, getShuyouGroups, getShuyouStatus, sourceLink, planParents,
+  getShisakuList, getShuyouGroups, getShuyouStatus, sourceLink, planParents, formerText,
 } from '../../lib/data.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -37,6 +37,11 @@ const src = k.source && sourceLink(k.source, k.page);
 const shuyou = getShuyouGroups().filter((g) => g.kihon.id === k.id);
 const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
 const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
+// R7で名前が少し変わった主要指標の前の名前（年度のつなぎ方はカードに書かず、出典に注釈として書く。施策のページの成果指標と同じ）
+const renamed = shuyou.map((g) => ({
+  name: g.latest.name,
+  fs: [...Object.values(g.years).filter((r) => r.name !== g.latest.name).reduce((m, r) => m.set(r.name, [...(m.get(r.name) || []), r.year]), new Map<string, number[]>())].map(([name, years]) => ({ name, years })),
+})).filter((x) => x.fs.length > 0);
 // 頭の箱の主要指標の達成状況（最新の年度の概要版。表の順）
 const status = getShuyouStatus().filter((r) => r.kihon_id === k.id);
 // 図の凡例は置かない（図の中に「スタート」「いまここ」「ゴール」の文字がある。施策のページの成果指標と同じ）
@@ -169,6 +174,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
     {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
+    {renamed.length > 0 && <p class="small">{renamed.map((x) => `主要指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
   </section>
 </Base>
 
