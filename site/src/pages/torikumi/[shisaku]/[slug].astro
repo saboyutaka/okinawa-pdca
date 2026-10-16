@@ -10,7 +10,6 @@ import Icon from '../../../components/Icon.astro';
 import Chunk from '../../../components/Chunk.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
-import Sz from '../../../components/Sz.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import HeadKind from '../../../components/HeadKind.astro';
 import NewTag from '../../../components/NewTag.astro';
@@ -51,6 +50,13 @@ const candidates = renameCandidates(g);
 // 別の施策に移った可能性のある取組があるか（この取組の後の年度・前の年度）
 const movedAfter = candidates.some((c) => c.moved && c.after);
 const anyMoved = candidates.some((c) => c.moved);
+// 頭のタイトルの下に、前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・関連の取組（再掲）を並べる
+const rels = [
+  { label: '前回までの取組', cs: candidates.filter((c) => !c.after) },
+  { label: '後続の取組', cs: candidates.filter((c) => c.after) },
+].filter((x) => x.cs.length > 0);
+const candNote = (c: (typeof candidates)[number]) =>
+  `${span(c.group)}${c.moved ? `・別の施策「${c.group.shisaku.name}」` : ''}・${c.shared.length ? `同じ予算事業${c.moved ? 'と活動指標' : ''}` : '名前が似ている'}`;
 // 前の年度の報告での名前（名前が変わった取組も、同じ取組として年度をつないでいる。lib/renames.ts）
 const formers = formerNames(g);
 const reposts = repostsOf(g);
@@ -164,6 +170,22 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   <header class="sticker lift head">
     <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)}>{g.patterns.includes('new') && <NewTag href="/torikumi/?pat=new" />}</HeadKind>
     <h1>{t.name}</h1>
+    {(rels.length > 0 || reposts.length > 0) && (
+      <dl class="rel">
+        {rels.map((x) => (
+          <>
+            <dt>{x.label}</dt>
+            {x.cs.map((c) => <dd><a class="sub-link" href={c.group.href}>{c.group.latest.name}</a><span class="rel-note">（{candNote(c)}）</span></dd>)}
+          </>
+        ))}
+        {reposts.length > 0 && (
+          <>
+            <dt>関連の取組</dt>
+            <dd>{reposts.map((o, i) => <>{i > 0 && '、'}<a class="sub-link" href={o.href}>施策 {o.shisaku.name}</a> <span class="code-no">{o.shisaku.code}</span></>)}<span class="rel-note">の同じ取組（再掲）</span></dd>
+          </>
+        )}
+      </dl>
+    )}
     <div class="meta">
       <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
@@ -453,16 +475,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     </section>
   )}
 
-  {reposts.length > 0 && (
-    <section aria-labelledby="repost">
-      <h2 id="repost">同じ取組が載っている施策</h2>
-      <p class="small secondary">総括報告書では、1つの取組が複数の施策に載っていることがあります（再掲）。</p>
-      <ul class="reposts">
-        {reposts.map((o) => <li><a class="tag" href={o.href}><Sz id={o.shisaku.shouraizou} />施策 {o.shisaku.name} <span class="code-no">{o.shisaku.code}</span></a></li>)}
-      </ul>
-    </section>
-  )}
-
   <ShareBox kind="主な取組" name={t.name} />
 
   <section aria-labelledby="source">
@@ -484,16 +496,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0 || actFormers.length > 0) && (
       <p class="small">{first !== YEARS[0] && `${yearLabel(first)}の報告から載っている取組です。`}{t.year !== LATEST && `${yearLabel(t.year + 1)}の報告には、${movedAfter ? 'この施策に' : ''}この名前の取組はありません（終わったか、名前${movedAfter ? 'や載っている施策' : ''}が変わった可能性があります）。`}{formers.length > 0 && `この取組は、${formerText(formers)}という名前で載っています。`}{actFormers.map((run) => `活動指標「${run.indicator}」は、${formerText(run.formers)}という名前で載っています。`).join('')}年度をまたいだ取組は<a href="/about/#kazoekata">名前で結び付けています</a>（名前が変わったものは、予算事業や活動指標が続いているかで判断）。</p>
     )}
-    {candidates.length > 0 && (
-      <>
-        <p class="small">関係がありそうな取組（この取組の前後の年度に載っている、同じ施策のもの{anyMoved && 'と、予算事業と活動指標が同じ別の施策のもの'}。名前の変更や、取組の分割・統合{anyMoved && '、施策の移動'}の可能性があります）:</p>
-        <ul class="small">
-          {candidates.map((c) => (
-            <li><a href={c.group.href}>{c.group.latest.name}</a>（{span(c.group)}・この取組の{c.after ? '後' : '前'}。{c.moved && `別の施策「${c.group.shisaku.name}」。`}{c.shared.length ? `同じ予算事業「${c.shared[0]}」` : '名前が似ている'}{c.moved && '・同じ活動指標'}）</li>
-          ))}
-        </ul>
-      </>
-    )}
+    {candidates.length > 0 && <p class="small">ページの頭の前回までの取組・後続の取組は、この取組の前後の年度に載っている同じ施策の取組のうち、同じ予算事業を使うものや名前が似ているもの{anyMoved && 'と、予算事業と活動指標が同じ別の施策の取組'}です。名前の変更や、取組の分割・統合{anyMoved && '、施策の移動'}の可能性があります。</p>}
   </section>
 </Base>
 
@@ -503,6 +506,16 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .head > :global(.head-kind) { margin-bottom: -6px; }
   .head h1 { margin: 0; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
+  /* 前回までの取組・後続の取組・関連の取組。PC は 見出し | 取組 の2列、スマホは見出しの下に取組 */
+  .rel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; margin: -4px 0 0; font-size: 0.9375rem; color: var(--ink-2); }
+  .rel dt { grid-column: 1; font-size: 0.8125rem; font-weight: 700; line-height: 1.85; }
+  .rel dd { grid-column: 2; margin: 0; }
+  .rel-note { font-size: 0.8125rem; }
+  @media (max-width: 640px) {
+    .rel { grid-template-columns: minmax(0, 1fr); }
+    .rel dt, .rel dd { grid-column: 1; }
+    .rel dd + dt { margin-top: 4px; }
+  }
   /* 状態（札と4年間）の下に、状態を決める活動指標の計画と実績を置く。スマホでは 札 → 活動指標 → 4年間 の順 */
   .now { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "l years" "act act"; align-items: center; gap: 10px 32px; padding: 12px 16px; }
   .now-l { grid-area: l; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
@@ -619,8 +632,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .typed { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
   .typed li { display: grid; gap: 2px; }
   .typed .type { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-  .reposts { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .reposts .tag { gap: 6px; }
   @media (max-width: 640px) {
     .progress td.num, .progress th.num { min-width: 0; padding-left: 6px; padding-right: 6px; }
     .bud li { grid-template-columns: 5.5em minmax(0, 1fr); }
