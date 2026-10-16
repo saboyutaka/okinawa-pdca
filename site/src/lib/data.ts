@@ -532,6 +532,15 @@ export function getShuyouStatus(): ShuyouStatus[] {
   });
   return shuyouStatus;
 }
+// 基本施策ページの主要指標のカードに置く、最新の年度の概要版の達成状況の札（将来像のページと同じ components/ShuyouTags.astro）。
+// 概要版は男性・女性などを分けた1指標1行なので、カードを部分に分けていて行の数が部分の数と同じなら、報告書の順で部分ごとに当てる
+// （概要版の行の順は付属資料の欄の中の順と同じ）。当てられない行（付属資料の欄が分けられない 2-(8)・3-(7)）は、カードの頭にまとめる
+export function shuyouStatusOfCard(g: Pick<ShuyouGroupOfKihon, 'href' | 'parts'>): { head: ShuyouStatus[]; parts: ShuyouStatus[][] } {
+  const rows = getShuyouStatus().filter((r) => r.href === g.href);
+  return g.parts.length > 1 && rows.length === g.parts.length
+    ? { head: [], parts: rows.map((r) => [r]) }
+    : { head: rows, parts: g.parts.map(() => []) };
+}
 
 // ---------------------------------------------------------------- 施策
 
