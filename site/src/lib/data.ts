@@ -765,6 +765,8 @@ export const PATTERNS = {
   ended: (st) => !st.at(-1), // 最新の年度の報告に無い（終了・名称変更）
 } satisfies Record<string, (st: Statuses) => boolean>;
 export type Pattern = keyof typeof PATTERNS;
+// 取組の年度の順の進捗状況（報告の無い年度は null。PATTERNS に渡す）
+export const statusesOf = (g: YearGroup<TorikumiRow>): Statuses => YEARS.map((y) => (g.years[y] ? statusOf(g.years[y]) : null));
 
 // 全施策の取組を、年度をまたいで1行にまとめたもの。部局は最新年度の所管部局（docs/data.md 7.2）
 export interface TorikumiGroup extends YearGroup<TorikumiRow> {
@@ -781,7 +783,7 @@ let torikumiGroups: TorikumiGroup[] | undefined;
 export function getTorikumiGroups() {
   torikumiGroups ??= getShisakuList().flatMap((s) =>
     torikumiRows(s).map((row) => {
-      const statuses = YEARS.map((y) => (row.years[y] ? statusOf(row.years[y]) : null));
+      const statuses = statusesOf(row);
       return {
         ...row,
         shisaku: s,

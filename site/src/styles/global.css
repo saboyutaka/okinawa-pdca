@@ -335,6 +335,13 @@ a.ttag:hover { background: var(--sky); }
 }
 a.plan-tag:hover { background: var(--sky); }
 .t-main > .plan-tag { justify-self: start; }
+/* 最新の年度の報告から新しく載った取組の札（components/NewTag.astro）。ほかの札（くらしのテーマ・個別計画・一括交付金）と状態・将来像の色と混ぜないよう、サイトの青の地に白い字。少し傾けたシールの形 */
+.new-tag {
+  display: inline-flex; align-items: center; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--pop-ink);
+  background: var(--pop); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 8px; line-height: 1.7; white-space: nowrap; text-decoration: none;
+  transform: rotate(-3deg); vertical-align: 0.1em;
+}
+a.new-tag:hover { filter: brightness(1.12); }
 /* 一括交付金（ソフト）の事後評価の札。沖縄県PDCA の主な取組とは別の評価なので、事業の行とカードに付けて見分ける（砂色。将来像・状態・くらしのテーマ・個別計画の色と混ぜない） */
 .ik-tag {
   display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);

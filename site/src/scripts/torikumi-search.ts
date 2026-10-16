@@ -58,7 +58,18 @@ function search(form: HTMLFormElement) {
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
-    main.append(n, s);
+    // 最新の年度の報告から新しく載った取組の札（components/NewTag.astro と同じ形）
+    if (row[11].includes('new')) {
+      const yl = `R${data!.years[data!.years.length - 1] - 2018}`;
+      const tag = el('span', 'new-tag', `${yl}から`);
+      tag.title = `${yl}の報告から新しく載った取組`;
+      tag.append(el('span', 'sr-only', '新しく載った取組'));
+      const head = el('div');
+      head.append(n, ' ', tag);
+      main.append(head, s);
+    } else {
+      main.append(n, s);
+    }
     // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
     if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));

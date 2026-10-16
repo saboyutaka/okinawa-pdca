@@ -1,0 +1,14 @@
+---
+// 最新の年度の報告から新しく載った取組の札（「R7から」）。どの取組に付けるかは、取組をさがすの「R7で新しく出た」と同じ（lib/data.ts の PATTERNS.new）。
+// 取組をさがすの行は scripts/torikumi-search.ts が同じ形で書く。href を渡すと札をリンクにする（取組のページの頭から、新しく載った取組の一覧へ）
+import { LATEST, yearLabel } from '../lib/data.ts';
+
+interface Props { href?: string }
+const { href } = Astro.props;
+const yl = yearLabel(LATEST);
+---
+{href ? (
+  <a class="new-tag" href={href} title={`${yl}の報告から新しく載った取組をさがす`}>{yl}から<span class="sr-only">新しく載った取組</span></a>
+) : (
+  <span class="new-tag" title={`${yl}の報告から新しく載った取組`}>{yl}から<span class="sr-only">新しく載った取組</span></span>
+)}
