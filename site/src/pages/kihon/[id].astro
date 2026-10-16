@@ -19,7 +19,7 @@ import { kihonDescription } from '../../lib/describe.ts';
 import { kihonHead } from '../../lib/heads.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getShisakuList, shuyouRows, shuyouAnchor, sourceLink, planParents,
+  getShisakuList, getShuyouGroups, sourceLink, planParents,
 } from '../../lib/data.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -32,7 +32,7 @@ const statusKeys = STATUSES.map((x) => x.key);
 const src = k.source && sourceLink(k.source, k.page);
 
 // 主要指標（年度をまたいだ指標ごと）。最新の報告で使われなくなった指標は、施策ページの成果指標と同じく畳んで後ろに置く
-const shuyou = shuyouRows(k.id);
+const shuyou = getShuyouGroups().filter((g) => g.kihon.id === k.id);
 const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
 const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
 // 図を描ける部分があるときだけ凡例を出す（ゴールの丸は、目標値が数で読める部分があるときだけ）
@@ -88,11 +88,11 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       </ul>
     )}
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
-    {shuyouLatest.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
+    {shuyouLatest.map((row) => <ShuyouCard row={row} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
-        <summary>R6まで使われていた主要指標（{shuyouPast.length}）</summary>
-        {shuyouPast.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
+        <summary>{yearLabel(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
+        {shuyouPast.map((row) => <ShuyouCard row={row} />)}
       </details>
     )}
     {drawable && <p class="small secondary">主要指標には、成果指標のような年度ごとの計画値がないため、図に計画の道すじ（点線）はありません。</p>}

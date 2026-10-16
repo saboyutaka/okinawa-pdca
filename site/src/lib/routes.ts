@@ -3,7 +3,7 @@
 // （test/routes.test.ts）・一覧を書き直すスクリプト（scripts/urls.ts）・ビルドの確かめ（astro.config.ts）も、同じものから全ページの URL を作る
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEPTS, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getTorikumiGroups, keySlug } from './data.ts';
+import { DEPTS, getActivityShares, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getShuyouGroups, getTorikumiGroups, keySlug } from './data.ts';
 import { kankoTenkaiList } from './plans.ts';
 import { getThemes } from './themes.ts';
 
@@ -11,13 +11,20 @@ import { getThemes } from './themes.ts';
 export const ROUTES = {
   'bukyoku/[slug]': () => DEPTS.map((dept) => ({ params: { slug: dept.slug }, props: { dept } })),
   'future/[id]': () => getShouraizou().map((v) => ({ params: { id: String(v.id) }, props: { v } })),
+  'katsudou/[shisaku]/[slug]': () => getActivityShares().map((a) => ({ params: { shisaku: a.torikumi.shisaku.id, slug: keySlug(a.key) }, props: { a } })),
   'keikaku/kanko/[tenkai]': () => kankoTenkaiList().map((t) => ({ params: { tenkai: t.id }, props: { t } })),
   'kihon/[id]': () => getKihonList().map((k) => ({ params: { id: k.id }, props: { k } })),
   'shihyou/[shisaku]/[slug]': () => getSeikaGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: keySlug(g.key) }, props: { g } })),
   'shisaku/[id]': () => getShisakuList().map((s) => ({ params: { id: s.id }, props: { s } })),
+  'shuyou/[kihon]/[slug]': () => getShuyouGroups().map((g) => ({ params: { kihon: g.kihon.id, slug: keySlug(g.key) }, props: { g } })),
   'theme/[id]': () => getThemes().map((t) => ({ params: { id: t.id }, props: { t } })),
   'torikumi/[shisaku]/[slug]': () => getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: keySlug(g.key) }, props: { g } })),
 } satisfies Record<string, () => { params: Record<string, string> }[]>;
+
+// シェア用のページ（指標ごとの SNS のカードを持ち、開いた人をその指標を見せるページの場所へ移す。docs/site.md の 4章）。
+// 検索には載せず（noindex）、sitemap.xml にも入れない。公開した URL の一覧（urls.txt）には入れる
+export const SHARE_ROUTES = ['katsudou/[shisaku]/[slug]', 'shihyou/[shisaku]/[slug]', 'shuyou/[kihon]/[slug]'] as const satisfies (keyof typeof ROUTES)[];
+export const sharePaths = () => new Set(SHARE_ROUTES.flatMap((k) => ROUTES[k]().map(({ params }) => routePath(k, params))));
 
 // ページのファイルのパス（'about'・'keikaku/index'・'torikumi/[shisaku]/[slug]'）と params から、ページの URL（/torikumi/1-1-a-1/0123abcd/）を作る
 export function routePath(file: string, params: Record<string, string> = {}) {

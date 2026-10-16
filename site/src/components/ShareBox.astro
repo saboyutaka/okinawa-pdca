@@ -2,7 +2,7 @@
 // 施策・基本施策・主な取組・成果指標・部局・将来像・くらしのテーマのページの終わり（出典の前）に置く、いいねとシェアの枠。
 // 「この〇〇のページが役に立ったら」の言葉と、いいねのボタン（Like.astro）・シェアパネルだけを置く（説明は書かない。県に意見を届ける方法は /iken/ とフッターで案内する）。
 // いいねはページへのもの（施策への賛成ではない）と読めるように、言葉は「ページが役に立ったら」にする。押すと、ボタンの上に運営からのお礼のポップアップが出る。
-// SNS には、そのページの名前と URL（と #okinawa_miraima。lib/iken.ts の HASHTAG）を入れて投稿できる。
+// SNS には、そのページの名前と URL（と #okinawa_miraima。lib/iken.ts の HASHTAG）を入れて投稿でき、アイコンの最後のボタンでページのリンクをコピーできる。
 import Like from './Like.astro';
 import Share from './Share.astro';
 import { shareText } from '../lib/iken.ts';
@@ -14,7 +14,7 @@ const { kind, name } = Astro.props;
   <h2 id="share-h" class="anchor">この{kind}のページが役に立ったら</h2>
   <div class="share-actions">
     <Like />
-    <Share text={shareText(kind, name)} label={`この${kind}を SNS でシェア`} compact />
+    <Share text={shareText(kind, name)} label={`この${kind}を SNS でシェア`} compact copy />
   </div>
 </section>
 

@@ -7,7 +7,7 @@ import path from 'node:path';
 import { cardChars, cardImage, cardMeta, getCards, phrases, textOf } from '../src/lib/card.ts';
 import { cacheFile, pruneCardCache, readCache } from '../src/lib/card-cache.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total } from '../src/lib/heads.ts';
-import { DEPTS, LATEST, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, seikaVerdict } from '../src/lib/data.ts';
+import { DEPTS, LATEST, getActivityShares, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, seikaVerdict } from '../src/lib/data.ts';
 import { getThemes } from '../src/lib/themes.ts';
 import { pagePaths } from '../src/lib/routes.ts';
 
@@ -17,13 +17,20 @@ test('カードの画像のフォントに、カードで使う字が全部入�
   assert.deepEqual(missing, [], `フォントに無い字: ${missing.join('')}（make card-font で切り出し直す）`);
 });
 
-test('施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページには、どれもカードがある', () => {
-  const kinds = /^\/(shisaku|kihon|future|theme|bukyoku|torikumi|shihyou)\/.+\/$/;
+test('施策・基本施策・将来像・くらしのテーマ・部局・主な取組のページと、指標のシェア用のページには、どれもカードがある', () => {
+  const kinds = /^\/(shisaku|kihon|future|theme|bukyoku|torikumi|shihyou|shuyou|katsudou)\/.+\/$/;
   const pages = pagePaths().filter((p) => kinds.test(p));
   const cards = getCards();
   assert.deepEqual(pages.filter((p) => !cards.has(p)), []);
   // ページの無いカードも作らない
   assert.deepEqual([...cards.keys()].filter((p) => !pages.includes(p)), []);
+});
+
+test('活動指標のカードの値は、全角の数字を半角にそろえる（計画が「１施設」、実績が「1施設」と印字されたもの）', () => {
+  const a = getActivityShares().find((x) => x.name === '県有施設ZEB化施設数（累計）');
+  assert.ok(a);
+  const text = textOf(getCards().get(a.share)!.node());
+  assert.ok(text.includes('計画') && !/[０-９]/.test(text), text);
 });
 
 test('カードの画像の URL は、ページの URL の末尾の / を .png にして /og の下に置く', () => {

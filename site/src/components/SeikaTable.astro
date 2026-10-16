@@ -1,41 +1,72 @@
 ---
-// 成果指標1つの年度ごとの値の表（畳む）。道のりの図（SeikaRoute）の「表で見る」。新しい年度が上。
-// open は図を描けない指標（目標が「〜との差の縮小」など）の成果指標のページで、表を開いて出すとき
-import { YEARS, yearLabel, planIndex, withUnit, type SeikaGroup } from '../lib/data.ts';
+// 成果指標1つの年度ごとの値の表（畳む）。道のりの図（SeikaRoute）の「表で見る」。
+// 取組のページの活動指標の表と同じく、図と同じ年度を列にして左から右へ並べる（計画期間ごとに3年。この先の年度は計画値だけ）。
+// 行は 基準値 → 計画値 → 実績値 → 達成率 → 目標値 → 見通し。基準値・目標値は計画期間ごとの値なので、期間の3列をまたいで、
+// 図のスタートと同じく左に、ゴールと同じく右に寄せる。計画値・基準値・目標値は、図と同じく計画期間の最後の報告の値。
+// 図があるときは（open でないとき）、PC の幅で列を図の年度にそろえ（左の列は図の左の余白 --plot-l。scripts/charts.ts の drawSeika が入れる）、
+// 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。
+// open は図を描けない指標（目標が「〜との差の縮小」など）で、表を開いて出すとき
+import { LATEST, yearLabel, planIndex, withUnit, refText, type SeikaGroup } from '../lib/data.ts';
 
 interface Props { row: SeikaGroup; open?: boolean }
 const { row, open = false } = Astro.props;
-const yearsDesc = [...YEARS].reverse().filter((y) => row.years[y]);
+const aligned = !open;
+const unit = row.latest.unit;
+// 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
+const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const r = ys.map((y) => row.years[y]).filter((x) => x != null).pop();
+  return r ? [{ ys, r, cur: ys.includes(row.latest.year) }] : [];
+});
+const cols = periods.flatMap((p) => p.ys.map((y, i) => ({ y, p, first: i === 0, rep: row.years[y] })));
+const cell = (k: number, ...more: (string | false)[]) => ['num', ...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
+const span = (p: (typeof periods)[number], ...more: (string | false)[]) => ['num', ...more, p !== periods[0] && 'sep', !p.cur && 'off'];
+// 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は —
+const planOf = (p: (typeof periods)[number], y: number) => { const v = p.r.plan_raw?.[planIndex(y)]; return v && /[^\s\-－―—‐]/.test(v) ? withUnit(v, unit) : '—'; };
+const rateOf = (r: (typeof cols)[number]['rep']) => (r ? (r.rate != null ? `${r.rate}%` : r.rate_raw || '—') : '—');
 ---
 <details open={open}>
   <summary>表で見る</summary>
   <div class="table-wrap">
-    <table>
-      <caption class="sr-only">{row.name}の年度別の値</caption>
+    <table class:list={['seika-table', aligned && 'aligned']}>
+      <caption class="sr-only">{row.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+      <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
       <thead>
-        <tr><th>報告年度</th><th class="num">基準値</th><th class="num">その年度の計画値</th><th class="num">実績値</th><th class="num">達成率</th><th class="num">目標値</th><th>県の見通し</th></tr>
+        <tr><td></td>{cols.map((c, k) => <th scope="col" class:list={cell(k)}>{yearLabel(c.y)}{!c.rep && c.y > LATEST && <small class="secondary">これから</small>}</th>)}</tr>
       </thead>
       <tbody>
-        {yearsDesc.map((y) => {
-          const r = row.years[y];
-          return (
-            <tr>
-              <th>{yearLabel(y)}<br /><small class="secondary">{y <= 2024 ? '前期' : '中期'}</small></th>
-              <td class="num">{withUnit(r.base_raw, r.unit)}{r.base_fix && <><br /><small class="secondary">部局の検証票の値</small></>}</td>
-              <td class="num">{withUnit(r.plan_raw?.[planIndex(y)], r.unit)}</td>
-              <td class="num">{withUnit(r.actual_raw, r.unit)}<br /><small class="secondary">{r.actual_ref_year}</small></td>
-              <td class="num">{r.rate != null ? `${r.rate}%` : r.rate_raw || '—'}</td>
-              <td class="num">{withUnit(r.target_raw, r.unit)}<br /><small class="secondary">{r.target_year}</small></td>
-              <td>{r.judgement || '—'}</td>
-            </tr>
-          );
-        })}
+        <tr><th scope="row">基準値</th>{periods.map((p) => <td colspan={p.ys.length} class:list={span(p, 'start')}>{withUnit(p.r.base_raw, unit)}{p.r.base_fix && <span class="paren">部局の検証票の値</span>}</td>)}</tr>
+        <tr><th scope="row">計画値</th>{cols.map((c, k) => <td class:list={cell(k)}>{planOf(c.p, c.y)}</td>)}</tr>
+        <tr><th scope="row">実績値</th>{cols.map((c, k) => <td class:list={cell(k)}>{c.rep ? <><b>{withUnit(c.rep.actual_raw, unit)}</b>{refText(c.rep.actual_ref_year) && <span class="paren">{refText(c.rep.actual_ref_year)}</span>}</> : '—'}</td>)}</tr>
+        <tr><th scope="row">達成率</th>{cols.map((c, k) => <td class:list={cell(k)}>{rateOf(c.rep)}</td>)}</tr>
+        <tr><th scope="row">目標値</th>{periods.map((p) => <td colspan={p.ys.length} class:list={span(p, 'goal')}>{withUnit(p.r.target_raw, unit)}<span class="paren">{p.r.target_year}</span></td>)}</tr>
+        <tr><th scope="row">見通し</th>{cols.map((c, k) => <td class:list={cell(k, 'text')}>{c.rep?.judgement || '—'}</td>)}</tr>
       </tbody>
     </table>
   </div>
 </details>
 
 <style>
-  /* 目標値が文章の指標（「〜の縮小」など）は折り返す */
-  td.num { white-space: normal; min-width: 5em; max-width: 14em; }
+  /* 年度が列の表。期間の変わり目に縦の線を引き、最新でない計画期間の列に図の帯と同じ地の色を敷く（取組のページの活動指標の表と同じ） */
+  .seika-table thead th { vertical-align: bottom; }
+  .seika-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
+  .seika-table .sep { border-left: 1.5px solid var(--line); }
+  .seika-table .off { background: var(--bg); }
+  /* 数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。見通しと、文で書かれた基準値・目標値は折り返す */
+  .seika-table td { overflow-wrap: normal; min-width: 4.5em; }
+  .seika-table td.text, .seika-table td.start, .seika-table td.goal { white-space: normal; }
+  .seika-table td.start { text-align: left; }
+  .seika-table td.goal { text-align: right; }
+  .seika-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+  /* 図があるときは、列を図の年度にそろえる。左の列は図の左の余白、右の 8px は図の右の余白。値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。
+     スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+  @media (min-width: 641px) {
+    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
+    .aligned col.lab { width: var(--plot-l, 60px); }
+    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
+    .aligned td.start { text-align: left; padding-left: 8px; }
+    .aligned td.goal { text-align: right; padding-right: 8px; }
+    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
+    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
+    .aligned .paren { font-size: 0.75rem; }
+  }
 </style>
