@@ -335,6 +335,15 @@ a.ttag:hover { background: var(--sky); }
 }
 a.plan-tag:hover { background: var(--sky); }
 .t-main > .plan-tag { justify-self: start; }
+/* 取組が載っている年度の札（components/YearTag.astro）。新しく載った取組（「R7から」）は薄い青、載らなくなった取組（「R6まで」）は灰色がかった青の地に濃い字。
+   ほかの札（くらしのテーマ・個別計画・一括交付金）と状態・将来像の色と混ぜない。少し傾けたシールの形 */
+.year-tag {
+  display: inline-flex; align-items: center; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);
+  background: var(--sky); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 8px; line-height: 1.7; white-space: nowrap; text-decoration: none;
+  transform: rotate(-3deg); vertical-align: 0.1em;
+}
+.year-tag.ended { background: var(--grid); }
+a.year-tag:hover { background: color-mix(in oklab, var(--pop) 30%, var(--paper)); }
 /* 一括交付金（ソフト）の事後評価の札。沖縄県PDCA の主な取組とは別の評価なので、事業の行とカードに付けて見分ける（砂色。将来像・状態・くらしのテーマ・個別計画の色と混ぜない） */
 .ik-tag {
   display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink);
@@ -452,6 +461,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 /* 一覧の絞り込み（scripts/list-filter.ts）。フィルタは一覧の上に並べる */
 .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
 .filters label, .fgroup-label { display: grid; gap: 4px; font-size: 0.875rem; color: var(--ink-2); font-weight: 700; }
+/* セレクトは選択肢のいちばん長い文の幅になるので、ラベルを箱の幅より広げず、セレクトをその中に収める（スマホで箱からはみ出さないように） */
+.filters label { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, auto); }
 .filters select, .filters input[type="search"], .filters input[type="text"] {
   font: inherit; font-size: 0.95rem; font-weight: 400; color: var(--ink); background-color: var(--paper);
   border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-height: 44px; max-width: 100%;
