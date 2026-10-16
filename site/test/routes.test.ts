@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  REDIRECTS_FILE, URLS_FILE, checkUrls, pageFiles, pagePaths, parseRedirects, parseUrlList, routePath, updateUrlList, urlListText, type Redirect,
+  REDIRECTS_FILE, URLS_FILE, checkUrls, pageFiles, pagePaths, parseRedirects, parseUrlList, routePath, sharePaths, updateUrlList, urlListText, type Redirect,
 } from '../src/lib/routes.ts';
-import { getSeikaGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { getActivityShares, getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
 
 test('ページのファイルと params から URL を作る', () => {
   assert.equal(routePath('index'), '/');
@@ -62,10 +62,23 @@ test('ROUTES と src/pages の動的なページが1対1', () => {
   assert.throws(() => pagePaths(pageFiles().filter((f) => f !== 'shisaku/[id]')), /shisaku\/\[id\]/);
 });
 
-test('取組・成果指標のリンク先（href）は、どれもページの URL', () => {
+test('取組・指標のリンク先（href。指標はページの中の id）とシェア用のページの URL は、どれもページの URL', () => {
   const paths = new Set(pagePaths());
-  const bad = [...getTorikumiGroups(), ...getSeikaGroups()].map((g) => g.href).filter((h) => !paths.has(h));
+  const page = (h: string) => h.split('#')[0];
+  const hrefs = [...getTorikumiGroups(), ...getSeikaGroups(), ...getShuyouGroups(), ...getActivityShares()].map((g) => page(g.href));
+  const shares = [...getSeikaGroups(), ...getShuyouGroups(), ...getActivityShares()].map((g) => g.share);
+  const bad = [...hrefs, ...shares].filter((h) => !paths.has(h));
   assert.deepEqual(bad.slice(0, 5), [], `${bad.length} 件`);
+  // 指標のリンク先は、どれもページの中の id
+  assert.deepEqual([...getSeikaGroups(), ...getShuyouGroups(), ...getActivityShares()].filter((g) => !/#[\w-]+$/.test(g.href)).slice(0, 5), []);
+});
+
+test('シェア用のページは、成果指標・主要指標・活動指標のものだけで、ほかのページと重ならない（sitemap.xml に入れない）', () => {
+  const share = sharePaths();
+  assert.equal(share.size, getSeikaGroups().length + getShuyouGroups().length + getActivityShares().length);
+  assert.deepEqual([...share].filter((p) => !/^\/(shihyou|shuyou|katsudou)\/[^/]+\/[0-9a-f]{8}\/$/.test(p)), []);
+  const paths = new Set(pagePaths());
+  assert.deepEqual([...share].filter((p) => !paths.has(p)), []);
 });
 
 test('公開した URL の一覧（urls.txt）にある URL は、どれもページか転送（public/_redirects）で開ける', (t) => {

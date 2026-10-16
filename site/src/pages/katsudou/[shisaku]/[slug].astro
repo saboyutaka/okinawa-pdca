@@ -1,0 +1,17 @@
+---
+// 活動指標のシェア用のページ（docs/site.md の 4章）。SNS のカードは計画と実績（lib/card.ts の katsudouCard）で、開いた人は取組のページのその活動指標の図へ移る
+import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../../lib/routes.ts';
+import Base from '../../../layouts/Base.astro';
+import ShareJump from '../../../components/ShareJump.astro';
+import { katsudouHead } from '../../../lib/describe.ts';
+
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['katsudou/[shisaku]/[slug]'];
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { a } = Astro.props;
+---
+<Base {...katsudouHead(a)} ogType="article" jump={a.href}>
+  <ShareJump kind="活動指標" name={a.name} to={a.href} place={`主な取組「${a.torikumi.latest.name}」のページ`} />
+</Base>

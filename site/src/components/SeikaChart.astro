@@ -4,15 +4,15 @@
 import { YEARS, LATEST, yearLabel, planIndex, withUnit, refText, type ChartRow } from '../lib/data.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
 
-// drawable を渡すと、図を描くかをそれで決める（主要指標は目標値が文でも描く）。aligned は、すぐ下の表の列を図の年度にそろえるとき（主要指標）
-interface Props { row: ChartRow; unit?: string; drawable?: boolean; aligned?: boolean }
-const { row, unit = '', aligned } = Astro.props;
+// drawable を渡すと、図を描くかをそれで決める（主要指標は目標値が文でも描く）
+interface Props { row: ChartRow; unit?: string; drawable?: boolean }
+const { row, unit = '' } = Astro.props;
 const years: SeikaChartYear[] = YEARS.filter((y) => row.years[y]).map((y) => {
   const r = row.years[y];
   return { y, actual: r.actual, actual_raw: r.actual_raw, ref: refText(r.actual_ref_year), plan: r.plan || [], plan_raw: r.plan_raw || [], target: r.target, target_raw: r.target_raw, target_year: r.target_year, base: r.base, base_raw: r.base_raw };
 });
 const drawable = Astro.props.drawable ?? (years.some((r) => r.actual != null) && years.some((r) => r.target != null));
-const data = JSON.stringify({ unit, years, latest: row.latest.year === LATEST, aligned } satisfies SeikaData).replace(/</g, '\\u003c');
+const data = JSON.stringify({ unit, years, latest: row.latest.year === LATEST } satisfies SeikaData).replace(/</g, '\\u003c');
 const periodText = (r: SeikaChartYear) => `${r.y <= 2024 ? '前期' : '中期'}は基準値 ${withUnit(r.base_raw, unit)} から目標値 ${withUnit(r.target_raw, unit)}（${r.target_year}）まで`;
 const periods = [years.filter((r) => r.y <= 2024).pop(), years.filter((r) => r.y >= 2025).pop()].filter((r) => r != null);
 // 主要指標には年度ごとの計画値がない（plan_raw が空）。目標値が文の成果指標は計画値が「―」

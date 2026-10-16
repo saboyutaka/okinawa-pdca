@@ -5,8 +5,8 @@ import {
   yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
-  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, valuePieces,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -232,10 +232,11 @@ test('JUDGE_TRENDS: 最新の年度まで3年続けて C〜G', () => {
   assert.deepEqual(trendsOf(null, null, 'C', 'C'), []);
 });
 
-test('取組・成果指標のページの URL は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
+test('取組のページ・成果指標のシェア用のページの URL と成果指標のカードの id は、名前の key の SHA-1 の先頭8桁（変えると URL が変わる）', () => {
   assert.equal(keySlug('abc'), 'a9993e36');
   assert.equal(torikumiHref('1-1-a-1', 'abc'), '/torikumi/1-1-a-1/a9993e36/');
-  assert.equal(seikaHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
+  assert.equal(seikaShareHref('1-1-a-1', 'abc'), '/shihyou/1-1-a-1/a9993e36/');
+  assert.equal(seikaHref('1-1-a-1', 'abc'), '/shisaku/1-1-a-1/#seika-a9993e36');
 });
 
 test('seikaNameMatches: 部局票の「対応する成果指標」は、空白・記号の違いを無視し、含む・含まれるか、指標の名前の字が同じ順で出てくれば当たり', () => {
@@ -349,20 +350,6 @@ test('sameScale: 1つの指標の値の位を、いちばん小さい位にそ�
   assert.deepEqual(sameScale(['1,084.0万人', '2,941.4万人', '2,715.8万人']), ['1,084.0万人', '2,941.4万人', '2,715.8万人']);
   assert.deepEqual(sameScale(['3兆円', '5,000万t']), ['3兆円', '5,000万t']);
   assert.deepEqual(sameScale(['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']), ['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']);
-});
-
-test('valuePieces: 数と位・単位だけの値を、数字と位・単位に分ける（単位の無い数には単位を添える。文の値は null）', () => {
-  const p = (text: string, unit?: string) => valuePieces(text, unit)?.map((x) => (x.num ? x.t : `<${x.t}>`)).join('');
-  assert.equal(p('32,885億円'), '32,885<億円>');
-  assert.equal(p('3兆2,885億円'), '3<兆>2,885<億円>');
-  assert.equal(p('1,032万t-CO₂', '万t-CO₂'), '1,032<万t-CO₂>'); // 単位が書かれていれば添えない
-  assert.equal(p('11.1', '%'), '11.1<%>');
-  assert.equal(p('△0.5', 'ポイント'), '△0.5<ポイント>');
-  assert.equal(p('１２．５％'), '12.5<％>'); // 全角の数字は半角に
-  assert.equal(p('1,032万', '万t'), '1,032<万>'); // 位だけの数には単位を添えない
-  assert.equal(p('男性72.11年', '年'), undefined);
-  assert.equal(p('可能な限り減少させる'), undefined);
-  assert.equal(p('—'), undefined);
 });
 
 test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果指標の達成率の区分にそろえる', () => {

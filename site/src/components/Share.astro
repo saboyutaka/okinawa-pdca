@@ -2,29 +2,43 @@
 // SNS のシェアパネル。「シェア」の文字と、Facebook・LINE・X・Threads・Bluesky のアイコンだけのボタンを1つの枠にまとめる。
 // X・Threads・Bluesky は #okinawa_miraima（lib/iken.ts の HASHTAG）を付けた投稿画面を開く（lib/share.ts）。
 // アイコンだけなので、名前は読み上げ用の文字と、マウスを乗せたときのツールチップ（scripts/tooltip.ts）で出す。
-// 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない（読み上げの「別のタブで開きます」は付ける）。
+// 外のサイトを別のタブで開くが、パネルとしてまとめるため ExtLink の外部リンクの印は付けない。ツールチップは「〇〇 でシェア」だけにし、
+// 「別のタブで開きます」は読み上げの文字にだけ付ける。
 // link="page" は見ているページ、link="top" はサイトのトップの URL を、ビルド時に本番のドメイン（lib/links.ts の SITE.url）で入れる。
+// path を渡すと、そのページ（指標のシェア用のページ。components/ShareMenu.astro）の URL を入れる。
+// copy を付けると、アイコンの最後にリンクのコピーのボタン（リンクの形。押すと2秒チェックの印になる。scripts/copy-link.ts）を足す。
+// スクリプトが動かないときは出さない。指標のシェアの枠（ShareMenu.astro）はリンクの欄とコピーのボタンを別に持つので付けない。
 // compact はシェアの枠（ShareBox.astro）用。スマホ（520px 以下）では、いいねと1行に並ぶように「シェア」の文字を隠してアイコンだけにする。
 import { SNS, shareHref } from '../lib/share.ts';
 import { SHARE_ICONS } from '../lib/share-icons.ts';
 import { absUrl } from '../lib/seo.ts';
 
-interface Props { text?: string; link?: 'page' | 'top'; label?: string; compact?: boolean }
-const { text = '', link = 'page', label = 'SNS でシェア', compact = false } = Astro.props;
-const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
+interface Props { text?: string; link?: 'page' | 'top'; path?: string; label?: string; compact?: boolean; copy?: boolean }
+const { text = '', link = 'page', path, label = 'SNS でシェア', compact = false, copy = false } = Astro.props;
+const url = absUrl(path ?? (link === 'top' ? '/' : Astro.url.pathname));
 ---
-<div class:list={['share-panel', { compact }]} role="group" aria-label={label}>
+<div class:list={['share-panel', { compact }]} role="group" aria-label={label} data-copy-box={copy || undefined}>
   <span class="share-label" aria-hidden="true">シェア</span>
   <ul class="share-list">
     {SNS.map((s) => (
       <li>
-        <a class="share-ic" href={shareHref(s.id, { text, url })} target="_blank" rel="noopener" data-tip-value={`${s.label} でシェア`} data-tip-label="別のタブで開きます">
+        <a class="share-ic" href={shareHref(s.id, { text, url })} target="_blank" rel="noopener" data-tip-value={`${s.label} でシェア`}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d={SHARE_ICONS[s.id]} /></svg>
           <span class="sr-only">{s.label} でシェア（別のタブで開きます）</span>
         </a>
       </li>
     ))}
+    {copy && (
+      <li class="share-copy-li">
+        <button type="button" class="share-ic share-copy" data-copy={url} data-tip-value="リンクをコピー">
+          <svg class="ic-link" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M10 13.5a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6" /><path d="M14 10.5a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" /></svg>
+          <svg class="ic-done" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          <span class="sr-only">リンクをコピー</span>
+        </button>
+      </li>
+    )}
   </ul>
+  {copy && <span class="sr-only" role="status"></span>}
 </div>
 
 <style>
@@ -39,11 +53,21 @@ const url = absUrl(link === 'top' ? '/' : Astro.url.pathname);
   .share-ic:hover { background: var(--sky); }
   .share-ic:active { transform: translate(1px, 1px); }
   .share-ic svg { fill: currentColor; }
+  /* リンクのコピーのボタン。線の絵（リンクの形とチェックの印）。コピーしたあいだはチェックの印にし、地の色を付ける */
+  button.share-ic { border: 0; padding: 0; font: inherit; cursor: pointer; }
+  .share-copy svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .share-copy .ic-done, .share-copy[data-copied] .ic-link { display: none; }
+  .share-copy[data-copied] .ic-done { display: block; }
+  .share-copy[data-copied] { background: var(--sky); }
+  :global(html:not(.js)) .share-copy-li { display: none; }
   /* 320px 前後の狭い画面では、折り返したアイコンの列が枠に収まるように丸を小さくする */
   @media (max-width: 360px) { .share-ic { width: 38px; height: 38px; } }
-  /* 「シェア」の文字は aria-hidden（読み上げは枠の aria-label）なので、隠しても読み上げは変わらない */
+  /* 「シェア」の文字は aria-hidden（読み上げは枠の aria-label）なので、隠しても読み上げは変わらない。
+     シェアの枠（compact）は、いいね（Like.astro）と1行に並ぶように、丸を小さくしてあいだを詰める（アイコンが6つになるため） */
   @media (max-width: 520px) {
     .compact { padding: 3px; }
     .compact .share-label { display: none; }
+    .compact .share-list { gap: 2px; }
+    .compact .share-ic { width: 38px; height: 38px; }
   }
 </style>

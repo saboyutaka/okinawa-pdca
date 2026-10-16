@@ -39,7 +39,7 @@ test('BOSHU: いちばん新しい募集が、これまでの募集の一覧の�
   for (const x of BOSHU_PAST) assert.ok(x.start <= x.end, `${x.year} の募集の期間`);
 });
 
-test('shareText: 種類と名前から投稿の本文を作る（長い名前は shortName で切る）', () => {
-  assert.equal(shareText('施策', '離島の振興'), '施策「離島の振興」について');
-  assert.equal(shareText('部局', 'あ'.repeat(41)), `部局「${'あ'.repeat(39)}…」について`);
+test('shareText: 種類と名前から投稿の本文を作り、サイトの名前を添える（長い名前は shortName で切る）', () => {
+  assert.equal(shareText('主要指標', '二酸化炭素排出量'), '主要指標「二酸化炭素排出量」 | おきなわ、みらい、いま');
+  assert.equal(shareText('部局', 'あ'.repeat(41)), `部局「${'あ'.repeat(39)}…」 | おきなわ、みらい、いま`);
 });

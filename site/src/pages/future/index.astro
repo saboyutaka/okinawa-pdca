@@ -18,7 +18,7 @@ const tori = getTorikumi(LATEST);
 const seika = getSeika(LATEST);
 const shuyou = getShuyouStatus();
 const statusKeys = STATUSES.map((s) => s.key);
-// 基本施策ごとに、名前の後ろに主要指標の達成状況の札（「後退 -6%」。報告書の順。components/ShuyouTags.astro）を置き、
+// 基本施策ごとに、名前の下に主要指標の名前と達成状況の札（「後退 -6%」。components/ShuyouTags.astro）を報告書の順に1行ずつ置き、
 // 右（スマホは下）に主な取組の進捗状況の内訳の細い棒を控えめに置く（数は出さない。区分と数は棒の区間にマウスを乗せる・タップすると出る）。
 // 札は県の言葉で読めるので、凡例・「達成率」の説明は置かない。何の棒かは、カードの頭に1回だけ書く
 const visions = getShouraizou().map((v) => {
@@ -53,7 +53,14 @@ const visions = getShouraizou().map((v) => {
         <ul class="k-rows">
           {v.rows.map((k) => (
             <li class="k-r">
-              <div class="k-n"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span> <ShuyouTags items={k.shuyou} /></div>
+              <div>
+                <div class="k-n"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></div>
+                {k.shuyou.length > 0 && (
+                  <ul class="k-sy">
+                    {k.shuyou.map((r) => <li><a class="s-name name-link" href={r.href}>{r.name}</a> <ShuyouTags items={[r]} named={false} /></li>)}
+                  </ul>
+                )}
+              </div>
               <div class="k-bar"><span class="k-bl" aria-hidden="true">主な取組</span><StatusBar categories={STATUSES} counts={k.tori} context={`${k.name} 主な取組 `} size="mini" /></div>
             </li>
           ))}
@@ -80,20 +87,25 @@ const visions = getShouraizou().map((v) => {
   /* 帯は将来像のページへのリンク。名前のリンク（.name-link）と同じく、名前に薄い下線を付け、乗せると黒く太くする（番号の印には付けない） */
   .v-nm { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
   .v-h .sz-ribbon:hover .v-nm { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
-  /* 基本施策の行。PC は「名前と主要指標の札 | 主な取組の細い棒」の2列で、何の棒かは頭の行の列の見出しに1回だけ書く。
-     名前が何行にも折り返す幅では棒を名前の下に置き、見出しが棒から遠くなるので、棒ごとに左へ小さく「主な取組」と添える（トップの将来像の行と同じ字） */
+  /* 基本施策の行。PC は「名前と主要指標 | 主な取組の細い棒」の2列で、何の棒かは頭の行の列の見出しに1回だけ書く。棒は基本施策の名前の行の高さに置く。
+     名前が何行にも折り返す幅では棒を主要指標の下に置き、見出しが棒から遠くなるので、棒ごとに左へ小さく「主な取組」と添える（トップの将来像の行と同じ字） */
   .v-kihon { margin-top: 16px; padding-bottom: 8px; }
-  .k-head, .k-r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%); gap: 6px 20px; align-items: center; }
+  .k-head, .k-r { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 30%); gap: 6px 20px; }
   .k-head { margin: 0 0 4px; align-items: baseline; }
   .v-kt { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
   .k-hb { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
   .k-rows { list-style: none; margin: 0; padding: 0; }
-  .k-r { padding: 12px 0; }
+  .k-r { align-items: start; padding: 12px 0; }
   .k-r + .k-r { border-top: 1.5px solid var(--hair); }
   .k-n { font-weight: 700; line-height: 1.6; }
   @media (min-width: 721px) { .k-n { font-size: 1.0625rem; } }
+  /* 主要指標の名前は、将来像のページの基本施策の行（components/KihonRow.astro）と同じ字にする */
+  .k-sy { list-style: none; margin: 4px 0 0; padding: 0; }
+  .k-sy li { line-height: 1.7; }
+  .s-name { font-size: 0.9375rem; font-weight: 400; }
   /* 主な取組は控えめに、細い棒だけ */
   .k-bar :global(.sbar) { height: 10px; padding: 1px; border-width: 1px; gap: 1px; }
+  @media (min-width: 721px) { .k-bar { margin-top: 8px; } }
   .k-bl { display: none; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
   @media (max-width: 720px) {
     .k-head { display: block; }

@@ -33,7 +33,6 @@ export interface SeikaData {
   unit: string;
   years: SeikaChartYear[];
   latest: boolean; // 最新の報告にある指標か（無ければ「いまここ」を「最後の報告」にする）
-  aligned?: boolean; // すぐ下の表の列を図の年度にそろえる（主要指標の components/ShuyouTable.astro）
 }
 export interface KatsudouChartYear {
   y: number; // 報告年度
@@ -280,7 +279,7 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
 // 前期と中期で基準値・目標値が変わるので、最新の報告の計画期間でない方は地の色の帯に灰色の点線で描く。
 // 主要指標（基本施策のページ）のように年度ごとの計画値がない指標は、道すじを引かず、ゴールの丸（目標値）を計画期間の最後の年度に置く。
 // 数字はカードの「スタート → いま → ゴール」に出しているので、図の中の文字は「スタート」「ゴール」「いまここ」だけにし、ほかの印と重ならない場所に置く
-function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest, aligned }: SeikaData) {
+function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaData) {
   const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
   const last = years[years.length - 1];
   // 計画期間ごとの最後の報告（r。基準値・計画値・目標値はこれを使う）と、最新の報告の計画期間か（cur）
@@ -299,11 +298,12 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest, aligned 
   const ticks = niceTicks(lo, hi, 4);
   lo = Math.min(lo, ticks[0]);
   hi = Math.max(hi, ticks[ticks.length - 1]);
-  // スマホ幅では低くして、カード1枚が1画面に収まるようにする
-  const H = W < 480 ? 200 : 240;
-  // 下の表の列を図の年度にそろえるときは、左の余白を表の行の見出し（「基準値」）が入る幅より狭くせず、カードに --plot-l で渡す（drawKatsudou と同じ）
-  const { svg, textW, m, ih, sw, slots, x, y, left } = yearFrame(wrap, W, H, W < 480 ? 44 : 50, periods, ticks, lo, hi, unit, aligned ? 60 : 0);
-  if (aligned) wrap.parentElement?.style.setProperty('--plot-l', `${m.l}px`);
+  // 施策ページのカードで値の1行の次に見る図なので、取組のページの活動指標の図に近い高さにする（スマホ幅はさらに低く）
+  const H = W < 480 ? 170 : 190;
+  // 左の余白は、下の「表で見る」の表の行の見出し（「基準値」など）が入る幅より狭くしない。決まった余白は親に --plot-l で渡し、
+  // 表の列を図の年度にそろえる（components/SeikaTable.astro の .aligned。取組のページの活動指標の図と同じ）
+  const { svg, textW, m, ih, sw, slots, x, y, left } = yearFrame(wrap, W, H, 40, periods, ticks, lo, hi, unit, 52);
+  wrap.parentElement?.style.setProperty('--plot-l', `${m.l}px`);
   const line = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px},${py}`).join('');
   const { mark, markPath, place } = placer(W, 24, m.t + ih + 2);
 

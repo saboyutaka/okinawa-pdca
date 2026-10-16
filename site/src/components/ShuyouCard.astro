@@ -1,52 +1,87 @@
 ---
-// 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①県の見通し（1行）と「スタート → いま → ゴール」の数字（ShuyouGoal）
-// ②道のりの図 ③そのすぐ下に、年度を列にして図にそろえた表（畳む。ShuyouTable） ④県による説明（吹き出し。ShuyouSays）。
-// 主要指標には達成率と年度ごとの計画値がないので、①は県の見通しにし、図には計画の道すじを引かない。
-// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに①〜③を並べる（分け方と、図に置く数の読み取りは lib/data.ts の shuyouRows）
+// 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①名前とシェアのボタン ②県の見通し（1行） ③スタート → いま → ゴールの値（1行）
+// ④道のりの図とそのすぐ下の「表で見る」（ShuyouTable） ⑤県による説明（吹き出し。ShuyouSays）。
+// 主要指標には達成率と年度ごとの計画値がないので、②は県の見通しにし、図には計画の道すじを引かない。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
+// 中期実施計画で基準値・目標値が新しくなったことは、表の計画期間ごとの基準値・目標値で見られるので書かない（成果指標と同じ）。
+// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに②〜④を並べる（分け方と、図に置く数の読み取りは lib/data.ts の shuyouRows）
 import SeikaChart from './SeikaChart.astro';
-import ShuyouGoal from './ShuyouGoal.astro';
 import ShuyouTable from './ShuyouTable.astro';
 import ShuyouSays from './ShuyouSays.astro';
+import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { YEARS, LATEST, yearLabel, type ShuyouGroup } from '../lib/data.ts';
+import ShareMenu from './ShareMenu.astro';
+import { LATEST, yearLabel, refText, withUnit, sameScale, toneOfJudgement, judgesOf, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
 
-// id は主要指標の一覧の行から飛ぶ先（lib/data.ts の shuyouAnchor）。says はこの指標についての評価検証報告書の県の説明
-interface Props { row: ShuyouGroup; id: string; says?: string }
-const { row, id, says } = Astro.props;
+// カードの id（row.anchor）は、将来像のページ・指標のマップ・計画の目次・シェア用のページから飛ぶ先。says はこの指標についての評価検証報告書の県の説明
+interface Props { row: ShuyouGroupOfKihon; says?: string }
+const { row, says } = Astro.props;
 const x = row.latest;
 const yl = yearLabel(x.year);
 const split = row.parts.length > 1;
-// 計画期間をまたいで基準値・目標値が変わった（R6→R7）
-const prevRow = [...YEARS].reverse().filter((y) => y < x.year).map((y) => row.years[y]).find((r) => r && (r.year <= 2024) !== (x.year <= 2024));
-// 新しくなったのはスタート（基準値）・ゴール（目標値）のどちらか。どちらも同じ指標もある（欄の中の改行・全角半角の違いは同じとみなす）
-const sameText = (a: string | null | undefined, b: string | null | undefined) => (a || '').normalize('NFKC').replace(/\s/g, '') === (b || '').normalize('NFKC').replace(/\s/g, '');
-const renewed = prevRow && [!sameText(prevRow.base_raw, x.base_raw) && 'スタート', !sameText(prevRow.target_raw, x.target_raw) && 'ゴール'].filter(Boolean).join('と');
+// 図の位が1でない指標（万t-CO₂ など）は、位の書かれていない数に単位を添えない（どの位の数か分からないため）
+const unitOf = (p: ShuyouPart) => (p.scale === 1 ? p.unit : '');
+// 欄の後ろのかっこ（基準年・「速報値」など）は、外側のかっこを外して値の後ろに小さく出す
+const unparen = (s: string) => s.replace(/^\s*[（(]/, '').replace(/[）)]\s*$/, '');
+// スタート → いま → ゴールの値。位は1つの指標の中でそろえる（印字は「3兆2,885億円 → 34,516億円」のようにまちまち。lib/data.ts の sameScale）
+const valsOf = (p: ShuyouPart) => {
+  const now = p.latest;
+  const [b, a, t] = sameScale([now.b.text, now.a.text, now.t.text]).map((v) => withUnit(v, unitOf(p)));
+  return [
+    { label: 'スタート', v: b, y: unparen(now.b.note) },
+    { label: now.year === LATEST ? 'いま' : `${yl}の報告`, v: a, y: refText(now.a.note), now: true },
+    { label: 'ゴール', v: t, y: [now.target_year, unparen(now.t.note)].filter(Boolean).join('・') },
+  ];
+};
 ---
-<article class="sticker scard" id={id}>
-  <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+<article class="sticker scard" id={row.anchor}>
+  <div class="sc-head">
+    <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+    <ShareMenu path={row.share} kind="主要指標" name={x.name} />
+  </div>
   {x.year !== LATEST && <p class="small notice-inline">この指標は{yl}まで使われていました（R7の中期実施計画で入れ替わった指標）。</p>}
-  {row.parts.map((p) => (
-    <div class="part">
-      {split && <h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>}
-      <ShuyouGoal part={p} />
-      <SeikaChart row={p} unit={p.scale === 1 ? p.unit : ''} drawable={p.drawable} aligned />
-      <ShuyouTable row={row} part={p} />
-    </div>
-  ))}
-  {prevRow && (
-    <p class="small secondary note">
-      {yl}から中期<Term word="実施計画" />になり、{renewed ? `${renewed}が新しくなりました` : 'スタートとゴールの値は前期と同じです'}。
-    </p>
-  )}
+  {row.parts.map((p) => {
+    const judges = judgesOf(p.latest.judgement);
+    return (
+      <div class="part">
+        {split && <h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>}
+        {p.latest.judgement && (
+          <p class="verdict">
+            <span class="small secondary">県の<Term word="見通し" /></span>
+            {judges
+              ? judges.map((j) => <span class="vj">{j.label && <span class="small">{j.label}</span>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
+              : <span class="prose small">{p.latest.judgement}</span>}
+          </p>
+        )}
+        <p class="sc-vals">
+          {valsOf(p).map((v, j) => (
+            <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
+          ))}
+        </p>
+        <SeikaChart row={p} unit={unitOf(p)} drawable={p.drawable} />
+        <ShuyouTable row={row} part={p} />
+      </div>
+    );
+  })}
   {says && <ShuyouSays text={says} />}
 </article>
 
 <style>
   .scard { margin-top: 18px; }
-  .scard h3 { margin-top: 0; }
+  .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
+  .sc-head > :global(.share-menu) { margin-left: auto; }
+  .scard h3 { margin: 0; }
   .notice-inline { background: var(--pink); border-radius: 10px; padding: 4px 10px; display: inline-block; }
   /* 男性・女性のように分けた部分は、細い線で区切って名前の見出しを付ける */
   .part + .part { margin-top: 16px; padding-top: 4px; border-top: 2px solid var(--hair); }
   .part h4 { margin: 10px 0 0; }
-  .note { margin: 10px 0 0; }
+  .verdict { margin: 8px 0 0; }
+  .vj { display: inline-flex; align-items: center; gap: 6px; }
+  .vj :global(.chip) { white-space: normal; }
+  /* スタート → いま → ゴールの値を1行で（成果指標のカードと同じ形。入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
+  .sc-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 6px 0 0; font-size: 0.9375rem; color: var(--ink-2); line-height: 1.6; }
+  .v-l { font-size: 0.75rem; font-weight: 700; }
+  .v-n { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+  .now .v-n { font-size: 1.1rem; }
+  .v-y { font-size: 0.75rem; white-space: nowrap; }
+  .arrow { color: var(--muted); margin-right: 3px; }
 </style>

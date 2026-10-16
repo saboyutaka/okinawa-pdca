@@ -1,4 +1,4 @@
-// SNS のカードの画像（og:image）の中身。施策・基本施策・将来像・くらしのテーマ・部局・主な取組・成果指標のページごとに1枚（1200×630）。
+// SNS のカードの画像（og:image）の中身。施策・基本施策・将来像・くらしのテーマ・部局・主な取組のページと、指標（成果指標・主要指標・活動指標）のシェア用のページごとに1枚（1200×630）。
 // ここでは satori に渡す要素の木（React の要素と同じ形のただのオブジェクト）を作るだけで、画像にはしない（画像にするのは lib/card-render.ts、
 // 書き出すのは pages/og/[...card].png.ts）。フォントの部分集合を作るスクリプト（scripts/shot/card-font.ts）も、ここで作った木から使う字を集める。
 //
@@ -11,11 +11,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, refText, seikaVerdict, textGoalChartRow, toneOfStatus, yearLabel, yearLong,
-  type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type TorikumiGroup,
+  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
+  type ActivityRun, type ActivityShare, type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import { fmt } from './format.ts';
-import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead, type Head } from './heads.ts';
+import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';
 import { PROJECT, SITE } from './links.ts';
 import { ROUTES, routePath } from './routes.ts';
@@ -93,7 +93,8 @@ function icon(tone: Tone | null | undefined, shape: Shape | null | undefined, si
   return img(svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="${size}" height="${size}">${inner}</svg>`), size);
 }
 
-// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）
+// 将来像の番号の印（色は基本計画のパンフレットの色。番号の印だけに使う）。将来像のものなので、将来像と、「将来像Nの基本施策」の行だけに置き、
+// 施策・取組・基本施策の名前の前には置かない（その将来像の施策と読めないため）
 const sz = (id: number, size = 40) =>
   box({ width: size, height: size, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, background: color(`sz-${id}`), color: color(`sz-${id}-ink`), fontSize: size * 0.56, lineHeight: 1 }, String(id));
 
@@ -214,17 +215,19 @@ const heading = (kick: El, name: string, width: number, height: number) =>
 // 名前の上の「何のページか」の行
 const kicker = (...kids: Kid[]) => box({ alignItems: 'center', gap: 12, height: KICK_H, flexShrink: 0, fontSize: 26, color: color('ink-2') }, ...kids);
 
-// 親の施策の札（施策の判定は小さな丸いハンコ）。kind（「この取組が入っている施策」など）は行の右端に小さく
+// 親の札（施策・基本施策・取組）。lead は名前の前の印（施策の札は施策の判定のハンコ。基本施策・取組の札は印を付けない）、
+// kind（「この取組が入っている施策」など）は行の右端に小さく
 const PARENT_H = 62;
-function parent(s: Shisaku, kind: string) {
+function parentBar(lead: Kid, name: string, kind: string) {
   return box(
     { alignItems: 'center', columnGap: 12, height: PARENT_H, paddingBottom: 12, flexShrink: 0, borderBottom: `3px solid ${color('grid')}` },
-    judgeStamp(s.judges[LATEST], 44),
-    sz(s.shouraizou, 34),
-    txt({ fontSize: 26, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, s.name, 1),
+    lead,
+    txt({ fontSize: 26, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, name, 1),
     txt({ fontSize: 18, color: color('ink-2'), flexShrink: 0 }, kind),
   );
 }
+// 親の施策の札（施策の判定は小さな丸いハンコ）
+const parent = (s: Shisaku, kind: string) => parentBar(judgeStamp(s.judges[LATEST], 44), s.name, kind);
 
 // 区分（進捗状況・判定・達成率）
 interface Cat { key: string; label: string; tone: Tone; shape: Shape; hatch?: boolean }
@@ -298,7 +301,6 @@ const stats = (rows: Row[]) => inset({ rowGap: STATS_PAD.gap, height: statsHeigh
 
 const toriRow = (counts: Record<string, number>): Row => ({ label: '主な取組の進捗状況', unit: '件', cats: STATUS_CATS, counts });
 const judgeRow = (a: AreaHead, label = '施策の判定'): Row => ({ label, unit: '施策', cats: JUDGE_CATS, counts: judgeGroupCounts(a.judges) });
-const rateRow = (hd: Head): Row => ({ label: '成果指標の達成率', unit: '指標', cats: RATE_CATS, counts: hd.rates });
 
 // 下の帯: サイトの名前・（非公式）・作っている団体
 let logo: string | undefined;
@@ -333,28 +335,85 @@ const gap = (n: number) => box({ height: n, flexShrink: 0 });
 
 // ---------------------------------------------------------------- ページごとのカード
 
+// 施策（施策のページの頭と同じ形）。名前の下の箱に、県の判定のハンコと言葉、右に4年間の判定のスタンプ。細い線の下に判定のもとを2列で、
+// 成果指標（計画値に到達した数と、指標ごとの達成率の札）→ 主な取組（順調の数と、1件1つの四角）の順に置く
+const SQ = 26;
+const WHY_GAP = 32;
+function judgeStamps(s: Shisaku) {
+  const W = 96;
+  const kids: El[] = [];
+  YEARS.forEach((y, i) => {
+    const j = judgeOf(s.judges[y]);
+    const ui = j && JUDGE_UI[j.key];
+    if (i > 0) kids.push(box({ width: 24, marginTop: 48, borderTop: `4px ${j && judgeOf(s.judges[YEARS[i - 1]]) ? 'solid' : 'dashed'} ${color('line')}` }));
+    kids.push(box(
+      { flexDirection: 'column', alignItems: 'center', rowGap: 4, width: W },
+      txt({ fontSize: 18, color: color('ink-2') }, yearLabel(y)),
+      box(
+        {
+          width: 48, height: 48, alignItems: 'center', justifyContent: 'center', columnGap: 2, borderRadius: '50%', border: `3px solid ${color('line')}`,
+          backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26), backgroundImage: ui?.hatch ? hatch() : undefined,
+        },
+        j ? [icon(j.tone, ui!.shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
+      ),
+      txt({ fontSize: 16, lineHeight: 1.25, textAlign: 'center', width: W }, ui ? ui.short : y === YEARS[0] ? '未公表' : '判定なし'),
+    ));
+  });
+  return box({ alignItems: 'flex-start', flexShrink: 0 }, kids);
+}
 function shisakuCard(s: Shisaku) {
   const hd = shisakuHead(s);
   const j = judgeOf(hd.judge);
-  const rows = [toriRow(hd.tori), rateRow(hd)];
-  // 上の段（何のページか・名前と、右の判定のハンコ）
-  const top = BODY_H - 12 - statsHeight(rows);
-  const STAMP_W = 230;
-  const stamp = Math.min(128, top - 72);
+  const seika = seikaGroupsOf(s.id).filter((r) => r.latest.year === LATEST).map((r) => seikaVerdict(r.latest));
+  const tori = torikumiCells(s);
+  const ok = tori.filter((t) => t.key === '順調').length;
+  // 判定のもとの列の幅と、札・四角が何行になるか（入らなければ折り返す）
+  const COL_W = (INNER_W - 2 * STATS_PAD.x - WHY_GAP) / 2;
+  const chipW = (c: string) => 20 + 6 + widthOf(c, 20) + 14;
+  const chipLines = seika.reduce((acc, v) => {
+    const w = chipW(v.chip);
+    return acc.x + w > COL_W ? { n: acc.n + 1, x: w } : { n: acc.n, x: acc.x + w };
+  }, { n: 1, x: 0 }).n;
+  const sqLines = Math.max(1, Math.ceil(tori.length / Math.floor((COL_W + 4) / (SQ + 4))));
+  const lines = Math.max(chipLines, sqLines);
+  // 高さ: 頭の行（4年間のスタンプの言葉は2行まで）、区切り（上のあき・線・下のあき）、判定のもと（見出し・数・札か四角の行）
+  const TOP_H = 116;
+  const RULE_H = 14 + 3 + 14;
+  const WHY_H = 26 + 4 + 44 + 4 + 6 + lines * 30 + (lines - 1) * 4;
+  const INSET_H = 2 * STATS_PAD.y + TOP_H + RULE_H + WHY_H;
+  const why = (label: string, num: string, after: string, itemGap: number, items: Kid) => box(
+    { flexDirection: 'column', rowGap: 4, width: COL_W, flexShrink: 0 },
+    txt({ fontSize: 20, color: color('ink-2'), height: 26 }, label),
+    box({ alignItems: 'baseline', columnGap: 6, height: 44 }, txt({ fontSize: 36 }, num), txt({ fontSize: 22 }, after)),
+    box({ flexWrap: 'wrap', alignItems: 'center', rowGap: 4, columnGap: itemGap, marginTop: 6 }, items),
+  );
   return frame(
     color('paper'),
-    box(
-      { height: top, flexShrink: 0, columnGap: 28 },
-      box({ flex: 1 }, heading(kicker(sz(s.shouraizou), '施策'), s.name, INNER_W - 28 - STAMP_W, top)),
+    heading(kicker('施策'), s.name, INNER_W, BODY_H - 12 - INSET_H),
+    gap(12),
+    inset(
+      { height: INSET_H },
       box(
-        { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: STAMP_W, flexShrink: 0 },
-        judgeStamp(hd.judge, stamp),
-        txt({ fontSize: 26, marginTop: 12 }, j ? `${j.key} ${JUDGE_UI[j.key].short}` : '判定なし'),
-        txt({ fontSize: 18, color: color('ink-2') }, `${yearLong(LATEST)}の県の判定`),
+        { alignItems: 'center', justifyContent: 'space-between', columnGap: 20, height: TOP_H, flexShrink: 0 },
+        box(
+          { alignItems: 'center', columnGap: 18, minWidth: 0, flex: 1 },
+          judgeStamp(hd.judge, 88),
+          box(
+            { flexDirection: 'column', rowGap: 2, minWidth: 0 },
+            txt({ fontSize: 30 }, j ? `${j.key} ${JUDGE_UI[j.key].short}` : '判定なし'),
+            txt({ fontSize: 18, color: color('ink-2') }, `${yearLong(LATEST)}の県の判定`),
+          ),
+        ),
+        box({ alignItems: 'center', columnGap: 10, flexShrink: 0 }, txt({ fontSize: 18, color: color('ink-2') }, '4年間'), judgeStamps(s)),
+      ),
+      box(
+        { columnGap: WHY_GAP, marginTop: 14, paddingTop: 14, borderTop: `3px solid ${color('grid')}`, flexShrink: 0 },
+        why('成果指標', `${fmt(hd.reached)}/${fmt(seika.length)}`, 'が計画値に到達', 14,
+          seika.map((v) => box({ alignItems: 'center', columnGap: 6, height: 30 }, icon(v.tone, null, 20), txt({ fontSize: 20 }, v.chip)))),
+        why('主な取組', `${fmt(ok)}/${fmt(tori.length)}`, '件が順調', 4,
+          tori.map((t) => box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, background: color(STATUSES.find((x) => x.key === t.key)?.tone || 'blank') }))),
       ),
     ),
-    gap(12),
-    stats(rows),
   );
 }
 
@@ -406,38 +465,19 @@ function torikumiCard(g: TorikumiGroup) {
   );
 }
 
-// 成果指標のゴールまでの道のりの図（scripts/charts.ts の seika と同じ形をカードの大きさで描く。数字は横の「スタート → いま → ゴール」にあるので、
-// 図の中の文字は計画期間・年度・スタート・ゴール・いまここだけ）。線と点は SVG の画像にし、文字は satori の文字として上に重ねる
-// （画像の中の SVG の文字にはカードのフォントが効かないため）。図を描けない指標（目標が「〜との差の縮小」など）は null
-type Pt = [x: number, y: number];
-const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
-function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
-  // 目標値が文の指標は、施策ページの図と同じく基準値・実績値を読み、スタートと実績値だけを描く（components/SeikaRoute.astro）
-  const textGoal = textGoalChartRow(g);
-  const row = textGoal ?? g;
-  const years = YEARS.flatMap((y) => (row.years[y] ? [row.years[y]] : []));
-  if (!(textGoal || (years.some((r) => num(r.actual)) && years.some((r) => num(r.target))))) return null;
-  const last = years[years.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
-    const r = years.filter((q) => ys.includes(q.year)).pop();
-    return r ? [{ ys, r, cur: ys.includes(last.year) }] : [];
-  });
-  const vals = [...years.map((r) => r.actual), ...periods.flatMap(({ r }) => [r.base, r.target, ...(r.plan || [])])].filter(num);
-  const pad = (Math.max(...vals) - Math.min(...vals) || Math.abs(vals[0]) || 1) * 0.14;
-  const [lo, hi] = [Math.min(...vals) - pad, Math.max(...vals) + pad];
-  const m = { l: 14, r: 14, t: 34, b: 30 };
-  const slots = periods.flatMap((p) => p.ys);
-  const sw = (W - m.l - m.r) / slots.length;
-  const ih = H - m.t - m.b;
-  const x = (s: number) => m.l + (slots.indexOf(s) + 0.5) * sw;
-  const y = (v: number) => m.t + (1 - (v - lo) / (hi - lo)) * ih;
-  const left = (p: (typeof periods)[number]) => x(p.ys[0]) - sw / 2;
-  const d = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('');
+// ---------------------------------------------------------------- 図
 
-  // 文字を置く場所を、印と重ならないように選ぶ（scripts/charts.ts の placer と同じ考え方）
-  type Box = [number, number, number, number];
+// 図は線と点を SVG の画像にし、文字は satori の文字として上に重ねる（画像の中の SVG の文字にはカードのフォントが効かないため）。
+// 図の中の文字は計画期間・年度・スタート・ゴール・いまここだけ（数字は図の横にある）
+type Pt = [x: number, y: number];
+type Box = [number, number, number, number];
+const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
+const pathD = (pts: Pt[]) => pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('');
+
+// 文字を置く場所を、印と重ならないように選ぶ（scripts/charts.ts の placer と同じ考え方）。top・bottom は文字を置ける上下の端
+function placer(W: number, top: number, bottom: number) {
   const boxes: Box[] = [];
-  const mark = (cx: number, cy: number, r: number) => boxes.push([cx - r, cy - r, cx + r, cy + r]);
+  const mark = (cx: number, cy: number, r: number) => { boxes.push([cx - r, cy - r, cx + r, cy + r]); };
   const markPath = (pts: Pt[]) => pts.slice(1).forEach(([bx, by], i) => {
     const [ax, ay] = pts[i];
     const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 6));
@@ -447,32 +487,78 @@ function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
   // 候補（左上の座標）のうち、図に収まって重なりのいちばん少ない場所。重なりの面積も返す
   const place = (w: number, h: number, cands: Pt[]): [x: number, y: number, overlap: number] => {
     const bs = cands.map(([bx, by]): Box => [bx, by, bx + w, by + h]);
-    const ok = bs.filter((b) => b[0] >= 0 && b[2] <= W && b[1] >= m.t - 4 && b[3] <= m.t + ih + 4);
+    const ok = bs.filter((b) => b[0] >= 0 && b[2] <= W && b[1] >= top && b[3] <= bottom);
     const b = (ok.length ? ok : bs).reduce((a, q) => (overlap(q) < overlap(a) ? q : a));
     const o = overlap(b);
     boxes.push(b);
     return [b[0], b[1], o];
   };
+  return { mark, markPath, place };
+}
 
+// 横は報告年度（計画期間ごとに3年）。最新の報告の計画期間でない方は地の色の帯にし、前期と中期の境に線を引く（ページの図と同じ）
+function yearFrame(periods: { ys: number[]; cur: boolean }[], W: number, H: number) {
+  const m = { l: 14, r: 14, t: 34, b: 30 };
+  const slots = periods.flatMap((p) => p.ys);
+  const sw = (W - m.l - m.r) / slots.length;
+  const ih = H - m.t - m.b;
+  const x = (s: number) => m.l + (slots.indexOf(s) + 0.5) * sw;
+  const left = (p: { ys: number[] }) => x(p.ys[0]) - sw / 2;
   const svg: string[] = [];
   const labels: El[] = [];
   const label = (s: string, px: number, py: number, style: Style = {}) =>
     labels.push(txt({ position: 'absolute', left: Math.round(px), top: Math.round(py), fontSize: 17, lineHeight: 1, color: color('ink-2'), ...style }, s));
-  const ink2 = color('ink-2');
-  // 計画期間の帯（最新の報告の計画期間でない方は地の色）・前期と中期の境・年度
   for (const p of periods) {
     if (!p.cur) svg.push(`<rect x="${left(p)}" y="0" width="${sw * 3}" height="${m.t + ih + 4}" rx="10" fill="${color('bg')}"/>`);
     label(p.ys[0] <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）', left(p) + 10, 10, p.cur ? { color: color('ink') } : {});
   }
   if (periods.length > 1) svg.push(`<line x1="${left(periods[1])}" x2="${left(periods[1])}" y1="0" y2="${m.t + ih + 4}" stroke="${color('hair')}" stroke-width="2"/>`);
   slots.forEach((s) => label(yearLabel(s), x(s) - 13, H - 22));
+  return { m, sw, ih, x, left, svg, labels, label, ...placer(W, m.t - 4, m.t + ih + 4) };
+}
+
+// 最後の実績に添える「いまここ」の札
+function hereTag(text: string, [cx, cy]: Pt, place: ReturnType<typeof placer>['place']) {
+  const w = widthOf(text, 18) + 24;
+  const h = 30;
+  const [bx, by] = place(w, h, [[cx + 16, cy - h / 2], [cx - w / 2, cy - 16 - h], [cx - w / 2, cy + 16], [cx - 16 - w, cy - h / 2]]);
+  return box(
+    { position: 'absolute', left: Math.round(bx), top: Math.round(by), width: Math.round(w), height: h, alignItems: 'center', justifyContent: 'center', borderRadius: 999, border: `3px solid ${color('line')}`, background: color('paper'), fontSize: 18, color: color('ink') },
+    text,
+  );
+}
+
+const chartBox = (W: number, H: number, svg: string[], labels: El[]) => box(
+  { position: 'relative', width: W, height: H, flexShrink: 0, borderRadius: 14, background: color('paper') },
+  img(svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${svg.join('')}</svg>`), W, H, { position: 'absolute', left: 0, top: 0 }),
+  labels,
+);
+
+// ゴールまでの道のりの図（scripts/charts.ts の seika と同じ形をカードの大きさで描く）。成果指標と主要指標の部分（ChartRow）。
+// スタート（基準値）から点線の計画の道すじ（その年度の計画値）をたどってゴール（目標値）へ。年度ごとの計画値の無い主要指標は、ゴールの丸だけ
+function routeChart(row: ChartRow, W: number, H: number): El {
+  const years = YEARS.flatMap((y) => (row.years[y] ? [row.years[y]] : []));
+  const last = years[years.length - 1];
+  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+    const r = years.filter((q) => ys.includes(q.year)).pop();
+    return r ? [{ ys, r, cur: ys.includes(last.year) }] : [];
+  });
+  const vals = [...years.map((r) => r.actual), ...periods.flatMap(({ r }) => [r.base, r.target, ...(r.plan || [])])].filter(num);
+  const pad = (Math.max(...vals) - Math.min(...vals) || Math.abs(vals[0]) || 1) * 0.14;
+  const [lo, hi] = [Math.min(...vals) - pad, Math.max(...vals) + pad];
+  const { m, sw, ih, x, left, svg, labels, label, mark, markPath, place } = yearFrame(periods, W, H);
+  const y = (v: number) => m.t + (1 - (v - lo) / (hi - lo)) * ih;
+  const ink2 = color('ink-2');
 
   // 計画の道すじ（スタートの基準値 → その年度の計画値。最後の○がゴールの目標値）と実績値
   const plans = periods.map((p) => {
     const { r } = p;
     const sx = left(p) + 8;
-    const circles = (r.plan || []).flatMap((v, i): Pt[] => (num(v) ? [[x(p.ys[i]), y(v)]] : []));
-    const pts: Pt[] = [...(num(r.base) ? [[sx, y(r.base)] as Pt] : []), ...circles];
+    const plan = r.plan || [];
+    const circles: Pt[] = plan.length
+      ? plan.flatMap((v, i): Pt[] => (num(v) ? [[x(p.ys[i]), y(v)]] : []))
+      : num(r.target) ? [[x(p.ys[2]), y(r.target)]] : [];
+    const pts: Pt[] = [...(num(r.base) ? [[sx, y(r.base)] as Pt] : []), ...(plan.length ? circles : [])];
     markPath(pts);
     circles.forEach(([cx, cy]) => mark(cx, cy, 8));
     return { p, sx, pts, circles };
@@ -483,11 +569,11 @@ function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
   for (const { p, sx, pts, circles } of plans) {
     const ink = p.cur ? ink2 : color('none');
     if (p.cur && num(p.r.base)) svg.push(`<line x1="${sx}" x2="${left(p) + sw * 3 - 6}" y1="${y(p.r.base)}" y2="${y(p.r.base)}" stroke="${color('hair')}" stroke-width="2" stroke-dasharray="3 4"/>`);
-    if (pts.length > 1) svg.push(`<path d="${d(pts)}" fill="none" stroke="${ink}" stroke-width="3" stroke-dasharray="8 6" stroke-linejoin="round"/>`);
+    if (pts.length > 1) svg.push(`<path d="${pathD(pts)}" fill="none" stroke="${ink}" stroke-width="3" stroke-dasharray="8 6" stroke-linejoin="round"/>`);
     circles.forEach(([cx, cy], i) => svg.push(`<circle cx="${cx}" cy="${cy}" r="${i === circles.length - 1 ? 9 : 7}" fill="${color('paper')}" stroke="${ink}" stroke-width="3.5"/>`));
     if (num(p.r.base)) svg.push(`<circle cx="${sx}" cy="${y(p.r.base)}" r="5" fill="${ink}"/>`);
   }
-  if (act.length > 1) svg.push(`<path d="${d(act)}" fill="none" stroke="${color('pop')}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  if (act.length > 1) svg.push(`<path d="${pathD(act)}" fill="none" stroke="${color('pop')}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`);
   act.forEach(([cx, cy], i) => {
     const now = i === act.length - 1;
     svg.push(`<circle cx="${cx}" cy="${cy}" r="${now ? 11 : 7.5}" fill="${color('pop')}" stroke="${color('line')}" stroke-width="${now ? 3.5 : 3}"/>`);
@@ -495,23 +581,14 @@ function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
 
   // 「いまここ」の札（最新の報告で使われなくなった指標は「最後の報告」）と、スタート・ゴールの文字（最新の報告の計画期間だけ）
   const now = act.at(-1);
-  if (now) {
-    const text = last.year === LATEST ? 'いまここ' : '最後の報告';
-    const w = widthOf(text, 18) + 24;
-    const h = 30;
-    const [bx, by] = place(w, h, [[now[0] + 16, now[1] - h / 2], [now[0] - w / 2, now[1] - 16 - h], [now[0] - w / 2, now[1] + 16], [now[0] - 16 - w, now[1] - h / 2]]);
-    labels.push(box(
-      { position: 'absolute', left: Math.round(bx), top: Math.round(by), width: Math.round(w), height: h, alignItems: 'center', justifyContent: 'center', borderRadius: 999, border: `3px solid ${color('line')}`, background: color('paper'), fontSize: 18, color: color('ink') },
-      text,
-    ));
-  }
-  for (const { p, sx } of plans) {
+  if (now) labels.push(hereTag(last.year === LATEST ? 'いまここ' : '最後の報告', now, place));
+  for (const { p, sx, circles } of plans) {
     if (!p.cur) continue;
     const { r } = p;
     const rising = !num(r.base) || !num(r.target) || r.target >= r.base;
     const ends: [name: string, ex: number, ey: number, start: boolean][] = [];
     if (num(r.base)) ends.push(['スタート', sx, y(r.base), true]);
-    if (num(r.target)) ends.push(['ゴール', x(p.ys[2]), y(r.target), false]);
+    if (num(r.target) && circles.length) ends.push(['ゴール', x(p.ys[2]), y(r.target), false]);
     for (const [name, ex, ey, start] of ends) {
       const w = widthOf(name, 17);
       const up: Pt[] = start ? [[ex + 6, ey - 26], [ex + 18, ey - 28]] : [[ex - w / 2, ey - 32], [ex - w - 12, ey - 28]];
@@ -521,12 +598,63 @@ function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
       if (!o) label(name, bx, by, { color: color('ink'), background: color('paper') });
     }
   }
-  const src = svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${svg.join('')}</svg>`);
-  return box(
-    { position: 'relative', width: W, height: H, flexShrink: 0, borderRadius: 14, background: color('paper') },
-    img(src, W, H, { position: 'absolute', left: 0, top: 0 }),
-    labels,
-  );
+  return chartBox(W, H, svg, labels);
+}
+
+// 成果指標の道のりの図。目標値が文の指標は、施策ページの図と同じく基準値・実績値を読み、スタートと実績値だけを描く（components/SeikaRoute.astro）。
+// 図を描けない指標（目標が「〜との差の縮小」など）は null
+function seikaChart(g: SeikaGroup, W: number, H: number): El | null {
+  const textGoal = textGoalChartRow(g);
+  const rows = Object.values(g.years);
+  if (!(textGoal || (rows.some((r) => num(r.actual)) && rows.some((r) => num(r.target))))) return null;
+  return routeChart(textGoal ?? g, W, H);
+}
+
+// 活動指標の計画と実績の図（scripts/charts.ts の katsudou と同じ形）。計画期間ごとに点線でつないだ白い丸がその年度の計画、青い点が実績で、縦は0から。
+// 年度別計画にだけある、この先の年度の計画も置く。実績が計画とほぼ同じ高さのときは、計画を点の外側の輪で描く。here は最後の実績に添える札。図に置ける実績が無ければ null
+function katsudouChart(run: ActivityRun, W: number, H: number, here: string): El | null {
+  if (!run.chart) return null;
+  const done = run.years.filter((r) => !r.future);
+  const last = done[done.length - 1];
+  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+    const rows = run.years.filter((q) => ys.includes(q.y));
+    return rows.length ? [{ ys, rows, cur: ys.includes(last.y) }] : [];
+  });
+  const vals = run.years.flatMap((r) => [r.plan, r.actual]).filter(num);
+  const lo = Math.min(0, ...vals);
+  const top = Math.max(0, ...vals);
+  const hi = top + (top - lo || 1) * 0.12;
+  const { m, ih, x, svg, labels, mark, markPath, place } = yearFrame(periods, W, H);
+  const y = (v: number) => m.t + (1 - (v - lo) / (hi - lo)) * ih;
+  const ink2 = color('ink-2');
+  svg.push(`<line x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}" stroke="${color('hair')}" stroke-width="2"/>`);
+
+  const plans = periods.map((p) => ({ p, pts: p.rows.flatMap((r): Pt[] => (num(r.plan) ? [[x(r.y), y(r.plan)]] : [])) }));
+  for (const { pts } of plans) {
+    markPath(pts);
+    pts.forEach(([cx, cy]) => mark(cx, cy, 8));
+  }
+  const act = done.flatMap((r): Pt[] => (num(r.actual) ? [[x(r.y), y(r.actual)]] : []));
+  markPath(act);
+  const now = here ? act.at(-1) : undefined;
+  const dotR = (a: Pt) => (a === now ? 11 : 7.5);
+  act.forEach((a) => mark(a[0], a[1], dotR(a) + 3));
+  const under = (cx: number, cy: number) => act.find(([ax, ay]) => ax === cx && Math.abs(ay - cy) < 8);
+  for (const { p, pts } of plans) {
+    const ink = p.cur ? ink2 : color('none');
+    if (pts.length > 1) svg.push(`<path d="${pathD(pts)}" fill="none" stroke="${ink}" stroke-width="3" stroke-dasharray="8 6" stroke-linejoin="round"/>`);
+    pts.forEach(([cx, cy]) => { if (!under(cx, cy)) svg.push(`<circle cx="${cx}" cy="${cy}" r="7" fill="${color('paper')}" stroke="${ink}" stroke-width="3.5"/>`); });
+  }
+  if (act.length > 1) svg.push(`<path d="${pathD(act)}" fill="none" stroke="${color('pop')}" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  act.forEach((a) => svg.push(`<circle cx="${a[0]}" cy="${a[1]}" r="${dotR(a)}" fill="${color('pop')}" stroke="${color('line')}" stroke-width="${a === now ? 3.5 : 3}"/>`));
+  for (const { p, pts } of plans) {
+    for (const [cx, cy] of pts) {
+      const a = under(cx, cy);
+      if (a) svg.push(`<circle cx="${a[0]}" cy="${a[1]}" r="${dotR(a) + 4}" fill="none" stroke="${p.cur ? ink2 : color('none')}" stroke-width="3"/>`);
+    }
+  }
+  if (now) labels.push(hereTag(here, now, place));
+  return chartBox(W, H, svg, labels);
 }
 
 // 成果指標の「スタート → いま → ゴール」（components/SeikaGoal.astro と同じ並び）の1行。数字だけの値は単位を小さく添える
@@ -570,6 +698,123 @@ function seikaCard(g: SeikaGroupOfShisaku) {
           goalStep('スタート', x.base_raw, x.unit, '基準値'),
           goalStep(x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`, x.actual_raw, x.unit, ref ? `実績値（${ref}）` : '実績値'),
           goalStep('ゴール', x.target_raw, x.unit, `目標値（${x.target_year}）`),
+        ),
+        chart,
+      ),
+    ),
+  );
+}
+
+// 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま。
+// 報告書の印字は全角と半角の数字がまじる（計画「１施設」・実績「1施設」）ので、並べたときに数字の位置と幅がそろうよう、数字・カンマ・ピリオド・％は半角にする
+const DIGITS = /([-△]?\d[\d,.]*)/;
+const halfWidth = (s: string) => s.replace(/[０-９，．％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+function valueText(raw: string, unit = ''): El {
+  const text = halfWidth(raw);
+  if (!DIGITS.test(text)) return txt({ fontSize: 24, flexShrink: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text, 1);
+  const ps = [...text.split(DIGITS).filter(Boolean), ...(unit ? [unit] : [])];
+  return box({ alignItems: 'baseline', columnGap: 2, flexShrink: 1, minWidth: 0, overflow: 'hidden' }, ps.map((t) => txt({ fontSize: DIGITS.test(t) ? 34 : 20, flexShrink: 0, whiteSpace: 'nowrap' }, t)));
+}
+function valueStep(label: string, value: El, sub: string) {
+  return box(
+    { alignItems: 'baseline', columnGap: 8, height: 42, minWidth: 0 },
+    txt({ fontSize: 20, color: color('ink-2'), width: 92, flexShrink: 0 }, label),
+    value,
+    sub ? txt({ fontSize: 17, color: color('ink-2'), flexShrink: 0, marginLeft: 4 }, sub) : null,
+  );
+}
+// 図の箱の頭の1行（成果指標の達成率の札と同じ高さ）
+const verdictLine = (...kids: Kid[]) => box({ alignItems: 'center', columnGap: 14, height: 34, minWidth: 0 }, ...kids);
+
+// 主要指標（シェア用のページ）。成果指標のカードと同じ並びで、達成率の代わりに県の見通し（主要指標には達成率と年度ごとの計画値がない）。
+// 男性・女性のように1つの欄に値が並ぶ指標は、部分ごとに「いま → ゴール」を1行にし、図は描かない
+function shuyouCard(g: ShuyouGroupOfKihon) {
+  const x = g.latest;
+  const INSET_H = 232;
+  const STEPS_W = 440;
+  const judges = judgesOf(x.judgement);
+  const verdict = x.judgement && verdictLine(
+    txt({ fontSize: 21, color: color('ink-2'), flexShrink: 0 }, '県の見通し'),
+    judges
+      ? judges.map((j) => box({ alignItems: 'center', columnGap: 8, flexShrink: 0 }, j.label && txt({ fontSize: 20, color: color('ink-2') }, j.label), icon(toneOfJudgement(j.key), null, 24), txt({ fontSize: 24 }, j.key)))
+      : txt({ fontSize: 21, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }, oneLine(x.judgement), 1),
+  );
+  // 単位の書かれていない数には指標の単位を添える。スタート・いま・ゴールの位は1つの部分の中でそろえる（lib/data.ts の sameScale）
+  const vals = (p: ShuyouPart) => {
+    const cs = [p.latest.b, p.latest.a, p.latest.t];
+    const ts = sameScale(cs.map((c) => c.text));
+    const unit = (c: Cell) => (c.value != null && !c.unit && p.scale === 1 ? p.unit : '');
+    return cs.map((c, i) => valueText(ts[i], unit(c)));
+  };
+  const nowLabel = x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`;
+  let body: Kid;
+  if (g.parts.length > 1) {
+    body = g.parts.map((p) => {
+      const [, a, t] = vals(p);
+      return box(
+        { alignItems: 'baseline', columnGap: 10, height: 42, minWidth: 0 },
+        txt({ fontSize: 22, width: 92, flexShrink: 0 }, p.label),
+        txt({ fontSize: 18, color: color('ink-2'), flexShrink: 0 }, nowLabel), a,
+        txt({ fontSize: 18, color: color('ink-2'), flexShrink: 0, marginLeft: 12 }, '→ ゴール'), t,
+      );
+    });
+  } else {
+    const p = g.parts[0];
+    const [b, a, t] = vals(p);
+    const ref = refText(p.latest.a.note);
+    const chart = p.drawable ? routeChart(p, INNER_W - 2 * STATS_PAD.x - STEPS_W - 20, INSET_H - 2 * STATS_PAD.y - 44) : null;
+    body = box(
+      { columnGap: 20, alignItems: 'center' },
+      box(
+        { flexDirection: 'column', rowGap: 4, width: chart ? STEPS_W : INNER_W - 2 * STATS_PAD.x, flexShrink: 0 },
+        valueStep('スタート', b, `基準値${p.latest.b.note}`),
+        valueStep(nowLabel, a, ref ? `実績値（${ref}）` : '実績値'),
+        valueStep('ゴール', t, `目標値（${p.latest.target_year}）`),
+      ),
+      chart,
+    );
+  }
+  return frame(
+    color('paper'),
+    parentBar(null, g.kihon.name, 'この指標の基本施策'),
+    gap(8),
+    heading(kicker('主要指標'), x.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
+    gap(12),
+    inset({ rowGap: 10, height: INSET_H }, verdict, body),
+  );
+}
+
+// 活動指標（シェア用のページ）。最後の報告の年度の進捗状況と計画 → 実績（取組のページの頭と同じ言い方。年度は進捗状況の行に1回だけ書く）、計画と実績の図
+function katsudouCard(a: ActivityShare) {
+  const { run, torikumi: g } = a;
+  const done = run.years.filter((r) => !r.future);
+  const last = done[done.length - 1];
+  const tone = toneOfStatus(last.status);
+  const INSET_H = 232;
+  const STEPS_W = 440;
+  // 最後の実績の札は、取組のページの図と同じ（いちばん新しい活動指標は「いまここ」、最新の報告に無い取組と前の活動指標は「最後の報告」）
+  const here = run.group === 0 && last.y === LATEST ? 'いまここ' : '最後の報告';
+  const chart = katsudouChart(run, INNER_W - 2 * STATS_PAD.x - STEPS_W - 20, INSET_H - 2 * STATS_PAD.y - 44, here);
+  const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
+  return frame(
+    color('paper'),
+    parentBar(null, g.latest.name, 'この指標の取組'),
+    gap(8),
+    heading(kicker('活動指標'), a.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
+    gap(12),
+    inset(
+      { rowGap: 10, height: INSET_H },
+      verdictLine(
+        box({ alignItems: 'center', columnGap: 8, flexShrink: 0 }, icon(tone, null, 24), txt({ fontSize: 24 }, last.status || '—')),
+        txt({ fontSize: 21, color: color('ink-2'), whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }, `${yearLong(last.y)}の取組の進捗状況`, 1),
+      ),
+      box(
+        { columnGap: 20, alignItems: 'center' },
+        box(
+          { flexDirection: 'column', rowGap: 4, width: chart ? STEPS_W : INNER_W - 2 * STATS_PAD.x, flexShrink: 0 },
+          valueStep('計画', valueText(one(last.plan_raw)), ''),
+          valueStep('実績', valueText(one(last.actual_raw)), ''),
+          last.ach ? valueStep('達成割合', valueText(last.ach), parseFloat(last.ach.replace(/,/g, '')) >= 100 ? '計画クリア' : '') : null,
         ),
         chart,
       ),
@@ -643,6 +888,16 @@ export function getCards(): Map<string, Card> {
       page: routePath('shihyou/[shisaku]/[slug]', params),
       alt: `成果指標「${g.name}」の基準値・実績値・目標値と、計画値に対する達成率`,
       node: () => seikaCard(g),
+    })),
+    ...ROUTES['shuyou/[kihon]/[slug]']().map(({ params, props: { g } }) => ({
+      page: routePath('shuyou/[kihon]/[slug]', params),
+      alt: `主要指標「${g.latest.name}」の基準値・実績値・目標値と、県の見通し`,
+      node: () => shuyouCard(g),
+    })),
+    ...ROUTES['katsudou/[shisaku]/[slug]']().map(({ params, props: { a } }) => ({
+      page: routePath('katsudou/[shisaku]/[slug]', params),
+      alt: `主な取組「${a.torikumi.latest.name}」の活動指標「${a.name}」の、年度ごとの計画と実績`,
+      node: () => katsudouCard(a),
     })),
   ];
   cards = new Map(list.map((c) => [c.page, { ...c, image: cardImage(c.page) }]));

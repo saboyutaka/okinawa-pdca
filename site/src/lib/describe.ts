@@ -1,12 +1,13 @@
-// ページの説明文（<meta name="description">・og:description）と、取組・成果指標のページの題名。検索結果と SNS のカードに出る。
+// ページの説明文（<meta name="description">・og:description）と、取組のページ・指標のシェア用のページの題名。検索結果と SNS のカードに出る。
 // 検索結果で切れても意味が通るように、最新の年度の判定・件数を先に、何のページかを後ろに書く。
 // 検索エンジンに重複とみなされないよう、題名と説明文はページごとに違うものにする（test/describe.test.ts で確かめ、ビルドでも同じページを数える）。
 // 数はページが表示している数をそのまま受け取る（数え方は lib/data.ts の1か所。ここでは数えない）。
 // 内訳は県の区分の並びのまま、0でない区分を全部同じ重みで並べる（遅れだけを書いたり、遅れを先に書いたりしない。docs/design.md の1章）
-import { YEARS, LATEST, STATUSES, JUDGES, yearLabel, yearLong, judgeOf, withUnit, rateText, repostsOf, type SeikaGroup, type TorikumiGroup } from './data.ts';
+import { YEARS, LATEST, STATUSES, JUDGES, yearLabel, yearLong, judgeOf, withUnit, rateText, sameNameElsewhere, type ActivityShare, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
 import type { SeikaRow } from './types.ts';
 import { fmt } from './format.ts';
 import { oneLine } from './text.ts';
+import { shortName } from './iken.ts';
 
 type Counts = Record<string, number>;
 
@@ -42,24 +43,51 @@ export function shisakuDescription(o: { name: string; judge: string | null | und
   return `${judge}${rest && `${rest}。`}沖縄県PDCAの施策「${o.name}」の${SPAN}の成果指標と主な取組。`;
 }
 
-// 主な取組の題名。同じ取組が複数の施策に載っている（総括報告書の「再掲」）と施策ごとにページがあるので、題名が同じにならないように施策の番号を足す。
+// 主な取組の題名。同じ取組が複数の施策に載っている（総括報告書の「再掲」。年度の途中で施策を移ったものも）と施策ごとにページがあるので、題名が同じにならないように施策の番号を足す。
 // 番号は名前より目立たせないので、後ろに置く（docs/design.md の3章）
 export const torikumiTitle = (o: { name: string; code: string; reposted: boolean }) =>
   `${o.name}（沖縄県の主な取組${o.reposted ? `・施策 ${o.code}` : ''}）`;
 
-// 主な取組: 進捗状況 R4 順調・R5 概ね順調・R6 順調・R7 順調。R7にやったこと: 〇〇。所管 〇〇部〇〇課。沖縄県PDCAの施策「〇〇」の主な取組。…
+// 進捗状況は年度の順に並べ、同じ区分が続く年度はまとめる（R4〜R6 順調・R7 概ね順調）。報告の無い年度（null）はとばし、そこで区切る
+export function statusRuns(statuses: (string | null)[]): string[] {
+  const runs: { from: number; to: number; status: string }[] = [];
+  YEARS.forEach((y, i) => {
+    const status = statuses[i];
+    if (!status) return;
+    const last = runs.at(-1);
+    if (last && last.status === status && last.to === YEARS[i - 1]) last.to = y;
+    else runs.push({ from: y, to: y, status });
+  });
+  return runs.map((r) => `${yearLabel(r.from)}${r.to !== r.from ? `〜${yearLabel(r.to)}` : ''} ${r.status}`);
+}
+
+// 「やったこと」は 50字ほどまで。長ければ、読点・句点のところで切って「…」を付ける（検索結果と SNS のカードで、そのあとの施策の名前まで見えるように）。
+// 10字ほどの超えなら切らない（切った「…」のほうが長くなるため）
+export const SUMMARY_MAX = 50;
+export function shorten(s: string, max = SUMMARY_MAX): string {
+  const chars = [...s];
+  if (chars.length <= max + 10) return s;
+  const head = chars.slice(0, max).join('');
+  // 句点は3分の1より後ろ、読点は半分より後ろにあればそこで切る（前のほうの読点で切ると「〇〇では、△△が…」のように何も残らない）。無ければ 50字で切る
+  const period = head.lastIndexOf('。');
+  const comma = head.lastIndexOf('、');
+  const at = period >= max / 3 ? period : comma >= max / 2 ? comma : head.length;
+  return `${head.slice(0, at)}…`;
+}
+
+// 主な取組: 進捗状況 R4〜R6 順調・R7 概ね順調。R7にやったこと: 〇〇。所管 〇〇部〇〇課。沖縄県PDCAの施策「〇〇」の主な取組。活動指標「〇〇」。
 // statuses は年度の順の進捗状況（報告の無い年度は null。lib/data.ts の TorikumiGroup の statuses）。最新の年度の報告に無い取組はそうと書く。
-// 同じ施策で所管課と進捗状況が同じ取組も説明文が同じにならないように、最新の報告の「やったこと」（総括報告書の活動概要。100字ほどまで）と
-// 活動指標の名前を入れる（県が複数の取組に同じ活動概要を書いていることもあるので、活動指標でも見分ける）。取組の名前は題名にあるので入れない
+// 同じ施策で所管課と進捗状況が同じ取組も説明文が同じにならないように、最新の報告の「やったこと」（総括報告書の活動概要。shorten で短くする）と
+// 活動指標の名前を入れる（県が複数の取組に同じ活動概要を書いていることもあるので、活動指標でも見分ける）。取組の名前は題名にあるので入れない。
+// 説明文は検索結果で 120字ほどで切れるので、ページにあるもの（計画と実績・予算・検証）の案内は書かず、取組を見分ける文だけにする
 export function torikumiDescription(o: { statuses: (string | null)[]; year: number; summary: string; indicator: string; section: string; shisaku: string }) {
-  const st = YEARS.flatMap((y, i) => (o.statuses[i] ? [`${yearLabel(y)} ${o.statuses[i]}`] : []));
   const ended = o.statuses.at(-1) ? '' : `（${yearLabel(LATEST)}の報告には無い）`;
   // 「-」だけの欄は書かない
   const text = (v: string) => oneLine(v).trim().replace(/^[-―ー－—]+$/, '');
-  const did = text(o.summary);
+  const did = shorten(text(o.summary));
   const didText = did ? `${yearLabel(o.year)}にやったこと: ${did}${did.endsWith('。') ? '' : '。'}` : '';
   const indicator = text(o.indicator);
-  return `進捗状況 ${st.join('・')}${ended}。${didText}${o.section ? `所管 ${o.section}。` : ''}沖縄県PDCAの施策「${o.shisaku}」の主な取組。${indicator ? `活動指標「${indicator}」の計画と実績` : '活動指標'}・予算・県の検証と改善案。`;
+  return `進捗状況 ${statusRuns(o.statuses).join('・')}${ended}。${didText}${o.section ? `所管 ${o.section}。` : ''}沖縄県PDCAの施策「${o.shisaku}」の主な取組。${indicator ? `活動指標「${indicator}」。` : ''}`;
 }
 
 // 成果指標の題名。name は lib/data.ts の SeikaGroup の name（印字で見分けられない指標は内訳の名前）
@@ -68,15 +96,34 @@ export const seikaTitle = (name: string) => `${name}（沖縄県の成果指標�
 // 成果指標: 最新の報告の実績値・達成率・目標値を先に置く。name は題名と同じ名前
 export function seikaDescription(x: SeikaRow, name: string) {
   const u = x.unit;
-  return `${yearLabel(x.year)}の実績値 ${oneLine(withUnit(x.actual_raw, u))}（達成率 ${rateText(x)}）、目標値 ${oneLine(withUnit(x.target_raw, u))}（${x.target_year}）。沖縄県PDCAの成果指標「${name}」の基準値からの道のり・県による説明・かかわる主な取組。`;
+  return `${yearLabel(x.year)}の実績値 ${oneLine(withUnit(x.actual_raw, u))}（達成率 ${rateText(x)}）、目標値 ${oneLine(withUnit(x.target_raw, u))}（${x.target_year}）。沖縄県PDCAの成果指標「${name}」の基準値からの道のりと県による説明。`;
 }
 
-// 取組・成果指標のページの題名と説明文（ページと、ほかのページと同じにならないかのテストで同じものを使う）
+// 取組のページ・成果指標のシェア用のページの題名と説明文（ページと、ほかのページと同じにならないかのテストで同じものを使う）
 export const torikumiHead = (g: TorikumiGroup) => ({
-  title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: repostsOf(g).length > 0 }),
+  title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: sameNameElsewhere(g) }),
   description: torikumiDescription({ statuses: g.statuses, year: g.latest.year, summary: g.latest.summary, indicator: g.latest.indicator, section: g.section, shisaku: g.shisaku.name }),
 });
 export const seikaHead = (g: SeikaGroup) => ({ title: seikaTitle(g.name), description: seikaDescription(g.latest, g.name) });
+
+// 主要指標・活動指標のシェア用のページの題名と説明文（SNS のカードに出る。成果指標と同じく、最新の報告の値を先に置く）。
+// 活動指標は同じ名前（「開催回数」など）がいくつもの取組にあるので、題名に取組の名前も入れる
+export function shuyouHead(g: ShuyouGroupOfKihon) {
+  const x = g.latest;
+  const judge = x.judgement ? `県の見通しは「${shortName(oneLine(x.judgement), 30)}」。` : '';
+  return {
+    title: `${x.name}（沖縄県の主要指標）`,
+    description: `${yearLabel(x.year)}の実績値 ${oneLine(x.actual_raw)}、目標値 ${oneLine(x.target_raw)}（${x.year <= 2024 ? 'R6年度' : 'R9年度'}）。${judge}沖縄県PDCAの基本施策「${g.kihon.name}」の主要指標「${x.name}」の基準値からの道のり。`,
+  };
+}
+export function katsudouHead(a: ActivityShare) {
+  const last = [...a.run.years].reverse().find((r) => !r.future);
+  const now = last ? `${yearLabel(last.y)}の計画 ${oneLine(last.plan_raw)} → 実績 ${oneLine(last.actual_raw)}（${last.status}）。` : '';
+  return {
+    title: `${a.name}（沖縄県の主な取組「${shortName(a.torikumi.latest.name, 30)}」の活動指標）`,
+    description: `${now}沖縄県PDCAの主な取組「${a.torikumi.latest.name}」の活動指標「${a.name}」の、年度ごとの計画と実績。`,
+  };
+}
 
 // 基本施策・将来像・部局・くらしのテーマに渡す数（ページの頭の札・ドーナツ・判定のマス目と同じもの）
 interface AreaCounts {
