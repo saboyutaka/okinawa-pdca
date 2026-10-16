@@ -459,6 +459,8 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 /* 一覧の絞り込み（scripts/list-filter.ts）。フィルタは一覧の上に並べる */
 .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
 .filters label, .fgroup-label { display: grid; gap: 4px; font-size: 0.875rem; color: var(--ink-2); font-weight: 700; }
+/* セレクトは選択肢のいちばん長い文の幅になるので、ラベルを箱の幅より広げず、セレクトをその中に収める（スマホで箱からはみ出さないように） */
+.filters label { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, auto); }
 .filters select, .filters input[type="search"], .filters input[type="text"] {
   font: inherit; font-size: 0.95rem; font-weight: 400; color: var(--ink); background-color: var(--paper);
   border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-height: 44px; max-width: 100%;
