@@ -20,7 +20,7 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, renameCandidates, repostsOf, firstYearOf, formerNames, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
+  sectionHref, sourceLink, renameCandidates, repostsOf, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
   isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -51,7 +51,7 @@ const candidates = renameCandidates(g);
 const movedAfter = candidates.some((c) => c.moved && c.after);
 const anyMoved = candidates.some((c) => c.moved);
 // 前の年度の報告での名前（名前が変わった取組も、同じ取組として年度をつないでいる。lib/renames.ts）
-const formers = formerNames(g).map((f) => ({ ...f, span: f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0]) }));
+const formers = formerNames(g);
 const reposts = repostsOf(g);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
 const rm = kankoOfPdca(s.id, g.key);
@@ -82,8 +82,8 @@ const runSpan = (run: ActivityRun) => {
   return ys.length > 1 ? `${yearLabel(ys[0])}〜${yearLabel(ys[ys.length - 1])}` : yearLabel(ys[0]);
 };
 const futureText = (run: ActivityRun) => run.years.filter((r) => r.future).map((r) => yearLabel(r.y)).join('・');
-// 名前の変わった活動指標を同じ活動指標としてつないだときの、前の名前（取組・成果指標の前の名前と同じ書き方）
-const formerText = (run: ActivityRun) => run.formers.map((f) => `${f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0])}の報告では「${f.name}」という名前でした。`).join('');
+// 名前の変わった活動指標を同じ活動指標としてつないだもの（前の名前は出典に書く）
+const actFormers = [...runGroups.values()].map((runs) => runs[0]).filter((run) => run.formers.length > 0);
 // 計画期間（図の帯の見出しと同じ言葉）
 const periodOf = (y: number) => (y <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）');
 // 表の「1件（3件）」を、図に使うかっこの前と、かっこの中（累計や内訳）に分ける。かっこの中は下の行に出す
@@ -168,9 +168,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}でも評価</a>}
     </div>
-    {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0) && (
-      <p class="small notice-inline">{t.year !== LATEST && `${yearLabel(t.year + 1)}の報告には、${movedAfter ? 'この施策に' : ''}この名前の取組はありません。終わったか、名前${movedAfter ? 'や載っている施策' : ''}が変わった可能性があります。`}{first !== YEARS[0] && `${yearLabel(first)}の報告から載っている取組です。`}{formers.map((f) => `${f.span}の報告では「${f.name}」という名前でした。`).join('')}年度をまたいだ取組は<a href="/about/#kazoekata">名前で結び付けています</a>（名前が変わったものは、予算事業や活動指標が続いているかで判断）。{candidates.length > 0 && <><a href="#kankei">関係がありそうな取組</a>を下に出しています。</>}</p>
-    )}
     <div class="now inset">
       <div class="now-l">
         <span class:list={['now-pill', `tone-${latestTone}`]}><Icon tone={latestTone} size={16} />{latestStatus}</span>
@@ -221,25 +218,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     <Fragment slot="status"><small>{yearLabel(t.year)}</small><Chip tone={latestTone} text={latestStatus} /></Fragment>
   </Toc>
 
-  {candidates.length > 0 && (
-    <div class="bubble-row notice-row" id="kankei">
-      <span class="avatar" aria-hidden="true">!</span>
-      <div class="bubble">
-        <p class="small">関係がありそうな取組（この取組の前後の年度に載っている、同じ施策のもの{anyMoved && 'と、予算事業と活動指標が同じ別の施策のもの'}。名前の変更や、取組の分割・統合{anyMoved && '、施策の移動'}の可能性があります）:</p>
-        <ul class="cands">
-          {candidates.map((c) => (
-            <li>
-              <a class="cand" href={c.group.href}>
-                <span class="c-name">{c.group.latest.name}</span>
-                <span class="small secondary">{span(c.group)}・この取組の{c.after ? '後' : '前'}。{c.moved && `別の施策「${c.group.shisaku.name}」。`}{c.shared.length ? `同じ予算事業「${c.shared[0]}」` : '名前が似ている'}{c.moved && '・同じ活動指標'}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )}
-
   <section aria-labelledby="katsudou">
     <h2 id="katsudou" class="anchor">活動指標の計画と実績</h2>
     {[...runGroups.values()].map((runs, i) => {
@@ -267,7 +245,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
             {sh.name && <ShareMenu path={sh.share} kind="活動指標" name={sh.name} />}
           </div>
           <KatsudouChart run={run} here={i > 0 ? '' : t.year === LATEST ? 'いまここ' : '最後の報告'} />
-          {!split && run.formers.length > 0 && <p class="small secondary k-former">{formerText(run)}同じ活動指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
           <details open={!run.chart}>
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
             <div class="table-wrap">
@@ -295,7 +272,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
         <div class="k-group">
           {i > 0 && <div class="k-span">{runSpan(run0)}の活動指標</div>}
           <h3 class="k-name">{run0.indicator || '活動指標の記載なし'}</h3>
-          <p class="small secondary">計画と実績が{runs.length}つの値で書かれているので、値ごとに図と表を分けています。{run0.formers.length > 0 && <>{formerText(run0)}同じ活動指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</>}</p>
+          <p class="small secondary">計画と実績が{runs.length}つの値で書かれているので、値ごとに図と表を分けています。</p>
           {cards}
         </div>
       ) : cards[0];
@@ -503,17 +480,28 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       })}
     </ul>
     <p class="small">この取組が入っている施策の、県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
+    {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0 || actFormers.length > 0) && (
+      <p class="small">{first !== YEARS[0] && `${yearLabel(first)}の報告から載っている取組です。`}{t.year !== LATEST && `${yearLabel(t.year + 1)}の報告には、${movedAfter ? 'この施策に' : ''}この名前の取組はありません（終わったか、名前${movedAfter ? 'や載っている施策' : ''}が変わった可能性があります）。`}{formers.length > 0 && `この取組は、${formerText(formers)}という名前で載っています。`}{actFormers.map((run) => `活動指標「${run.indicator}」は、${formerText(run.formers)}という名前で載っています。`).join('')}年度をまたいだ取組は<a href="/about/#kazoekata">名前で結び付けています</a>（名前が変わったものは、予算事業や活動指標が続いているかで判断）。</p>
+    )}
+    {candidates.length > 0 && (
+      <>
+        <p class="small">関係がありそうな取組（この取組の前後の年度に載っている、同じ施策のもの{anyMoved && 'と、予算事業と活動指標が同じ別の施策のもの'}。名前の変更や、取組の分割・統合{anyMoved && '、施策の移動'}の可能性があります）:</p>
+        <ul class="small">
+          {candidates.map((c) => (
+            <li><a href={c.group.href}>{c.group.latest.name}</a>（{span(c.group)}・この取組の{c.after ? '後' : '前'}。{c.moved && `別の施策「${c.group.shisaku.name}」。`}{c.shared.length ? `同じ予算事業「${c.shared[0]}」` : '名前が似ている'}{c.moved && '・同じ活動指標'}）</li>
+          ))}
+        </ul>
+      </>
+    )}
   </section>
 </Base>
 
 <style>
-  .cand:hover .c-name { text-decoration-color: var(--ink); text-decoration-thickness: 2.5px; }
   .report-no { white-space: nowrap; }
   .head { display: grid; gap: 12px; }
   .head > :global(.head-kind) { margin-bottom: -6px; }
   .head h1 { margin: 0; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .notice-inline { justify-self: start; margin: 0; background: var(--pink); border-radius: 10px; padding: 4px 10px; }
   /* 状態（札と4年間）の下に、状態を決める活動指標の計画と実績を置く。スマホでは 札 → 活動指標 → 4年間 の順 */
   .now { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "l years" "act act"; align-items: center; gap: 10px 32px; padding: 12px 16px; }
   .now-l { grid-area: l; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
@@ -543,21 +531,14 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     .now { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "act" "years"; gap: 12px; }
     .now-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
   }
-  .notice-row { margin-top: 18px; }
-  .notice-row p { margin: 0 0 6px; }
   .basis { margin-top: 14px; }
   .basis .prose { margin: 4px 0 0; }
   .past { margin-top: 14px; }
-  .cands { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 8px; }
-  .cand { display: grid; gap: 2px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); text-decoration: none; color: var(--ink); }
-  .cand:hover { background: var(--sky); }
-  .c-name { font-weight: 700; text-decoration: underline 2px var(--hair); text-underline-offset: 0.2em; }
   .kcard { margin-top: 12px; }
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .k-name { margin: 0; }
   .k-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
   .k-head > :global(.share-menu) { margin-left: auto; }
-  .k-former { margin: 6px 0 0; }
   .k-group { margin-top: 12px; }
   .k-group > p { margin: 4px 0 0; }
   .k-part { margin: 0; font-size: 1rem; }

@@ -948,6 +948,9 @@ export function formerNames(g: YearGroup<TorikumiRow>) {
   }
   return [...m].map(([name, years]) => ({ name, years }));
 }
+// 前の名前を出典に書くときの文（「R4〜R6の報告では「〇〇」」）。取組・活動指標・成果指標で同じ書き方
+export const formerText = (fs: { name: string; years: number[] }[]) =>
+  fs.map((f) => `${f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0])}の報告では「${f.name}」`).join('、');
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
 // href は施策のページのカード（anchor はその id）、share はシェア用のページ
