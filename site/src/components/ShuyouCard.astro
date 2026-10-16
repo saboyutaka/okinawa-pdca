@@ -39,7 +39,7 @@ const valsOf = (p: ShuyouPart) => {
 <article class="sticker scard" id={row.anchor}>
   <div class="sc-head">
     <div class="sc-title">
-      <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
+      <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small unit">（{row.parts[0].unit}）</span>}</h3>
       {tags.head.length === 1 && <ShuyouStatusTag r={tags.head[0]} />}
     </div>
     <ShareMenu path={row.share} kind="主要指標" name={x.name} />
@@ -69,6 +69,7 @@ const valsOf = (p: ShuyouPart) => {
   .sc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 6px 16px; }
   .sc-title { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-width: 0; }
   .scard h3 { margin: 0; }
+  .unit { white-space: nowrap; } /* 「（万t-CO₂）」をかっこの途中で割らない */
   /* 概要版の行と部分が対応しない指標の札: 行ごとに名前と札 */
   .sc-tags { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }
   .sc-tags li { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }

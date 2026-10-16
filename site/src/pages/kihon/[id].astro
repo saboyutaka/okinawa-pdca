@@ -39,9 +39,7 @@ const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
 const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
 // 頭の箱の主要指標の達成状況（最新の年度の概要版。表の順）
 const status = getShuyouStatus().filter((r) => r.kihon_id === k.id);
-// 図の凡例は置かない（図の中に「スタート」「いまここ」「ゴール」の文字があり、青い点が実績値であることは節の頭の文にある。施策のページの成果指標と同じ）。
-// 図を描ける部分があるときだけ、計画の道すじが無いことの注を出す
-const drawable = shuyou.some((r) => r.parts.some((p) => p.drawable));
+// 図の凡例は置かない（図の中に「スタート」「いまここ」「ゴール」の文字がある。施策のページの成果指標と同じ）
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -97,7 +95,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 
   <section aria-labelledby="shuyou">
     <h2 id="shuyou" class="anchor"><Term word="主要指標" /></h2>
-    <p class="small secondary lead">スタートの基準値からゴールの目標値へ、青い点の実績値がどこまで進んだかを見ます。</p>
+    <p class="small secondary lead">この基本施策の成果をはかる県の物差しごとに、スタート（基準値）からゴール（R9の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
     {shuyouLatest.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
     {shuyouPast.length > 0 && (
@@ -107,7 +105,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       </details>
     )}
     {h?.shuyou && saysTo.length !== 1 && <ShuyouSays text={h.shuyou} />}
-    {drawable && <p class="small secondary">主要指標には、成果指標のような年度ごとの計画値がないため、図に計画の道すじ（点線）はありません。</p>}
+    {shuyou.length > 0 && <p class="small secondary">主要指標は、計画期間の最後のゴール（目標値）だけが決められていて、成果指標のような年度ごとの計画値はありません。</p>}
     <p class="small">ほかの基本施策の主要指標は、<a href="/future/">5つの将来像</a>のページでまとめて見られます。</p>
   </section>
 
@@ -163,7 +161,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>
-    <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
+    <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
     {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
   </section>

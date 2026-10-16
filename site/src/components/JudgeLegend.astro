@@ -1,5 +1,6 @@
 ---
-// 施策の一覧の上に1回だけ置く、行の丸いハンコ（components/ShisakuItem.astro）が何年度の何かの1行。
+// 施策の一覧の上に1回だけ置く、一覧から何が分かるかの1行（行の丸いハンコ components/ShisakuItem.astro は何年度の県の判定か）。
+// ハンコの置き場所などの表示の説明はせず、判定が何から決まるかは「県の判定」を押すと出す説明に任せる。
 // 区分の一覧は凡例の箱にせず、「県の判定」を押すと短い説明と一緒に出す（components/KeyBrief.astro。くらしのテーマの一覧・将来像のページと同じ）。
 // ハンコの1つずつの区分は、ハンコにマウスを乗せる・タップすると出る。C・D と E・F はまとめて出す（細かい違いは施策のページに任せる）
 import Term from './Term.astro';
@@ -7,7 +8,7 @@ import KeyBrief from './KeyBrief.astro';
 import { LATEST, yearLabel } from '../lib/data.ts';
 import { JUDGE_GROUPS } from '../lib/icons.ts';
 ---
-<p class="jlegend small">ハンコは{yearLabel(LATEST)}の<Term word="推進状況" label="県の判定" brief="key-judge" />（A〜G）です。</p>
+<p class="jlegend small">施策ごとに、{yearLabel(LATEST)}の<Term word="推進状況" label="県の判定" brief="key-judge" />（A〜G）と、主な取組の進み具合・成果指標の達成率が分かります。</p>
 <KeyBrief kind="judge" used={JUDGE_GROUPS.map((g) => g.key)} />
 
 <style>
