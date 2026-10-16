@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows,
+  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
@@ -354,6 +354,21 @@ test('主要指標の達成状況の名前は、基本施策ページのその�
   }
   const k312 = getShuyouStatus().filter((r) => r.kihon_id === '3-12');
   assert.equal(new Set(k312.map((r) => r.href)).size, 2, '3-(12) の2つの指標が同じカードに向いている');
+});
+
+test('主要指標のカードの達成状況の札は、概要版の49指標がどれも1回ずつ出て、部分に分けたカードは部分ごとに1つ', () => {
+  const placed = getShuyouGroups().flatMap((g) => {
+    const t = shuyouStatusOfCard(g);
+    // 最新の報告に無い指標（R6まで使われていた指標）のカードには、最新の年度の札は無い
+    if (g.latest.year !== LATEST) assert.equal(t.head.length + t.parts.flat().length, 0, `${g.kihon.id} ${g.latest.name}`);
+    else if (g.parts.length > 1 && t.head.length === 0) assert.ok(t.parts.every((p) => p.length === 1), `${g.kihon.id} ${g.latest.name}: 札の無い部分がある`);
+    return [...t.head, ...t.parts.flat()];
+  });
+  assert.equal(placed.length, 49);
+  assert.equal(new Set(placed).size, 49);
+  // 部分に分けたカードは、概要版の行の名前に部分の名前が入る（概要版も付属資料の欄の中と同じ順。3-(4) の「港湾」は概要版では「那覇港」）
+  const pairs = getShuyouGroups().flatMap((g) => shuyouStatusOfCard(g).parts.flatMap((p, i) => p.map((r) => [g.parts[i].label.replace(/^[①-⑳]/, ''), r.name])));
+  assert.deepEqual(pairs.filter(([label, name]) => !name.includes(label)), [['港湾', '那覇港の外貿取扱貨物量']]);
 });
 
 test('主要指標を年度をまたいでまとめても、行が落ちたり2回出たりしない', () => {

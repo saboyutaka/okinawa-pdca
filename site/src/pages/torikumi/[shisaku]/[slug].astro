@@ -493,7 +493,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
         );
       })}
     </ul>
-    <p class="small">この取組が入っている施策の、県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
+    <p class="small">この取組が入っている施策の、県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>です。</p>
     {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0 || actFormers.length > 0) && (
       <p class="small">{first !== YEARS[0] && `${yearLabel(first)}の報告から載っている取組です。`}{t.year !== LATEST && `${yearLabel(t.year + 1)}の報告には、${movedAfter ? 'この施策に' : ''}この名前の取組はありません（終わったか、名前${movedAfter ? 'や載っている施策' : ''}が変わった可能性があります）。`}{formers.length > 0 && `この取組は、${formerText(formers)}という名前で載っています。`}{actFormers.map((run) => `活動指標「${run.indicator}」は、${formerText(run.formers)}という名前で載っています。`).join('')}年度をまたいだ取組は<a href="/about/#kazoekata">名前で結び付けています</a>（名前が変わったものは、予算事業や活動指標が続いているかで判断）。</p>
     )}

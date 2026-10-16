@@ -224,7 +224,7 @@ const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]
 // 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
 export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 // 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
-const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
+export const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
 
 // 「1,032万t-CO₂」「３兆2,885億円」「8,060億92百万円」を { value: 数, scale: 最初の位（万なら1e4）, unit: 位の後ろの単位 } にする。数と単位だけの値でなければ null
 function jaNum(text: string) {
@@ -531,6 +531,15 @@ export function getShuyouStatus(): ShuyouStatus[] {
     };
   });
   return shuyouStatus;
+}
+// 基本施策ページの主要指標のカードに置く、最新の年度の概要版の達成状況の札（将来像のページと同じ components/ShuyouTags.astro）。
+// 概要版は男性・女性などを分けた1指標1行なので、カードを部分に分けていて行の数が部分の数と同じなら、報告書の順で部分ごとに当てる
+// （概要版の行の順は付属資料の欄の中の順と同じ）。当てられない行（付属資料の欄が分けられない 2-(8)・3-(7)）は、カードの頭にまとめる
+export function shuyouStatusOfCard(g: Pick<ShuyouGroupOfKihon, 'href' | 'parts'>): { head: ShuyouStatus[]; parts: ShuyouStatus[][] } {
+  const rows = getShuyouStatus().filter((r) => r.href === g.href);
+  return g.parts.length > 1 && rows.length === g.parts.length
+    ? { head: [], parts: rows.map((r) => [r]) }
+    : { head: rows, parts: g.parts.map(() => []) };
 }
 
 // ---------------------------------------------------------------- 施策

@@ -162,7 +162,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   </Toc>
 
   <section aria-labelledby="seika">
-    <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
+    <h2 id="seika" class="anchor">成果指標</h2>
     <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} past={!pastSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
@@ -194,7 +194,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     )}
     {rmShisaku.length > 0 && (
       <p class="small rm-note">
-        <span class="plan-tag">{KANKO.short}</span> この施策の主な取組の一部は、県の観光の<a href="/keikaku/">個別計画</a>でも評価されています:
+        <span class="plan-tag">{KANKO.short}</span> この施策の主な取組の一部は、県の観光の<a href="/keikaku/">個別計画</a>でも評価されています:{' '}
         {rmShisaku.map((r, i) => <>{i > 0 && '、'}<a href={kankoShisakuHref(r)}>{r.name}</a> <span class="code-no">施策 {r.code}</span></>)}
       </p>
     )}
@@ -265,7 +265,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>
-    <p class="small">県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>（<span class="report-no">基本施策 {kihon?.code}</span>）です。報告書の PDF では、この番号で探せます。</p>
+    <p class="small">県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>（<span class="report-no">基本施策 {kihon?.code}</span>）です。</p>
     <ul class="small">
       {yearsDesc.map((y) => {
         const r = s.years[y];
@@ -323,7 +323,8 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .tlist { margin-top: 12px; }
   .past { margin-top: 18px; }
-  .rm-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 16px 0 0; }
+  /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */
+  .rm-note { margin: 16px 0 0; }
   .ikcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 18px; margin-top: 14px; }
   .ik-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 8px; }
   .voice { margin-top: 16px; }

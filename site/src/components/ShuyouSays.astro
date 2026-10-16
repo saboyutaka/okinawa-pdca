@@ -1,0 +1,50 @@
+---
+// 主要指標の「県」の印の吹き出し（成果指標のカードの SeikaSays と同じ形）。基本施策のページの主要指標のカード（ShuyouCard）の中に置く。
+// ①県の見通し（その指標の最後の報告の年度。県の見立ての言葉なので、達成状況の札とは分けて県の吹き出しに出す）
+// ②評価検証報告書（R4〜R6 の3年間）の基本施策の主要指標についての説明（この指標のことを書いたものだけ）。見通しと年度が違うので見出しで書き分ける。
+// 見通しの札は成果指標の見通しと同じ形と文字の札（Chip）にし、達成状況の札（言葉と数の札 ShuyouTags）と取り違えないようにする。
+// 男性・女性のように1つの欄に見通しが並ぶ指標は名前ごとに札を、言い方として読めない欄（2-(8)）は印字のまま出す。
+// row を渡さないときは②だけ（2つの指標をまとめて書いた 3-(12) の説明。カードの後ろに置く）
+import Chip from './Chip.astro';
+import Term from './Term.astro';
+import { yearLabel, judgesOf, joinCell, toneOfJudgement, type ShuyouGroup } from '../lib/data.ts';
+import { HYOKA } from '../lib/plans.ts';
+
+interface Props { row?: ShuyouGroup; text?: string }
+const { row, text } = Astro.props;
+const raw = row?.latest.judgement;
+const judges = raw ? judgesOf(raw) : null;
+---
+{(raw || text) && (
+  <div class="bubble-row says">
+    <span class="avatar" aria-hidden="true">県</span>
+    <div class="bubble">
+      {row && raw && (
+        <p class="j-line">
+          <span class="small secondary label">県の<Term word="見通し" />（{yearLabel(row.latest.year)}）</span>
+          {judges
+            ? judges.map((j) => <span class="vj">{j.label && <small>{j.label}</small>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
+            : <span class="small">{joinCell(raw)}</span>}
+        </p>
+      )}
+      {text && (
+        <div class:list={['explain', raw && 'after']}>
+          <div class="small secondary label">県による説明（<Term word="評価検証報告書" />・{HYOKA.period}）</div>
+          <p class="prose small">{text}</p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+<style>
+  .says { margin-top: 14px; }
+  .says .prose { margin: 4px 0 0; }
+  /* 見通しの行: 見出しの後ろに札を続けて並べる（入らなければ札を次の行へ送る） */
+  .j-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; }
+  .vj { display: inline-flex; align-items: center; gap: 6px; }
+  .vj small { color: var(--ink-2); }
+  .vj :global(.chip) { font-weight: 700; }
+  /* 見通しの後ろの説明は、細い線で区切る（年度が違うため） */
+  .after { margin-top: 10px; padding-top: 10px; border-top: 1.5px solid var(--grid); }
+</style>
