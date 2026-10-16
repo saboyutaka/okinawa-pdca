@@ -1,7 +1,7 @@
 ---
 // 主要指標1つ（基本施策ページ）。成果指標のカード（SeikaCard）と同じ順に ①名前と達成状況の札・シェアのボタン ②スタート → いま → ゴールの値（1行）
 // ③道のりの図とそのすぐ下の「表で見る」（ShuyouTable） ④県の吹き出し（県の見通しと評価検証報告書の説明。ShuyouSays）。
-// ①の札は将来像のページと同じ概要版の達成状況（「後退 -6%」。成果指標のカードの達成率の札と同じ位置）。男性・女性のように分けた指標は部分の見出しの横に、
+// ①の札は将来像のページと同じ概要版の達成状況（「後退 -6%」）で、将来像のページと同じく名前のすぐ後ろに置く（シェアのボタンとは離す）。男性・女性のように分けた指標は部分の見出しの横に、
 // 付属資料の欄が分けられず概要版の行と部分が対応しない指標は名前の下に、行ごとの名前を付けて並べる（どこに置くかは lib/data.ts の shuyouStatusOfCard）。
 // 県の見通しは県の見立ての言葉なので、①の札（数え方）と分けて④の県の吹き出しに出す（年度ごとの見通しは表）。
 // 主要指標には年度ごとの計画値がないので、図には計画の道すじを引かない。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
@@ -38,11 +38,11 @@ const valsOf = (p: ShuyouPart) => {
 ---
 <article class="sticker scard" id={row.anchor}>
   <div class="sc-head">
-    <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
-    <div class="sc-acts">
+    <div class="sc-title">
+      <h3>{x.name}{!split && row.parts[0].unit && <span class="secondary small">（{row.parts[0].unit}）</span>}</h3>
       {tags.head.length === 1 && <ShuyouStatusTag r={tags.head[0]} />}
-      <ShareMenu path={row.share} kind="主要指標" name={x.name} />
     </div>
+    <ShareMenu path={row.share} kind="主要指標" name={x.name} />
   </div>
   {tags.head.length > 1 && (
     <ul class="sc-tags">{tags.head.map((r) => <li><span class="small secondary">{r.name}</span><ShuyouStatusTag r={r} /></li>)}</ul>
@@ -65,8 +65,9 @@ const valsOf = (p: ShuyouPart) => {
 
 <style>
   .scard { margin-top: 18px; }
-  .sc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 16px; }
-  .sc-acts { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  /* 名前と札の列と、シェアのボタンの列。名前が長いときも、シェアのボタンは右上に置いたまま名前の列の中で折り返す */
+  .sc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 6px 16px; }
+  .sc-title { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-width: 0; }
   .scard h3 { margin: 0; }
   /* 概要版の行と部分が対応しない指標の札: 行ごとに名前と札 */
   .sc-tags { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 16px; }

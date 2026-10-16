@@ -39,10 +39,9 @@ const shuyouLatest = shuyou.filter((r) => r.latest.year === LATEST);
 const shuyouPast = shuyou.filter((r) => r.latest.year !== LATEST);
 // 頭の箱の主要指標の達成状況（最新の年度の概要版。表の順）
 const status = getShuyouStatus().filter((r) => r.kihon_id === k.id);
-// 図を描ける部分があるときだけ凡例を出す（ゴールの丸は、目標値が数で読める部分があるときだけ）
-const parts = shuyou.flatMap((r) => r.parts);
-const drawable = parts.some((p) => p.drawable);
-const goal = parts.some((p) => p.drawable && p.goal);
+// 図の凡例は置かない（図の中に「スタート」「いまここ」「ゴール」の文字があり、青い点が実績値であることは節の頭の文にある。施策のページの成果指標と同じ）。
+// 図を描ける部分があるときだけ、計画の道すじが無いことの注を出す
+const drawable = shuyou.some((r) => r.parts.some((p) => p.drawable));
 
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
@@ -97,14 +96,8 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   />
 
   <section aria-labelledby="shuyou">
-    <h2 id="shuyou" class="anchor"><Term word="主要指標" />：ゴールまでの道のり</h2>
+    <h2 id="shuyou" class="anchor"><Term word="主要指標" /></h2>
     <p class="small secondary lead">スタートの基準値からゴールの目標値へ、青い点の実績値がどこまで進んだかを見ます。</p>
-    {drawable && (
-      <ul class="chart-key" aria-hidden="true">
-        {goal && <li><span class="k-ring"></span>ゴールの目標値</li>}
-        <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
-      </ul>
-    )}
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
     {shuyouLatest.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
     {shuyouPast.length > 0 && (

@@ -157,7 +157,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   </Toc>
 
   <section aria-labelledby="seika">
-    <h2 id="seika" class="anchor">成果指標：ゴールまでの道のり</h2>
+    <h2 id="seika" class="anchor">成果指標</h2>
     <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} past={!pastSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
