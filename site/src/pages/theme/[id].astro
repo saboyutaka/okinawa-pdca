@@ -9,6 +9,7 @@ import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import ShisakuHead from '../../components/ShisakuHead.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
 import Ladder from '../../components/Ladder.astro';
@@ -46,7 +47,8 @@ const SEIKA_SHOW = 10;
 // 4年間の推移。年度ごとに、その年度の名前でテーマに入るかを決める（施策は4年度とも同じ）
 const pick = (x: { shisaku_id: string; name: string }) => inTheme(t, x.shisaku_id, x.name);
 const trend = trendPoints(pick, pick);
-// 一覧は将来像の帯の下に、将来像ごとに1つの箱を置き、箱の中を基本施策の名前で区切って施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
+// 一覧は将来像の帯の下に、将来像ごとに1つの箱を置き、箱の中を基本施策の名前で区切って施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）。
+// 箱は基本施策のページの施策の一覧と同じく、頭に列の見出し（ShisakuHead）を1回だけ置き、行は左の列に施策と成果指標、右の列に主な取組の四角（ShisakuItem の toriList）
 const kihonList = getKihonList();
 const visions = getShouraizou()
   .map((v) => {
@@ -98,11 +100,12 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
         {/* 件数は名前の最後の行に続けて置き、数字の途中で折り返さない */}
         <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a><span class="n">（{v.n}）</span></span></h3>
         <div class="k-box">
+          <ShisakuHead />
           {v.kihon.map((k) => (
             <>
               <h4 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></h4>
               <ul class="row-list">
-                {k.items.map((s) => <ShisakuItem s={s} />)}
+                {k.items.map((s) => <ShisakuItem s={s} toriList />)}
               </ul>
             </>
           ))}
@@ -153,7 +156,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
   .sz-ribbon .n { white-space: nowrap; }
-  /* 将来像ごとに1つの箱。中は基本施策の名前の行（地の色）と施策の行を、一覧（.row-list）と同じ細い線で区切って並べる */
+  /* 将来像ごとに1つの箱。中は列の見出し・基本施策の名前の行（地の色）・施策の行を、一覧（.row-list）と同じ細い線で区切って並べる */
   .k-box { display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
   .k-box .row-list { border: 0; border-radius: 0; box-shadow: none; }
   .k-h { margin: 0; padding: 8px 16px; background: var(--bg); font-size: 0.9375rem; line-height: 1.5; }
