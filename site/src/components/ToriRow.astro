@@ -5,7 +5,7 @@
 // その年にやったことは畳む。4年分の進捗状況・予算・県の検証と改善案は取組のページで見せる（施策のページでは経年を出さず、一覧を短くする）。
 // 所管課・くらしのテーマは取組のページに任せる。対応する成果指標は出さない（施策のページではどの行も成果指標の節と同じになる。docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
 import Chip from './Chip.astro';
-import NewTag from './NewTag.astro';
+import YearTag from './YearTag.astro';
 import { LATEST, STATUSES, PATTERNS, yearLabel, statusOf, statusesOf, toneOfStatus, torikumiHref, type YearGroup } from '../lib/data.ts';
 import type { TorikumiRow } from '../lib/types.ts';
 
@@ -23,7 +23,7 @@ const note = STATUSES.find((c) => c.key === status)?.note;
 const values = t.indicator ? (t.lines ? t.lines.map((l) => ({ target: l.target, actual: l.actual })) : [{ target: t.target, actual: t.actual }]) : [];
 ---
 <li class:list={['tr', old && 'old']}>
-  <div class="tr-name"><a class="name-link" href={href}>{t.name}</a>{isNew && <> <NewTag /></>}</div>
+  <div class="tr-name"><a class="name-link" href={href}>{t.name}</a>{isNew && <> <YearTag kind="new" /></>}</div>
   {t.indicator && <div class="tr-ind small secondary">{t.indicator}</div>}
   <div class="tr-v small">
     {values.length > 0 && <span class="tr-n">{values.map((v) => <span>計画 <b>{v.target || '—'}</b> → 実績 <b>{v.actual || '—'}</b></span>)}</span>}

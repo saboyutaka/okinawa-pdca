@@ -58,12 +58,13 @@ function search(form: HTMLFormElement) {
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
-    // 最新の年度の報告から新しく載った取組の札（components/NewTag.astro と同じ形）
-    if (row[11].includes('new')) {
-      const yl = `R${data!.years[data!.years.length - 1] - 2018}`;
-      const tag = el('span', 'new-tag', `${yl}から`);
-      tag.title = `${yl}の報告から新しく載った取組`;
-      tag.append(el('span', 'sr-only', '新しく載った取組'));
+    // 最新の年度の報告から新しく載った取組（「R7から」）と、最新の年度の報告に無い取組（「R6まで」）の札（components/YearTag.astro と同じ形）
+    const kind = row[11].includes('new') ? 'new' : row[11].includes('ended') ? 'ended' : '';
+    if (kind) {
+      const yl = `R${latestYear - 2018}`;
+      const tag = el('span', `year-tag ${kind}`, kind === 'new' ? `${yl}から` : `${yl}まで`);
+      tag.title = kind === 'new' ? `${yl}の報告から新しく載った取組` : `${yl}の報告まで載っていた取組`;
+      tag.append(el('span', 'sr-only', kind === 'new' ? '新しく載った取組' : '載っていた取組'));
       const head = el('div');
       head.append(n, ' ', tag);
       main.append(head, s);

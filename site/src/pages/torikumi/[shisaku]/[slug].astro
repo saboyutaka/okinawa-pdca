@@ -12,7 +12,7 @@ import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import HeadKind from '../../../components/HeadKind.astro';
-import NewTag from '../../../components/NewTag.astro';
+import YearTag from '../../../components/YearTag.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
 import ShareMenu from '../../../components/ShareMenu.astro';
@@ -168,7 +168,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 <Base {...torikumiHead(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift head">
-    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)}>{g.patterns.includes('new') && <NewTag href="/torikumi/?pat=new" />}</HeadKind>
+    <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOfItem(s.id, t.name)}>{g.patterns.includes('new') && <YearTag kind="new" href="/torikumi/?pat=new" />}{g.patterns.includes('ended') && <YearTag kind="ended" year={t.year} href="/torikumi/?pat=ended" />}</HeadKind>
     <h1>{t.name}</h1>
     {(rels.length > 0 || reposts.length > 0) && (
       <dl class="rel">
