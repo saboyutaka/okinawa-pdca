@@ -70,7 +70,7 @@ function build(): SearchData {
       themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
-      torikumiLinks(g), // ほかの取組とのつながり（前回までの取組・後続の取組・関連の取組があるか。lib/data.ts の relatedOf）
+      torikumiLinks(g), // ほかの取組とのつながり（前回までの取組・後続の取組・再掲があるか。lib/data.ts の relatedOf）
     ]),
     summary: searchSummary().hash,
   };

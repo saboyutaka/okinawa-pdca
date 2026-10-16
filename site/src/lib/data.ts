@@ -985,7 +985,7 @@ export function renameCandidates(g: TorikumiGroup) {
   }
   return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
 }
-// 取組のページの頭に出す、ほかの取組とのつながり。前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・関連の取組（再掲）。
+// 取組のページの頭に出す、ほかの取組とのつながり。前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・再掲（別の施策にも載っている同じ取組）。
 // 取組をさがすの「ほかの取組とのつながり」も、これで決める（ページに出る取組と、絞り込みの件数をそろえるため）
 export function relatedOf(g: TorikumiGroup) {
   const cs = renameCandidates(g);
