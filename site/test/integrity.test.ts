@@ -8,7 +8,7 @@ import {
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
   seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows,
 } from '../src/lib/data.ts';
-import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
+import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
 import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -317,6 +317,34 @@ test('別の施策に移った取組は、前回までの取組・後続の取�
       const [a, b] = c.after ? [indicatorOf(g, g.latest.year), indicatorOf(c.group, firstYearOf(c.group))] : [indicatorOf(g, firstYearOf(g)), indicatorOf(c.group, c.group.latest.year)];
       assert.ok(c.shared.length && katsudouNameKey(a) === katsudouNameKey(b), `${g.href} → ${c.group.href}`);
     }
+  }
+});
+
+test('再掲は、同じ年度に同じ名前で載っている別の施策の取組と、名前を変えて載っている取組（TORIKUMI_REPOSTS）で、互いに出る', () => {
+  // 名前を変えて載っている取組は、両方が載っている年度のすべてで、所管課・決算見込額・活動指標と計画・実績・進捗状況が同じ（書き方の違いはそろえる）
+  const same = (s: string) => s.normalize('NFKC').replace(/\s/g, '');
+  for (const set of TORIKUMI_REPOSTS) {
+    const gs = set.map((r) => groupOf(r.shisaku, r.name));
+    for (const a of gs) {
+      for (const b of gs.filter((x) => x !== a)) {
+        assert.notEqual(a.shisaku.id, b.shisaku.id);
+        const r = repostsOf(a).find((x) => x.group === b);
+        assert.ok(r, `${a.href} → ${b.href}`);
+        assert.deepEqual([r.name, r.partial, r.years.length > 0], [b.latest.name, false, true]);
+        for (const y of r.years) {
+          const [x, z] = [a.years[y]!, b.years[y]!];
+          assert.deepEqual([x.section, x.budget, same(x.indicator), same(x.target), same(x.actual), x.status], [z.section, z.budget, same(z.indicator), same(z.target), same(z.actual), z.status], `${y} ${a.href} ${b.href}`);
+        }
+      }
+    }
+  }
+  // 名前は年度ごとにも比べる。R6まで同じ名前で、R7で 2-4-a-1 だけ名前が変わった取組は、R4〜R6 の再掲
+  const ict = repostsOf(groupOf('2-4-a-1', 'ICTを活用した関係機関との連携体制構築')).find((x) => x.group === groupOf('3-2-a-1', 'ICTを活用した観光危機情報の収集・発信'));
+  assert.ok(ict);
+  assert.deepEqual([ict.years, ict.partial, ict.name], [[2022, 2023, 2024], true, null]);
+  // どちらの取組のページにも、同じ年度の再掲として出る
+  for (const g of getTorikumiGroups()) {
+    for (const r of repostsOf(g)) assert.ok(repostsOf(r.group).some((x) => x.group === g && x.years.join() === r.years.join()), `${g.href} → ${r.group.href}`);
   }
 });
 

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
-import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from './renames.ts';
+import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
 } from './types.ts';
@@ -866,8 +866,7 @@ export function getPlanTree(): PlanTreeVision[] {
   }));
 }
 
-// 同じ名前の取組が別の施策にも載っているもの（総括報告書の「再掲」）。同じ年度に載っているものだけ
-// （R6まで施策Aに、R7から施策Bに同じ名前で載っている「沖縄平和賞の開催」は、再掲ではなく施策の移動なので renameCandidates で出す）
+// 最新の報告の名前が同じ取組（別の施策のものを含む）
 let groupsByKey: Map<string, TorikumiGroup[]> | undefined;
 function sameNameGroups(g: TorikumiGroup) {
   if (!groupsByKey) {
@@ -880,8 +879,53 @@ function sameNameGroups(g: TorikumiGroup) {
   }
   return groupsByKey.get(sameKey(g.key))!;
 }
-export function repostsOf(g: TorikumiGroup) {
-  return sameNameGroups(g).filter((x) => x.shisaku.id !== g.shisaku.id && YEARS.some((y) => g.years[y] && x.years[y]));
+// 同じ取組が別の施策にも載っているもの（総括報告書の「再掲」）。同じ年度に同じ名前で載っているものと、名前を変えて載っているもの（lib/renames.ts の TORIKUMI_REPOSTS）。
+// 名前は最新の報告の名前（名前が変わった取組は新しい名前）のほか、年度ごとの名前でも比べる（R6まで 2-4-a-1・3-2-a-1 の再掲で、
+// R7で 2-4-a-1 だけ名前が変わった「ICTを活用した観光危機情報の収集・発信」も R4〜R6 の再掲になる）。
+// years は再掲だった年度、partial は両方が載っている年度の一部だけが再掲のとき、name は名前を変えて載っているものの相手の名前（最新の報告）。
+// R6まで施策Aに、R7から施策Bに同じ名前で載っている「沖縄平和賞の開催」は、年度が重ならないので再掲ではなく施策の移動として renameCandidates で出す
+export interface Repost { group: TorikumiGroup; years: number[]; partial: boolean; name: string | null }
+let groupsByYearKey: Map<string, TorikumiGroup[]> | undefined;
+let listedReposts: Map<TorikumiGroup, TorikumiGroup[]> | undefined;
+export function repostsOf(g: TorikumiGroup): Repost[] {
+  if (!groupsByYearKey) {
+    groupsByYearKey = new Map();
+    for (const x of getTorikumiGroups()) {
+      for (const y of YEARS) {
+        if (!x.years[y]) continue;
+        const k = `${y}|${sameKey(x.years[y].key)}`;
+        if (!groupsByYearKey.has(k)) groupsByYearKey.set(k, []);
+        groupsByYearKey.get(k)!.push(x);
+      }
+    }
+  }
+  if (!listedReposts) {
+    listedReposts = new Map();
+    const groupOf = (r: { shisaku: string; name: string }) => {
+      const x = getTorikumiGroups().find((o) => o.shisaku.id === r.shisaku && sameKey(o.key) === sameKey(nameKey(r.name)));
+      if (!x) throw new Error(`TORIKUMI_REPOSTS の取組が見つからない: ${r.shisaku} ${r.name}`);
+      return x;
+    };
+    for (const set of TORIKUMI_REPOSTS) {
+      const xs = set.map(groupOf);
+      for (const x of xs) listedReposts.set(x, [...(listedReposts.get(x) || []), ...xs.filter((o) => o !== x)]);
+    }
+  }
+  const years = new Map<TorikumiGroup, number[]>();
+  for (const y of YEARS) {
+    if (!g.years[y]) continue;
+    for (const x of [...sameNameGroups(g).filter((o) => o.years[y]), ...groupsByYearKey.get(`${y}|${sameKey(g.years[y].key)}`)!]) {
+      if (x.shisaku.id !== g.shisaku.id && !years.get(x)?.includes(y)) years.set(x, [...(years.get(x) || []), y]);
+    }
+  }
+  const listed = listedReposts.get(g) || [];
+  for (const x of listed) years.set(x, YEARS.filter((y) => g.years[y] && x.years[y]));
+  return [...years].map(([x, ys]) => ({
+    group: x,
+    years: ys,
+    partial: ys.length < YEARS.filter((y) => g.years[y] && x.years[y]).length,
+    name: listed.includes(x) ? x.latest.name : null,
+  }));
 }
 // 別の施策に同じ名前の取組（のページ）があるか。再掲のほか、施策を移ったものも含む（ページの題名に施策の番号を足すかを決める。lib/describe.ts）
 export const sameNameElsewhere = (g: TorikumiGroup) => sameNameGroups(g).some((x) => x.shisaku.id !== g.shisaku.id);
