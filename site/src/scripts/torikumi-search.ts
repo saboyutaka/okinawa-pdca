@@ -135,6 +135,7 @@ function search(form: HTMLFormElement) {
     const pat = String(f.get('pat') || '');
     const theme = String(f.get('theme') || '');
     const plan = String(f.get('plan') || '');
+    const link = String(f.get('link') || '');
     const ti = theme ? data.themes.findIndex(([id]) => id === theme) : -1;
     const last = data.years.length - 1;
     if (words.length && !texts.length) {
@@ -153,6 +154,8 @@ function search(form: HTMLFormElement) {
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
+      // ほかの取組とのつながりも、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
+      if (link && !r[13].includes(link)) return false;
       // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;

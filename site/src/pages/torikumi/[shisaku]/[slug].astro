@@ -20,7 +20,7 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOfItem } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, renameCandidates, repostsOf, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
+  sectionHref, sourceLink, relatedOf, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
   isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -46,20 +46,21 @@ const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
 // 部局票の「対応する成果指標」は出さない（docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
-const candidates = renameCandidates(g);
+// 前回までの取組・後続の取組・関連の取組（再掲）。頭のタイトルの下に並べる
+const related = relatedOf(g);
+const candidates = [...related.before, ...related.after];
 // 別の施策に移った可能性のある取組があるか（この取組の後の年度・前の年度）
 const movedAfter = candidates.some((c) => c.moved && c.after);
 const anyMoved = candidates.some((c) => c.moved);
-// 頭のタイトルの下に、前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・関連の取組（再掲）を並べる
 const rels = [
-  { label: '前回までの取組', cs: candidates.filter((c) => !c.after) },
-  { label: '後続の取組', cs: candidates.filter((c) => c.after) },
+  { label: '前回までの取組', cs: related.before },
+  { label: '後続の取組', cs: related.after },
 ].filter((x) => x.cs.length > 0);
 const candNote = (c: (typeof candidates)[number]) =>
   `${span(c.group)}${c.moved ? `・別の施策「${c.group.shisaku.name}」` : ''}・${c.shared.length ? `同じ予算事業${c.moved ? 'と活動指標' : ''}` : '名前が似ている'}`;
 // 前の年度の報告での名前（名前が変わった取組も、同じ取組として年度をつないでいる。lib/renames.ts）
 const formers = formerNames(g);
-const reposts = repostsOf(g);
+const reposts = related.repost;
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
 const rm = kankoOfPdca(s.id, g.key);
 const okUrl = (u: string | null | undefined) => /^https?:\/\/\S+$/.test(u || '');
