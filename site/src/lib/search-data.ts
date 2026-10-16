@@ -6,7 +6,7 @@
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
 import { createHash } from 'node:crypto';
 import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, torikumiLinks } from './data.ts';
-import { getThemes, themeIdsOfItem } from './themes.ts';
+import { getThemes, themeIdsOf } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
 
@@ -67,7 +67,7 @@ function build(): SearchData {
       // 取組のページの URL。施策の番号（1列目）と重なるが、短くしても gzip で約4KB しか減らない（残りはハッシュの8桁で縮まない）ので、
       // URL の作り方（lib/data.ts の torikumiHref）をブラウザに持たせず、そのまま渡す
       g.href,
-      themeIdsOfItem(g.shisaku.id, g.latest.name).map((id) => themeIndex.get(id)!),
+      themeIdsOf(g.shisaku.id).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
       torikumiLinks(g), // ほかの取組とのつながり（前回までの取組・後続の取組・再掲があるか。lib/data.ts の relatedOf）

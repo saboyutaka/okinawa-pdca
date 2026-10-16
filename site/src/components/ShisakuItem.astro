@@ -3,18 +3,24 @@
 // 1行目に判定の小さなハンコと名前、2行目に取組の進みと成果指標の達成率を並べる。
 // 取組は1施策に1〜14件と少ないので、指標のマップのマスのような1件1つの四角を並べる（何件のうち何件かを、文字の「6/6」と同じく図でも見せる）。
 // 四角を押すと、その取組の名前と進捗状況を吹き出しに出す（StatusBar の pop。一覧なので Tab では止めない）。
-// 判定はハンコだけで出し、言い方（A〜G の意味）は一覧の上の凡例（JudgeLegend）に1回だけ書く。前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
+// toriList を付けると（基本施策・くらしのテーマのページ。1ページの施策は多くても40ほどで、取組の一覧を書き出しても重くならないため）、5つの将来像のページの基本施策の行と同じ2列にする。
+// 左の列は施策の名前と、その下に「成果指標の名前 ▲ 40.7%」を1指標1行で畳まずに出す。右の列は主な取組の四角だけ（何の四角かは一覧の箱の頭の列の見出し
+// 「施策と成果指標｜主な取組」（ShisakuHead）に1回だけ書き、行には「取組」「順調」の言葉を書かない。四角の数と色で何件のうち何件が順調かが見える）。
+// 右の列の頭の下向きの矢印（「条件で絞り込む」と同じ印。開くと上向きに回る。取組の数で位置が変わらないよう四角の前）と四角を押すと、行の下に主な取組の名前と進捗状況の一覧を開く（四角の吹き出しの代わり）。
+// 720px 以下は将来像のページと同じく右の列を左の列の下に積み、四角の前に小さく「主な取組」と添える
+// 判定はハンコだけで出し、何年度の判定かは一覧の上（JudgeLegend）に1回だけ書く。ハンコの区分（A〜G の意味）は、マウスを乗せる・タップすると出す。
+// 前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
 // 一覧は将来像・基本施策ごとに見出しを立てているので、見出しと同じこと（将来像・基本施策）は行に書かない。
 // 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）。
 // sub のスロットを渡すと、基本施策の名前の代わりにそれを出す（部局のページの「関係部等: 環境部」など）
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone, torikumiCells, type Shisaku } from '../lib/data.ts';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy, getKihonList, rateText, rateTone, torikumiCells, seikaGroupsOf, type Shisaku } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
 
-interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean }
-const { s, attrs = {}, kihon: showKihon = false } = Astro.props;
+interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean; toriList?: boolean }
+const { s, attrs = {}, kihon: showKihon = false, toriList = false } = Astro.props;
 const kihon = showKihon ? getKihonList().find((k) => k.id === s.kihon_id) : null;
 const latestTori = s.torikumi.filter((t) => t.year === LATEST);
 const counts = countBy(latestTori, statusOf, STATUSES.map((x) => x.key));
@@ -22,25 +28,53 @@ const ok = counts['順調'] || 0;
 const seika = s.seika.filter((x) => x.year === LATEST);
 const j = judgeOf(s.judges[LATEST]);
 const ui = j && JUDGE_UI[j.key];
-const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : '判定なし'}`;
+const judgeLabel = `${yearLabel(LATEST)}の判定`;
+const judgeValue = j ? `${j.key} ${j.label}` : '判定なし';
+const context = `${s.name} 主な取組 `;
+// 行に出す成果指標（名前は施策のページの成果指標のカードへのリンク）
+const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year === LATEST) : [];
 ---
-<li class="s-item" {...attrs}>
-  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j && ui ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
+<li class:list={['s-item', toriList && 'cols']} {...attrs}>
+  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} data-tip-label={judgeLabel} data-tip-value={judgeValue} aria-hidden="true">{j && ui ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
   <div class="name-row">
     <a class="item-name name-link" href={`/shisaku/${s.id}/`}>{s.name}</a>
     <span class="code-no">{s.code}</span>
   </div>
   <div class="facts small">
-    <span class="sr-only">{judgeText}</span>
+    <span class="sr-only">{judgeLabel}: {judgeValue}</span>
     {Astro.slots.has('sub') ? <span class="kihon"><slot name="sub" /></span> : kihon && <span class="kihon">基本施策 {kihon.name}</span>}
-    <span class="tori">
-      取組 <b>{ok}/{latestTori.length}</b>順調
-      {latestTori.length > 0 && <StatusBar categories={STATUSES} context={`${s.name} 主な取組 `} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
-    </span>
-    <span class="seika">
-      成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}
-      <span class="sr-only">（達成率）</span>
-    </span>
+    {toriList ? (
+      <>
+        {seikaGroups.length > 0 && (
+          <ul class="sr-list">
+            {seikaGroups.map((g) => <li><a class="s-name name-link" href={g.href}>{g.name}</a> <Chip tone={rateTone(g.latest)} text={rateText(g.latest)} /><span class="sr-only">（達成率）</span></li>)}
+          </ul>
+        )}
+        {latestTori.length > 0 && (
+          <details class="open-d">
+            <summary>
+              <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+              <span class="t-l">主な取組</span>
+              <StatusBar categories={STATUSES} counts={counts} context={context} size="mini" cells squares />
+            </summary>
+            <ul class="p-list inset">
+              {torikumiCells(s).map((x) => <li><span class="t-st" data-tip-label="進捗状況" data-tip-value={x.key}><Chip tone={toneOfStatus(x.key)} text={x.key} /></span><a class="name-link" href={x.href}>{x.name}</a></li>)}
+            </ul>
+          </details>
+        )}
+      </>
+    ) : (
+      <>
+        <span class="tori">
+          取組 <b>{ok}/{latestTori.length}</b>順調
+          {latestTori.length > 0 && <StatusBar categories={STATUSES} context={context} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
+        </span>
+        <span class="seika">
+          成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}
+          <span class="sr-only">（達成率）</span>
+        </span>
+      </>
+    )}
   </div>
 </li>
 
@@ -53,4 +87,43 @@ const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : 
   .kihon { flex-basis: 100%; }
   .tori, .seika { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
   .seika :global(.chip) { gap: 4px; }
+  /* 成果指標の行（toriList）: 1指標1行で、名前のすぐ後ろに達成率の形と数（5つの将来像のページの基本施策の行の主要指標と同じ字） */
+  .sr-list { flex-basis: 100%; list-style: none; margin: 0; padding: 0; }
+  .sr-list li { line-height: 1.7; }
+  .s-name { font-size: 0.9375rem; font-weight: 400; }
+  .sr-list :global(.chip) { gap: 4px; white-space: nowrap; vertical-align: -1px; }
+  /* 2列の行（toriList）: 左の列は判定のハンコ・名前（番号は名前の後ろ）・成果指標、右の列（幅は --tcol。列の見出しの ShisakuHead と同じ）は主な取組。
+     右の列の開け閉めのボタン（summary）は、開いた一覧を行の幅いっぱいに出すため details の中に置き、PC の幅では行の右上（名前の行の高さ）に重ねる */
+  .cols { position: relative; }
+  .cols .name-row { display: block; }
+  .cols .name-row .code-no { margin-left: 6px; }
+  @media (min-width: 721px) {
+    .cols { grid-template-columns: 30px minmax(0, 1fr) var(--tcol, 15rem); column-gap: 16px; }
+    .cols .name-row { grid-column: 2; }
+    .cols .facts { grid-column: 2 / -1; }
+    .cols .open-d > summary { position: absolute; top: 12px; right: 16px; width: var(--tcol, 15rem); }
+    .cols .t-l { display: none; }
+  }
+  .t-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  /* 取組の一覧を開くボタン: 下向きの矢印と四角。矢印は取組の数で位置が変わらないよう、四角の前（右の列の頭）に置く。四角は押しても吹き出しを出さない */
+  .open-d { flex-basis: 100%; }
+  .open-d > summary { display: flex; align-items: center; gap: 8px; padding: 0; color: inherit; font-size: inherit; font-weight: 400; list-style: none; }
+  .open-d > summary :global(.sbar) { flex: 0 1 auto; min-width: 0; }
+  .chev { flex: none; width: 14px; height: 14px; fill: none; stroke: var(--link); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .open-d[open] .chev { transform: rotate(180deg); }
+  .open-d > summary::-webkit-details-marker { display: none; }
+  .open-d > summary :global(.sbar) { pointer-events: none; }
+  .open-d[open] > summary { margin-bottom: 6px; }
+  /* 開いた中: 進捗状況と名前の行 */
+  .p-list { list-style: none; margin: 0 0 4px; padding: 8px 12px; display: grid; gap: 4px; border-radius: 10px; }
+  .p-list li { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px; align-items: start; }
+  .p-list :global(.chip) { font-size: 0.8125rem; white-space: nowrap; }
+  .p-list .name-link { font-weight: 400; color: var(--ink); }
+  /* スマホの幅では名前を広く取るため、取組の進捗状況は形の印だけにする（文字は読み上げに残し、印をタップするとツールチップでも出す） */
+  @media (max-width: 640px) {
+    .p-list { padding: 8px 10px; }
+    .p-list li { grid-template-columns: auto minmax(0, 1fr); }
+    .t-st { display: flex; align-items: center; height: 1.6em; }
+    .t-st :global(.chip > span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
 </style>

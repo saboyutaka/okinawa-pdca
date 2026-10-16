@@ -1,0 +1,76 @@
+---
+// 主要指標の部分1つの年度ごとの値の表（畳む）。道のりの図（SeikaChart）のすぐ下に置く「表で見る」。成果指標の表（SeikaTable）と同じ形で、
+// 図と同じ年度を列にして左から右へ並べる（計画期間ごとに3年。報告のある期間だけ）。行は 基準値 → 実績値 → 目標値 → 見通し → 出典。
+// 基準値・目標値は計画期間ごとの値なので、期間の3列をまたいで、図のスタートと同じく左に、ゴールと同じく右に寄せる（図と同じく、その期間の最後の報告の値）。
+// 図があるときは、PC の幅で列を図の年度にそろえ（左の列は図の左の余白 --plot-l。scripts/charts.ts の drawSeika が入れる）、
+// 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。図を描けない部分は、表を開いて出す
+import Chip from './Chip.astro';
+import ExtLink from './ExtLink.astro';
+import { LATEST, yearLabel, refText, toneOfJudgement, judgesOf, joinCell, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+
+interface Props { row: ShuyouGroup; part: ShuyouPart }
+const { row, part: p } = Astro.props;
+const aligned = p.drawable;
+// 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
+const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const r = ys.map((y) => p.years[y]).filter((x) => x != null).pop();
+  return r ? [{ ys, r, cur: ys.includes(p.latest.year) }] : [];
+});
+const cols = periods.flatMap((q) => q.ys.map((y, i) => ({ y, p: q, first: i === 0, rep: p.years[y] })));
+const cell = (k: number, ...more: (string | false)[]) => [...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
+const span = (q: (typeof periods)[number], ...more: (string | false)[]) => [...more, q !== periods[0] && 'sep', !q.cur && 'off'];
+const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? joinCell(raw) : null);
+const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.years[y].page);
+---
+<details open={!aligned}>
+  <summary>表で見る</summary>
+  <div class="table-wrap">
+    <table class:list={['shuyou-table', aligned && 'aligned']}>
+      <caption class="sr-only">{p.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+      <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
+      <thead>
+        <tr><td></td>{cols.map((c, k) => <th scope="col" class:list={cell(k)}>{yearLabel(c.y)}{!c.rep && c.y > LATEST && <small class="secondary">これから</small>}</th>)}</tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">基準値</th>{periods.map((q) => <td colspan={q.ys.length} class:list={span(q, 'start')}>{q.r.b.text}{q.r.b.note && <span class="paren">{q.r.b.note}</span>}</td>)}</tr>
+        <tr><th scope="row">実績値</th>{cols.map((c, k) => <td class:list={cell(k, c.rep?.a.value == null && 'text')}>{c.rep ? <><b>{c.rep.a.text}</b>{refText(c.rep.a.note) && <span class="paren">{refText(c.rep.a.note)}</span>}</> : '—'}</td>)}</tr>
+        <tr><th scope="row">目標値</th>{periods.map((q) => <td colspan={q.ys.length} class:list={span(q, 'goal')}>{q.r.t.text}<span class="paren">{q.r.target_year}{q.r.t.note}</span></td>)}</tr>
+        <tr><th scope="row">見通し</th>{cols.map((c, k) => {
+          const j = judge(c.rep?.judgement);
+          return <td class:list={cell(k, 'text')}>{!j ? '—' : typeof j === 'string' ? j : j.map((x) => <span class="vj">{x.label && <small>{x.label}</small>}<Chip tone={toneOfJudgement(x.key)} text={x.key} /></span>)}</td>;
+        })}</tr>
+        <tr><th scope="row">出典</th>{cols.map((c, k) => { const s = c.rep && src(c.y); return <td class:list={cell(k, 'text')}>{s ? <ExtLink href={s.href}>{s.label}</ExtLink> : '—'}</td>; })}</tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<style>
+  /* 成果指標の表（components/SeikaTable.astro）と同じ見た目。期間の変わり目に縦の線を引き、最新でない計画期間の列に図の帯と同じ地の色を敷く */
+  .shuyou-table thead th { vertical-align: bottom; }
+  .shuyou-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
+  .shuyou-table .sep { border-left: 1.5px solid var(--line); }
+  .shuyou-table .off { background: var(--bg); }
+  /* 数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。見通し・出典・文の実績値と、基準値・目標値は折り返す */
+  .shuyou-table td { overflow-wrap: normal; min-width: 4.5em; white-space: nowrap; }
+  .shuyou-table td.text, .shuyou-table td.start, .shuyou-table td.goal { white-space: normal; }
+  .shuyou-table td.start { text-align: left; }
+  .shuyou-table td.goal { text-align: right; }
+  .shuyou-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+  .vj { display: inline-flex; align-items: center; gap: 4px; }
+  .shuyou-table :global(.chip) { white-space: normal; }
+  /* 図があるときは、列を図の年度にそろえる。左の列は図の左の余白、右の 8px は図の右の余白。値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。
+     スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+  @media (min-width: 641px) {
+    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
+    .aligned col.lab { width: var(--plot-l, 60px); }
+    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
+    .aligned td { white-space: normal; }
+    .aligned td.start { text-align: left; padding-left: 8px; }
+    .aligned td.goal { text-align: right; padding-right: 8px; }
+    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
+    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
+    .aligned .paren { font-size: 0.75rem; }
+    .aligned :global(.chip) { font-size: 0.8125rem; }
+  }
+</style>

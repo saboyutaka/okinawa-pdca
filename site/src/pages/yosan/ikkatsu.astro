@@ -13,7 +13,7 @@ import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import { yearLabel, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuDept, isShort, ikkatsuRows, planSourceLink } from '../../lib/plans.ts';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt } from '../../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../../lib/types.ts';
@@ -52,7 +52,7 @@ const rows = ikkatsuGroups()
         'data-tr': trendsOf(g).join('|'),
         'data-s': s ? String(s.shouraizou) : '',
         'data-dept': ikkatsuDept(g.latest.dept),
-        'data-theme': [...new Set(sids.flatMap((id) => themeIdsOfItem(id, g.latest.name)))].join('|'),
+        'data-theme': [...new Set(sids.flatMap(themeIdsOf))].join('|'),
         'data-text': `${g.latest.name} ${g.latest.dept} ${g.latest.overview} ${sids.map((id) => { const x = getShisaku(id); return x ? `${x.code} ${x.name}` : ''; }).join(' ')}`,
       },
     };

@@ -1,5 +1,5 @@
 // このサイト独自の「くらしのテーマ」（data/reference/themes.json）。県の計画の分類ではないので、画面では必ずそうと分かるように出す。
-// 施策は、施策名・施策展開・基本施策の名前に当たる言葉で決める。主な取組・成果指標は、その施策のテーマに加えて、取組・指標の名前に当たるテーマにも入れる
+// 施策は、施策名・施策展開・基本施策の名前に当たる言葉で決める。主な取組・成果指標は、その施策のテーマに入る（docs/site.md の 5章）
 import fs from 'node:fs';
 import path from 'node:path';
 import { getShisakuList, getKihonList } from './data.ts';
@@ -7,7 +7,6 @@ import type { ThemeConfig } from './types.ts';
 
 // くらしのテーマ（themes.json の1つに、当てる正規表現と、入る施策 ID を付けたもの）
 export interface Theme extends ThemeConfig {
-  re: RegExp;
   words: string[]; // 画面に出す「決め方」の言葉
   ids: string[];
   idSet: Set<string>;
@@ -26,7 +25,7 @@ export function getThemes(): Theme[] {
     const ids = list
       .filter((s) => (re.test(`${s.name} ${s.tenkai_name} ${kihonName.get(s.kihon_id)}`) || t.include.includes(s.id)) && !t.exclude.includes(s.id))
       .map((s) => s.id);
-    return { ...t, re, words: matchWords(t.match), ids, idSet: new Set(ids) };
+    return { ...t, words: matchWords(t.match), ids, idSet: new Set(ids) };
   });
   const missing = unthemed();
   if (missing.length) console.warn(`[themes] どのテーマにも入らない施策が ${missing.length} あります: ${missing.map((s) => s.id).join(', ')}（data/reference/themes.json を直してください）`);
@@ -38,16 +37,8 @@ export const matchWords = (match: string) => match.replace(/\(\?<?[!=][^)]*\)/g,
 
 export const getTheme = (id: string) => getThemes().find((t) => t.id === id);
 export const themesOf = (shisakuId: string) => getThemes().filter((t) => t.idSet.has(shisakuId));
+export const themeIdsOf = (shisakuId: string) => themesOf(shisakuId).map((t) => t.id);
 export function unthemed() {
   const inAny = new Set(getThemes().flatMap((t) => t.ids));
   return getShisakuList().filter((s) => !inAny.has(s.id));
 }
-
-// 主な取組・成果指標がそのテーマに入るか（施策のテーマ ＋ 名前に当たるテーマ）
-export const inTheme = (t: Theme, shisakuId: string, name: string | null | undefined) =>
-  t.idSet.has(shisakuId) || (!t.exclude.includes(shisakuId) && t.re.test(name || ''));
-// 主な取組・成果指標のテーマ。テーマの並びは themes.json の順
-export function themesOfItem(shisakuId: string, name: string | null | undefined) {
-  return getThemes().filter((t) => inTheme(t, shisakuId, name));
-}
-export const themeIdsOfItem = (shisakuId: string, name: string | null | undefined) => themesOfItem(shisakuId, name).map((t) => t.id);

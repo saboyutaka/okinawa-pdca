@@ -182,7 +182,7 @@ const dataPath = treeDataPath();
   /* 根（計画そのもの）。開け閉めはしないので、丸の代わりに小さな点を置く（線は点の真ん中から下ろす） */
   .tree-box .tree-root { --c: 13px; position: relative; margin: 0; padding-bottom: 4px; display: flex; align-items: flex-start; gap: 8px; font-family: var(--font-display); font-weight: 700; line-height: 1.6; }
   .tree-box .tree-root .tw { margin-top: calc(var(--c) - var(--tw) / 2); border: 0; background: none; }
-  .tree-box .tree-root .tw::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
+  .tree-box .tree-root .tw::before { content: ''; width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--ink); translate: none; }
   .tree-box .tree-root::after { top: calc(var(--c) + 6px); }
   /* キーボードで木に止まったときだけ、矢印キーで動かせることを根の行の右に出す（指標のマップと同じ。読み上げは木の aria-label で伝える） */
   .tree-box .tree-hint {
@@ -191,11 +191,8 @@ const dataPath = treeDataPath();
   }
   .tree-box:has(.tree :focus-visible) .tree-hint { display: block; }
 
-  /* 開け閉めの丸。閉じているときは ▶、開いているときは ▼ */
-  .tree-box .tw { display: grid; place-items: center; width: var(--tw); height: var(--tw); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
-  .tree-box .tree .tw::before { content: ''; border-left: 7px solid var(--ink); border-block: 4.5px solid transparent; translate: 1px 0; }
-  .tree-box .tree details[open] > summary .tw::before { rotate: 90deg; translate: 0 1px; }
-  .tree-box .tree summary:hover .tw, .tree-box .lv2 > .tb:hover + details > summary .tw { background: var(--sky); }
+  /* 開け閉めの丸（.tw）の形は styles/global.css。施策展開は名前の行に乗せても丸の色を変える。子の無い行は点線の丸だけ */
+  .tree-box .lv2 > .tb:hover + details > summary .tw { background: var(--sky); }
   .tree-box .tree .tw-none { border-style: dashed; border-color: var(--hair); }
   .tree-box .tree .tw-none::before { display: none; }
 
@@ -256,6 +253,5 @@ const dataPath = treeDataPath();
     /* 選んだ・外した手ごたえ。✓ は少しはねて出る */
     .tree-show-pop input { transition: background-color 0.12s ease-out, box-shadow 0.12s ease-out; }
     .tree-show-pop input::before { transition: scale 0.18s cubic-bezier(0.3, 1.6, 0.6, 1); }
-    .tree-box .tree .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
   }
 </style>

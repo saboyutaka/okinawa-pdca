@@ -5,7 +5,7 @@ import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
 import Sz from '../../components/Sz.astro';
-import { getThemes, themeIdsOfItem } from '../../lib/themes.ts';
+import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, seikaDept,
   getSeikaGroups, getKihonList, getShouraizou, seikaHref,
@@ -101,7 +101,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
                     'data-bin': rateBin(x),
                     'data-judge': x.judgement,
                     'data-dept': seikaDept(x),
-                    'data-theme': themeIdsOfItem(r.shisaku.id, x.name).join('|'),
+                    'data-theme': themeIdsOf(r.shisaku.id).join('|'),
                     'data-text': `${r.name} ${r.shisaku.code} ${r.shisaku.name} ${k.name} ${x.dept || ''}`,
                   }}
                 />

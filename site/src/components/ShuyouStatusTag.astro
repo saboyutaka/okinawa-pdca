@@ -1,0 +1,17 @@
+---
+// 基本施策のページ（頭の箱と主要指標のカード ShuyouCard）に置く、概要版の達成状況の札1つ（将来像のページと同じ ShuyouTags）。
+// カードの値は付属資料の印字で、札の達成率は概要版の値で出したものなので、県が値を試算し直した指標（「※」。3-(1)・3-(8)）は、
+// 値が合わないわけを「※」にマウスを乗せる・タップすると出す（読み上げでは読む）
+import ShuyouTags from './ShuyouTags.astro';
+import type { ShuyouStatus } from '../lib/data.ts';
+
+interface Props { r: ShuyouStatus }
+const { r } = Astro.props;
+const REVISED = '達成率は、統計の基準改定にあわせて県が試算し直した基準値・目標値（概要版）で出したもので、主要指標のカードの値（付属資料の印字）とは違います';
+---
+<span class="sc-tag"><ShuyouTags items={[r]} named={false} />{r.revised && <span class="mark" data-tip-value={REVISED} data-tip-label="※"><span aria-hidden="true">※</span><span class="sr-only">（{REVISED}）</span></span>}</span>
+
+<style>
+  .sc-tag { display: inline-flex; align-items: center; white-space: nowrap; }
+  .mark { font-size: 0.8125rem; color: var(--ink-2); margin-left: 2px; padding: 0 3px; cursor: help; }
+</style>

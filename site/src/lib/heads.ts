@@ -4,7 +4,7 @@ import {
   LATEST, RATE_BINS, STATUSES, countBy, countJudges, getSeika, getSeikaGroups, getShisakuList, getTorikumi, getTorikumiGroups,
   rateBin, seikaDept, seikaGroupsOf, shisakuDepts, statusOf, type Shisaku,
 } from './data.ts';
-import { themeIdsOfItem, type Theme } from './themes.ts';
+import type { Theme } from './themes.ts';
 import type { SeikaRow } from './types.ts';
 
 type Counts = Record<string, number>;
@@ -62,11 +62,11 @@ export function kihonHead(id: string): AreaHead {
   );
 }
 
-// くらしのテーマ: 主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る（lib/themes.ts）
+// くらしのテーマ: テーマに入る施策の主な取組・成果指標（lib/themes.ts）
 export function themeHead(t: Theme): AreaHead {
   const byId = new Map(getShisakuList().map((s) => [s.id, s]));
-  const tori = getTorikumiGroups().filter((g) => g.statuses.at(-1) && themeIdsOfItem(g.shisaku.id, g.latest.name).includes(t.id));
-  const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && themeIdsOfItem(r.shisaku.id, r.latest.name).includes(t.id));
+  const tori = getTorikumiGroups().filter((g) => g.statuses.at(-1) && t.idSet.has(g.shisaku.id));
+  const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && t.idSet.has(r.shisaku.id));
   return area(
     t.ids.map((id) => byId.get(id)!),
     countBy(tori, (g) => g.statuses.at(-1)!, statusKeys),

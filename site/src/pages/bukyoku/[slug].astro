@@ -20,7 +20,7 @@ import FilterMore from '../../components/FilterMore.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import { getThemes, themesOf, themeIdsOfItem } from '../../lib/themes.ts';
+import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
@@ -305,7 +305,7 @@ const sources = deptSourcePages(dept.name);
                 row={row}
                 shisaku={s}
                 href={seikaHref(x.shisaku_id, row.key)}
-                attrs={{ 'data-item': '', 'data-theme': themeIdsOfItem(x.shisaku_id, x.name).join('|'), 'data-text': `${row.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
+                attrs={{ 'data-item': '', 'data-theme': themeIdsOf(x.shisaku_id).join('|'), 'data-text': `${row.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );
           })}
@@ -323,7 +323,7 @@ const sources = deptSourcePages(dept.name);
             <h4>関係部等にこの部局の名前がある施策（<span data-group-count>{fmt(kankeiList.length)}</span>）</h4>
             <ul class="row-list">
               {kankeiList.map(({ s }) => (
-                <ShisakuItem s={s} kihon attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name}` }} />
+                <ShisakuItem s={s} kihon attrs={{ 'data-item': '', 'data-theme': themeIdsOf(s.id).join('|'), 'data-text': `${s.code} ${s.name}` }} />
               ))}
             </ul>
           </div>
@@ -334,7 +334,7 @@ const sources = deptSourcePages(dept.name);
             <p class="small secondary">施策の関係部等には名前が無いものの、この部局が所管する主な取組がある施策です。</p>
             <ul class="row-list">
               {toriList.map(({ s, kankei }) => (
-                <ShisakuItem s={s} attrs={{ 'data-item': '', 'data-theme': themesOf(s.id).map((t) => t.id).join('|'), 'data-text': `${s.code} ${s.name} ${kankei.join(' ')}` }}>
+                <ShisakuItem s={s} attrs={{ 'data-item': '', 'data-theme': themeIdsOf(s.id).join('|'), 'data-text': `${s.code} ${s.name} ${kankei.join(' ')}` }}>
                   <Fragment slot="sub">
                     関係部等 {kankei.length ? kankei.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}・{toriText(s.id)}
                   </Fragment>
