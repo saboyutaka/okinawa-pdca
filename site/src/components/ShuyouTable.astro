@@ -6,7 +6,7 @@
 // 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。図を描けない部分は、表を開いて出す
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
-import { LATEST, yearLabel, refText, toneOfJudgement, judgesOf, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+import { LATEST, yearLabel, refText, toneOfJudgement, judgesOf, joinCell, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
 
 interface Props { row: ShuyouGroup; part: ShuyouPart }
 const { row, part: p } = Astro.props;
@@ -19,7 +19,7 @@ const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
 const cols = periods.flatMap((q) => q.ys.map((y, i) => ({ y, p: q, first: i === 0, rep: p.years[y] })));
 const cell = (k: number, ...more: (string | false)[]) => [...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
 const span = (q: (typeof periods)[number], ...more: (string | false)[]) => [...more, q !== periods[0] && 'sep', !q.cur && 'off'];
-const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? raw : null);
+const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? joinCell(raw) : null);
 const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.years[y].page);
 // R7で名前が少し変わった指標は、前の名前とその年度を表の下に書く
 const renamed = [...Object.values(row.years).filter((r) => r.name !== row.latest.name)

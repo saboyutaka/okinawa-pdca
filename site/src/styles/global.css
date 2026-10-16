@@ -604,7 +604,7 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 .k-start { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); }
 .chart .here { fill: var(--ink); }
 
-/* 主要指標のカード（components/ShuyouCard.astro）の県の見通しと、観光ロードマップの成果指標（RmSeika.astro）の頭の1行 */
+/* 観光ロードマップの成果指標（components/RmSeika.astro）の頭の1行 */
 .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
 
 /* 成果指標の一覧の行の小さな道のりの図（components/SeikaSpark.astro）。行が多いので、色と太さは要素に書かずここで付ける */

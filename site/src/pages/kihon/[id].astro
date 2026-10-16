@@ -13,6 +13,7 @@ import JudgeLegend from '../../components/JudgeLegend.astro';
 import ShuyouCard from '../../components/ShuyouCard.astro';
 import ShuyouSays from '../../components/ShuyouSays.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import Chip from '../../components/Chip.astro';
 import Toc from '../../components/Toc.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
@@ -20,7 +21,7 @@ import { kihonDescription } from '../../lib/describe.ts';
 import { kihonHead } from '../../lib/heads.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getShisakuList, getShuyouGroups, sourceLink, planParents,
+  getShisakuList, getShuyouGroups, sourceLink, planParents, judgesOf, toneOfJudgement, joinCell,
 } from '../../lib/data.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -61,6 +62,26 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   <header class="sticker lift k-head">
     <HeadKind kind="基本施策" code={k.code} />
     <h1>{k.name}</h1>
+    {/* 頭の箱: 最新の報告の主要指標と県の見通し（施策のページの頭の判定の箱と同じ地の色の箱）。名前は下の主要指標のカードへのリンク。
+        男性・女性のように1つの欄に見通しが並ぶ指標は、名前ごとに札を並べる。年度ごとの見通しはカードの「表で見る」にある */}
+    {shuyouLatest.length > 0 && (
+      <div class="sh-now inset">
+        <div class="sh-l"><Term word="主要指標" />と{yearLong(LATEST)}の県の<Term word="見通し" /></div>
+        <ul class="sh-list">
+          {shuyouLatest.map((row) => {
+            const js = judgesOf(row.latest.judgement);
+            return (
+              <li>
+                <a class="name-link" href={`#${row.anchor}`}>{row.latest.name}</a>
+                <span class="sh-j">{js
+                  ? js.map((j) => <span class="vj">{j.label && <small>{j.label}</small>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
+                  : <span class="small">{joinCell(row.latest.judgement) || '—'}</span>}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    )}
     {k.mezasu && (
       <div class="bubble-row says">
         <span class="avatar" aria-hidden="true">県</span>
@@ -167,6 +188,16 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   /* 頭は施策ページと同じ太いステッカー。目指す姿は県の吹き出しに入れる */
   .k-head { display: grid; gap: 4px; margin-top: 12px; }
   .k-head h1 { margin: 2px 0 10px; }
+  /* 頭の主要指標の箱。指標ごとに1行で、名前の後ろに見通しの札（入らなければ札を次の行へ送る） */
+  .sh-now { display: grid; gap: 6px; margin-bottom: 12px; padding: 12px 18px; }
+  .sh-l { font-size: 0.875rem; color: var(--ink-2); }
+  .sh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .sh-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
+  .sh-list .name-link { font-size: 1.0625rem; }
+  .sh-j { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; }
+  .vj { display: inline-flex; align-items: center; gap: 6px; }
+  .vj small { color: var(--ink-2); }
+  @media (max-width: 640px) { .sh-now { padding: 10px 14px; } }
   .label { font-weight: 700; margin-bottom: 4px; }
   .past { margin-top: 18px; }
   .says .first { margin: 4px 0 0; }

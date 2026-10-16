@@ -224,7 +224,7 @@ const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]
 // 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
 export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 // 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
-const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
+export const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
 
 // 「1,032万t-CO₂」「３兆2,885億円」「8,060億92百万円」を { value: 数, scale: 最初の位（万なら1e4）, unit: 位の後ろの単位 } にする。数と単位だけの値でなければ null
 function jaNum(text: string) {
