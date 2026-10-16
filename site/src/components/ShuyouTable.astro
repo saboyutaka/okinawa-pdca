@@ -1,0 +1,68 @@
+---
+// 主要指標の部分1つの年度ごとの値の表（畳む）。道のりの図（SeikaChart）のすぐ下に置く「表で見る」（図を描けない指標も、数字はカードの頭にあるので畳む）。
+// 取組のページの活動指標の表と同じく、図と同じに年度を列にして左から右へ並べ、図のある部分は列を図の年度にそろえる（.aligned。
+// 左の列の幅は図の左の余白で、scripts/charts.ts の drawSeika が --plot-l で入れる）。列は図と同じく、報告のある計画期間の3年ずつ（この先の年度も空の列で置く）。
+// 行は 基準値 → 実績値 → 目標値 → 見通し → 出典。基準値と目標値は計画期間ごとに決まるので、期間の3列をまとめた1つの欄にする（図と同じく、その期間の最後の報告の値）
+import Chip from './Chip.astro';
+import ExtLink from './ExtLink.astro';
+import { yearLabel, toneOfJudgement, judgesOf, sourceLink, type ShuyouGroup, type ShuyouPart, type ShuyouYear } from '../lib/data.ts';
+
+interface Props { row: ShuyouGroup; part: ShuyouPart }
+const { row, part: p } = Astro.props;
+const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].filter((ys) => ys.some((y) => p.years[y]));
+const cur = periods.find((ys) => ys.includes(p.latest.year));
+// 期間の変わり目に縦の線（sep）、最新でない計画期間の列に図の帯と同じ地の色（off）
+const cls = (ys: number[], y: number) => [ys !== periods[0] && y === ys[0] && 'sep', ys !== cur && 'off'];
+const lastOf = (ys: number[]) => ys.map((y) => p.years[y]).filter((r): r is ShuyouYear => r != null).at(-1)!;
+const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? raw : null);
+const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.years[y].page);
+// R7で名前が少し変わった指標は、前の名前とその年度を表の下に書く
+const renamed = [...Object.values(row.years).filter((r) => r.name !== row.latest.name)
+  .reduce((m, r) => m.set(r.name, [...(m.get(r.name) || []), r.year]), new Map<string, number[]>())];
+---
+<details>
+  <summary>表で見る</summary>
+  <div class="table-wrap">
+    <table class:list={[p.drawable && 'aligned']}>
+      <caption class="sr-only">{p.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+      <colgroup><col class="lab" /><col span={periods.flat().length} /></colgroup>
+      <thead>
+        <tr><td></td>{periods.flatMap((ys) => ys.map((y) => <th scope="col" class:list={cls(ys, y)}>{yearLabel(y)}</th>))}</tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">基準値</th>{periods.map((ys) => { const r = lastOf(ys); return <td colspan={ys.length} class:list={cls(ys, ys[0])}>{r.b.text}{r.b.note && <span class="paren">{r.b.note}</span>}</td>; })}</tr>
+        <tr><th scope="row">実績値</th>{periods.flatMap((ys) => ys.map((y) => { const r = p.years[y]; return <td class:list={cls(ys, y)}>{r ? <><b>{r.a.text}</b>{r.a.note && <span class="paren">{r.a.note}</span>}</> : '—'}</td>; }))}</tr>
+        <tr><th scope="row">目標値</th>{periods.map((ys) => { const r = lastOf(ys); return <td colspan={ys.length} class:list={cls(ys, ys[0])}>{r.t.text}<span class="paren">（{r.target_year}）{r.t.note}</span></td>; })}</tr>
+        <tr><th scope="row">見通し</th>{periods.flatMap((ys) => ys.map((y) => {
+          const j = judge(p.years[y]?.judgement);
+          return <td class:list={cls(ys, y)}>{!j ? '—' : typeof j === 'string' ? <span class="small">{j}</span> : j.map((x) => <span class="vj">{x.label && <small>{x.label}</small>}<Chip tone={toneOfJudgement(x.key)} text={x.key} /></span>)}</td>;
+        }))}</tr>
+        <tr><th scope="row">出典</th>{periods.flatMap((ys) => ys.map((y) => { const s = src(y); return <td class:list={cls(ys, y)}>{s ? <ExtLink href={s.href}>{s.label}</ExtLink> : '—'}</td>; }))}</tr>
+      </tbody>
+    </table>
+  </div>
+  {renamed.map(([name, ys]) => <p class="small secondary note">{ys.map(yearLabel).join('・')}の報告での名前は「{name}」です。</p>)}
+</details>
+
+<style>
+  /* 見た目は取組のページの活動指標の表と同じ。期間の変わり目に縦の線、最新でない計画期間の列に図の帯と同じ地の色。
+     値は折り返さず（ページ全体の overflow-wrap: anywhere で数字の途中が割れるため）、入りきらなければ表を横にすべらせる。かっこの中（基準年など）は下の行に小さく */
+  thead th { vertical-align: bottom; }
+  .sep { border-left: 1.5px solid var(--line); }
+  .off { background: var(--bg); }
+  td { white-space: nowrap; overflow-wrap: normal; }
+  .paren { display: block; font-size: 0.75rem; color: var(--ink-2); font-weight: 400; }
+  .vj { display: inline-flex; align-items: center; gap: 4px; }
+  /* 図のある部分は、列を図の年度にそろえる（左の列は図の左の余白 --plot-l、右の 8px は図の右の余白）。値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。
+     列が狭いので、数と単位のあいだ・文の値・見通しの札は折り返す（数字の途中では折り返さない）。スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+  @media (min-width: 641px) {
+    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
+    .aligned col.lab { width: var(--plot-l, 60px); }
+    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
+    .aligned td, .aligned :global(.chip) { white-space: normal; }
+    .aligned :global(.chip) { font-size: 0.8125rem; }
+    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
+    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
+  }
+  .note { margin: 6px 0 0; }
+</style>

@@ -3,18 +3,21 @@
 // 1行目に判定の小さなハンコと名前、2行目に取組の進みと成果指標の達成率を並べる。
 // 取組は1施策に1〜14件と少ないので、指標のマップのマスのような1件1つの四角を並べる（何件のうち何件かを、文字の「6/6」と同じく図でも見せる）。
 // 四角を押すと、その取組の名前と進捗状況を吹き出しに出す（StatusBar の pop。一覧なので Tab では止めない）。
-// 判定はハンコだけで出し、言い方（A〜G の意味）は一覧の上の凡例（JudgeLegend）に1回だけ書く。前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
+// toriList を付けると、四角の吹き出しの代わりに、左の開け閉めの丸・取組の数・四角を押すとその施策の主な取組の名前と進捗状況の一覧を行の下に開く
+// （基本施策のページ。施策が少なく、取組の一覧を書き出しても重くならないため）。開いた一覧は行の幅いっぱいにし、成果指標はその下へ送る。
+// 判定はハンコだけで出し、何年度の判定かは一覧の上（JudgeLegend）に1回だけ書く。ハンコの区分（A〜G の意味）は、マウスを乗せる・タップすると出す。
+// 前の年度の判定は施策のページの「4年間の判定」に任せる（移り変わりは絞り込みの data-trend）。
 // 一覧は将来像・基本施策ごとに見出しを立てているので、見出しと同じこと（将来像・基本施策）は行に書かない。
 // 部局・テーマ・成果指標の名前は施策のページに任せる（絞り込みは data-* で効く）。kihon を付けると基本施策の名前を出す（見出しが将来像だけの一覧）。
 // sub のスロットを渡すと、基本施策の名前の代わりにそれを出す（部局のページの「関係部等: 環境部」など）
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, countBy, getKihonList, rateText, rateTone, torikumiCells, type Shisaku } from '../lib/data.ts';
+import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy, getKihonList, rateText, rateTone, torikumiCells, type Shisaku } from '../lib/data.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
 
-interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean }
-const { s, attrs = {}, kihon: showKihon = false } = Astro.props;
+interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean; toriList?: boolean }
+const { s, attrs = {}, kihon: showKihon = false, toriList = false } = Astro.props;
 const kihon = showKihon ? getKihonList().find((k) => k.id === s.kihon_id) : null;
 const latestTori = s.torikumi.filter((t) => t.year === LATEST);
 const counts = countBy(latestTori, statusOf, STATUSES.map((x) => x.key));
@@ -22,21 +25,35 @@ const ok = counts['順調'] || 0;
 const seika = s.seika.filter((x) => x.year === LATEST);
 const j = judgeOf(s.judges[LATEST]);
 const ui = j && JUDGE_UI[j.key];
-const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : '判定なし'}`;
+const judgeLabel = `${yearLabel(LATEST)}の判定`;
+const judgeValue = j ? `${j.key} ${j.label}` : '判定なし';
+const context = `${s.name} 主な取組 `;
 ---
 <li class="s-item" {...attrs}>
-  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} title={judgeText} aria-hidden="true">{j && ui ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
+  <span class:list={['jstamp', `tone-${j ? j.tone : 'blank'}`, ui?.hatch && 'hatch']} data-tip-label={judgeLabel} data-tip-value={judgeValue} aria-hidden="true">{j && ui ? <><Icon tone={j.tone} shape={ui.shape} size={9} />{j.key}</> : '—'}</span>
   <div class="name-row">
     <a class="item-name name-link" href={`/shisaku/${s.id}/`}>{s.name}</a>
     <span class="code-no">{s.code}</span>
   </div>
   <div class="facts small">
-    <span class="sr-only">{judgeText}</span>
+    <span class="sr-only">{judgeLabel}: {judgeValue}</span>
     {Astro.slots.has('sub') ? <span class="kihon"><slot name="sub" /></span> : kihon && <span class="kihon">基本施策 {kihon.name}</span>}
-    <span class="tori">
-      取組 <b>{ok}/{latestTori.length}</b>順調
-      {latestTori.length > 0 && <StatusBar categories={STATUSES} context={`${s.name} 主な取組 `} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
-    </span>
+    {toriList && latestTori.length > 0 ? (
+      <details class="tori-d">
+        <summary class="tori">
+          <span class="tw" aria-hidden="true"></span>取組 <b>{ok}/{latestTori.length}</b>順調
+          <StatusBar categories={STATUSES} counts={counts} context={context} size="mini" cells squares />
+        </summary>
+        <ul class="tori-list inset">
+          {torikumiCells(s).map((x) => <li><span class="t-st" data-tip-label="進捗状況" data-tip-value={x.key}><Chip tone={toneOfStatus(x.key)} text={x.key} /></span><a class="name-link" href={x.href}>{x.name}</a></li>)}
+        </ul>
+      </details>
+    ) : (
+      <span class="tori">
+        取組 <b>{ok}/{latestTori.length}</b>順調
+        {latestTori.length > 0 && <StatusBar categories={STATUSES} context={context} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
+      </span>
+    )}
     <span class="seika">
       成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}
       <span class="sr-only">（達成率）</span>
@@ -53,4 +70,22 @@ const judgeText = `${yearLabel(LATEST)}の判定: ${j ? `${j.key} ${j.label}` : 
   .kihon { flex-basis: 100%; }
   .tori, .seika { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; }
   .seika :global(.chip) { gap: 4px; }
+  /* 取組の一覧を開く行: 左の開け閉めの丸（計画の目次の木と同じ .tw）・取組の数・四角を1つのボタンにする（行の文字と同じ見た目のまま）。四角は押しても吹き出しを出さない */
+  .tori-d > summary { padding: 0; color: inherit; font-size: inherit; font-weight: 400; list-style: none; }
+  .tori-d > summary::-webkit-details-marker { display: none; }
+  .tori-d > summary :global(.sbar) { pointer-events: none; }
+  .tori-d .tw { margin-right: 2px; }
+  .tori-d[open] { flex-basis: 100%; }
+  .tori-d[open] > summary { margin-bottom: 6px; }
+  .tori-list { list-style: none; margin: 0 0 4px; padding: 8px 12px; display: grid; gap: 4px; border-radius: 10px; }
+  .tori-list li { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px; align-items: start; }
+  .tori-list :global(.chip) { font-size: 0.8125rem; white-space: nowrap; }
+  .tori-list .name-link { font-weight: 400; color: var(--ink); }
+  /* スマホの幅では名前を広く取るため、進捗状況は形の印だけにする（文字は読み上げに残し、印をタップするとツールチップでも出す） */
+  @media (max-width: 640px) {
+    .tori-list { padding: 8px 10px; }
+    .tori-list li { grid-template-columns: auto minmax(0, 1fr); }
+    .t-st { display: flex; align-items: center; height: 1.6em; }
+    .t-st :global(.chip > span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
 </style>

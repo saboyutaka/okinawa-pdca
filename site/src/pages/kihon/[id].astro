@@ -11,6 +11,7 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ShuyouCard from '../../components/ShuyouCard.astro';
+import ShuyouSays from '../../components/ShuyouSays.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Toc from '../../components/Toc.astro';
 import { oneLine } from '../../lib/text.ts';
@@ -48,6 +49,10 @@ const progressRows = YEARS.map((y) => ({
 // 評価検証報告書（R4〜R6）の基本施策ごとの成果と課題
 const h = hyokaOf(k.id);
 const hSrc = h && planSourceLink('hyoka', h.source, h.page);
+// 評価検証報告書の主要指標についての県の説明は、成果指標のカードの県による説明と同じく、R6 の報告にあった主要指標のカードの中に置く。
+// R6 の報告に主要指標が2つある基本施策（3-(12)）は、2つをまとめた説明なので、カードの後ろに置く
+const saysTo = h?.shuyou ? shuyou.filter((r) => r.years[2024]) : [];
+const saysOf = (row: (typeof shuyou)[number]) => (saysTo.length === 1 && saysTo[0] === row ? h?.shuyou : undefined);
 // この基本施策の取組が観光ロードマップでも評価されている施策の数
 const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => r.id))).size;
 ---
@@ -88,16 +93,16 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       </ul>
     )}
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
-    {shuyouLatest.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
+    {shuyouLatest.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} says={saysOf(row)} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
         <summary>R6まで使われていた主要指標（{shuyouPast.length}）</summary>
-        {shuyouPast.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} />)}
+        {shuyouPast.map((row) => <ShuyouCard row={row} id={shuyouAnchor(shuyou, row)} says={saysOf(row)} />)}
       </details>
     )}
+    {h?.shuyou && saysTo.length !== 1 && <ShuyouSays text={h.shuyou} />}
     {drawable && <p class="small secondary">主要指標には、成果指標のような年度ごとの計画値がないため、図に計画の道すじ（点線）はありません。</p>}
     <p class="small">ほかの基本施策の主要指標は、<a href="/future/">5つの将来像</a>のページでまとめて見られます。</p>
-    {h?.shuyou && <p class="small inset k-note"><strong>県の説明（<Term word="評価検証報告書" />）:</strong> {h.shuyou}</p>}
   </section>
 
   <section aria-labelledby="list">
@@ -107,7 +112,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       <>
         <h3>{tname}</h3>
         <ul class="row-list">
-          {shisaku.filter((s) => s.tenkai_id === tid).map((s) => <ShisakuItem s={s} />)}
+          {shisaku.filter((s) => s.tenkai_id === tid).map((s) => <ShisakuItem s={s} toriList />)}
         </ul>
       </>
     ))}
@@ -153,7 +158,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   <section aria-labelledby="source">
     <h2 id="source" class="anchor">出典</h2>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。報告書の PDF では、この番号で探せます。</p>
-    {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の各行にあります。</p>}
+    {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
     {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
   </section>
 </Base>
@@ -166,12 +171,12 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   .past { margin-top: 18px; }
   .says .first { margin: 4px 0 0; }
   .report-no { white-space: nowrap; }
-  .k-note { margin-top: 12px; padding: 8px 12px; }
   .voice { margin-top: 14px; }
   .voice h3 { margin: 0.6em 0 0.3em; font-size: 1.02rem; }
   .voice h4 { margin: 0.8em 0 0.2em; font-size: 0.95rem; }
   .intro { margin: 0 0 4px; font-weight: 700; }
   .pts { margin: 0; padding-left: 1.2em; }
   .pts li { margin: 0 0 6px; }
-  .rm-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 14px; }
+  /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */
+  .rm-note { margin-top: 14px; }
 </style>

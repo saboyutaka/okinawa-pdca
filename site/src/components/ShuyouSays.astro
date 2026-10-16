@@ -1,0 +1,21 @@
+---
+// 基本施策の主要指標についての、評価検証報告書（R4〜R6 の3年間）の県による説明（「県」の印の吹き出し。成果指標のカードの SeikaSays と同じ形）。
+// 基本施策のページで、その指標のカード（ShuyouCard）の中に置く。2つの指標をまとめて書いた説明（3-(12)）は、カードの後ろに置く
+import Term from './Term.astro';
+import { HYOKA } from '../lib/plans.ts';
+
+interface Props { text: string }
+const { text } = Astro.props;
+---
+<div class="bubble-row says">
+  <span class="avatar" aria-hidden="true">県</span>
+  <div class="bubble">
+    <div class="small secondary label">県による説明（<Term word="評価検証報告書" />・{HYOKA.period}）</div>
+    <p class="prose small">{text}</p>
+  </div>
+</div>
+
+<style>
+  .says { margin-top: 14px; }
+  .says .prose { margin: 4px 0 0; }
+</style>

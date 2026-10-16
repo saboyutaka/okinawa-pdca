@@ -264,6 +264,15 @@ export function sameScale(texts: string[]): string[] {
   });
 }
 
+// 「スタート → いま → ゴール」の値（components/GoalSteps.astro）を、数字と、位・単位に分ける（数字を大きく、位と単位を小さく出す。「32,885億円」→ 32,885・億円）。
+// 単位の書かれていない数には unit を添える（位だけ書かれた数「1,032万」には添えない）。数と単位だけでない値（文の値・「男性72.11年」など）は null で、印字のまま出す
+export function valuePieces(text: string, unit = ''): { t: string; num: boolean }[] | null {
+  const n = jaNum(text);
+  if (!n) return null;
+  const out = halfWidth(text).split(/([-△]?\d[\d,.]*)/).filter(Boolean).map((t) => ({ t, num: /\d/.test(t) }));
+  return !n.unit && n.scale === 1 && unit ? [...out, { t: unit, num: false }] : out;
+}
+
 // 欄の値。数と単位の後ろが括弧（基準年・「速報値」など。PDF で途中で切れて閉じていないものも）だけなら、括弧を note に分けて数を読む。
 // 文章の値（「可能な限り減少させる」など）や、1つの欄に値が並ぶもの（「1,117億円（R３年）農業922億円…」）は value が null
 type NumCell = { text: string; note: string; value: number; scale: number; unit: string };

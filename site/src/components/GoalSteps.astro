@@ -1,0 +1,33 @@
+---
+// 「スタート → いま → ゴール」の数字（時間の順）。成果指標（SeikaGoal）と主要指標（ShuyouGoal）で同じ形にする。
+// 値は数字を大きく、位と単位を小さく出す（lib/data.ts の valuePieces）。位は1つの指標の中でそろえる（sameScale。印字は「3兆2,885億円 → 34,516億円」のようにまちまち）。
+// 文の値（「可能な限り減少させる」など）は数字の字にせず、長いときは3つを縦に並べる。
+// 値の後ろの言葉（基準値・実績値・目標値と年度）は start・now・goal、その下に足す行（その年度の計画値・県の見通し）は now-more・goal-more のスロットで渡す
+import { sameScale, valuePieces } from '../lib/data.ts';
+
+// values はスタート・いま・ゴールの値の印字。unit は単位の書かれていない数に添える単位
+interface Props { values: [string, string, string]; unit?: string; nowLabel: string }
+const { values, unit = '', nowLabel } = Astro.props;
+const [b, a, t] = sameScale(values.map((v) => v || '—')).map((text) => ({ text, pieces: valuePieces(text, unit) }));
+const stack = [b, a, t].some((s) => !s.pieces && s.text.length > 10);
+---
+<ol class:list={['goal-steps', stack && 'stack']}>
+  <li>
+    <span class="gs-l">スタート</span>
+    <span class="gs-main"><span class:list={['gs-v', !b.pieces && 'text']}>{b.pieces ? b.pieces.map((q) => (q.num ? q.t : <small>{q.t}</small>)) : b.text}</span><span class="gs-s"><slot name="start" /></span></span>
+  </li>
+  <li class="now">
+    <span class="gs-l">{nowLabel}</span>
+    <span class="gs-main"><span class:list={['gs-v', !a.pieces && 'text']}>{a.pieces ? a.pieces.map((q) => (q.num ? q.t : <small>{q.t}</small>)) : a.text}</span><span class="gs-s"><slot name="now" /></span></span>
+    <slot name="now-more" />
+  </li>
+  <li>
+    <span class="gs-l">ゴール</span>
+    <span class="gs-main"><span class:list={['gs-v', !t.pieces && 'text']}>{t.pieces ? t.pieces.map((q) => (q.num ? q.t : <small>{q.t}</small>)) : t.text}</span><span class="gs-s"><slot name="goal" /></span></span>
+    <slot name="goal-more" />
+  </li>
+</ol>
+
+<style>
+  .gs-v.text { font-family: var(--font); font-size: 0.9375rem; font-weight: 700; }
+</style>

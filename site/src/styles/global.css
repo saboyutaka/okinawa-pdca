@@ -282,6 +282,11 @@ caption { text-align: left; font-size: 0.875rem; color: var(--ink-2); padding: 4
 
 details > summary { cursor: pointer; color: var(--link); font-weight: 700; font-size: 0.9375rem; padding: 4px 0; }
 details[open] > summary { margin-bottom: 8px; }
+/* 開け閉めの丸（summary の中に置く。計画の目次の木と、基本施策のページの施策の行の取組の一覧）。閉じているときは ▶、開いているときは ▼。大きさは --tw */
+.tw { display: grid; place-items: center; flex: none; width: var(--tw, 22px); height: var(--tw, 22px); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
+.tw::before { content: ''; border-left: 7px solid var(--ink); border-block: 4.5px solid transparent; translate: 1px 0; }
+details[open] > summary .tw::before { rotate: 90deg; translate: 0 1px; }
+summary:hover .tw { background: var(--sky); }
 
 /* 状態の印（形＋色＋文字）。色だけで意味を伝えない */
 .tone-good { --tone: var(--good); }
@@ -599,7 +604,7 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 .k-start { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); }
 .chart .here { fill: var(--ink); }
 
-/* 成果指標・主要指標のカード（components/SeikaCard.astro・ShuyouCard.astro）の頭の1行と「スタート → いま → ゴール」。
+/* 成果指標・主要指標のカードの頭の1行（.verdict）と「スタート → いま → ゴール」（components/GoalSteps.astro）。
    1つの箱に時間の順で3行（広い画面は3列）。いまの行だけ色を濃くする。値が文の指標（.stack）は広い画面でも行で並べる */
 .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
 .goal-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); background: var(--bg); border-radius: 12px; overflow: hidden; }
@@ -648,8 +653,9 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
-  /* 「条件で絞り込む」（components/FilterMore.astro）の矢印: 開け閉めで上下に回る */
+  /* 「条件で絞り込む」（components/FilterMore.astro）の矢印と、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
   .more-toggle .chev { transition: transform 0.15s ease-out; }
+  .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
   }
