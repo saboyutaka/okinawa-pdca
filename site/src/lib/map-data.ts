@@ -12,7 +12,7 @@ import {
   getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
   getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
-import { themeIdsOfItem } from './themes.ts';
+import { themeIdsOf } from './themes.ts';
 import type { Tone } from './icons.ts';
 import type { ShuyouGaiyouRow, SeikaRow, TorikumiRow } from './types.ts';
 
@@ -135,7 +135,7 @@ function buildSeika(): Built {
   const items: MapItem[] = [];
   for (const g of getSeikaGroups()) {
     const ys = YEARS.map((y) => g.years[y] ?? null);
-    cells.push({ s: g.shisaku.shouraizou, c: codes('seika', ys, rateBin), dept: seikaDept(g.latest), themes: themeIdsOfItem(g.shisaku.id, g.latest.name) });
+    cells.push({ s: g.shisaku.shouraizou, c: codes('seika', ys, rateBin), dept: seikaDept(g.latest), themes: themeIdsOf(g.shisaku.id) });
     items.push({
       n: g.name, h: g.href, p: parents.of(g.shisaku.code, g.shisaku.name, `/shisaku/${g.shisaku.id}/`),
       y: ys.map((x) => x && { ...(seikaName(x) !== g.name && { n: seikaName(x) }), v: seikaValues(x) }),
@@ -160,7 +160,7 @@ function buildKatsudou(): Built {
   const items: MapItem[] = [];
   for (const g of getTorikumiGroups()) {
     const ys = YEARS.map((y) => g.years[y] ?? null);
-    cells.push({ s: g.shisaku.shouraizou, c: codes('katsudou', ys, statusOf), dept: g.dept, themes: themeIdsOfItem(g.shisaku.id, g.latest.name) });
+    cells.push({ s: g.shisaku.shouraizou, c: codes('katsudou', ys, statusOf), dept: g.dept, themes: themeIdsOf(g.shisaku.id) });
     items.push({ n: g.latest.name, h: g.href, p: parents.of(g.shisaku.code, g.shisaku.name, `/shisaku/${g.shisaku.id}/`), y: ys.map((r, i) => r && katsudouYear(g, YEARS[i], r)) });
   }
   return { cells, data: { parents: parents.list, items } };
