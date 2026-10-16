@@ -1,0 +1,16 @@
+---
+// 2列の施策の行（ShisakuItem の toriList）を並べた箱の頭に1回だけ置く、列の見出し「施策と成果指標｜主な取組」（基本施策・くらしのテーマのページ）。
+// 左は行の名前の列（判定のハンコの右）、右は主な取組の列（--tcol）の頭にそろえる。右の列の見出しは行の四角の読み上げにあるので読ませない
+import Term from './Term.astro';
+---
+<p class="s-head"><span>施策と<Term word="成果指標" /></span><span class="s-hb" aria-hidden="true">主な取組</span></p>
+
+<style>
+  .s-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--tcol, 15rem); gap: 0 16px; align-items: baseline; margin: 0; padding: 10px 16px 6px 62px; background: var(--paper); }
+  .s-head > span:first-child { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; }
+  .s-hb { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  @media (max-width: 720px) {
+    .s-head { display: block; padding-left: 16px; }
+    .s-hb { display: none; }
+  }
+</style>

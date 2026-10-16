@@ -1,5 +1,5 @@
 ---
-// くらしのテーマ（このサイト独自の分類）1つのページ。頭（名前・段の問いと答え）→ 施策の判定 → 4年間の推移 → 施策 → 成果指標 →（観光だけ）県の観光の計画 → シェア。
+// くらしのテーマ（このサイト独自の分類）1つのページ。頭（名前・段の問いと答え）→ 施策の判定 → 4年間の推移 → 施策 →（観光だけ）県の観光の計画 → シェア。
 // 頭は将来像のページと同じく、段の問いと答え（components/Ladder.astro）を中に置く。主要指標との対応はまだ決めていない（#93）ので、成果指標と取組の2段。
 // 何年度の数かはヘッダーの版（令和7年度版）と、「順調」「判定」の用語の説明に任せ、頭・節の見出し・札には書かない。
 // テーマの決め方の言葉は、頭の「このサイト独自の分類」を押すと、分け方の説明の下に出す（Term の note）。
@@ -9,6 +9,7 @@ import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import ShisakuHead from '../../components/ShisakuHead.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
 import Ladder from '../../components/Ladder.astro';
@@ -19,16 +20,13 @@ import Sz from '../../components/Sz.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
-import { LATEST, seikaHref, getShisakuList, getShouraizou, getKihonList, getSeikaGroups, trendPoints } from '../../lib/data.ts';
-import { inTheme } from '../../lib/themes.ts';
+import { getShisakuList, getShouraizou, getKihonList, trendPoints } from '../../lib/data.ts';
 import { band, fmt } from '../../lib/format.ts';
 import { LINKS } from '../../lib/links.ts';
 import { themeDescription } from '../../lib/describe.ts';
 import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
-import SeikaRow from '../../components/SeikaRow.astro';
-import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -38,15 +36,13 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { t } = Astro.props;
 const byId = new Map(getShisakuList().map((s) => [s.id, s]));
 const items = t.ids.map((id) => byId.get(id)!);
-// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）。主な取組・成果指標は、施策のテーマに加えて名前に言葉が含まれるものも入る
+// 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = themeHead(t);
-// 成果指標の一覧（数は head.seika と同じ）は報告書の順に全部並べ、最初の SEIKA_SHOW 件より後は「さらに表示」で開く（scripts/show-more.ts）
-const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && inTheme(t, r.shisaku.id, r.latest.name));
-const SEIKA_SHOW = 10;
-// 4年間の推移。年度ごとに、その年度の名前でテーマに入るかを決める（施策は4年度とも同じ）
-const pick = (x: { shisaku_id: string; name: string }) => inTheme(t, x.shisaku_id, x.name);
+// 4年間の推移。テーマに入る施策の、年度ごとの主な取組・成果指標
+const pick = (x: { shisaku_id: string }) => t.idSet.has(x.shisaku_id);
 const trend = trendPoints(pick, pick);
-// 一覧は将来像の帯の下に、将来像ごとに1つの箱を置き、箱の中を基本施策の名前で区切って施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）
+// 一覧は将来像の帯の下に、将来像ごとに1つの箱を置き、箱の中を基本施策の名前で区切って施策を並べる（見出しと同じ基本施策の名前を行ごとに書かないため）。
+// 箱は基本施策のページの施策の一覧と同じく、頭に列の見出し（ShisakuHead）を1回だけ置き、行は左の列に施策と成果指標、右の列に主な取組の四角（ShisakuItem の toriList）
 const kihonList = getKihonList();
 const visions = getShouraizou()
   .map((v) => {
@@ -72,7 +68,6 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
       { href: '#judge-h', label: '施策の判定' },
       { href: '#trend-h', label: '4年間の推移' },
       { href: '#list-h', label: '施策' },
-      seika.length > 0 && { href: '#seika-h', label: '成果指標' },
     ]}
     head={{ kind: 'くらしのテーマ', tag: 'ttag', title: t.label }}
   />
@@ -98,11 +93,12 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
         {/* 件数は名前の最後の行に続けて置き、数字の途中で折り返さない */}
         <h3 class:list={['sz-ribbon', `sz-${v.id}`]}><Sz id={v.id} sr={false} /><span><a class="name-link" href={`/future/${v.id}/`}>将来像{v.id} {v.name}</a><span class="n">（{v.n}）</span></span></h3>
         <div class="k-box">
+          <ShisakuHead />
           {v.kihon.map((k) => (
             <>
               <h4 class="k-h"><a class="name-link" href={`/kihon/${k.id}/`}>{k.name}</a> <span class="code-no">{k.code}</span></h4>
               <ul class="row-list">
-                {k.items.map((s) => <ShisakuItem s={s} />)}
+                {k.items.map((s) => <ShisakuItem s={s} toriList />)}
               </ul>
             </>
           ))}
@@ -111,19 +107,6 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
     ))}
     <p class="small secondary after"><a href={`/shisaku/?theme=${t.id}`}>施策をさがす</a>で、判定や部局でさらに絞り込めます。</p>
   </section>
-
-  {seika.length > 0 && (
-    <section aria-labelledby="seika-h">
-      <h2 id="seika-h" class="anchor">成果指標（{fmt(seika.length)}）</h2>
-      <p class="small secondary lead">右の札は<Term word="達成率" />です。</p>
-      <SeikaKey mini />
-      <ul class="row-list" id="theme-seika" data-more={SEIKA_SHOW}>
-        {seika.map((r) => <SeikaRow x={r.latest} row={r} shisaku={r.shisaku} href={seikaHref(r.shisaku.id, r.key)} />)}
-      </ul>
-      {seika.length > SEIKA_SHOW && <p class="more-row"><button type="button" class="button" data-more-btn="theme-seika" hidden>さらに表示（残り {fmt(seika.length - SEIKA_SHOW)}指標）</button></p>}
-      <p class="small secondary after">このテーマの施策の成果指標のほか、名前にこのテーマの言葉を含む、ほかの施策の成果指標も入れています。<a href={`/shihyou/?theme=${t.id}`}>成果指標をさがす</a>で、見通しや担当部局でさらに絞り込めます。</p>
-    </section>
-  )}
 
   {t.id === KANKO.theme && <RmSummary />}
 
@@ -153,12 +136,11 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
   .sz-ribbon .n { white-space: nowrap; }
-  /* 将来像ごとに1つの箱。中は基本施策の名前の行（地の色）と施策の行を、一覧（.row-list）と同じ細い線で区切って並べる */
+  /* 将来像ごとに1つの箱。中は列の見出し・基本施策の名前の行（地の色）・施策の行を、一覧（.row-list）と同じ細い線で区切って並べる */
   .k-box { display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
   .k-box .row-list { border: 0; border-radius: 0; box-shadow: none; }
   .k-h { margin: 0; padding: 8px 16px; background: var(--bg); font-size: 0.9375rem; line-height: 1.5; }
   .nw { white-space: nowrap; }
   .after { margin-top: 14px; }
-  .more-row { margin-top: 14px; }
   @media print { .k-box { box-shadow: none; } }
 </style>

@@ -9,7 +9,7 @@ import {
   seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../src/lib/renames.ts';
-import { getThemes, unthemed, inTheme } from '../src/lib/themes.ts';
+import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
 import {
@@ -113,7 +113,7 @@ test('くらしのテーマの決め方の言葉に、正規表現の記号が�
 test('どのくらしのテーマも4年度とも主な取組と成果指標があり、4年間の推移の最新の年度は頭の数と同じ', () => {
   // 推移は年度ごとの行（trendPoints）、頭は年度をまたいでまとめた取組・成果指標（lib/heads.ts）で数えるので、最新の年度で数がずれないか
   const bad = getThemes().flatMap((t) => {
-    const pick = (x: { shisaku_id: string; name: string }) => inTheme(t, x.shisaku_id, x.name);
+    const pick = (x: { shisaku_id: string }) => t.idSet.has(x.shisaku_id);
     const points = trendPoints(pick, pick);
     const head = themeHead(t);
     const last = points.at(-1)!;

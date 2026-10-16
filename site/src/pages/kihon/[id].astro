@@ -9,6 +9,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Term from '../../components/Term.astro';
 import HeadKind from '../../components/HeadKind.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
+import ShisakuHead from '../../components/ShisakuHead.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ShuyouCard from '../../components/ShuyouCard.astro';
 import ShuyouSays from '../../components/ShuyouSays.astro';
@@ -117,13 +118,13 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   <section aria-labelledby="list">
     <h2 id="list" class="anchor">施策（{shisaku.length}）</h2>
     <JudgeLegend />
-    {/* 施策展開ごとの箱。5つの将来像のページの基本施策の箱と同じく、頭に列の見出し「施策と成果指標｜主な取組」を1回だけ置き、
-        行は左の列に施策と成果指標、右の列に主な取組の四角（components/ShisakuItem.astro の toriList）。右の列の見出しは行の四角の読み上げにあるので読ませない */}
+    {/* 施策展開ごとの箱。5つの将来像のページの基本施策の箱と同じく、頭に列の見出し（ShisakuHead）を1回だけ置き、
+        行は左の列に施策と成果指標、右の列に主な取組の四角（components/ShisakuItem.astro の toriList） */}
     {tenkai.map(([tid, tname]) => (
       <>
         <h3>{tname}</h3>
         <div class="sticker s-box">
-          <p class="s-head"><span>施策と<Term word="成果指標" /></span><span class="s-hb" aria-hidden="true">主な取組</span></p>
+          <ShisakuHead />
           <ul class="row-list">
             {shisaku.filter((s) => s.tenkai_id === tid).map((s) => <ShisakuItem s={s} toriList />)}
           </ul>
@@ -201,15 +202,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   .pts li { margin: 0 0 6px; }
   /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */
   .rm-note { margin-top: 14px; }
-  /* 施策展開ごとの箱: 列の見出しの行の下に、細い線で区切った施策の行（.row-list の枠と影は外して箱に任せる）。
-     列の見出しは、行の名前の列（判定のハンコの右）と主な取組の列（--tcol）の頭にそろえる */
-  .s-box { --tcol: 15rem; padding: 0; overflow: hidden; }
+  /* 施策展開ごとの箱: 列の見出しの行の下に、細い線で区切った施策の行（.row-list の枠と影は外して箱に任せる） */
+  .s-box { padding: 0; overflow: hidden; }
   .s-box .row-list { border: 0; border-radius: 0; box-shadow: none; border-top: 1.5px solid var(--grid); }
-  .s-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--tcol); gap: 0 16px; align-items: baseline; margin: 0; padding: 10px 16px 6px 58px; }
-  .s-head > span:first-child { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; }
-  .s-hb { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
-  @media (max-width: 720px) {
-    .s-head { display: block; padding-left: 16px; }
-    .s-hb { display: none; }
-  }
 </style>
