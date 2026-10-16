@@ -282,7 +282,7 @@ caption { text-align: left; font-size: 0.875rem; color: var(--ink-2); padding: 4
 
 details > summary { cursor: pointer; color: var(--link); font-weight: 700; font-size: 0.9375rem; padding: 4px 0; }
 details[open] > summary { margin-bottom: 8px; }
-/* 開け閉めの丸（summary の中に置く。計画の目次の木と、基本施策のページの施策の行の取組の一覧）。閉じているときは ▶、開いているときは ▼。大きさは --tw */
+/* 開け閉めの丸（summary の中に置く。計画の目次の木）。閉じているときは ▶、開いているときは ▼。大きさは --tw */
 .tw { display: grid; place-items: center; flex: none; width: var(--tw, 22px); height: var(--tw, 22px); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
 .tw::before { content: ''; border-left: 7px solid var(--ink); border-block: 4.5px solid transparent; translate: 1px 0; }
 details[open] > summary .tw::before { rotate: 90deg; translate: 0 1px; }
@@ -632,8 +632,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
-  /* 「条件で絞り込む」（components/FilterMore.astro）の矢印と、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
-  .more-toggle .chev { transition: transform 0.15s ease-out; }
+  /* 「条件で絞り込む」（components/FilterMore.astro）と基本施策のページの施策の行の取組の一覧（ShisakuItem.astro）の矢印、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
+  .more-toggle .chev, .open-d .chev { transition: transform 0.15s ease-out; }
   .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
