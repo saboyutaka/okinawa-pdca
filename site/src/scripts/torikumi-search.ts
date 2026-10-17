@@ -5,6 +5,7 @@
 import { iconSvg } from '../lib/icons.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { SearchData as Data, SearchSummary as Summary } from '../lib/search-data.ts';
+import { yearLabel } from '../lib/years.ts';
 import { getJson, getJsonOr } from './fetch-json.ts';
 import { bump } from './motion.ts';
 
@@ -64,7 +65,7 @@ function search(form: HTMLFormElement) {
     // 最新の年度の報告から新しく載った取組（「R7から」）と、最新の年度の報告に無い取組（「R6まで」）の札（components/YearTag.astro と同じ形）
     const kind = row[11].includes('new') ? 'new' : row[11].includes('ended') ? 'ended' : '';
     if (kind) {
-      const yl = `R${latestYear - 2018}`;
+      const yl = yearLabel(latestYear);
       const tag = el('span', `year-tag ${kind}`, kind === 'new' ? `${yl}から` : `${yl}まで`);
       tag.title = kind === 'new' ? `${yl}の報告から新しく載った取組` : `${yl}の報告まで載っていた取組`;
       tag.append(el('span', 'sr-only', kind === 'new' ? '新しく載った取組' : '載っていた取組'));
@@ -76,9 +77,9 @@ function search(form: HTMLFormElement) {
     }
     // 個別計画（観光ロードマップ）でも評価されている取組の札（styles/global.css の .plan-tag）
     if (row[12].includes('kanko')) main.append(el('span', 'plan-tag', '観光ロードマップでも評価'));
-    if (indicator) main.append(el('div', 'small secondary', `活動指標（R${latestYear - 2018}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
+    if (indicator) main.append(el('div', 'small secondary', `活動指標（${yearLabel(latestYear)}）: ${indicator}　計画 ${target || '—'} → 実績 ${actual || '—'}`));
     // キーワードが行に見える文字に無く、やったことにだけあるときは、やったことを出す（なぜ出たかが分かるように）
-    if (words.length && summary && !matchesAll(texts[i][0], words)) main.append(el('div', 'small secondary', `R${latestYear - 2018}にやったこと: ${summary[i]}`));
+    if (words.length && summary && !matchesAll(texts[i][0], words)) main.append(el('div', 'small secondary', `${yearLabel(latestYear)}にやったこと: ${summary[i]}`));
     // くらしのテーマは絞り込みと取組のページに任せる（一覧の行には出さない）
     li.append(main, stamps(sts));
     return li;
@@ -90,7 +91,7 @@ function search(form: HTMLFormElement) {
     ol.setAttribute('aria-label', '4年の進捗状況');
     data!.years.forEach((y, i) => {
       const st = sts[i];
-      const yl = `R${y - 2018}`;
+      const yl = yearLabel(y);
       const li = el('li', `stamp${i > 0 ? ' seg' : ''}${i > 0 && (st == null || sts[i - 1] == null) ? ' seg-dash' : ''}`);
       const tone = st == null ? 'blank' : data!.statuses[st][1];
       const c = el('span', `c tone-${tone}`);

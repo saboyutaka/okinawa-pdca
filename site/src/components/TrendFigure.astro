@@ -2,7 +2,7 @@
 // 4年間の推移の節の中身（トップ・将来像・くらしのテーマ・部局のページ）。頭の文（割合の幅）・図・「表で見る」。数は lib/data.ts の trendPoints。
 // 節の見出しはページに置く。name は図の題の後ろに添える名前（部局のページ）
 import TrendChart from './TrendChart.astro';
-import { yearLong, type TrendRow } from '../lib/data.ts';
+import { yearLong, periodName, type TrendRow } from '../lib/data.ts';
 import { band, fmt } from '../lib/format.ts';
 
 interface Props { points: TrendRow[]; name?: string }
@@ -22,7 +22,7 @@ const { points, name } = Astro.props;
         <tbody>
           {points.map((p) => (
             <tr>
-              <th>{yearLong(p.y)}（{p.y <= 2024 ? '前期' : '中期'}）</th>
+              <th>{yearLong(p.y)}（{periodName(p.y)}）</th>
               <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
               <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
             </tr>

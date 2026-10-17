@@ -24,7 +24,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import SecHead from '../../components/SecHead.astro';
 import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
@@ -92,15 +92,14 @@ const trend = YEARS.map((y, i) => {
   return { y, a: t.length ? (aOk / t.length) * 100 : 0, b: s.length ? (bOk / s.length) * 100 : 0, aOk, aN: t.length, bOk, bN: s.length };
 });
 const drawTrend = trend.every((p) => p.aN > 0 && p.bN > 0);
-const period = (y: number) => (y <= 2024 ? '前期' : '中期');
 const progressRows = YEARS.map((y, i) => ({
   label: yearLabel(y),
-  sub: period(y),
+  sub: periodName(y),
   counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!, statusKeys),
 }));
 const seikaRows = YEARS.map((y) => ({
   label: yearLabel(y),
-  sub: period(y),
+  sub: periodName(y),
   counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
 }));
 

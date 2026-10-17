@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Tone } from './icons.ts';
 import { foldVariants } from './search.ts';
+import { yearLabel, yearLong, yearsLong } from './years.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, SourceRow, TorikumiRow,
@@ -40,14 +41,7 @@ export interface YearGroup<T> {
 
 export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
-export const yearLabel = (y: number) => `R${y - 2018}`;
-export const yearLong = (y: number) => `令和${y - 2018}年度`;
-// 年度の範囲の文章での書き方（「令和4〜6年度」。1年なら「令和7年度」）。表・図・札は yearLabel で「R4〜R6」
-export const yearsLong = (from: number, to = from) => (from === to ? yearLong(from) : `令和${from - 2018}〜${to - 2018}年度`);
-// R4〜R6 は前期実施計画（目標年度R6）、R7からは中期実施計画（目標年度R9）。基準値・目標値が切り替わる
-export const planLabel = (y: number) => (y <= 2024 ? '前期実施計画（R4〜R6）' : '中期実施計画（R7〜R9）');
-// 成果指標の計画値の欄は計画期間の3年分が並ぶ。その年度の計画値が何番目か（scripts/check_extracted.py の plan_index と同じ）
-export const planIndex = (y: number) => (y <= 2024 ? y - 2022 : y - 2025);
+export { yearLabel, yearLong, yearsLong, PLAN_PERIODS, periodName, periodLabel, planLabel, planIndex } from './years.ts';
 // 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
 export const withUnit = (raw: string | null | undefined, unit?: string | null) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
 // 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、

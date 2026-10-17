@@ -1,7 +1,7 @@
 ---
 // このサイトそのもの（なりたち・シビックテックと作り手・使っている技術・デザイン・アクセシビリティ・運営と問い合わせ）。pdca・data との分け方は docs/design.md の5章
 import Base from '../layouts/Base.astro';
-import { YEARS, LATEST, yearLong } from '../lib/data.ts';
+import { YEARS, LATEST, yearLong, yearsLong } from '../lib/data.ts';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
 import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
@@ -19,7 +19,7 @@ import SecHead from '../components/SecHead.astro';
     私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>を行いました。貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読み、パブリックコメントを提出しました。
   </p>
   <p>
-    その計画が{yearLong(YEARS[0])}に始まってから{YEARS.length}年。県による評価も令和{YEARS[0] - 2018}〜{LATEST - 2018}年度の{YEARS.length}年分が公表されています。そこで決められた計画や施策のいまを振り返るために、このサイトを作りました。
+    その計画が{yearLong(YEARS[0])}に始まってから{YEARS.length}年。県による評価も{yearsLong(YEARS[0], LATEST)}の{YEARS.length}年分が公表されています。そこで決められた計画や施策のいまを振り返るために、このサイトを作りました。
   </p>
   <p>
     サイトの名前「{SITE.name}」には、計画が描いた沖縄のみらいが、いまどこまで来たかを見る、という意味を込めています。縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。

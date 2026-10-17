@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, judgeOf, periodLabel, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
   type ActivityRun, type ActivityShare, type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import { fmt } from './format.ts';
@@ -510,7 +510,7 @@ function yearFrame(periods: { ys: number[]; cur: boolean }[], W: number, H: numb
     labels.push(txt({ position: 'absolute', left: Math.round(px), top: Math.round(py), fontSize: 17, lineHeight: 1, color: color('ink-2'), ...style }, s));
   for (const p of periods) {
     if (!p.cur) svg.push(`<rect x="${left(p)}" y="0" width="${sw * 3}" height="${m.t + ih + 4}" rx="10" fill="${color('bg')}"/>`);
-    label(p.ys[0] <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）', left(p) + 10, 10, p.cur ? { color: color('ink') } : {});
+    label(periodLabel(p.ys[0]), left(p) + 10, 10, p.cur ? { color: color('ink') } : {});
   }
   if (periods.length > 1) svg.push(`<line x1="${left(periods[1])}" x2="${left(periods[1])}" y1="0" y2="${m.t + ih + 4}" stroke="${color('hair')}" stroke-width="2"/>`);
   slots.forEach((s) => label(yearLabel(s), x(s) - 13, H - 22));
@@ -539,7 +539,7 @@ const chartBox = (W: number, H: number, svg: string[], labels: El[]) => box(
 function routeChart(row: ChartRow, W: number, H: number): El {
   const years = YEARS.flatMap((y) => (row.years[y] ? [row.years[y]] : []));
   const last = years[years.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const r = years.filter((q) => ys.includes(q.year)).pop();
     return r ? [{ ys, r, cur: ys.includes(last.year) }] : [];
   });
@@ -616,7 +616,7 @@ function katsudouChart(run: ActivityRun, W: number, H: number, here: string): El
   if (!run.chart) return null;
   const done = run.years.filter((r) => !r.future);
   const last = done[done.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const rows = run.years.filter((q) => ys.includes(q.y));
     return rows.length ? [{ ys, rows, cur: ys.includes(last.y) }] : [];
   });
@@ -881,7 +881,7 @@ export function getCards(): Map<string, Card> {
     })),
     ...ROUTES['torikumi/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
       page: routePath('torikumi/[shisaku]/[slug]', params),
-      alt: `主な取組「${g.latest.name}」の令和${YEARS[0] - 2018}〜${LATEST - 2018}年度の進捗状況`,
+      alt: `主な取組「${g.latest.name}」の${yearsLong(YEARS[0], LATEST)}の進捗状況`,
       node: () => torikumiCard(g),
     })),
     ...ROUTES['shihyou/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({

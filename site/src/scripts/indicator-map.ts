@@ -17,6 +17,7 @@ import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { MapData, MapSearch } from '../lib/map-data.ts';
+import { yearLabel as yl, yearLong } from '../lib/years.ts';
 import { getJsonOr } from './fetch-json.ts';
 import { bump, reveal } from './motion.ts';
 
@@ -37,7 +38,6 @@ interface Tier {
 }
 
 const nf = new Intl.NumberFormat('ja-JP');
-const yl = (y: number) => `R${y - 2018}`;
 // キーワードに当たった字に印を付けた HTML（計画の目次と同じ）
 const marked = (text: string, words: SearchWord[]) => {
   let out = '';
@@ -235,7 +235,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       parts.push({ term: t.term, unit: t.unit, counts: t.cats.map((c, i) => [c[1], counts[i]]), hit: filtered ? hit : null });
     }
     grid.setAttribute('aria-label', mapLabel(yl(y), parts));
-    for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = `令和${y - 2018}年度`;
+    for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = yearLong(y);
     root.querySelector<HTMLElement>('[data-map-empty]')!.hidden = !emptyShuyou;
     root.querySelector<HTMLElement>('[data-map-nofilter]')!.hidden = !(theme || dept) || emptyShuyou;
     // 条件に合う数（件数の行。読み上げだけ）。キーワードの文字を読んでいるあいだ・読めなかったときは、画面にもそう書く

@@ -19,7 +19,7 @@ import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, yearsLong, statusOf, toneOfStatus, budgetOf, fundOf,
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, budgetOf, fundOf,
   sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
   isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
@@ -101,8 +101,6 @@ const runSpanLong = (run: ActivityRun) => {
 const futureText = (run: ActivityRun) => run.years.filter((r) => r.future).map((r) => yearLong(r.y)).join('・');
 // 名前の変わった活動指標を同じ活動指標としてつないだもの（前の名前は出典に書く）
 const actFormers = [...runGroups.values()].map((runs) => runs[0]).filter((run) => run.formers.length > 0);
-// 計画期間（図の帯の見出しと同じ言葉）
-const periodOf = (y: number) => (y <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）');
 // 表の「1件（3件）」を、図に使うかっこの前と、かっこの中（累計や内訳）に分ける。かっこの中は下の行に出す
 const parenSplit = (raw: string) => {
   const i = raw.search(/[（(]/);
@@ -259,8 +257,8 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       // 表は図と同じく、年度を列にして左から右へ。行は 計画 → 実績 → 達成割合 → 進捗状況（進捗状況が決まる順）。
       // 図のある活動指標は列を図の年度にそろえ（.aligned）、図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く
       const cols = run.years;
-      const curPeriod = periodOf(cols.filter((r) => !r.future).at(-1)!.y);
-      const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodOf(cols[k].y) !== periodOf(cols[k - 1].y) && 'sep', periodOf(cols[k].y) !== curPeriod && 'off'];
+      const curPeriod = periodLabel(cols.filter((r) => !r.future).at(-1)!.y);
+      const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodLabel(cols[k].y) !== periodLabel(cols[k - 1].y) && 'sep', periodLabel(cols[k].y) !== curPeriod && 'off'];
       const unit = run.unit && <span class="secondary small">（{run.unit}）</span>;
       const sh = shareOf.get(run)!;
       return (
@@ -275,7 +273,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
             <div class="table-wrap">
               <table class:list={['year-table', 'progress', run.chart && 'aligned']}>
-                <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodOf(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+                <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodLabel(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
                 <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
                 <thead>
                   <tr><td></td>{cols.map((r, k) => <th scope="col" class:list={cell(k)}>{yearLabel(r.y)}{r.future && <small class="secondary">年度別計画</small>}</th>)}</tr>

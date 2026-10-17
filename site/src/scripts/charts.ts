@@ -1,5 +1,6 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
+import { PLAN_PERIODS, periodLabel, periodName, planIndex, yearLabel as yl } from '../lib/years.ts';
 import { showRows, hide, onEsc, type TipRow } from './tip.ts';
 import { moving } from './motion.ts';
 
@@ -62,8 +63,6 @@ function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   return e;
 }
 const nf = new Intl.NumberFormat('ja-JP');
-const yl = (y: number) => `R${y - 2018}`;
-const planIndex = (y: number) => (y <= 2024 ? y - 2022 : y - 2025);
 const withUnit = (raw: string | null | undefined, unit: string) => (raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC')) && unit ? `${raw}${unit}` : raw || '—');
 function niceTicks(lo: number, hi: number, n = 4) {
   const raw = (hi - lo || 1) / n;
@@ -169,7 +168,7 @@ function yearFrame(wrap: HTMLElement, W: number, H: number, top: number, periods
   const left = (p: Period) => x(p.ys[0]) - sw / 2;
   for (const p of periods) {
     if (!p.cur) svg.append(sv('rect', { x: left(p), y: 0, width: sw * 3, height: m.t + ih + 4, rx: 10, fill: 'var(--bg)' }));
-    svg.append(sv('text', { class: p.cur ? 'lbl' : 'lbl2', x: left(p) + 8, y: 17 }, p.ys[0] <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）'));
+    svg.append(sv('text', { class: p.cur ? 'lbl' : 'lbl2', x: left(p) + 8, y: 17 }, periodLabel(p.ys[0])));
   }
   for (const t of ticks) {
     svg.append(sv('line', { class: 'gridl', x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }));
@@ -229,7 +228,7 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
   }
   // 広い図は和暦に西暦を添える（西暦で表示するときは西暦だけ）
   points.forEach((p, i) => svg.append(sv('text', { class: 'tick', x: x(i), y: H - 10, 'text-anchor': 'middle' }, W < 480 || window.era?.seireki ? yl(p.y) : `${yl(p.y)}（${p.y}）`)));
-  const div = points.findIndex((p) => p.y >= 2025);
+  const div = points.findIndex((p) => p.y >= PLAN_PERIODS[1][0]);
   if (div > 0) {
     const dx = (x(div - 1) + x(div)) / 2;
     svg.append(sv('line', { class: 'base', x1: dx, x2: dx, y1: m.t - 20, y2: m.t + ih }));
@@ -267,7 +266,7 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
   wrap.replaceChildren(svg);
   crosshair(wrap, svg, points.map((_, i) => x(i)), m.t, m.t + ih, (i, cx, cy) => {
     const p = points[i];
-    showRows(`${yl(p.y)}（${p.y <= 2024 ? '前期' : '中期'}）`, [
+    showRows(`${yl(p.y)}（${periodName(p.y)}）`, [
       [`${p.a.toFixed(1)}%`, `主な取組のうち順調（${nf.format(p.aOk)}/${nf.format(p.aN)}件）`, 'var(--series-1)'],
       [`${p.b.toFixed(1)}%`, `成果指標のうち計画値に到達（${nf.format(p.bOk)}/${nf.format(p.bN)}）`, 'var(--ink-2)'],
     ], cx, cy);
@@ -283,7 +282,7 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
   const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
   const last = years[years.length - 1];
   // 計画期間ごとの最後の報告（r。基準値・計画値・目標値はこれを使う）と、最新の報告の計画期間か（cur）
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const r = years.filter((q) => ys.includes(q.y)).pop();
     return r ? [{ ys, r, cur: ys.includes(last.y) }] : [];
   });
@@ -377,7 +376,7 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
     if (pr && /[^\s\-－―—‐]/.test(pr)) rows.push([withUnit(pr, unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
     rows.push([withUnit(per.target_raw, unit), `ゴール（目標値・${per.target_year}）`, 'var(--ink)']);
     rows.push([withUnit(per.base_raw, unit), 'スタート（基準値）', 'var(--none)']);
-    showRows(`${yl(s)}${r ? 'の報告' : ''}（${s <= 2024 ? '前期' : '中期'}）`, rows, cx, cy);
+    showRows(`${yl(s)}${r ? 'の報告' : ''}（${periodName(s)}）`, rows, cx, cy);
   }, slots.indexOf(last.y));
 }
 
@@ -389,7 +388,7 @@ function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: Katsu
   const num = (v: number | null): v is number => v != null && Number.isFinite(v);
   const done = years.filter((r) => !r.future);
   const last = done[done.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const rows = years.filter((q) => ys.includes(q.y));
     return rows.length ? [{ ys, rows, cur: ys.includes(last.y) }] : [];
   });
@@ -443,7 +442,7 @@ function drawKatsudou(wrap: HTMLElement, W: number, { unit, years, here }: Katsu
   crosshair(wrap, svg, slots.map(x), m.t - 8, m.t + ih, (i, cx, cy) => {
     const s = slots[i];
     const r = years.find((q) => q.y === s);
-    const per = s <= 2024 ? '前期' : '中期';
+    const per = periodName(s);
     if (!r) {
       showRows(`${yl(s)}（${per}）`, [['—', here === 'いまここ' && s > last.y ? 'これからの年度です（計画の記載なし）' : 'この年度の報告に、この活動指標はありません']], cx, cy);
     } else if (r.future) {
