@@ -20,7 +20,7 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, relatedOf, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
+  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
   isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
@@ -46,7 +46,7 @@ const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
 // 部局票の「対応する成果指標」は出さない（docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
-// 前回までの取組・後続の取組は頭のタイトルの下に並べる。別の施策にも載っている同じ取組（再掲）は、頭の番号の後ろに相手の番号を出し、相手の施策は出典に書く
+// 前回までの取組・後続の取組は頭のタイトルの下に並べる。複数の施策に載っている同じ取組（再掲）は、頭の番号の後ろに「2施策に共通」と相手の番号を出し、相手の施策は出典に書く
 const related = relatedOf(g);
 const candidates = [...related.before, ...related.after];
 // 別の施策に移った可能性のある取組があるか（この取組の後の年度・前の年度）
@@ -171,7 +171,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift head">
     <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOf(s.id)}>
-      {reposts.length > 0 && <span class="repost">再掲 {reposts.map((o, i) => <>{i > 0 && '、'}<a class="sub-link" href={o.group.href} title={`施策 ${o.group.shisaku.name}`}>{o.group.shisaku.code}-{o.group.latest.no}<span class="sr-only">（施策 {o.group.shisaku.name}の同じ取組）</span></a>{o.partial && `（${yearsText(o.years)}）`}</>)}</span>}
+      {reposts.length > 0 && <span class="common">{commonShisakuCount(g)}施策に共通 {reposts.map((o, i) => <>{i > 0 && '、'}<a class="sub-link" href={o.group.href} title={`施策 ${o.group.shisaku.name}`}>{o.group.shisaku.code}-{o.group.latest.no}<span class="sr-only">（施策 {o.group.shisaku.name}の同じ取組）</span></a>{o.partial && `（${yearsText(o.years)}）`}</>)}</span>}
       {g.patterns.includes('new') && <YearTag kind="new" href="/torikumi/?pat=new" />}{g.patterns.includes('ended') && <YearTag kind="ended" year={t.year} href="/torikumi/?pat=ended" />}
     </HeadKind>
     <h1>{t.name}</h1>
@@ -493,7 +493,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     </ul>
     <p class="small">この取組が入っている施策の、県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>です。</p>
     {reposts.length > 0 && (
-      <p class="small">同じ取組が、{reposts.map((o, i) => <>{i > 0 && '、'}{o.partial && `${yearsText(o.years)}の報告では`}<span class="report-no">施策 {o.group.shisaku.code}</span>「{o.group.shisaku.name}」{o.name ? `に「${o.name}」という名前で` : 'にも'}</>)}載っています（再掲）。{reposts.some((o) => o.name) && '名前の違うものは、所管課・決算見込額・活動指標の計画と実績が同じなので、同じ取組としています。'}</p>
+      <p class="small">同じ取組が、{reposts.map((o, i) => <>{i > 0 && '、'}{o.partial && `${yearsText(o.years)}の報告では`}<span class="report-no">施策 {o.group.shisaku.code}</span>「{o.group.shisaku.name}」{o.name ? `に「${o.name}」という名前で` : 'にも'}</>)}載っています（県の資料では「再掲」）。{reposts.some((o) => o.name) && '名前の違うものは、所管課・決算見込額・活動指標の計画と実績が同じなので、同じ取組としています。'}</p>
     )}
     {(t.year !== LATEST || first !== YEARS[0] || formers.length > 0 || actFormers.length > 0) && (
       <p class="small">{first !== YEARS[0] && `${yearLabel(first)}の報告から載っている取組です。`}{t.year !== LATEST && `${yearLabel(t.year + 1)}の報告には、${movedAfter ? 'この施策に' : ''}この名前の取組はありません（終わったか、名前${movedAfter ? 'や載っている施策' : ''}が変わった可能性があります）。`}{formers.length > 0 && `この取組は、${formerText(formers)}という名前で載っています。`}{actFormers.map((run) => `活動指標「${run.indicator}」は、${formerText(run.formers)}という名前で載っています。`).join('')}年度をまたいだ取組は<a href="/about/#kazoekata">名前で結び付けています</a>（名前が変わったものは、予算事業や活動指標が続いているかで判断）。</p>
@@ -507,7 +507,8 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .head > :global(.head-kind) { margin-bottom: -6px; }
   .head h1 { margin: 0; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .repost { font-size: 0.8125rem; color: var(--ink-2); }
+  .common { font-size: 0.8125rem; color: var(--ink-2); }
+  .common a { white-space: nowrap; } /* 番号の途中で折り返さない */
   /* 前回までの取組・後続の取組。PC は 見出し | 取組 の2列、スマホは見出しの下に取組 */
   .rel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; margin: -4px 0 0; font-size: 0.9375rem; color: var(--ink-2); }
   .rel dt { grid-column: 1; font-size: 0.8125rem; font-weight: 700; line-height: 1.85; }

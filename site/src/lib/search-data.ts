@@ -5,7 +5,7 @@
 // ファイルの名前に中身のハッシュを入れ（/torikumi/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
 import { createHash } from 'node:crypto';
-import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, relatedOf } from './data.ts';
+import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, commonShisakuCount } from './data.ts';
 import { getThemes, themeIdsOf } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
@@ -20,7 +20,7 @@ export interface SearchData {
   fields: string[];
   rows: [
     shisaku_id: string, name: string, section: string, dept: string, statuses: (number | null)[], indicator: string, target: string, actual: string,
-    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[], links: string[],
+    latest_year: number, href: string, themes: number[], patterns: string[], plans: string[], common: number,
   ][];
   // 同じビルドの「やったこと」（SearchSummary）の hash。読み込んだやったことが、このデータと同じ版かを確かめる
   summary: string;
@@ -52,7 +52,7 @@ function build(): SearchData {
     depts: Object.fromEntries(DEPTS.map((d) => [d.name, d.slug])), // 部局名 → 部局ページの slug
     shisaku: Object.fromEntries(getShisakuList().map((s) => [s.id, [s.code, s.name, s.shouraizou]])),
     themes: themes.map((t) => [t.id, t.label]), // くらしのテーマ（このサイト独自の分類）
-    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans', 'links'],
+    fields: ['shisaku_id', 'name', 'section', 'dept', 'statuses', 'indicator', 'target', 'actual', 'latest_year', 'href', 'themes', 'patterns', 'plans', 'common'],
     rows: getTorikumiGroups().map((g) => [
       g.shisaku.id,
       g.latest.name,
@@ -70,7 +70,7 @@ function build(): SearchData {
       themeIdsOf(g.shisaku.id).map((id) => themeIndex.get(id)!),
       g.patterns, // 4年間の様子（lib/data.ts の PATTERNS のうち当てはまるもの）
       kankoOfPdca(g.shisaku.id, g.key).length ? ['kanko'] : [], // 個別計画でも評価されているか（いまは観光ロードマップだけ）
-      relatedOf(g).repost.length ? ['repost'] : [], // 別の施策にも載っているか（再掲。取組のページの頭と同じ lib/data.ts の relatedOf）
+      commonShisakuCount(g), // 載っている施策の数（複数の施策に共通の取組だけ。ほかは 0。取組のページの頭と同じ）
     ]),
     summary: searchSummary().hash,
   };

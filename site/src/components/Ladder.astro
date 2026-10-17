@@ -29,6 +29,8 @@ interface Props {
   seika: Record<string, number>;
   /** 主な取組の進捗状況（STATUSES）ごとの数 */
   tori: Record<string, number>;
+  /** 複数の施策に載っている同じ取組を1件と数えた主な取組の数（トップ。数の下に「重なりを除くと」として添える。lib/data.ts の distinctTorikumiCount） */
+  toriDistinct?: number;
   /** 一覧の条件（将来像のページは `s=1`） */
   q?: string;
   /** 主要指標の行き先（将来像のページは同じページの基本施策の節 `#kihon`） */
@@ -36,12 +38,12 @@ interface Props {
   /** 主要指標を1指標1つの四角で並べ、押すと中身を出す（将来像のページ） */
   shuyouCells?: boolean;
 }
-const { shuyou, seika, tori, q = '', shuyouHref = '/future/', shuyouCells = false } = Astro.props;
+const { shuyou, seika, tori, toriDistinct, q = '', shuyouHref = '/future/', shuyouCells = false } = Astro.props;
 const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
 interface Cat { key: string; tone: Tone; n: number }
-type Rung = { id: string; kind: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number }; items?: CellItem[] };
+type Rung = { id: string; kind: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number }; items?: CellItem[]; note?: string };
 const shuyouRung = (rows: ShuyouStatus[]): Rung => {
   const c = shuyouCounts(rows);
   return {
@@ -62,6 +64,7 @@ const rungs: Rung[] = [
     id: 'tori', kind: 'アウトプット', q: ['県の活動は、', '計画どおりに', '進んだ？'], term: '主な取組', n: sum(tori), unit: '件', href: href('/torikumi/'), measure: '進捗状況',
     cats: STATUSES.map((s) => ({ key: s.key, tone: s.tone, n: tori[s.key] || 0 })),
     ans: { label: '順調', n: tori['順調'] || 0 },
+    note: toriDistinct != null ? `（重なりを除くと ${fmt(toriDistinct)}件）` : undefined,
   },
 ];
 ---
@@ -75,6 +78,7 @@ const rungs: Rung[] = [
           <a class="r-link" href={r.href}>{r.term}の<b>{fmt(r.n)}</b>{r.unit}<span aria-hidden="true"> →</span></a>
           <span class="r-ans"><span class="r-al">{r.ans.label}</span>{pct(r.ans.n, r.n)}</span>
         </p>
+        {r.note && <p class="r-note">{r.note}</p>}
       </div>
       <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey=""
         pop={r.items && { term: r.term, year: yearLabel(LATEST), items: r.items, shapes: false, keys: true }} />
@@ -96,6 +100,7 @@ const rungs: Rung[] = [
   .r-ans { margin-left: auto; font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; white-space: nowrap; }
   .r-al { font-family: var(--font); font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-right: 6px; }
   .r-link b { font-family: var(--font-num); font-weight: 600; margin: 0 1px; }
+  .r-note { margin: 0; font-size: 0.8125rem; color: var(--ink-2); }
   @media (max-width: 640px) {
     .ladder { padding: 2px 14px; }
     .rung { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 0; }

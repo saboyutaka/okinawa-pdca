@@ -58,6 +58,8 @@ function search(form: HTMLFormElement) {
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
+    // 複数の施策に載っている同じ取組（再掲）。同じ名前の行がほかの施策にもあるわけが分かるように、施策の後ろに書く
+    if (row[13]) s.append(`・${row[13]}施策に共通`);
     // 最新の年度の報告から新しく載った取組（「R7から」）と、最新の年度の報告に無い取組（「R6まで」）の札（components/YearTag.astro と同じ形）
     const kind = row[11].includes('new') ? 'new' : row[11].includes('ended') ? 'ended' : '';
     if (kind) {
@@ -154,8 +156,8 @@ function search(form: HTMLFormElement) {
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
-      // 再掲も、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
-      if (link && !r[13].includes(link)) return false;
+      // 複数の施策に共通（再掲）も、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
+      if (link && !r[13]) return false;
       // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;
@@ -193,9 +195,10 @@ function search(form: HTMLFormElement) {
       const i = chips.length;
       const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
       const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : box ? box.dataset.text : `「${input.value}」`;
-      const b = el('button', 'active-chip', `${label}: ${text}`) as HTMLButtonElement;
+      // チェックボックスは、その文字だけで条件が分かるので見出しを付けない
+      const b = el('button', 'active-chip', box ? text : `${label}: ${text}`) as HTMLButtonElement;
       b.type = 'button';
-      b.setAttribute('aria-label', `${label} ${text} の条件を外す`);
+      b.setAttribute('aria-label', `${box ? '' : `${label} `}${text} の条件を外す`);
       const x = el('span', '', '×');
       x.setAttribute('aria-hidden', 'true');
       b.append(x);

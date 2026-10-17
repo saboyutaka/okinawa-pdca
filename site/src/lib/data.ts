@@ -995,10 +995,24 @@ export function renameCandidates(g: TorikumiGroup) {
   return out.sort((a, b) => b.shared.length - a.shared.length || b.sim - a.sim).slice(0, 3);
 }
 // 取組のページの頭に出す、ほかの取組とのつながり。前回までの取組（この取組の前の年度で終わったもの）・後続の取組（この取組の次の年度から始まったもの）・再掲（別の施策にも載っている同じ取組）。
-// 取組をさがすの再掲の絞り込みも、これで決める（ページに出る再掲と、絞り込みの件数をそろえるため）
+// 取組をさがすの「複数の施策に共通」の絞り込みも、これで決める（ページに出る再掲と、絞り込みの件数をそろえるため）
 export function relatedOf(g: TorikumiGroup) {
   const cs = renameCandidates(g);
   return { before: cs.filter((c) => !c.after), after: cs.filter((c) => c.after), repost: repostsOf(g) };
+}
+// この取組が載っている施策の数（「2施策に共通」。複数の施策に載っている取組＝再掲だけで、ほかは 0）。year を渡すと、その年度に再掲だったものだけ（目次は最新の年度）
+export function commonShisakuCount(g: TorikumiGroup, year?: number) {
+  const n = repostsOf(g).filter((r) => year == null || r.years.includes(year)).length;
+  return n ? n + 1 : 0;
+}
+// その年度の主な取組を、複数の施策に載っている同じ取組（再掲）を1件として数えた数。県の件数とこのサイトのほかの数は、施策ごとに1件と数える延べ件数で、
+// トップの主な取組の数に「重なりを除くと」として添える
+export function distinctTorikumiCount(year: number) {
+  const gs = getTorikumiGroups().filter((g) => g.years[year]);
+  const root = new Map(gs.map((g) => [g, g]));
+  const find = (g: TorikumiGroup): TorikumiGroup => (root.get(g) === g ? g : find(root.get(g)!));
+  for (const g of gs) for (const r of repostsOf(g)) if (r.years.includes(year)) root.set(find(g), find(r.group));
+  return new Set(gs.map(find)).size;
 }
 // 前の年度の報告での名前（書き方の違い・名前の変更でまとめた取組の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度
 export function formerNames(g: YearGroup<TorikumiRow>) {

@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink, activityRuns,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
+  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
@@ -346,6 +346,12 @@ test('再掲は、同じ年度に同じ名前で載っている別の施策の�
   for (const g of getTorikumiGroups()) {
     for (const r of repostsOf(g)) assert.ok(repostsOf(r.group).some((x) => x.group === g && x.years.join() === r.years.join()), `${g.href} → ${r.group.href}`);
   }
+  // 「2施策に共通」の数は、再掲の相手とこの取組を合わせた施策の数。年度を渡すと、その年度に再掲だったものだけ（R7 は ICT の取組を数えない）
+  const ict7 = groupOf('2-4-a-1', 'ICTを活用した関係機関との連携体制構築');
+  assert.deepEqual([commonShisakuCount(ict7), commonShisakuCount(ict7, LATEST)], [2, 0]);
+  // 重なりを除いた取組の数（トップに添える）は、どの年度も延べ件数より少ない。R7 は 1,534件 → 1,335件（2026-10-17 に数えた）
+  for (const y of YEARS) assert.ok(distinctTorikumiCount(y) < getTorikumiGroups().filter((g) => g.years[y]).length, String(y));
+  assert.equal(distinctTorikumiCount(2025), 1335);
 });
 
 test('主要指標は、基準値の年が同じで基準値が違えば、名前が変わった年度を別の指標にする', () => {
