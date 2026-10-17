@@ -712,16 +712,8 @@ export function seikaRows(shisaku: Shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
-// 前の年度の報告での成果指標の名前（名前の変更でまとめた指標の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度（取組の formerNames と同じ形）
-export function seikaFormerNames(g: YearGroup<SeikaRow>) {
-  const m = new Map<string, number[]>();
-  const latest = sameKey(nameKey(seikaName(g.latest)));
-  for (const y of YEARS) {
-    const r = g.years[y];
-    if (r && sameKey(nameKey(seikaName(r))) !== latest) m.set(seikaName(r), [...(m.get(seikaName(r)) || []), y]);
-  }
-  return [...m].map(([name, years]) => ({ name, years }));
-}
+// 前の年度の報告での成果指標の名前と、その名前で載っていた年度（formersOf）
+export const seikaFormerNames = (g: YearGroup<SeikaRow>) => formersOf(namesByYear(g, seikaName), seikaName(g.latest));
 // 成果指標は施策のページのカードで見せる。カードの id は seika-<指標名の key のハッシュ8桁>。年度をまたいで同じ（名前が変わると別の id。SEIKA_RENAMES でまとめた指標は新しい名前の id）
 export const seikaAnchor = (key: string) => `seika-${keySlug(key)}`;
 export const seikaHref = (shisakuId: string, key: string) => `/shisaku/${shisakuId}/#${seikaAnchor(key)}`;
@@ -972,15 +964,15 @@ export function distinctTorikumiCount(year: number) {
   for (const g of gs) for (const r of repostsOf(g)) if (r.years.includes(year)) root.set(find(g), find(r.group));
   return new Set(gs.map(find)).size;
 }
-// 前の年度の報告での名前（書き方の違い・名前の変更でまとめた取組の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度
-export function formerNames(g: YearGroup<TorikumiRow>) {
+// 前の年度の報告での名前（書き方の違い・名前の変更でまとめたものの、いまの名前と名前の key が違うもの）と、その名前で載っていた年度。
+// 取組・成果指標・活動指標で同じ比べ方（書き方の違いだけでも出す。前の年度の報告書をその名前で探せるように）
+export function formersOf(names: { name: string; y: number }[], latest: string) {
   const m = new Map<string, number[]>();
-  for (const y of YEARS) {
-    const r = g.years[y];
-    if (r && r.key !== g.latest.key) m.set(r.name, [...(m.get(r.name) || []), y]);
-  }
+  for (const { name, y } of names) if (nameKey(name) !== nameKey(latest)) m.set(name, [...(m.get(name) ?? []), y]);
   return [...m].map(([name, years]) => ({ name, years }));
 }
+const namesByYear = <T>(g: YearGroup<T>, nameOf: (r: T) => string) => YEARS.flatMap((y) => (g.years[y] ? [{ name: nameOf(g.years[y]), y }] : []));
+export const formerNames = (g: YearGroup<TorikumiRow>) => formersOf(namesByYear(g, (r) => r.name), g.latest.name);
 // 前の名前を出典に書くときの文（「R4〜R6の報告では「〇〇」」）。取組・活動指標・成果指標で同じ書き方
 export const formerText = (fs: { name: string; years: number[] }[]) =>
   fs.map((f) => `${yearsLong(f.years[0], f.years[f.years.length - 1])}の報告では「${f.name}」`).join('、');
