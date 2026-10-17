@@ -233,6 +233,18 @@ figure { margin: 0; }
 .page-head > h1 { margin: 0; }
 .page-head > .head-kind { margin-bottom: -6px; }
 .page-head > .lead { margin: 0; }
+/* 頭の中の箱（施策のページの判定・取組のページの進捗状況。.inset に付ける）。上の行に いまの状態（.hb-now）と4年間のスタンプ（.hb-years）、
+   細い線の下にその状態のもと（.hb-why）。スマホでは いまの状態 → そのもと → 4年間 の順に積む */
+.head-box { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "now years" "why why"; align-items: center; gap: 10px 40px; padding: 12px 18px; }
+.head-box > .hb-now { grid-area: now; }
+.head-box > .hb-years { grid-area: years; display: flex; align-items: center; gap: 10px; max-width: 340px; }
+.hb-years > .hb-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+.hb-years > .stamps { flex: 1; }
+.head-box > .hb-why { grid-area: why; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+@media (max-width: 640px) {
+  .head-box { grid-template-columns: minmax(0, 1fr); grid-template-areas: "now" "why" "years"; gap: 12px; padding: 12px 14px; }
+  .head-box > .hb-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+}
 /* 頭の補足の行（関係部等・所管など）。項目を横に並べ、入らなければ折り返す */
 .page-head > .head-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 0; font-size: 0.9375rem; color: var(--ink-2); }
 /* 印のあるページの頭（将来像・くらしのテーマ）。PC は印（.bh-badge）を左に大きく置き、右に区分の行・名前・件数の札、下に3つの段（Ladder）。

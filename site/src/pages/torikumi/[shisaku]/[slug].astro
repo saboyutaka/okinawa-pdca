@@ -191,16 +191,16 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}でも評価</a>}
     </div>
-    <div class="now inset">
-      <div class="now-l">
+    <div class="head-box inset">
+      <div class="hb-now now-l">
         <span class:list={['now-pill', `tone-${latestTone}`]}><Icon tone={latestTone} size={16} />{latestStatus}</span>
         <span class="now-sb">{yearLong(t.year)}の<Term word="進捗状況" /></span>
       </div>
-      <div class="now-years">
-        <span class="now-yl">4年間</span>
+      <div class="hb-years">
+        <span class="hb-yl">4年間</span>
         <Stamps items={stamps} label="4年間の進捗状況" size="small" pop={0.1} />
       </div>
-      <div class="now-act">
+      <div class="hb-why now-act">
         <div class="act-name"><span class="act-l"><Term word="活動指標" /></span>{t.indicator || tr?.indicator_name || '—'}</div>
         {headParts ? (
           // 2行以上の活動指標は、行ごとの札（小学校・北部…）を頭に付けて並べ、行ごとの達成割合（部局票の表ごとの値）を同じ行に書く。計画が数で無い行（「－」）は割合を出さない
@@ -509,10 +509,9 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     .rel dt, .rel dd { grid-column: 1; }
     .rel dd + dt { margin-top: 4px; }
   }
-  /* 状態（札と4年間）の下に、状態を決める活動指標の計画と実績を置く。スマホでは 札 → 活動指標 → 4年間 の順 */
-  .now { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "l years" "act act"; align-items: center; gap: 10px 32px; padding: 12px 16px; }
-  .now-l { grid-area: l; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-  .now-act { grid-area: act; display: grid; gap: 6px; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+  /* 頭の中の箱（styles/global.css の .head-box）に、進捗状況の札・4年間のスタンプと、細い線の下に状態を決める活動指標の計画と実績 */
+  .now-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+  .now-act { display: grid; gap: 6px; }
   .act-name { font-family: var(--font-display); font-weight: 700; line-height: 1.5; }
   .act-l { margin-right: 10px; font-family: var(--font); font-size: 0.875rem; color: var(--ink-2); }
   .act-vals b, .act-lines b { font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; }
@@ -529,13 +528,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
     font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
   }
   .now-sb { font-size: 0.875rem; color: var(--ink-2); }
-  .now-years { grid-area: years; display: flex; align-items: center; gap: 10px; max-width: 340px; }
-  .now-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
-  .now-years :global(.stamps) { flex: 1; }
-  @media (max-width: 640px) {
-    .now { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "act" "years"; gap: 12px; }
-    .now-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
-  }
   .basis { margin-top: 14px; }
   .past { margin-top: 14px; }
   .kcard { margin-top: 12px; }

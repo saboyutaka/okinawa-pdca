@@ -12,6 +12,7 @@ import ShuyouTable from './ShuyouTable.astro';
 import ShuyouSays from './ShuyouSays.astro';
 import ShareMenu from './ShareMenu.astro';
 import ShuyouStatusTag from './ShuyouStatusTag.astro';
+import RouteVals from './RouteVals.astro';
 import { LATEST, yearLabel, refText, withUnit, sameScale, shuyouStatusOfCard, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
 
 // カードの id（row.anchor）は、将来像のページ・指標のマップ・計画の目次・シェア用のページから飛ぶ先。says はこの指標についての評価検証報告書の県の説明
@@ -50,11 +51,7 @@ const valsOf = (p: ShuyouPart) => {
   {row.parts.map((p, i) => (
       <div class="part">
         {split && <div class="part-head"><h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>{tags.parts[i].map((r) => <ShuyouStatusTag r={r} />)}</div>}
-        <p class="sc-vals">
-          {valsOf(p).map((v, j) => (
-            <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
-          ))}
-        </p>
+        <RouteVals vals={valsOf(p)} />
         <SeikaChart row={p} unit={unitOf(p)} drawable={p.drawable} />
         <ShuyouTable row={row} part={p} />
       </div>
@@ -77,11 +74,4 @@ const valsOf = (p: ShuyouPart) => {
   .part-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin: 10px 0 0; }
   .part h4 { margin: 10px 0 0; }
   .part-head h4 { margin: 0; }
-  /* スタート → いま → ゴールの値を1行で（成果指標のカードと同じ形。入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
-  .sc-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 6px 0 0; font-size: 0.9375rem; color: var(--ink-2); line-height: 1.6; }
-  .v-l { font-size: 0.75rem; font-weight: 700; }
-  .v-n { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
-  .now .v-n { font-size: 1.1rem; }
-  .v-y { font-size: 0.75rem; white-space: nowrap; }
-  .arrow { color: var(--muted); margin-right: 3px; }
 </style>

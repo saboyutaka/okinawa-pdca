@@ -105,22 +105,22 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     <div class="head-meta">
       <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
     </div>
-    <div class="now inset">
-      <div class="now-l">
+    <div class="head-box now inset">
+      <div class="hb-now now-l">
         <div class:list={['circle', 'm-stamp', `tone-${j ? j.tone : 'blank'}`, j && JUDGE_UI[j.key].hatch && 'hatch']} aria-hidden="true"><span class="k">{j && <Icon tone={j.tone} shape={JUDGE_UI[j.key].shape} size={18} />}{s.judges[LATEST] || '—'}</span></div>
         <div class="now-t">
           <div class="lb">{j ? `${j.key} ${j.label}` : '判定なし'}</div>
           <div class="sb">{yearLong(LATEST)}の<Term word="推進状況" label="県の判定" /></div>
         </div>
       </div>
-      <div class="now-years">
-        <span class="now-yl">4年間</span>
+      <div class="hb-years">
+        <span class="hb-yl">4年間</span>
         <Stamps items={judgeStamps} label="4年間の判定" size="small" pop={0.22} />
       </div>
       {/* 判定のもと（成果指標の達成率と、主な取組のうち順調の割合）。本文の節と同じ「成果指標 → 主な取組」の順。
           成果指標はほとんどの施策で1〜2つなので、数ではなく指標の名前と達成率の札を1指標1行で出し、名前を押すとその指標のカードへ移る。
           主な取組は数と1件1つの四角で出し、押すと主な取組の節へ移る（取組の名前と進捗状況は節の一覧にある） */}
-      <div class="now-why">
+      <div class="hb-why now-why">
         <div class="why">
           <div class="why-l"><Term word="成果指標" /></div>
           <ul class="why-s">
@@ -278,11 +278,9 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 </Base>
 
 <style>
-  /* 判定は取組のページの進捗状況と同じく、頭の中の箱にハンコと4年間のスタンプを横に並べ（題名は全幅で折り返す）、
-     細い線の下に判定のもと（成果指標・主な取組）を置く（取組のページの頭の活動指標と同じ形）。スマホでは ハンコ → 判定のもと → 4年間 の順。丸いハンコは施策の判定だけ */
+  /* 頭の中の箱（styles/global.css の .head-box）に、判定のハンコ・4年間のスタンプと、細い線の下に判定のもと（成果指標・主な取組）。丸いハンコは施策の判定だけ */
   .head-meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .now { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "l years" "why why"; align-items: center; gap: 10px 40px; padding: 12px 18px; }
-  .now-l { grid-area: l; display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .now-l { display: flex; align-items: center; gap: 16px; min-width: 0; }
   .now .circle {
     flex: none; display: grid; place-items: center; width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--line);
     background-color: color-mix(in oklab, var(--tone) 26%, var(--paper)); box-shadow: 3px 3px 0 var(--shadow); transform: rotate(-6deg);
@@ -291,10 +289,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .now-t { display: grid; gap: 2px; min-width: 0; }
   .lb { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; line-height: 1.45; }
   .sb { font-size: 0.875rem; color: var(--ink-2); }
-  .now-years { grid-area: years; display: flex; align-items: center; gap: 10px; max-width: 340px; }
-  .now-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
-  .now-years :global(.stamps) { flex: 1; }
-  .now-why { grid-area: why; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+  .now-why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; }
   .why { display: grid; gap: 6px; align-content: start; min-width: 0; }
   .why-l { font-size: 0.875rem; color: var(--ink-2); }
   .why-v b { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; }
@@ -308,11 +303,9 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .why-a:hover .why-v { text-decoration-color: var(--ink); }
   .why-a :global(.sbar) { pointer-events: none; }
   @media (max-width: 640px) {
-    .now { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "why" "years"; gap: 12px; padding: 12px 14px; }
     .now-why { grid-template-columns: minmax(0, 1fr); }
     .now .circle { width: 68px; height: 68px; }
     .now .k { font-size: 1.8rem; }
-    .now-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
   }
   .past { margin-top: 18px; }
   /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */

@@ -1,0 +1,20 @@
+---
+// 成果指標・主要指標のカードの、スタート → いま → ゴールの値（SeikaCard・ShuyouCard）。図が位置を見せるので箱にせず1行にまとめ、
+// 入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る。いまだけ濃い太字。y は値の後ろに小さく添える年度など
+interface Props { vals: { label: string; v: string; y?: string | null; now?: boolean }[] }
+const { vals } = Astro.props;
+---
+<p class="sc-vals">
+  {vals.map((v, j) => (
+    <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
+  ))}
+</p>
+
+<style>
+  .sc-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 6px 0 0; font-size: 0.9375rem; color: var(--ink-2); line-height: 1.6; }
+  .v-l { font-size: 0.75rem; font-weight: 700; }
+  .v-n { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
+  .now .v-n { font-size: 1.1rem; }
+  .v-y { font-size: 0.75rem; white-space: nowrap; }
+  .arrow { color: var(--muted); margin-right: 3px; }
+</style>
