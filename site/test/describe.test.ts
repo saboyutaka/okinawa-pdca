@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   breakdown, toriText, seikaText, judgesText,
   shisakuDescription, torikumiDescription, seikaDescription, kihonDescription, futureDescription, deptDescription, themeDescription,
-  torikumiTitle, seikaTitle, torikumiHead, seikaHead, shuyouHead, katsudouHead, statusRuns, shorten,
+  torikumiTitle, seikaTitle, torikumiMeta, seikaMeta, shuyouMeta, katsudouMeta, statusRuns, shorten,
 } from '../src/lib/describe.ts';
 import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getShuyouGroups, getActivityShares, getTorikumiGroups } from '../src/lib/data.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
@@ -107,26 +107,26 @@ const dupes = (xs: { title: string; description: string }[], key: 'title' | 'des
 };
 
 test('取組のページの題名と説明文は、ほかの取組のページと同じにならない', () => {
-  const heads = getTorikumiGroups().map(torikumiHead);
-  assert.deepEqual(dupes(heads, 'title'), []);
-  assert.deepEqual(dupes(heads, 'description'), []);
-  for (const h of heads) assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
+  const metas = getTorikumiGroups().map(torikumiMeta);
+  assert.deepEqual(dupes(metas, 'title'), []);
+  assert.deepEqual(dupes(metas, 'description'), []);
+  for (const h of metas) assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
 });
 
 test('成果指標のシェア用のページの題名と説明文は、ほかの成果指標と同じにならない', () => {
-  const heads = getSeikaGroups().map(seikaHead);
-  assert.deepEqual(dupes(heads, 'title'), []);
-  assert.deepEqual(dupes(heads, 'description'), []);
+  const metas = getSeikaGroups().map(seikaMeta);
+  assert.deepEqual(dupes(metas, 'title'), []);
+  assert.deepEqual(dupes(metas, 'description'), []);
 });
 
 test('主要指標・活動指標のシェア用のページ: 題名に指標の名前（活動指標は取組の名前も）、説明文に最新の報告の値と名前が入る', () => {
   for (const g of getShuyouGroups()) {
-    const h = shuyouHead(g);
+    const h = shuyouMeta(g);
     assert.ok(h.title.startsWith(g.latest.name) && h.description.includes(`「${g.latest.name}」`), h.description);
     assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
   }
   for (const a of getActivityShares()) {
-    const h = katsudouHead(a);
+    const h = katsudouMeta(a);
     assert.ok(h.title.startsWith(a.name) && h.description.includes(`「${a.name}」`), h.description);
     assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
   }

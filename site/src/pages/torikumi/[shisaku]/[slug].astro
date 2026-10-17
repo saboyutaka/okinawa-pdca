@@ -25,7 +25,7 @@ import {
 } from '../../../lib/data.ts';
 import { yen } from '../../../lib/format.ts';
 import { firstSentence } from '../../../lib/text.ts';
-import { torikumiHead } from '../../../lib/describe.ts';
+import { torikumiMeta } from '../../../lib/describe.ts';
 import ExtLink from '../../../components/ExtLink.astro';
 import Says from '../../../components/Says.astro';
 import SecHead from '../../../components/SecHead.astro';
@@ -128,7 +128,7 @@ const budText = (c: BudgetCell | undefined) => {
 // 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
 const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 ---
-<Base {...torikumiHead(g)} ogType="article">
+<Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift page-head">
     <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOf(s.id)}>
