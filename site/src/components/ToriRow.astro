@@ -1,8 +1,11 @@
 ---
-// 主な取組の一覧の1行（施策のページ。親は ul.row-list）。名前、その下に活動指標の名前と、右端に計画・実績と最新の年度の進捗状況の札。
-// 進捗状況は活動指標の計画に対する実績で決まるので、札は計画・実績のすぐ後ろに置く（取組のページの頭の 進捗状況の札 → 活動指標 と同じ組）。
+// 主な取組の一覧の1行（施策のページ。親は ToriList の ul.row-list）。基本施策・くらしのテーマのページの施策の行（ShisakuItem の toriList）と同じ形にする:
+// 左の列に最新の年度の進捗状況の札（施策の行で開く取組の一覧と同じく、札の列をそろえて上から見比べられるようにする）、
+// 右に名前と、その下に「活動指標の名前 計画 3回 → 実績 3回」（指標の名前のすぐ後ろに値。施策の行の「成果指標の名前 ▲ 40.7%」と同じ）。
 // 状態は形と色に加えて言葉でも出す（docs/design.md の2章）。区分の説明（「計画の90%以上」など）は札にマウスを乗せると出す。
-// その年にやったことは畳む。4年分の進捗状況・予算・県の検証と改善案は取組のページで見せる（施策のページでは経年を出さず、一覧を短くする）。
+// その年にやったことは、施策の行の取組の一覧と同じ下向きの矢印で畳み（PC の幅では行の右上、スマホでは指標の下）、開くと行の下に出す。
+// スマホの幅では、札の列を取らずに札を名前の前に置き、指標とやったことは行の幅いっぱいに出す（札の列を取ると名前と指標が狭くなるため）。
+// 4年分の進捗状況・予算・県の検証と改善案は取組のページで見せる（施策のページでは経年を出さず、一覧を短くする）。
 // 所管課・くらしのテーマは取組のページに任せる。対応する成果指標は出さない（施策のページではどの行も成果指標の節と同じになる。docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
 import Chip from './Chip.astro';
 import YearTag from './YearTag.astro';
@@ -22,42 +25,51 @@ const note = STATUSES.find((c) => c.key === status)?.note;
 // 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、組ごとに並べる
 const values = t.indicator ? (t.lines ? t.lines.map((l) => ({ target: l.target, actual: l.actual })) : [{ target: t.target, actual: t.actual }]) : [];
 ---
-<li class:list={['tr', old && 'old']}>
+<li class:list={['tr', old && 'old', t.summary && 'has-did']}>
+  <span class="tr-st"><Chip tone={toneOfStatus(status)} text={old ? `${yearLabel(t.year)} ${status}` : status} title={`${yearLabel(t.year)}の進捗状況${note ? `（${note}）` : ''}`} /></span>
   <div class="tr-name"><a class="name-link" href={href}>{t.name}</a>{isNew && <> <YearTag kind="new" /></>}</div>
-  {t.indicator && <div class="tr-ind small secondary">{t.indicator}</div>}
-  <div class="tr-v small">
-    {values.length > 0 && <span class="tr-n">{values.map((v) => <span>計画 <b>{v.target || '—'}</b> → 実績 <b>{v.actual || '—'}</b></span>)}</span>}
-    <span class="tr-st"><Chip tone={toneOfStatus(status)} text={old ? `${yearLabel(t.year)} ${status}` : status} title={`${yearLabel(t.year)}の進捗状況${note ? `（${note}）` : ''}`} /></span>
-  </div>
+  {t.indicator && (
+    <div class="tr-ind small">
+      <span class="secondary">{t.indicator}</span>
+      {values.map((v) => <> <span class="tr-n"><span>計画 <b>{v.target || '—'}</b></span> <span>→ 実績 <b>{v.actual || '—'}</b></span></span></>)}
+    </div>
+  )}
   {t.summary && (
-    <details class="tr-did small">
-      <summary>{yearLabel(t.year)}にやったこと</summary>
-      <p>{t.summary}</p>
+    <details class="tr-did">
+      <summary>
+        <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+        {yearLabel(t.year)}にやったこと
+      </summary>
+      <p class="inset small">{t.summary}</p>
     </details>
   )}
 </li>
 
 <style>
-  /* PC: 名前の下に指標の名前、その行の右端に 計画・実績 → 札。読み上げも 名前 → 指標の名前 → 計画・実績 → 進捗状況 の順 */
-  .tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name name" "ind v" "did did"; gap: 2px 24px; align-items: start; }
-  .tr-name { grid-area: name; }
-  .tr-ind { grid-area: ind; }
-  .tr-v { grid-area: v; display: flex; align-items: flex-start; gap: 14px; }
-  .tr-n { display: grid; justify-items: end; text-align: right; max-width: 22em; }
-  .tr-n b { font-weight: 700; color: var(--ink); }
-  /* 札の幅をそろえ、どの行も印の位置を縦にそろえる（「大幅遅れ」が入る幅。報告に無い取組は「R6 大幅遅れ」が入る幅） */
-  .tr-st { flex: none; width: 5.6em; }
-  .old .tr-st { width: 7.6em; }
+  /* 札の列の幅をそろえ、どの行も名前の頭を縦にそろえる（「大幅遅れ」が入る幅。報告に無い取組は「R6 大幅遅れ」が入る幅。幅は箱の ToriList が --st で決める） */
+  .tr { position: relative; display: grid; grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr); grid-template-areas: "st name" ". ind" ". did"; gap: 2px 12px; align-items: start; }
+  .tr-st { grid-area: st; padding-top: 1px; }
   .tr-st :global(.chip) { white-space: nowrap; }
-  .tr-did { grid-area: did; margin-top: 2px; }
-  .tr-did > summary { font-size: 0.8125rem; padding: 0; }
-  .tr-did[open] > summary { margin-bottom: 2px; }
-  .tr-did p { margin: 0 0 4px; line-height: 1.7; }
-  /* スマホ: 名前 → 指標の名前 → 計画・実績と札 */
-  @media (max-width: 560px) {
-    .tr { grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "ind" "v" "did"; }
-    .tr-v { flex-wrap: wrap; gap: 2px 12px; }
-    .tr-n { justify-items: start; text-align: left; max-width: none; }
-    .tr-st, .old .tr-st { width: auto; }
+  .tr-name { grid-area: name; }
+  .tr-ind { grid-area: ind; line-height: 1.7; }
+  /* 計画 → 実績はひとまとまりで送り、行に入らないほど長いときだけ矢印の前で折り返す */
+  .tr-n { display: inline-block; max-width: 100%; color: var(--ink-2); overflow-wrap: anywhere; }
+  .tr-n > span { white-space: nowrap; }
+  .tr-n b { font-weight: 700; color: var(--ink); }
+  /* やったこと: 施策の行の取組の一覧を開くボタンと同じ下向きの矢印（開くと上向きに回る） */
+  .tr-did { grid-area: did; }
+  .tr-did > summary { display: inline-flex; align-items: center; gap: 4px; padding: 0; font-size: 0.8125rem; font-weight: 400; color: var(--ink-2); list-style: none; }
+  .tr-did > summary::-webkit-details-marker { display: none; }
+  .chev { flex: none; width: 14px; height: 14px; fill: none; stroke: var(--link); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tr-did[open] .chev { transform: rotate(180deg); }
+  .tr-did p { margin: 6px 0 2px; padding: 8px 12px; border-radius: 10px; line-height: 1.7; }
+  /* PC の幅では、やったことのボタンを行の右上（名前の行の高さ）に置き、名前と指標はその幅を空ける。開いた中は行の下に出す */
+  @media (min-width: 641px) {
+    .has-did { grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr) 8.5em; grid-template-areas: "st name ." ". ind ." ". did did"; }
+    .tr-did > summary { position: absolute; top: 12px; right: 16px; }
+  }
+  @media (max-width: 640px) {
+    .tr { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "st name" "ind ind" "did did"; column-gap: 8px; }
+    .tr-did > summary { margin-top: 2px; }
   }
 </style>
