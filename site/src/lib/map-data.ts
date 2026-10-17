@@ -9,8 +9,9 @@
 import {
   YEARS, LATEST, STATUSES, RATE_BINS, SHUYOU_BINS, load, yearLabel, planIndex, withUnit, refText, eraRef, halfWidth, sameScale,
   getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
-  getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
+  getTorikumiGroups, statusOf, budgetOf, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
+import { activityAchievement, activityAchievements } from './katsudou.ts';
 import { sha8 } from './hashed.ts';
 import { esc } from './html.ts';
 import { once, onceBy } from './memo.ts';

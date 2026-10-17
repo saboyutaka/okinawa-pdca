@@ -11,7 +11,8 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import YearTag from './YearTag.astro';
-import { LATEST, STATUSES, yearLabel, statusOf, toneOfStatus, statusStamps, sectionHref, halfWidth, nameKey, activityAchievement, activityAchievements, type TorikumiGroup } from '../lib/data.ts';
+import { LATEST, STATUSES, yearLabel, statusOf, toneOfStatus, statusStamps, sectionHref, halfWidth, nameKey, type TorikumiGroup } from '../lib/data.ts';
+import { activityAchievement, activityAchievements } from '../lib/katsudou.ts';
 import { yen } from '../lib/format.ts';
 
 interface Props { g: TorikumiGroup }

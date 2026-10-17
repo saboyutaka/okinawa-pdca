@@ -3,7 +3,7 @@
 import { fmt } from '../lib/format.ts';
 import { isBlankCell } from '../lib/text.ts';
 import { PLAN_PERIODS, periodLabel, periodName, planIndex, yearLabel as yl } from '../lib/years.ts';
-import type { ActivityYear } from '../lib/data.ts';
+import type { ActivityYear } from '../lib/katsudou.ts';
 import { showRows, hide, onEsc, type TipRow } from './tip.ts';
 import { moving } from './motion.ts';
 

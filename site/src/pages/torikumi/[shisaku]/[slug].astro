@@ -20,9 +20,10 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
-  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
-  isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ActivityRun, type ReportBudgets, type BudgetCell,
+  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
+  isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
 } from '../../../lib/data.ts';
+import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
 import { yen } from '../../../lib/format.ts';
 import { firstSentence } from '../../../lib/text.ts';
 import { torikumiMeta } from '../../../lib/describe.ts';

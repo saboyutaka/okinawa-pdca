@@ -5,10 +5,11 @@ import {
   yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
-  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
   shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText, budgetSeriesOf, budgetTableOf,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
+import { activityQty } from '../src/lib/katsudou.ts';
 import type { BudgetAmountRow, BudgetBlock, SeikaRow } from '../src/lib/types.ts';
 
 test('shouraizouName: 将来像の名前は語尾の「を目指して」を外す（途中の「目指して」は残す）', () => {

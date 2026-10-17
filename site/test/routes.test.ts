@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import {
   REDIRECTS_FILE, URLS_FILE, checkUrls, pageFiles, pagePaths, parseRedirects, parseUrlList, routePath, sharePaths, updateUrlList, urlListText, type Redirect,
 } from '../src/lib/routes.ts';
-import { getActivityShares, getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { getActivityShares } from '../src/lib/katsudou.ts';
 
 test('ページのファイルと params から URL を作る', () => {
   assert.equal(routePath('index'), '/');

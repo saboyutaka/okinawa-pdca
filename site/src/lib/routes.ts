@@ -3,7 +3,8 @@
 // （test/routes.test.ts）・一覧を書き直すスクリプト（scripts/urls.ts）・ビルドの確かめ（astro.config.ts）も、同じものから全ページの URL を作る
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEPTS, getActivityShares, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getShuyouGroups, getTorikumiGroups, keySlug } from './data.ts';
+import { DEPTS, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getShuyouGroups, getTorikumiGroups, keySlug } from './data.ts';
+import { getActivityShares } from './katsudou.ts';
 import { kankoTenkaiList } from './plans.ts';
 import { getThemes } from './themes.ts';
 

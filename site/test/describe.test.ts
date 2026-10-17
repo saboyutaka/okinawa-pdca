@@ -6,7 +6,8 @@ import {
   shisakuDescription, torikumiDescription, seikaDescription, kihonDescription, futureDescription, deptDescription, themeDescription,
   torikumiTitle, seikaTitle, torikumiMeta, seikaMeta, shuyouMeta, katsudouMeta, statusRuns, shorten,
 } from '../src/lib/describe.ts';
-import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getShuyouGroups, getActivityShares, getTorikumiGroups } from '../src/lib/data.ts';
+import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { getActivityShares } from '../src/lib/katsudou.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
 
 const STATUS_KEYS = STATUSES.map((s) => s.key);

@@ -3,7 +3,8 @@
 // 検索エンジンに重複とみなされないよう、題名と説明文はページごとに違うものにする（test/describe.test.ts で確かめ、ビルドでも同じページを数える）。
 // 数はページが表示している数をそのまま受け取る（数え方は lib/data.ts の1か所。ここでは数えない）。
 // 内訳は県の区分の並びのまま、0でない区分を全部同じ重みで並べる（遅れだけを書いたり、遅れを先に書いたりしない。docs/design.md の1章）
-import { YEARS, LATEST, STATUSES, JUDGES, yearLong, yearsLong, judgeOf, withUnit, rateText, sameNameElsewhere, type ActivityShare, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
+import { YEARS, LATEST, STATUSES, JUDGES, yearLong, yearsLong, judgeOf, withUnit, rateText, sameNameElsewhere, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
+import type { ActivityShare } from './katsudou.ts';
 import type { SeikaRow } from './types.ts';
 import { fmt } from './format.ts';
 import { oneLine } from './text.ts';

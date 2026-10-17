@@ -12,8 +12,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, judgeOf, periodLabel, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
-  type ActivityRun, type ActivityShare, type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
+  type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
+import type { ActivityRun, ActivityShare } from './katsudou.ts';
 import { fmt } from './format.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';

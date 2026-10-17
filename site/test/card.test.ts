@@ -7,7 +7,8 @@ import path from 'node:path';
 import { cardChars, cardImage, cardMeta, getCards, phrases, textOf } from '../src/lib/card.ts';
 import { cacheFile, pruneCardCache, readCache } from '../src/lib/card-cache.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total } from '../src/lib/heads.ts';
-import { DEPTS, LATEST, getActivityShares, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, seikaVerdict } from '../src/lib/data.ts';
+import { DEPTS, LATEST, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, seikaVerdict } from '../src/lib/data.ts';
+import { getActivityShares } from '../src/lib/katsudou.ts';
 import { getThemes } from '../src/lib/themes.ts';
 import { pagePaths } from '../src/lib/routes.ts';
 
