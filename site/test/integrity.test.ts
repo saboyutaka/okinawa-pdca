@@ -288,17 +288,24 @@ test('名前が変わった活動指標（KATSUDOU_RENAMES）は、前の名前�
 
 test('活動指標は、書き方の違いと「（累計）」「（内訳）」の付け外しをそろえて年度をつなぎ、測るものが変わったものは分ける', () => {
   const runs = (s: string, name: string) => activityRuns(groupOf(s, name)).filter((r, i, all) => all.findIndex((x) => x.group === r.group) === i);
-  // 「子供の居場所の箇所数（内訳）」→「こどもの居場所の箇所数（内訳）」は書き方の違いだけなので、前の名前を出さずに4年分つなぐ
+  // 「子供の居場所の箇所数（内訳）」→「こどもの居場所の箇所数（内訳）」は書き方の違いだけなので4年分つなぐ
   const kodomo = runs('2-1-b-1', '沖縄こどもの貧困緊急対策事業（市町村事業）');
   assert.equal(kodomo.length, 1);
   assert.deepEqual(kodomo[0].years.filter((y) => !y.future).map((y) => y.y), YEARS);
-  assert.deepEqual(kodomo[0].formers, []);
   // R6 の「〜支援数（内訳）」と R7 の「〜支援数（累計）」は同じ活動指標。前の名前を出す
   const gan = runs('3-7-c-5', '含蜜糖振興対策（設備更新）');
   assert.equal(gan.length, 1);
   assert.deepEqual(gan[0].formers.map((f) => f.name), ['含蜜糖製造事業者への支援数（内訳）']);
   // 測るものが変わった活動指標（サポート・相談対応件数 → 実証実験支援件数）は、別の図と表のまま
   assert.equal(runs('3-3-a-2', 'デジタル技術・サービスを活用した実証実験に対する支援').length, 2);
+});
+
+test('書き方の違いだけの前の名前も、取組・成果指標・活動指標で同じように出典に出す', () => {
+  const r4to6 = [2022, 2023, 2024];
+  assert.deepEqual(formerNames(groupOf('2-1-a-2', '沖縄こども調査')), [{ name: '沖縄子ども調査', years: r4to6 }]);
+  assert.deepEqual(seikaFormerNames(getSeikaGroups().find((x) => x.shisaku.id === '2-1-b-1' && x.name === 'こどもの居場所の利用者数')!), [{ name: '子供の居場所の利用者数', years: r4to6 }]);
+  const run = activityRuns(groupOf('2-1-b-1', '沖縄こどもの貧困緊急対策事業（市町村事業）'))[0];
+  assert.deepEqual(run.formers, [{ name: '子供の居場所の箇所数（内訳）', years: r4to6 }]);
 });
 
 test('別の施策に移った取組は、前回までの取組・後続の取組に出し、同じ施策の再掲には出さない', () => {

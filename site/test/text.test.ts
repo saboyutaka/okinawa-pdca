@@ -1,7 +1,7 @@
 // PDF から読んだ文章の整形（lib/text.js）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { oneLine, isBlankCell, joinLines, sections, proseBlocks, firstSentence } from '../src/lib/text.ts';
+import { oneLine, isBlankCell, isNumOnly, withUnit, joinLines, sections, proseBlocks, firstSentence } from '../src/lib/text.ts';
 
 // 21字（joinLines は20字以下の行を見出しとみなして改行を残す）
 const LONG = 'あいうえおかきくけこさしすせそたちつてと、';
@@ -13,9 +13,24 @@ test('oneLine: 表の値の改行を空白にする。空なら —', () => {
   assert.equal(oneLine(null), '—');
 });
 
-test('isBlankCell: 空白と「-」「―」などだけの欄は空', () => {
-  for (const v of ['', ' ', '―', '－', ' - ', '—\n‐']) assert.equal(isBlankCell(v), true, v);
-  for (const v of ['0', '３回', '―件']) assert.equal(isBlankCell(v), false, v);
+test('isBlankCell: 空白と「-」「―」「ー」などだけの欄は空', () => {
+  for (const v of ['', ' ', '―', '－', ' - ', '—\n‐', 'ー', 'ｰ', '－－', null, undefined]) assert.equal(isBlankCell(v), true, String(v));
+  for (const v of ['0', '３回', '―件', 'ー事業']) assert.equal(isBlankCell(v), false, v);
+});
+
+test('isNumOnly: 数だけの欄（全角の数字も）', () => {
+  for (const v of ['1,234', '△5.2', '-3', '１，２３４']) assert.equal(isNumOnly(v), true, v);
+  for (const v of ['35件', '1,234（R2）', '―', '', null]) assert.equal(isNumOnly(v), false, String(v));
+});
+
+test('withUnit: 数だけの欄にだけ単位を付ける', () => {
+  assert.equal(withUnit('1,234', '件'), '1,234件');
+  assert.equal(withUnit('△5.2', '%'), '△5.2%');
+  assert.equal(withUnit('１２', '件'), '１２件');
+  assert.equal(withUnit('35件（R２年）', '件'), '35件（R２年）');
+  assert.equal(withUnit('12', ''), '12');
+  assert.equal(withUnit('', '件'), '—');
+  assert.equal(withUnit(null, '件'), '—');
 });
 
 test('joinLines: 文の途中の折り返しはつなぐ', () => {

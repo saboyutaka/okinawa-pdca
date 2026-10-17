@@ -27,7 +27,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, currentDeptOf, budgetKey, countStatuses, countRates,
+  FUNDS, AMOUNT_KINDS, amountTotal, deptAmountEntries, budgetKey, countStatuses, countRates,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -116,7 +116,7 @@ const moves: MoveGroup[] = [
 ];
 
 // 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 9.3）
-const mineEntries = (kind: AmountKind) => amountEntries(LATEST, kind).filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === dept.name);
+const mineEntries = (kind: AmountKind) => deptAmountEntries(LATEST, kind, dept.name);
 const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
   label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
   sub: AMOUNT_KINDS[kind].label,

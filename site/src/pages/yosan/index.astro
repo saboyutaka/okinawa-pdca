@@ -16,7 +16,7 @@ import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, amountTotal,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
-  currentDeptOf, torikumiPage, type AmountEntry,
+  currentDeptOf, deptAmountEntries, torikumiPage, type AmountEntry,
 } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
@@ -63,9 +63,7 @@ const ikSzRows = getShouraizou().map((s) => ({
 }));
 
 // 部局別・将来像別（最新の報告での所管部局）
-const toriByKey = new Map(getTorikumi(LATEST).map((t) => [`${t.shisaku_id}|${t.key}`, t]));
-const deptOf = (e: { shisaku_id: string; key: string }) => toriByKey.get(`${e.shisaku_id}|${e.key}`)?.dept || '';
-const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(estimate.filter((e) => deptOf(e) === d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
+const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(deptAmountEntries(LATEST, 'estimate', d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
   .filter((i) => i.n > 0)
   .sort((a, b) => b.n - a.n);
 const visionItems = getShouraizou().map((s) => ({
