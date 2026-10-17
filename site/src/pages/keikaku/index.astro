@@ -34,12 +34,12 @@ const tenkai = kankoTenkaiList();
       <div class="tile">
         <div class="tile-label"><Term word="主な取組" />（{yearLabel(RM_LATEST)}）</div>
         <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}<small>件が順調</small></div>
-        <StatusBar categories={STATUSES} counts={toriCounts} context={`観光ロードマップの${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
+        <StatusBar categories={STATUSES} counts={toriCounts} label={`観光ロードマップの${yearLabel(RM_LATEST)}の主な取組`} size="mini" />
       </div>
       <div class="tile">
         <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
         <div class="tile-value">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}<small>が基準値より前進</small></div>
-        <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`観光ロードマップの${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
+        <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" label={`観光ロードマップの${yearLabel(RM_LATEST)}の成果指標`} size="mini" />
       </div>
       <div class="tile">
         <div class="tile-label">沖縄県PDCAと同じ取組（{yearLabel(RM_LATEST)}）</div>

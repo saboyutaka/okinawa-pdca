@@ -4,13 +4,16 @@
 // plan は番号の後ろに置く個別計画の札（観光ロードマップのトップは区分を置かず、札だけ）。ほかの札（主な取組の「R7から」）は子に渡すと番号の後ろに置く
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
+import type { TermWord } from '../lib/terms.ts';
 
-interface Props { kind?: string; term?: boolean; plan?: string; code?: string; codeTitle?: string; themes?: string[] }
-const { kind, term = true, plan, code, codeTitle = '県の報告書での番号', themes = [] } = Astro.props;
+// 区分を用語にするときは、kind は用語の言葉
+type Props = { plan?: string; code?: string; codeTitle?: string; themes?: string[] } & ({ kind?: TermWord; term?: true } | { kind: string; term: false });
+const p = Astro.props;
+const { plan, code, codeTitle = '県の報告書での番号', themes = [] } = p;
 ---
 <div class="head-kind">
   <span class="hk">
-    {kind && <span class="hk-kind">{term ? <Term word={kind} /> : kind}</span>}
+    {p.kind && <span class="hk-kind">{p.term === false ? p.kind : <Term word={p.kind} />}</span>}
     {code && <span class="code-no" title={codeTitle}>{code}</span>}
     {plan && <span class="plan-tag">{plan}</span>}
     <slot />

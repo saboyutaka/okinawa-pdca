@@ -4,23 +4,23 @@
 // ②評価検証報告書（R4〜R6 の3年間）の基本施策の主要指標についての説明（この指標のことを書いたものだけ）。見通しと年度が違うので見出しで書き分ける。
 // 見通しの札は成果指標の見通しと同じ形と文字の札（Chip）にし、達成状況の札（言葉と数の札 ShuyouTags）と取り違えないようにする。
 // 男性・女性のように1つの欄に見通しが並ぶ指標は名前ごとに札を、言い方として読めない欄（2-(8)）は印字のまま出す。
-// row を渡さないときは②だけ（2つの指標をまとめて書いた 3-(12) の説明。カードの後ろに置く）
+// g を渡さないときは②だけ（2つの指標をまとめて書いた 3-(12) の説明。カードの後ろに置く）
 import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Says from './Says.astro';
 import { yearLabel, judgesOf, joinCell, toneOfJudgement, type ShuyouGroup } from '../lib/data.ts';
 import { HYOKA } from '../lib/plans.ts';
 
-interface Props { row?: ShuyouGroup; text?: string }
-const { row, text } = Astro.props;
-const raw = row?.latest.judgement;
+interface Props { g?: ShuyouGroup; text?: string }
+const { g, text } = Astro.props;
+const raw = g?.latest.judgement;
 const judges = raw ? judgesOf(raw) : null;
 ---
 {(raw || text) && (
   <Says>
-    {row && raw && (
+    {g && raw && (
       <p class="j-line">
-        <span class="says-label small secondary">県の<Term word="見通し" />（{yearLabel(row.latest.year)}）</span>
+        <span class="says-label small secondary">県の<Term word="見通し" />（{yearLabel(g.latest.year)}）</span>
         {judges
           ? judges.map((j) => <span class="vj">{j.label && <small>{j.label}</small>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
           : <span class="small">{joinCell(raw)}</span>}

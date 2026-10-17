@@ -21,7 +21,7 @@ import KihonRow from '../../components/KihonRow.astro';
 import SecHead from '../../components/SecHead.astro';
 import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, amountTotal, trendPoints } from '../../lib/data.ts';
 import { pct, yen } from '../../lib/format.ts';
-import { futureDescription } from '../../lib/describe.ts';
+import { futureMeta } from '../../lib/describe.ts';
 import { futureHead, kihonHead, total } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -61,7 +61,7 @@ const estimate = amountEntries(LATEST, 'estimate');
 const budget = amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(pre)));
 const budgetAll = amountTotal(estimate);
 ---
-<Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
+<Base {...futureMeta(v.id, v.name, head)} ogType="article">
   <header class:list={['sticker', 'lift', 'badge-head', 'v-hero', `sz-${v.id}`]}>
     <Sz id={v.id} sr={false} class="bh-badge" />
     {/* 番号は印にあるので「将来像」の後ろの番号は読み上げだけ */}

@@ -81,7 +81,7 @@ const next = all[i + 1];
         <div class="seika">{seika.map((g) => <RmSeika g={g} id={kankoSeikaAnchor(s.id, g.key)} />)}</div>
 
         <h3><Term word="主な取組" />（{yearLabel(RM_LATEST)}: {fmt(active.length)}件）</h3>
-        {active.length > 0 && <StatusBar categories={STATUSES} counts={counts} context={`${s.name} ${yearLabel(RM_LATEST)}の主な取組 `} />}
+        {active.length > 0 && <StatusBar categories={STATUSES} counts={counts} label={`${s.name} ${yearLabel(RM_LATEST)}の主な取組`} />}
         <div class="tcards">{active.map((g) => <RmTorikumi g={g} years={years} id={kankoTorikumiAnchor(s.id, g.key)} />)}</div>
         {ended.length > 0 && (
           <details class="past">

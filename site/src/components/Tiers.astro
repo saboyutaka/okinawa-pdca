@@ -12,20 +12,20 @@ interface Props {
   /** 主な取組の進捗状況（STATUSES）ごとの数 */
   tori: Record<string, number>;
   /** 読み上げの頭に付ける名前（将来像の名前） */
-  context: string;
+  label: string;
   class?: string;
 }
-const { shuyou, tori, context, class: cls } = Astro.props;
+const { shuyou, tori, label, class: cls } = Astro.props;
 ---
 <div class:list={['tiers', cls]}>
   {shuyou.length > 0 && (
     <>
       <span class="ts-l">主要指標</span>
-      <StatusBar categories={SHUYOU_CATS} counts={shuyouCounts(shuyou)} unit="指標" context={`${context} 主要指標の達成率 `} size="mini" cells />
+      <StatusBar categories={SHUYOU_CATS} counts={shuyouCounts(shuyou)} unit="指標" label={`${label} 主要指標の達成率`} size="mini" cells />
     </>
   )}
   <span class="ts-l">主な取組</span>
-  <StatusBar categories={STATUSES} counts={tori} context={`${context} 主な取組 `} size="mini" />
+  <StatusBar categories={STATUSES} counts={tori} label={`${label} 主な取組`} size="mini" />
 </div>
 
 <style>

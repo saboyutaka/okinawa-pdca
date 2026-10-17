@@ -20,6 +20,7 @@ import Term from './Term.astro';
 import { LATEST, RATE_BINS, STATUSES, SHUYOU_CATS, SHUYOU_FORWARD, shuyouCounts, yearLabel, type ShuyouStatus, type CellItem } from '../lib/data.ts';
 import { shuyouCells as cellsOf } from '../lib/map-data.ts';
 import type { Tone } from '../lib/icons.ts';
+import type { TermWord } from '../lib/terms.ts';
 import { fmt, pct } from '../lib/format.ts';
 
 interface Props {
@@ -43,7 +44,7 @@ const href = (path: string) => (q ? `${path}?${q}` : path);
 const sum = (c: Record<string, number>) => Object.values(c).reduce((a, n) => a + n, 0);
 // 棒の区分。主要指標は概要版の言葉（「目標値に到達」など）で出す（lib/data.ts の SHUYOU_CATS）
 interface Cat { key: string; tone: Tone; n: number }
-type Rung = { id: string; kind: string; q: string[]; term: string; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number }; items?: CellItem[]; note?: string };
+type Rung = { id: string; kind: TermWord; q: string[]; term: TermWord; n: number; unit: string; href: string; measure: string; cats: Cat[]; ans: { label: string; n: number }; items?: CellItem[]; note?: string };
 const shuyouRung = (rows: ShuyouStatus[]): Rung => {
   const c = shuyouCounts(rows);
   return {
@@ -80,7 +81,7 @@ const rungs: Rung[] = [
         </p>
         {r.note && <p class="r-note">{r.note}</p>}
       </div>
-      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey=""
+      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} label={`${r.term}の${r.measure}`} labelKey=""
         pop={r.items && { term: r.term, year: yearLabel(LATEST), items: r.items, shapes: false, keys: true }} />
     </li>
   ))}

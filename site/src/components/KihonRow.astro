@@ -55,7 +55,7 @@ const vals = (r: ShuyouStatus) => {
   {tori.n > 0 && (
     <div class="k-bar">
       <span class="k-l">主な取組</span>
-      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} context={`${k.name} 主な取組 `} size="mini" /><KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} /></div>
+      <div class="k-viz"><StatusBar categories={STATUSES} counts={tori.counts} label={`${k.name} 主な取組`} size="mini" /><KeyNum class="k-num" word="進捗状況" label="順調" brief="key-status" value={pct(tori.ok, tori.n)} /></div>
     </div>
   )}
 </li>

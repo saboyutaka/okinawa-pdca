@@ -7,19 +7,19 @@ import SeikaChart from './SeikaChart.astro';
 import SeikaTable from './SeikaTable.astro';
 import { sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup }
-const { row } = Astro.props;
-const x = row.latest;
+interface Props { g: SeikaGroup }
+const { g } = Astro.props;
+const x = g.latest;
 // 目標値が文の指標（「〜を目指す」など）は、スタートと実績値だけの図にする
-const textGoal = textGoalChartRow(row);
+const textGoal = textGoalChartRow(g);
 // 図を描けるか（SeikaChart と同じ決め方）
-const rows = Object.values(row.years);
+const rows = Object.values(g.years);
 const drawn = Boolean(textGoal) || (rows.some((r) => r.actual != null) && rows.some((r) => r.target != null));
 // 総括報告書の基準値の印字が欠けていて（「########」）、部局の検証票の値で補ったもの
 const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 ---
-<SeikaChart row={textGoal || row} unit={x.unit} drawable={textGoal ? true : undefined} />
-<SeikaTable row={row} open={!drawn} />
+<SeikaChart row={textGoal || g} unit={x.unit} drawable={textGoal ? true : undefined} />
+<SeikaTable g={g} open={!drawn} />
 {textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
 {x.base_fix && (
   <p class="small secondary note">

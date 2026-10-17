@@ -1,4 +1,4 @@
-// ページの説明文（<meta name="description">・og:description）と、取組のページ・指標のシェア用のページの題名。検索結果と SNS のカードに出る。
+// ページの題名と説明文（<meta name="description">・og:description）。検索結果と SNS のカードに出る。
 // 検索結果で切れても意味が通るように、最新の年度の判定・件数を先に、何のページかを後ろに書く。
 // 検索エンジンに重複とみなされないよう、題名と説明文はページごとに違うものにする（test/describe.test.ts で確かめ、ビルドでも同じページを数える）。
 // 数はページが表示している数をそのまま受け取る（数え方は lib/data.ts の1か所。ここでは数えない）。
@@ -102,7 +102,7 @@ export function seikaDescription(x: SeikaRow, name: string) {
   return `${yearLong(x.year)}の実績値 ${oneLine(withUnit(x.actual_raw, u))}（達成率 ${rateText(x)}）、目標値 ${oneLine(withUnit(x.target_raw, u))}（${longYear(x.target_year)}）。沖縄県PDCAの成果指標「${name}」の基準値からの道のりと県による説明。`;
 }
 
-// 取組のページ・成果指標のシェア用のページの題名と説明文（ページと、ほかのページと同じにならないかのテストで同じものを使う）
+// ページの題名と説明文は *Meta で組み、ページと、ほかのページと同じにならないかのテストで同じものを使う
 export const torikumiMeta = (g: TorikumiGroup) => ({
   title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: sameNameElsewhere(g) }),
   description: torikumiDescription({ statuses: g.statuses, year: g.latest.year, summary: g.latest.summary, indicator: g.latest.indicator, section: g.section, shisaku: g.shisaku.name }),
@@ -150,3 +150,11 @@ export const deptDescription = (name: string, c: AreaCounts) =>
 // くらしのテーマはこのサイト独自の分類なので、切れても分かるように頭に書く（docs/design.md の5章）
 export const themeDescription = (label: string, c: AreaCounts) =>
   `「${label}」はこのサイト独自の分類。${facts([judgesText(c.judges), toriText(c.tori), seikaOf(c)])}沖縄県PDCAの施策・主な取組・成果指標を、くらしのテーマで分けて見られます。`;
+
+// 施策・基本施策・将来像・部局・くらしのテーマのページの題名と説明文。c はページの頭と同じ数（lib/heads.ts）
+export const shisakuMeta = (name: string, c: { judge: string | null | undefined; tori: Counts; seika: number; reached: number }) =>
+  ({ title: `${name}（沖縄県の施策）`, description: shisakuDescription({ name, ...c }) });
+export const kihonMeta = (name: string, c: AreaCounts) => ({ title: `${name}（沖縄県の基本施策）`, description: kihonDescription(name, c) });
+export const futureMeta = (id: number, name: string, c: AreaCounts) => ({ title: `将来像${id} ${name}`, description: futureDescription(id, name, c) });
+export const deptMeta = (name: string, c: AreaCounts) => ({ title: `沖縄県${name}の取組`, description: deptDescription(name, c) });
+export const themeMeta = (label: string, c: AreaCounts) => ({ title: `${label}（くらしのテーマ）`, description: themeDescription(label, c) });
