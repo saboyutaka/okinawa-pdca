@@ -6,8 +6,8 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
-  type JudgeTrend, type Pattern,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, shuyouSteps, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
+  type JudgeTrend, type Pattern, type ShuyouPart,
 } from '../src/lib/data.ts';
 import { activityQty } from '../src/lib/katsudou.ts';
 import type { BudgetAmountRow, BudgetBlock, SeikaRow } from '../src/lib/types.ts';
@@ -349,6 +349,13 @@ test('sameScale: 1つの指標の値の位を、いちばん小さい位にそ�
   assert.deepEqual(sameScale(['1,084.0万人', '2,941.4万人', '2,715.8万人']), ['1,084.0万人', '2,941.4万人', '2,715.8万人']);
   assert.deepEqual(sameScale(['3兆円', '5,000万t']), ['3兆円', '5,000万t']);
   assert.deepEqual(sameScale(['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']), ['34箇所', '34箇所', '跡地における土地区画整理事業認可を目指す']);
+});
+
+test('shuyouSteps: 主要指標のスタート・いま・ゴールは位をそろえ、数だけの値にだけ単位を添える（図の位が1でない指標は添えない）', () => {
+  const part = (scale: number, unit: string, [b, a, t]: string[]) => ({ scale, unit, latest: { b: { text: b }, a: { text: a }, t: { text: t } } }) as ShuyouPart;
+  assert.deepEqual(shuyouSteps(part(1, '人', ['1,234', '3万', '増加'])), [{ text: '1,234', unit: '人' }, { text: '30,000', unit: '人' }, { text: '増加', unit: '' }]);
+  assert.deepEqual(shuyouSteps(part(1, '人', ['35人', '40', '3万'])), [{ text: '35人', unit: '' }, { text: '40', unit: '人' }, { text: '3万', unit: '' }]);
+  assert.deepEqual(shuyouSteps(part(1e4, '万t-CO₂', ['1,032', '1,000万t-CO₂', '増加'])), [{ text: '1,032', unit: '' }, { text: '1,000万t-CO₂', unit: '' }, { text: '増加', unit: '' }]);
 });
 
 test('shuyouBinOf: 主要指標の達成状況の区分の色と形は、成果指標の達成率の区分にそろえる', () => {

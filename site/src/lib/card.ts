@@ -11,8 +11,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
-  type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
+  type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import type { ActivityRun, ActivityShare } from './katsudou.ts';
 import { fmt } from './format.ts';
@@ -740,13 +740,8 @@ function shuyouCard(g: ShuyouGroupOfKihon) {
       ? judges.map((j) => box({ alignItems: 'center', columnGap: 8, flexShrink: 0 }, j.label && txt({ fontSize: 20, color: color('ink-2') }, j.label), icon(toneOfJudgement(j.key), null, 24), txt({ fontSize: 24 }, j.key)))
       : txt({ fontSize: 21, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }, oneLine(x.judgement), 1),
   );
-  // 単位の書かれていない数には指標の単位を添える。スタート・いま・ゴールの位は1つの部分の中でそろえる（lib/data.ts の sameScale）
-  const vals = (p: ShuyouPart) => {
-    const cs = [p.latest.b, p.latest.a, p.latest.t];
-    const ts = sameScale(cs.map((c) => c.text));
-    const unit = (c: Cell) => (c.value != null && !c.unit && p.scale === 1 ? p.unit : '');
-    return cs.map((c, i) => valueText(ts[i], unit(c)));
-  };
+  // スタート・いま・ゴールの値はページのカードと同じ（lib/data.ts の shuyouSteps）
+  const vals = (p: ShuyouPart) => shuyouSteps(p).map((s) => valueText(s.text, s.unit));
   const nowLabel = x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`;
   let body: Kid;
   if (g.parts.length > 1) {

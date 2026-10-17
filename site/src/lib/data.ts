@@ -6,7 +6,8 @@ import path from 'node:path';
 import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
-import { yearLabel, yearLong, yearsLong } from './years.ts';
+import { yearLabel, yearsLong } from './years.ts';
+import { isNumOnly } from './text.ts';
 import { SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
@@ -380,6 +381,12 @@ function partOf(label: string, name: string, cells: Record<number, PartCells>, l
   const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
   return { label, name, years, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...years[latestYear], name } };
 }
+// 主要指標の部分の、数だけの値に添える単位（図の目盛りにも使う）。図の位が1でない指標（万t-CO₂ など）は、位の書かれていない数に単位を添えない（どの位の数か分からないため）
+export const shuyouUnit = (p: ShuyouPart) => (p.scale === 1 ? p.unit : '');
+// 主要指標の部分の最新の報告のスタート・いま・ゴールの値（ページのカードと SNS のカードの画像）。位は1つの部分の中でそろえ（sameScale。印字は「3兆2,885億円 → 34,516億円」のようにまちまち）、
+// 数だけの値には単位を添える
+export const shuyouSteps = (p: ShuyouPart) =>
+  sameScale([p.latest.b.text, p.latest.a.text, p.latest.t.text]).map((text) => ({ text, unit: isNumOnly(text) ? shuyouUnit(p) : '' }));
 
 // 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
 // 単位や名前（指標の名前の括弧の中）付きで書かれていて数になっていないので、主要指標と同じように読む。図はゴールの丸を置かず、スタートと実績値だけを描く。
