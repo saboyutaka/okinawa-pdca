@@ -4,16 +4,15 @@
 // 札の列の幅（--st）は見出しと行で同じにする。old は最新の年度の報告に無い取組の一覧（札に年度が付くので、札の列を広くする）。
 // 札の列の見出しは、行の札がそれぞれ進捗状況の言葉なので読ませない。スマホの幅では札の列が無いので出さない
 import ToriRow from './ToriRow.astro';
-import type { YearGroup } from '../lib/data.ts';
-import type { TorikumiRow } from '../lib/types.ts';
+import type { TorikumiGroup } from '../lib/data.ts';
 
-interface Props { rows: YearGroup<TorikumiRow>[]; shisakuId: string; old?: boolean }
-const { rows, shisakuId, old = false } = Astro.props;
+interface Props { rows: TorikumiGroup[]; old?: boolean }
+const { rows, old = false } = Astro.props;
 ---
 <div class:list={['sticker', 't-box', old && 'old']}>
   <p class="t-head"><span class="t-hs" aria-hidden="true">進捗状況</span><span class="t-hm">主な取組と活動指標</span></p>
   <ul class="row-list">
-    {rows.map((row) => <ToriRow row={row} shisakuId={shisakuId} />)}
+    {rows.map((g) => <ToriRow g={g} />)}
   </ul>
 </div>
 

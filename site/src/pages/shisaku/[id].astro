@@ -18,7 +18,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
-  getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents,
+  getKihonList, getTorikumiGroups, seikaGroupsOf, sourceLink, deptHref, planParents,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
 import { themesOf } from '../../lib/themes.ts';
@@ -36,7 +36,8 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { s } = Astro.props;
 const kihon = getKihonList().find((k) => k.id === s.kihon_id)!;
-const tRows = torikumiRows(s);
+// 主な取組（年度をまたいだまとまり。報告書の順）
+const tRows = getTorikumiGroups().filter((g) => g.shisaku.id === s.id);
 const sRows = seikaGroupsOf(s.id);
 const yearsDesc = [...YEARS].reverse();
 const themes = themesOf(s.id);
@@ -183,13 +184,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="torikumi">
     <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と<Term word="活動指標" />の計画・実績を一覧で確かめられます。名前を押すと、4年間の歩みや予算、県の検証と改善案まで見られます。</p>
-    <ToriList rows={toriActive} shisakuId={s.id} />
+    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と、それを決めた<Term word="活動指標" />の計画と実績・決算見込額・4年間の歩みが分かります。予算の推移と県の検証・改善案は、取組のページにあります。</p>
+    <ToriList rows={toriActive} />
     {toriEnded.length > 0 && (
       <details class="past">
         <summary>{yearLabel(LATEST)}の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
         <p class="small secondary">R7から中期実施計画になり、取組が入れ替わったり、名前が変わったりしたものがあります。印は、最後に報告があった年度の進捗状況です。</p>
-        <ToriList rows={toriEnded} shisakuId={s.id} old />
+        <ToriList rows={toriEnded} old />
       </details>
     )}
     {rmShisaku.length > 0 && (

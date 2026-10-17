@@ -1,75 +1,122 @@
 ---
 // 主な取組の一覧の1行（施策のページ。親は ToriList の ul.row-list）。基本施策・くらしのテーマのページの施策の行（ShisakuItem の toriList）と同じ形にする:
-// 左の列に最新の年度の進捗状況の札（施策の行で開く取組の一覧と同じく、札の列をそろえて上から見比べられるようにする）、
-// 右に名前と、その下に「活動指標の名前 計画 3回 → 実績 3回」（指標の名前のすぐ後ろに値。施策の行の「成果指標の名前 ▲ 40.7%」と同じ）。
+// 左の列に最新の年度の進捗状況の札（施策の行で開く取組の一覧と同じく、札の列をそろえて上から見比べられるようにする）、右に名前と、その下に活動指標の名前。
 // 状態は形と色に加えて言葉でも出す（docs/design.md の2章）。区分の説明（「計画の90%以上」など）は札にマウスを乗せると出す。
-// その年にやったことは、施策の行の取組の一覧と同じ下向きの矢印で畳み（PC の幅では行の右上、スマホでは指標の下）、開くと行の下に出す。
-// スマホの幅では、札の列を取らずに札を名前の前に置き、指標とやったことは行の幅いっぱいに出す（札の列を取ると名前と指標が狭くなるため）。
-// 4年分の進捗状況・予算・県の検証と改善案は取組のページで見せる（施策のページでは経年を出さず、一覧を短くする）。
-// 所管課・くらしのテーマは取組のページに任せる。対応する成果指標は出さない（施策のページではどの行も成果指標の節と同じになる。docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
+// 「詳細」（施策の行の取組の一覧と同じ下向きの矢印。PC の幅では行の右上、スマホでは指標の下）を開くと、行の下に取組のページの頭の要点を出す:
+// 進捗状況を決めた活動指標の計画 → 実績（大きな数字）と達成割合、決算見込額、所管、4年間の進捗状況、その年にやったこと。
+// 計画と実績の数字は詳細にだけ出し、行には書かない（同じ数を2回出さない）。予算の推移・県の検証と改善案は取組のページに任せる。
+// スマホの幅では、札の列を取らずに札を名前の前に置き、指標と詳細は行の幅いっぱいに出す（札の列を取ると名前と指標が狭くなるため）。
+// くらしのテーマは取組のページに任せる。対応する成果指標は出さない（施策のページではどの行も成果指標の節と同じになる。docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
 import Chip from './Chip.astro';
+import Term from './Term.astro';
+import Stamps from './Stamps.astro';
 import YearTag from './YearTag.astro';
-import { LATEST, STATUSES, PATTERNS, yearLabel, statusOf, statusesOf, toneOfStatus, torikumiHref, type YearGroup } from '../lib/data.ts';
-import type { TorikumiRow } from '../lib/types.ts';
+import { YEARS, LATEST, STATUSES, yearLabel, statusOf, toneOfStatus, sectionHref, halfWidth, nameKey, activityAchievement, activityAchievements, type TorikumiGroup } from '../lib/data.ts';
+import { yen } from '../lib/format.ts';
 
-interface Props { row: YearGroup<TorikumiRow>; shisakuId: string }
-const { row, shisakuId } = Astro.props;
-const t = row.latest;
-const href = torikumiHref(shisakuId, row.key);
+interface Props { g: TorikumiGroup }
+const { g } = Astro.props;
+const t = g.latest;
+const yl = yearLabel(t.year);
 // 最新の年度の報告に無い取組（終了・名前の変更など）は、最後に報告された年度の進捗状況を年度つきで出す
 const status = statusOf(t);
 const old = t.year !== LATEST;
-// 最新の年度の報告から新しく載った取組は、名前の後ろに札を付ける
-const isNew = PATTERNS.new(statusesOf(row));
 const note = STATUSES.find((c) => c.key === status)?.note;
-// 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、組ごとに並べる
-const values = t.indicator ? (t.lines ? t.lines.map((l) => ({ target: l.target, actual: l.actual })) : [{ target: t.target, actual: t.actual }]) : [];
+// 目標・実績が2行以上に印字されている取組（北部と西表、件数と回数など）は、組ごとに並べる。大きな数字で出すので、全角の数字は半角にそろえる
+const values = (t.lines ?? [{ target: t.target, actual: t.actual }]).map((l) => ({ target: halfWidth(l.target || '—'), actual: halfWidth(l.actual || '—') }));
+// 達成割合（部局票の値。無ければ同じ単位の計画と実績から計算）。活動指標の表が2つ以上ある取組は表ごとに並べ、
+// 表の名前が行の活動指標の名前と同じ（か、その頭を切ったもの）なら名前を書かずに1行にまとめる（「達成割合 100.0%・100.0%」）
+const ach = activityAchievement(g, t.year);
+const achs = activityAchievements(g, t.year).map((x) => ({ ...x, name: nameKey(t.indicator).startsWith(nameKey(x.name)) ? '' : x.name }));
+const achNamed = achs.some((x) => x.name);
+const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+const secHref = sectionHref(t.section);
 ---
-<li class:list={['tr', old && 'old', t.summary && 'has-did']}>
-  <span class="tr-st"><Chip tone={toneOfStatus(status)} text={old ? `${yearLabel(t.year)} ${status}` : status} title={`${yearLabel(t.year)}の進捗状況${note ? `（${note}）` : ''}`} /></span>
-  <div class="tr-name"><a class="name-link" href={href}>{t.name}</a>{isNew && <> <YearTag kind="new" /></>}</div>
-  {t.indicator && (
-    <div class="tr-ind small">
-      <span class="secondary">{t.indicator}</span>
-      {values.map((v) => <> <span class="tr-n"><span>計画 <b>{v.target || '—'}</b></span> <span>→ 実績 <b>{v.actual || '—'}</b></span></span></>)}
+<li class:list={['tr', old && 'old']}>
+  <span class="tr-st"><Chip tone={toneOfStatus(status)} text={old ? `${yl} ${status}` : status} title={`${yl}の進捗状況${note ? `（${note}）` : ''}`} /></span>
+  <div class="tr-name"><a class="name-link" href={g.href}>{t.name}</a>{g.patterns.includes('new') && <> <YearTag kind="new" /></>}</div>
+  {t.indicator && <div class="tr-ind small secondary">{t.indicator}</div>}
+  <details class="tr-more">
+    <summary>
+      <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+      詳細<span class="sr-only">（{t.name}）</span>
+    </summary>
+    <div class="tr-body inset">
+      <div class="hl">
+        {t.indicator && (
+          <div class="hl-i">
+            <div class="hl-l">{yl}の活動指標</div>
+            {values.map((v) => <div class="hl-v">計画 <b>{v.target}</b> → 実績 <b>{v.actual}</b></div>)}
+            {ach && <div class="hl-s">達成割合 {ach.text}{ach.pct >= 100 && '　計画クリア'}</div>}
+            {achs.length > 0 && (achNamed
+              ? <ul class="hl-s hl-achs">{achs.map((x) => <li>{x.name && `${x.name}: `}達成割合 {x.text || '—'}</li>)}</ul>
+              : <div class="hl-s">達成割合 {achs.map((x) => x.text || '—').join('・')}</div>)}
+          </div>
+        )}
+        {t.budget != null && (
+          <div class="hl-i">
+            <div class="hl-l">{yl}の<Term word="決算見込額" /></div>
+            <div class="hl-v"><b>{yen(t.budget)}</b></div>
+          </div>
+        )}
+        {t.section && (
+          <div class="hl-i">
+            <div class="hl-l">所管</div>
+            <div class="hl-t">{secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</div>
+          </div>
+        )}
+        <div class="hl-i hl-years">
+          <div class="hl-l">4年間の進捗状況</div>
+          <Stamps items={stamps} label="4年間の進捗状況" size="small" />
+        </div>
+      </div>
+      {t.summary && (
+        <div class="did">
+          <div class="hl-l">{yl}にやったこと</div>
+          <p>{t.summary}</p>
+        </div>
+      )}
+      <p class="go"><a href={g.href}>取組のページで、予算の推移や県の検証と改善案を見る</a></p>
     </div>
-  )}
-  {t.summary && (
-    <details class="tr-did">
-      <summary>
-        <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
-        {yearLabel(t.year)}にやったこと
-      </summary>
-      <p class="inset small">{t.summary}</p>
-    </details>
-  )}
+  </details>
 </li>
 
 <style>
   /* 札の列の幅をそろえ、どの行も名前の頭を縦にそろえる（「大幅遅れ」が入る幅。報告に無い取組は「R6 大幅遅れ」が入る幅。幅は箱の ToriList が --st で決める） */
-  .tr { position: relative; display: grid; grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr); grid-template-areas: "st name" ". ind" ". did"; gap: 2px 12px; align-items: start; }
+  .tr { position: relative; display: grid; grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr); grid-template-areas: "st name" ". ind" ". more"; gap: 2px 12px; align-items: start; }
   .tr-st { grid-area: st; padding-top: 1px; }
   .tr-st :global(.chip) { white-space: nowrap; }
   .tr-name { grid-area: name; }
   .tr-ind { grid-area: ind; line-height: 1.7; }
-  /* 計画 → 実績はひとまとまりで送り、行に入らないほど長いときだけ矢印の前で折り返す */
-  .tr-n { display: inline-block; max-width: 100%; color: var(--ink-2); overflow-wrap: anywhere; }
-  .tr-n > span { white-space: nowrap; }
-  .tr-n b { font-weight: 700; color: var(--ink); }
-  /* やったこと: 施策の行の取組の一覧を開くボタンと同じ下向きの矢印（開くと上向きに回る） */
-  .tr-did { grid-area: did; }
-  .tr-did > summary { display: inline-flex; align-items: center; gap: 4px; padding: 0; font-size: 0.8125rem; font-weight: 400; color: var(--ink-2); list-style: none; }
-  .tr-did > summary::-webkit-details-marker { display: none; }
+  /* 詳細: 施策の行の取組の一覧を開くボタンと同じ下向きの矢印（開くと上向きに回る） */
+  .tr-more { grid-area: more; }
+  .tr-more > summary { display: inline-flex; align-items: center; gap: 4px; padding: 0; font-size: 0.8125rem; font-weight: 400; color: var(--ink-2); list-style: none; }
+  .tr-more > summary::-webkit-details-marker { display: none; }
   .chev { flex: none; width: 14px; height: 14px; fill: none; stroke: var(--link); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .tr-did[open] .chev { transform: rotate(180deg); }
-  .tr-did p { margin: 6px 0 2px; padding: 8px 12px; border-radius: 10px; line-height: 1.7; }
-  /* PC の幅では、やったことのボタンを行の右上（名前の行の高さ）に置き、名前と指標はその幅を空ける。開いた中は行の下に出す */
+  .tr-more[open] .chev { transform: rotate(180deg); }
+  /* 開いた中: 頭に要点（ハイライト）を横に並べ（入らなければ折り返す）、細い線の下にやったことと、取組のページへのリンク */
+  .tr-body { display: grid; gap: 10px; margin: 8px 0 2px; padding: 12px 14px; border-radius: 12px; }
+  .hl { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 36px; }
+  .hl-i { display: grid; gap: 2px; min-width: 0; }
+  .hl-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+  .hl-v { font-size: 0.875rem; color: var(--ink-2); overflow-wrap: anywhere; }
+  .hl-v b { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; color: var(--ink); }
+  .hl-t { font-size: 0.9375rem; line-height: 1.5; }
+  .hl-s { font-size: 0.8125rem; color: var(--ink-2); }
+  .hl-achs { margin: 0; padding-left: 1.2em; }
+  .hl-years :global(.stamps) { width: 15rem; max-width: 100%; }
+  .did { padding-top: 10px; border-top: 1.5px solid var(--grid); }
+  .did p { margin: 2px 0 0; font-size: 0.875rem; line-height: 1.7; }
+  .go { margin: 0; font-size: 0.8125rem; }
+  /* PC の幅では、詳細のボタンを行の右上（名前の行の高さ）に置き、名前と指標はその幅を空ける。開いた中は行の下に出す */
   @media (min-width: 641px) {
-    .has-did { grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr) 8.5em; grid-template-areas: "st name ." ". ind ." ". did did"; }
-    .tr-did > summary { position: absolute; top: 12px; right: 16px; }
+    .tr { grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr) 4em; grid-template-areas: "st name ." ". ind ." ". more more"; }
+    .tr-more > summary { position: absolute; top: 12px; right: 16px; }
   }
   @media (max-width: 640px) {
-    .tr { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "st name" "ind ind" "did did"; column-gap: 8px; }
-    .tr-did > summary { margin-top: 2px; }
+    .tr { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "st name" "ind ind" "more more"; column-gap: 8px; }
+    .tr-more > summary { margin-top: 2px; }
+    .tr-body { padding: 10px 12px; }
+    .hl { gap: 10px 24px; }
   }
 </style>

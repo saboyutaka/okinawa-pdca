@@ -643,8 +643,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
-  /* 「条件で絞り込む」（components/FilterMore.astro）と基本施策・くらしのテーマのページの施策の行の取組の一覧（ShisakuItem.astro）の矢印、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
-  .more-toggle .chev, .open-d .chev { transition: transform 0.15s ease-out; }
+  /* 「条件で絞り込む」（components/FilterMore.astro）と基本施策・くらしのテーマのページの施策の行の取組の一覧（ShisakuItem.astro）・施策のページの取組の詳細（ToriRow.astro）の矢印、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
+  .more-toggle .chev, .open-d .chev, .tr-more .chev { transition: transform 0.15s ease-out; }
   .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
