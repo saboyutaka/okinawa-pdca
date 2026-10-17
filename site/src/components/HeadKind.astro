@@ -1,16 +1,16 @@
 ---
 // ページの頭の1行目。左に何のページか（区分。押すと用語の説明）と報告書での番号、右端にくらしのテーマ
-// term={false} は区分を用語にしない（観光ロードマップの施策展開。用語の説明は沖縄県PDCA の施策展開のもの）。plan は番号の後ろに置く個別計画の札。
-// ほかの札（主な取組の「R7から」）は子に渡すと番号の後ろに置く
+// term={false} は区分を用語にしない（用語の一覧に無い区分と、観光ロードマップの施策展開。用語の説明は沖縄県PDCA の施策展開のもの）。
+// plan は番号の後ろに置く個別計画の札（観光ロードマップのトップは区分を置かず、札だけ）。ほかの札（主な取組の「R7から」）は子に渡すと番号の後ろに置く
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
 
-interface Props { kind: string; term?: boolean; plan?: string; code?: string; codeTitle?: string; themes?: string[] }
+interface Props { kind?: string; term?: boolean; plan?: string; code?: string; codeTitle?: string; themes?: string[] }
 const { kind, term = true, plan, code, codeTitle = '県の報告書での番号', themes = [] } = Astro.props;
 ---
 <div class="head-kind">
   <span class="hk">
-    <span class="hk-kind">{term ? <Term word={kind} /> : kind}</span>
+    {kind && <span class="hk-kind">{term ? <Term word={kind} /> : kind}</span>}
     {code && <span class="code-no" title={codeTitle}>{code}</span>}
     {plan && <span class="plan-tag">{plan}</span>}
     <slot />

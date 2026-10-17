@@ -7,6 +7,7 @@
 // row を渡さないときは②だけ（2つの指標をまとめて書いた 3-(12) の説明。カードの後ろに置く）
 import Chip from './Chip.astro';
 import Term from './Term.astro';
+import Says from './Says.astro';
 import { yearLabel, judgesOf, joinCell, toneOfJudgement, type ShuyouGroup } from '../lib/data.ts';
 import { HYOKA } from '../lib/plans.ts';
 
@@ -16,30 +17,26 @@ const raw = row?.latest.judgement;
 const judges = raw ? judgesOf(raw) : null;
 ---
 {(raw || text) && (
-  <div class="bubble-row says">
-    <span class="avatar" aria-hidden="true">県</span>
-    <div class="bubble">
-      {row && raw && (
-        <p class="j-line">
-          <span class="small secondary label">県の<Term word="見通し" />（{yearLabel(row.latest.year)}）</span>
-          {judges
-            ? judges.map((j) => <span class="vj">{j.label && <small>{j.label}</small>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
-            : <span class="small">{joinCell(raw)}</span>}
-        </p>
-      )}
-      {text && (
-        <div class:list={['explain', raw && 'after']}>
-          <div class="small secondary label">県による説明（<Term word="評価検証報告書" />・{HYOKA.period}）</div>
-          <p class="prose small">{text}</p>
-        </div>
-      )}
-    </div>
-  </div>
+  <Says>
+    {row && raw && (
+      <p class="j-line">
+        <span class="says-label small secondary">県の<Term word="見通し" />（{yearLabel(row.latest.year)}）</span>
+        {judges
+          ? judges.map((j) => <span class="vj">{j.label && <small>{j.label}</small>}<Chip tone={toneOfJudgement(j.key)} text={j.key} /></span>)
+          : <span class="small">{joinCell(raw)}</span>}
+      </p>
+    )}
+    {text && (
+      <div class:list={['explain', raw && 'after']}>
+        <div class="says-label small secondary">県による説明（<Term word="評価検証報告書" />・{HYOKA.period}）</div>
+        <p class="prose small">{text}</p>
+      </div>
+    )}
+  </Says>
 )}
 
 <style>
   .says { margin-top: 14px; }
-  .says .prose { margin: 4px 0 0; }
   /* 見通しの行: 見出しの後ろに札を続けて並べる（入らなければ札を次の行へ送る） */
   .j-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; }
   .vj { display: inline-flex; align-items: center; gap: 6px; }

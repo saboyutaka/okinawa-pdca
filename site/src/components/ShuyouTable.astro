@@ -25,7 +25,7 @@ const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.y
 <details open={!aligned}>
   <summary>表で見る</summary>
   <div class="table-wrap">
-    <table class:list={['shuyou-table', aligned && 'aligned']}>
+    <table class:list={['year-table', aligned && 'aligned']}>
       <caption class="sr-only">{p.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
       <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
       <thead>
@@ -46,31 +46,11 @@ const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.y
 </details>
 
 <style>
-  /* 成果指標の表（components/SeikaTable.astro）と同じ見た目。期間の変わり目に縦の線を引き、最新でない計画期間の列に図の帯と同じ地の色を敷く */
-  .shuyou-table thead th { vertical-align: bottom; }
-  .shuyou-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
-  .shuyou-table .sep { border-left: 1.5px solid var(--line); }
-  .shuyou-table .off { background: var(--bg); }
-  /* 数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。見通し・出典・文の実績値と、基準値・目標値は折り返す */
-  .shuyou-table td { overflow-wrap: normal; min-width: 4.5em; white-space: nowrap; }
-  .shuyou-table td.text, .shuyou-table td.start, .shuyou-table td.goal { white-space: normal; }
-  .shuyou-table td.start { text-align: left; }
-  .shuyou-table td.goal { text-align: right; }
-  .shuyou-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+  /* 表の形は styles/global.css の .year-table。見通しの札は折り返す。図にそろえたときは、印字の長い値（「3兆2,885億円」）も列の中で折り返す */
   .vj { display: inline-flex; align-items: center; gap: 4px; }
-  .shuyou-table :global(.chip) { white-space: normal; }
-  /* 図があるときは、列を図の年度にそろえる。左の列は図の左の余白、右の 8px は図の右の余白。値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。
-     スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+  .year-table :global(.chip) { white-space: normal; }
   @media (min-width: 641px) {
-    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
-    .aligned col.lab { width: var(--plot-l, 60px); }
-    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
     .aligned td { white-space: normal; }
-    .aligned td.start { text-align: left; padding-left: 8px; }
-    .aligned td.goal { text-align: right; padding-right: 8px; }
-    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
-    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
-    .aligned .paren { font-size: 0.75rem; }
     .aligned :global(.chip) { font-size: 0.8125rem; }
   }
 </style>

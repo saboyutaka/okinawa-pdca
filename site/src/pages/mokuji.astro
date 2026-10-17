@@ -76,7 +76,7 @@ const dataPath = treeDataPath();
   </form>
   <p class="result-count tree-hits" data-tree-hits="plan-tree" aria-live="polite"><span id="tree-hits"></span></p>
   <div class="tree-box sticker">
-    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span><span class="tree-hint" aria-hidden="true">矢印キーで行を移り、開け閉めできます</span></p>
+    <p class="tree-root"><span class="tw" aria-hidden="true"></span><span>新・沖縄21世紀ビジョン基本計画</span><span class="key-hint tree-hint" aria-hidden="true">矢印キーで行を移り、開け閉めできます</span></p>
     <p class="tree-msg small secondary" role="status">目次を読み込んでいます…</p>
     <ul class="tree" id="plan-tree" data-tree data-show={SHOW.filter((x) => x.on).map((x) => x.key).join(' ')} aria-label="計画の目次。上下の矢印キーで行を移り、左右の矢印キーかスペースで開け閉めし、Enter でページを開きます" aria-busy="true" data-src={dataPath} data-fallback={TREE_DATA_FALLBACK}></ul>
     <noscript><p class="small">目次の表示には JavaScript が必要です。<a href="/shisaku/">施策をさがす</a>・<a href="/future/">5つの将来像</a>から、それぞれの施策・取組を見られます。</p></noscript>
@@ -102,11 +102,9 @@ const dataPath = treeDataPath();
   .tree-show { position: relative; flex: none; display: grid; gap: 4px; }
   .tree-show-btn {
     display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 12px 4px 14px;
-    font: inherit; font-size: 0.95rem; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 12px; cursor: pointer;
+    font: inherit; font-size: 1rem; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 12px; cursor: pointer;
   }
   .tree-show-btn:hover, .tree-show-btn[aria-expanded='true'] { background: var(--sky); }
-  .tree-show-btn .chev { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .tree-show-btn[aria-expanded='true'] .chev { rotate: 180deg; }
   .tree-show-pop {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 45; margin: 0; min-width: 100%; width: max-content; display: grid;
     background: var(--paper); color: var(--ink); border: 2px solid var(--line); border-radius: 12px; box-shadow: 3px 3px 0 var(--shadow); padding: 6px;
@@ -149,7 +147,6 @@ const dataPath = treeDataPath();
   /* キーワードで後ろの行を隠したときは、見えている最後の行より下へ線を伸ばさない */
   .tree-box .tree li:not(:has(~ li:not([hidden])))::after { display: none; }
   /* キーワードに当たった文字。状態の色（黄など）と混ぜないよう、装飾の青の地に下線を引く */
-  .tree-box .qn mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--pop); border-radius: 2px; }
 
   /* 名前の行。頭の番号は折り返さず、名前が何行かになるときは名前の頭にそろえる */
   .tree-box .tb { display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: var(--pad) 0; line-height: 1.6; }
@@ -185,10 +182,7 @@ const dataPath = treeDataPath();
   .tree-box .tree-root .tw::before { content: ''; width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--ink); translate: none; }
   .tree-box .tree-root::after { top: calc(var(--c) + 6px); }
   /* キーボードで木に止まったときだけ、矢印キーで動かせることを根の行の右に出す（指標のマップと同じ。読み上げは木の aria-label で伝える） */
-  .tree-box .tree-hint {
-    display: none; position: absolute; right: 0; top: var(--c); translate: 0 -50%; padding: 0 8px; font-family: var(--font); font-size: 0.75rem; line-height: 1.6;
-    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
-  }
+  .tree-box .tree-hint { right: 0; top: var(--c); translate: 0 -50%; }
   .tree-box:has(.tree :focus-visible) .tree-hint { display: block; }
 
   /* 開け閉めの丸（.tw）の形は styles/global.css。施策展開は名前の行に乗せても丸の色を変える。子の無い行は点線の丸だけ */

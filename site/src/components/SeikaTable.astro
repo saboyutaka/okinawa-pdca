@@ -27,7 +27,7 @@ const rateOf = (r: (typeof cols)[number]['rep']) => (r ? (r.rate != null ? `${r.
 <details open={open}>
   <summary>表で見る</summary>
   <div class="table-wrap">
-    <table class:list={['seika-table', aligned && 'aligned']}>
+    <table class:list={['year-table', aligned && 'aligned']}>
       <caption class="sr-only">{row.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
       <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
       <thead>
@@ -45,28 +45,3 @@ const rateOf = (r: (typeof cols)[number]['rep']) => (r ? (r.rate != null ? `${r.
   </div>
 </details>
 
-<style>
-  /* 年度が列の表。期間の変わり目に縦の線を引き、最新でない計画期間の列に図の帯と同じ地の色を敷く（取組のページの活動指標の表と同じ） */
-  .seika-table thead th { vertical-align: bottom; }
-  .seika-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
-  .seika-table .sep { border-left: 1.5px solid var(--line); }
-  .seika-table .off { background: var(--bg); }
-  /* 数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。見通しと、文で書かれた基準値・目標値は折り返す */
-  .seika-table td { overflow-wrap: normal; min-width: 4.5em; }
-  .seika-table td.text, .seika-table td.start, .seika-table td.goal { white-space: normal; }
-  .seika-table td.start { text-align: left; }
-  .seika-table td.goal { text-align: right; }
-  .seika-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
-  /* 図があるときは、列を図の年度にそろえる。左の列は図の左の余白、右の 8px は図の右の余白。値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。
-     スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
-  @media (min-width: 641px) {
-    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
-    .aligned col.lab { width: var(--plot-l, 60px); }
-    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
-    .aligned td.start { text-align: left; padding-left: 8px; }
-    .aligned td.goal { text-align: right; padding-right: 8px; }
-    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
-    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
-    .aligned .paren { font-size: 0.75rem; }
-  }
-</style>

@@ -68,9 +68,6 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
 
 <style>
   .chart-card { margin: 16px 0 0; }
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
-  .legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
   figcaption + .rows { margin-top: 12px; }
   /* 全行で列幅をそろえ、棒の左端を合わせる */
   .rows { display: grid; grid-template-columns: minmax(4.5em, max-content) 1fr auto; align-items: center; gap: 10px 12px; }

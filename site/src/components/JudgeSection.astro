@@ -1,0 +1,16 @@
+---
+// 施策の判定の節（トップ・将来像・くらしのテーマのページ）。県がどう決めているかの1文と、判定のマス目（JudgeMatrix）。数だけをページのものにする
+import JudgeMatrix from './JudgeMatrix.astro';
+import Term from './Term.astro';
+import ExtLink from './ExtLink.astro';
+import SecHead from './SecHead.astro';
+import { LINKS } from '../lib/links.ts';
+
+interface Props { counts: Record<string, number>; hrefOf?: (key: string) => string; title?: string }
+const { counts, hrefOf, title = '施策の判定' } = Astro.props;
+---
+<section aria-labelledby="judge">
+  <SecHead id="judge" class="anchor">{title}</SecHead>
+  <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。</p>
+  <JudgeMatrix counts={counts} hrefOf={hrefOf} />
+</section>

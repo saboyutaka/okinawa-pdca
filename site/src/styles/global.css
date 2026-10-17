@@ -58,13 +58,6 @@
   --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
   /* ヘッダーの版の木の板。ロゴと同じく、木の色と字はダークでも変えない */
   --wood: #efc98f; --wood-2: #e0ad68; --wood-grain: rgb(110 66 24 / 0.17); --wood-knot: rgb(110 66 24 / 0.3); --wood-ink: #3a2310;
-  /* 以前の名前（ページの style から参照しているもの） */
-  --page: var(--bg);
-  --surface: var(--paper);
-  --border: var(--hair);
-  --baseline: var(--hair);
-  --accent: var(--pop);
-  --accent-wash: var(--sky);
   --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Hiragino Maru Gothic ProN", var(--font);
   --font-num: "Fredoka Num", var(--font-display);
@@ -210,39 +203,68 @@ small, .small { font-size: 0.875rem; }
 :root[data-era="seireki"] .era-toggle .to-seireki, :root:not([data-era="seireki"]) .era-toggle .to-wareki { display: none; }
 :root[data-theme="dark"] .theme-toggle .to-dark, :root:not([data-theme="dark"]) .theme-toggle .to-light { display: none; }
 
-/* ステッカー（カード）。.card は以前の名前。
-   目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
+/* ステッカー（カード）。目立たせる順をはっきりさせるため、強さを3段階に分ける（全部が同じ強さだと、どこから見ればいいか分からなくなる）:
    1. .sticker.lift … ページの頭とトップのヒーローだけ。太い線と大きな影
    2. .sticker      … 並ぶカード・図・絞り込み。細めの線と小さな影
-   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける（余白は使う所で決める。数字の並び .kv の箱もこの形） */
-.sticker, .card {
+   3. .inset        … ステッカーの中の箱。線も影も付けず、地の色だけで分ける（余白は使う所で決める） */
+.sticker {
   background: var(--paper); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); padding: 18px 20px; min-width: 0;
 }
 .sticker.lift { border-width: 2.5px; border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); }
 /* ステッカーの中のステッカー（5つの将来像のページの中の図など）は影を付けない */
 .sticker .sticker { box-shadow: none; }
-.inset, .kv > div { background: var(--bg); border-radius: 12px; }
-/* 数字の並び（基準値・実績値・計画値・目標値・見通し。成果指標と主要指標の札） */
-.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0; }
-.kv > div { padding: 6px 10px; min-width: 0; }
-.kv dt { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
-.kv dd { margin: 0; }
-.kv dd.big { font-size: 1.1rem; }
-.card + .card { margin-top: 18px; }
-.cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.cards > .card { margin-top: 0; }
-/* ドーナツのカード（components/DonutCard.astro）を並べる箱 */
+.inset { background: var(--bg); border-radius: 12px; }
+/* ドーナツのカード（components/DonutCard.astro）・数字のタイル（.tile）を並べる箱 */
 .donuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 18px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
+.tile { display: grid; gap: 6px; align-content: start; justify-items: start; }
 figure { margin: 0; }
-.notice {
-  background: var(--pink); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; font-size: 0.9375rem; color: var(--ink);
-}
+/* 項目名と中身を2列に並べる定義リスト（このサイトについて・意見を伝えたい人へ）。スマホでは1列 */
+.dl-rows { display: grid; gap: 10px; margin: 8px 0 16px; }
+.dl-rows > div { display: grid; grid-template-columns: 10em minmax(0, 1fr); gap: 4px 16px; }
+.dl-rows dt { font-family: var(--font-display); font-weight: 700; }
+.dl-rows dd { margin: 0; }
+@media (max-width: 560px) { .dl-rows > div { grid-template-columns: 1fr; } }
 /* ページの階層（components/Hierarchy.astro）の無いページ（ナビから入る一覧のページなど）は、見出しやページの頭のステッカーを階層のあるページと同じくらい下げる */
 #main > h1:first-child { margin-top: 28px; }
 #main > .sticker.lift:first-child { margin-top: 24px; }
+/* ページの頭のステッカー（.sticker.lift）。区分の行（components/HeadKind.astro）・題名・補足の行・中の箱を同じすき間で縦に並べ、区分の行と題名のあいだだけ詰める */
+.page-head { display: grid; gap: 12px; }
+.page-head > h1 { margin: 0; }
+.page-head > .head-kind { margin-bottom: -6px; }
+.page-head > .lead { margin: 0; }
+/* 頭の中の箱（施策のページの判定・取組のページの進捗状況。.inset に付ける）。上の行に いまの状態（.hb-now）と4年間のスタンプ（.hb-years）、
+   細い線の下にその状態のもと（.hb-why）。スマホでは いまの状態 → そのもと → 4年間 の順に積む */
+.head-box { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "now years" "why why"; align-items: center; gap: 10px 40px; padding: 12px 18px; }
+.head-box > .hb-now { grid-area: now; }
+.head-box > .hb-years { grid-area: years; display: flex; align-items: center; gap: 10px; max-width: 340px; }
+.hb-years > .hb-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
+.hb-years > .stamps { flex: 1; }
+.head-box > .hb-why { grid-area: why; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+@media (max-width: 640px) {
+  .head-box { grid-template-columns: minmax(0, 1fr); grid-template-areas: "now" "why" "years"; gap: 12px; padding: 12px 14px; }
+  .head-box > .hb-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
+}
+/* 頭の補足の行（関係部等・所管など）。項目を横に並べ、入らなければ折り返す */
+.page-head > .head-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 0; font-size: 0.9375rem; color: var(--ink-2); }
+/* 印のあるページの頭（将来像・くらしのテーマ）。PC は印（.bh-badge）を左に大きく置き、右に区分の行・名前・件数の札、下に3つの段（Ladder）。
+   スマホは印を小さくして区分の行に並べ、名前を全幅にする。余白はトップのヒーローと同じにする（段の位置がそろうように） */
+.badge-head {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kind" "badge name" "badge stats" "ladder ladder";
+  gap: 0 18px; align-items: center; padding: 24px 24px 28px;
+}
+.badge-head > .bh-badge { grid-area: badge; width: 76px; height: 76px; border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
+.badge-head > .head-kind { grid-area: kind; }
+.badge-head > h1 { grid-area: name; margin: 4px 0 10px; }
+.badge-head > .head-stats { grid-area: stats; }
+.badge-head > .ladder { grid-area: ladder; }
+@media (max-width: 520px) {
+  .badge-head { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kind" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
+  .badge-head > .bh-badge { width: 36px; height: 36px; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
+  .badge-head > h1 { margin-top: 8px; }
+}
 
-/* 数字の見出し（ヒーロー・タイル） */
-.hero-figure { font-family: var(--font-num); font-size: 3.2rem; font-weight: 600; line-height: 1.1; }
+/* 数字のタイル（.tile）の見出し・数字・補足 */
 .tile-label { font-size: 0.9375rem; color: var(--ink-2); font-weight: 700; }
 .tile-value { font-family: var(--font-num); font-size: 2rem; font-weight: 600; line-height: 1.2; margin: 4px 0; }
 .tile-value small { font-family: var(--font); font-size: 0.9375rem; font-weight: 700; margin-left: 2px; }
@@ -279,9 +301,36 @@ th, td { text-align: left; padding: 8px 10px; border-bottom: 1.5px solid var(--g
 th { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 caption { text-align: left; font-size: 0.875rem; color: var(--ink-2); padding: 4px 0; }
+/* 年度を列にした表（成果指標・主要指標のカード、取組のページの活動指標）。計画期間の変わり目（.sep）に縦の線を引き、最新でない計画期間の列（.off）に図の帯と同じ地の色を敷く。
+   数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。文の欄（.text）と基準値・目標値（.start・.goal）は折り返す。
+   かっこの中（累計・内訳・何年度の値か）は下の行に小さく出す */
+.year-table thead th { vertical-align: bottom; }
+.year-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
+.year-table .sep { border-left: 1.5px solid var(--line); }
+.year-table .off { background: var(--bg); }
+.year-table td { white-space: nowrap; overflow-wrap: normal; min-width: 4.5em; }
+.year-table td:is(.text, .start, .goal) { white-space: normal; }
+.year-table td.start { text-align: left; }
+.year-table td.goal { text-align: right; }
+.year-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+/* 図があるとき（.aligned）は、列を図の年度にそろえる。左の列（col.lab）は図の左の余白（--plot-l。scripts/charts.ts が入れる）、右の 8px は図の右の余白。
+   値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+@media (min-width: 641px) {
+  .year-table.aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
+  .year-table.aligned col.lab { width: var(--plot-l, 60px); }
+  .year-table.aligned :is(th, td) { min-width: 0; padding: 6px 4px; text-align: center; }
+  .year-table.aligned td.start { text-align: left; padding-left: 8px; }
+  .year-table.aligned td.goal { text-align: right; padding-right: 8px; }
+  .year-table.aligned th[scope="row"] { text-align: left; padding-left: 0; }
+  .year-table.aligned thead th { font-family: var(--font-num); font-size: 12px; }
+  .year-table.aligned .paren { font-size: 0.75rem; }
+}
 
 details > summary { cursor: pointer; color: var(--link); font-weight: 700; font-size: 0.9375rem; padding: 4px 0; }
 details[open] > summary { margin-bottom: 8px; }
+/* 開け閉めの下向きの矢印（「条件で絞り込む」・施策の行の取組の一覧・取組の詳細・計画の目次の出す指標）。開くと上向きに回る */
+.chev { flex: none; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+:is([aria-expanded="true"], details[open] > summary) > .chev { transform: rotate(180deg); }
 /* 開け閉めの丸（summary の中に置く。計画の目次の木）。閉じているときは ▶、開いているときは ▼。大きさは --tw */
 .tw { display: grid; place-items: center; flex: none; width: var(--tw, 22px); height: var(--tw, 22px); border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
 .tw::before { content: ''; border-left: 7px solid var(--ink); border-block: 4.5px solid transparent; translate: 1px 0; }
@@ -325,6 +374,9 @@ summary:hover .tw { background: var(--sky); }
   padding: 4px 16px 4px 5px; box-shadow: 2px 2px 0 var(--shadow); font-family: var(--font-display); font-weight: 700; line-height: 1.4;
 }
 .sz-ribbon .badge-sz { width: 2.1em; height: 2.1em; font-size: 0.95rem; }
+/* くらしのテーマのアイコン（components/ThemeIcon.astro）の丸。大きさは --ico（ページの頭の印では .badge-head が決める） */
+.theme-ico { flex: none; display: grid; place-items: center; width: var(--ico, 36px); height: var(--ico, 36px); border-radius: 50%; background: var(--pink); }
+.theme-ico .theme-ic { width: 58%; height: 58%; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* くらしのテーマのラベル（components/ThemeTags.astro）。このサイト独自の分類なので、ピンクの地で県の分類と見分ける */
 .ttags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
 .ttags-l { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; cursor: help; }
@@ -398,6 +450,13 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 }
 /* ステッカーの中の吹き出しは影を付けない（箱の中の箱を浮かせない） */
 .sticker .bubble { box-shadow: none; }
+/* 吹き出しの中は、上下の端に段落の余白を付けない。頭の小さな見出し（components/Says.astro の label）は太字にして、その下を少し空ける。
+   .says-first は施策の方向・取組内容の「ひとことで言うと」の1文 */
+.bubble > :first-child { margin-top: 0; }
+.bubble > :last-child { margin-bottom: 0; }
+.says-label { font-weight: 700; }
+div.says-label + * { margin-top: 4px; }
+.says-first { font-weight: 700; }
 /* スマホでは印を上に置き、吹き出しを上から出す（横に並べると印の分だけ本文の幅が狭くなるため）。尾は印の真ん中の下に置く */
 @media (max-width: 640px) {
   .bubble-row { flex-direction: column; gap: 14px; }
@@ -437,7 +496,10 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .termpop a { font-size: 0.875rem; }
 .termpop-close { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
 
-/* 押せる四角の中身の吹き出し（components/StatusBar.astro の pop、scripts/cell-pop.ts）。指標のマップの吹き出し（pages/map.astro の .im-pop）と同じ形で、
+/* キーワードに当たった文字（指標のマップの吹き出し・計画の目次）。状態の色と混ぜないよう、装飾の青の地に下線 */
+mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--pop); border-radius: 2px; }
+
+/* 押せる四角の中身の吹き出し（components/StatusBar.astro の pop、scripts/cell-pop.ts。指標のマップの吹き出しも同じ）。
    押した四角の下（画面に入らなければ上）に出し、尾（--ax は四角の真ん中の位置）で四角を指す */
 .cellpop {
   position: absolute; z-index: 45; width: min(380px, calc(100vw - 16px)); padding: 10px 40px 12px 14px;
@@ -464,12 +526,13 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .cellpop .cp-close:hover { background: var(--sky); }
 
 /* 一覧の絞り込み（scripts/list-filter.ts）。フィルタは一覧の上に並べる */
-.filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 20px 0 8px; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; margin: 16px 0 8px; }
 .filters label, .fgroup-label { display: grid; gap: 4px; font-size: 0.875rem; color: var(--ink-2); font-weight: 700; }
-/* セレクトは選択肢のいちばん長い文の幅になるので、ラベルを箱の幅より広げず、セレクトをその中に収める（スマホで箱からはみ出さないように） */
+/* セレクトは選択肢のいちばん長い文の幅になるので、ラベルを箱の幅より広げず、セレクトをその中に収める（スマホで箱からはみ出さないように）。
+   入力する字は 16px にする（小さくすると、iPhone で押したときに画面が拡大されるため） */
 .filters label { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, auto); }
 .filters select, .filters input[type="search"], .filters input[type="text"] {
-  font: inherit; font-size: 0.95rem; font-weight: 400; color: var(--ink); background-color: var(--paper);
+  font: inherit; font-size: 1rem; font-weight: 400; color: var(--ink); background-color: var(--paper);
   border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-height: 44px; max-width: 100%;
 }
 /* セレクトの三角は標準のものを消し、枠の内側に余白をとって描く（角の丸い枠の端に寄らないように。色は配色に合わせる） */
@@ -509,13 +572,14 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 }
 .active-chip span { font-size: 1rem; color: var(--ink-2); }
 .active-chip:hover { background: var(--paper); }
-.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.item { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; padding: 12px 16px; min-width: 0; }
 /* 一覧の行。1件ずつをステッカーにせず、1つの箱の中に細い線で区切って並べる。
    区切りは grid のすき間に地の色を見せて描く（絞り込みで隠れた行のぶんの線が残らないように）。
    名前は .row-list（図の部品 StatusChart・AmountChart が中で .rows を使っているので、それと分ける） */
 .row-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.5px; background: var(--grid); border: 2px solid var(--line); border-radius: 18px; box-shadow: 3px 3px 0 var(--shadow); overflow: hidden; }
 .row-list > li { background: var(--paper); padding: 12px 16px; min-width: 0; }
+/* 列の見出し（ShisakuHead・ToriList の頭）の下に一覧を入れる箱（.sticker.list-box）。一覧の枠と影は外して箱に任せ、見出しとのあいだを細い線で区切る */
+.list-box { padding: 0; overflow: hidden; }
+.list-box .row-list { border: 0; border-radius: 0; box-shadow: none; border-top: 1.5px solid var(--grid); }
 /* 画面の外の行は描かない（content-visibility）。成果指標・施策の一覧は数百行あり、全部を描くとスマホで読み込みと絞り込みが重い。
    描く前の行の高さは目安（行の種類と画面の幅ごとのおおよその中央値）。一度描いた行は実際の高さを覚える（auto）。
    中身は行の外へはみ出せなくなるので、行の中に吹き出しなどをはみ出させて置かない（ツールチップと用語の説明は body に付けている） */
@@ -525,12 +589,28 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
   .row-list > li { contain-intrinsic-block-size: auto 140px; }
   .row-list > li.t-row { contain-intrinsic-block-size: auto 270px; }
 }
+/* 一覧のまとまり（基本施策ごと）の見出し。将来像の番号の印と、名前と番号（.gt-name） */
+.group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.08rem; margin: 2em 0 0.6em; }
+.gt-name { flex: 1 1 12em; min-width: 0; }
 /* 取組の一覧の1行（取組をさがす・部局のページ）。左に名前・所管と施策・活動指標、右に4年のスタンプ */
 .t-row { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 6px 20px; align-items: center; }
 .t-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
 @media (max-width: 640px) { .t-row { grid-template-columns: 1fr; } .t-row .stamps { max-width: 260px; } }
+/* 成果指標の一覧の1行（components/SeikaRow.astro・RmSeikaRow.astro）。左に名前（.m-head）と施策（.m-sub）、右に達成率の札と道のりの小さな図（.m-viz）。
+   札と図の列の幅はどの行も同じにして、印と図の位置をそろえる（文字の値で図の無い行も）。スマホでは右の列を細くし、札の下に図を置く */
+.m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
+.m-head { grid-area: head; min-width: 0; }
+.m-sub { grid-area: sub; }
+.m-viz { grid-area: viz; display: grid; grid-template-columns: 6.5em 120px; gap: 12px; align-items: center; }
+.m-viz .spark { width: 100%; height: auto; }
+@media (max-width: 640px) {
+  .m-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 2px 12px; align-items: start; }
+  .m-viz { grid-template-columns: 1fr; gap: 4px; }
+}
 /* 報告書の施策・基本施策の番号（1-(1)-ア-①）。名前より目立たせず、カードの右上か名前の後ろ、ページの頭では区分の後ろ（components/HeadKind.astro）に小さく薄く置く */
 .code-no { font-family: var(--font); font-size: 0.75rem; font-weight: 400; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* 出典の節の、県の報告書での番号（「施策 1-(1)-ア-①」）。番号の途中で折り返さない */
+.report-no { white-space: nowrap; }
 /* カードの名前の行。名前を左に、番号を右上に置く */
 .name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 2px 10px; }
 .name-row > :first-child { min-width: 0; }
@@ -592,10 +672,19 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 .swatch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; white-space: nowrap; }
 .swatch::before { content: ""; width: 13px; height: 13px; border-radius: 4px; background: var(--series); border: 1.5px solid var(--line); flex: none; }
 
+/* 図の題と、その下の補足（StatusChart・AmountChart・BarList・TrendFigure）。凡例（.legend）は題の下に横に並べて折り返す */
+.chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+.chart-caption { font-size: 0.875rem; color: var(--ink-2); }
+.legend { list-style: none; padding: 0; margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
 /* 図（scripts/charts.ts が表示幅で描く） */
 .chart { position: relative; touch-action: pan-y; margin-top: 4px; min-height: 120px; }
 .chart svg { display: block; overflow: visible; }
 .chart:focus-visible { outline: 3px solid var(--pop); outline-offset: 4px; border-radius: 10px; }
+/* キーボードで止まったときだけ出す、キーの使い方の札（指標のマップ・計画の目次・押せる四角）。場所は使う所で決める。読み上げは止まる所の aria-label で伝える */
+.key-hint {
+  display: none; position: absolute; padding: 0 8px; font-family: var(--font); font-size: 0.75rem; font-weight: 700; line-height: 1.6; white-space: nowrap;
+  background: var(--paper); color: var(--ink); border: 1.5px solid var(--pop); border-radius: 999px;
+}
 .chart .tick { font-size: 12px; fill: var(--ink-2); font-family: var(--font-num); }
 .chart .lbl { font-size: 13px; fill: var(--ink); font-weight: 700; font-family: var(--font-num); }
 .chart .lbl2 { font-size: 12px; fill: var(--ink-2); font-weight: 700; font-family: var(--font-display); }
@@ -607,16 +696,12 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 .k-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--k); border: 2px solid var(--line); }
 .k-sq { width: 10px; height: 10px; background: var(--k); border: 1.5px solid var(--line); }
 .k-ring { width: 11px; height: 11px; border-radius: 50%; border: 2.5px solid var(--ink-2); }
-.k-line { width: 16px; height: 3px; background: var(--k); }
 /* 成果指標の計画の道すじ（charts.ts の drawSeika の点線） */
 .k-path { width: 18px; height: 0; border-top: 2px dashed var(--ink-2); }
 .k-band { width: 16px; height: 11px; border-radius: 3px; background: var(--bg); border: 1px solid var(--hair); }
 .k-band.on-frame { background: var(--grid); border-color: var(--grid); }
 .k-start { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-2); }
 .chart .here { fill: var(--ink); }
-
-/* 観光ロードマップの成果指標（components/RmSeika.astro）の頭の1行 */
-.verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
 
 /* 成果指標の一覧の行の小さな道のりの図（components/SeikaSpark.astro）。行が多いので、色と太さは要素に書かずここで付ける */
 .spark { display: block; overflow: visible; }
@@ -643,8 +728,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
-  /* 「条件で絞り込む」（components/FilterMore.astro）と基本施策・くらしのテーマのページの施策の行の取組の一覧（ShisakuItem.astro）・施策のページの取組の詳細（ToriRow.astro）の矢印、開け閉めの丸（.tw）の ▶: 開け閉めで回る */
-  .more-toggle .chev, .open-d .chev, .tr-more .chev { transition: transform 0.15s ease-out; }
+  /* 開け閉めの矢印（.chev）と丸（.tw）の ▶: 開け閉めで回る */
+  .chev { transition: transform 0.15s ease-out; }
   .tw::before { transition: rotate 0.15s ease-out, translate 0.15s ease-out; }
   @media (hover: hover) {
     :is(.button, .pill-btn, .press):hover:not(:active) { transform: translate(-1px, -1px); box-shadow: calc(var(--sh, 3px) + 1px) calc(var(--sh, 3px) + 1px) 0 var(--shadow); }
@@ -698,7 +783,7 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, .share-menu, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
-  .sticker, .card, .row-list { box-shadow: none !important; }
+  .sticker, .row-list { box-shadow: none !important; }
   .row-list > li { content-visibility: visible; } /* 画面の外の行も描く（画面では content-visibility: auto） */
   .table-wrap { overflow: visible; }
   [data-scroll-hint] { -webkit-mask-image: none !important; mask-image: none !important; }

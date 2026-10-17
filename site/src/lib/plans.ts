@@ -26,7 +26,7 @@ export const KANKO = {
   name: '沖縄観光推進ロードマップ',
   short: '観光ロードマップ',
   basis: '第6次沖縄県観光振興基本計画',
-  period: '前期（R4〜R6）',
+  period: '前期（令和4〜6年度）',
   dept: '文化観光スポーツ部 観光政策課',
   href: '/keikaku/kanko/',
   theme: 'kanko', // くらしのテーマ「観光」のページに要約の枠を出す

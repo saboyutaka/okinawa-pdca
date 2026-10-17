@@ -6,6 +6,7 @@
 // 担当・くらしのテーマも絞り込みと施策ページのカードに任せる。名前は施策ページのその指標のカード（href）へのリンク
 import Chip from './Chip.astro';
 import SeikaSpark from './SeikaSpark.astro';
+import YearTag from './YearTag.astro';
 import { LATEST, yearLabel, withUnit, refText, rateText, rateTone, type SeikaGroup, type Shisaku } from '../lib/data.ts';
 import type { SeikaRow as SeikaRecord } from '../lib/types.ts';
 
@@ -20,27 +21,12 @@ const srText = `${rateLabel} ${rateText(x)}。基準値 ${withUnit(x.base_raw, x
 <li class="m-row" {...attrs}>
   <div class="m-head">
     <a class="name-link" href={href}>{row.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
-    {past && <small class="past-badge">{yearLabel(x.year)}の報告まで</small>}
+    {past && <> <YearTag kind="ended" year={x.year} what="指標" /></>}
   </div>
-  {s && <div class="sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
+  {s && <div class="m-sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
   <div class="m-viz" aria-hidden="true">
     <Chip tone={rateTone(x)} text={rateText(x)} title={rateLabel} />
     <SeikaSpark row={row} />
   </div>
   <span class="sr-only">{srText}</span>
 </li>
-
-<style>
-  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
-  .m-head { grid-area: head; min-width: 0; }
-  .sub { grid-area: sub; }
-  /* 達成率の札と図。札と図の列の幅はどの行も同じにして、印と図の位置をそろえる（文字の値で図の無い行も） */
-  .m-viz { grid-area: viz; display: grid; grid-template-columns: 6.5em 120px; gap: 12px; align-items: center; }
-  .m-viz :global(.spark) { width: 100%; height: auto; }
-  .past-badge { font-weight: 400; margin-left: 8px; padding: 1px 6px; border: 1px solid var(--baseline); border-radius: 4px; color: var(--ink-2); }
-  /* スマホでは右の列を細くし、札の下に図を置く */
-  @media (max-width: 640px) {
-    .m-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 2px 12px; align-items: start; }
-    .m-viz { grid-template-columns: 1fr; gap: 4px; }
-  }
-</style>

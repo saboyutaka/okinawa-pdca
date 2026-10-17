@@ -5,7 +5,8 @@
 // R6 の報告に R4〜R6 の実績値と計画値がそろっているので、図はその1件から年度ごとの点を作って scripts/charts.ts（drawSeika）で描く
 import Chip from './Chip.astro';
 import Term from './Term.astro';
-import { yearLabel, withUnit, refText, sectionHref } from '../lib/data.ts';
+import Says from './Says.astro';
+import { yearLabel, yearLong, withUnit, refText, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
 import { joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
@@ -33,7 +34,7 @@ const down = nums && target < base;
 const j = rmJudgementOf(x.judgement || 'その他');
 const reached = x.rate_raw === '達成' || (x.rate != null && x.rate >= 100) || (progress != null && progress >= 1);
 const verdict = {
-  前進: reached ? 'スタートの基準値より良くなり、R6の目標値に届いています' : 'スタートの基準値より良くなっていますが、R6の目標値にはまだ届いていません',
+  前進: reached ? 'スタートの基準値より良くなり、令和6年度の目標値に届いています' : 'スタートの基準値より良くなっていますが、令和6年度の目標値にはまだ届いていません',
   横ばい: 'スタートの基準値から変わっていません',
   後退: 'スタートの基準値より悪くなっています',
   その他: '目標値の設定が難しいなどで、基準値と比べられません',
@@ -44,7 +45,7 @@ const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達�
 const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
 const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
-const note = ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yl}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
+const note = ref ? `この指標の${yearLong(x.year)}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yearLong(x.year)}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
 
 // ③ 道のりの図のデータ（components/SeikaChart.astro と同じ形）。年度ごとに、その年度の実績値と、計画期間の計画値の並び
 const years: SeikaChartYear[] = x.years.map((yy, k) => ({
@@ -86,13 +87,10 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
     <p class="small note">沖縄県PDCAにも同じ成果指標があります: {g.pdca.map((p, k) => <>{k > 0 && '、'}施策 <a class="sub-link" href={p.href}>{p.shisaku.name}</a> <span class="code-no">{p.shisaku.code}</span></>)}</p>
   )}
   {x.explanation && (
-    <div class="bubble-row says">
-      <span class="avatar" aria-hidden="true">県</span>
-      <div class="bubble">
-        <div class="small secondary label">県による説明（{yl}{x.dept && `・${x.dept}`}）</div>
-        <p class="prose small">{joinLines(x.explanation)}</p>
-      </div>
-    </div>
+    <Says>
+      <Fragment slot="label">県による説明（{yl}{x.dept && `・${x.dept}`}）</Fragment>
+      <p class="prose small">{joinLines(x.explanation)}</p>
+    </Says>
   )}
   <details>
     <summary>表で見る</summary>
@@ -121,7 +119,6 @@ const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.b
   .scard h4 { margin: 0; font-size: 1.02rem; line-height: 1.5; }
   .meta { margin: 2px 0 4px; }
   .says { margin-top: 14px; }
-  .says .prose { margin: 4px 0 0; }
   .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 700; margin: 10px 0 12px; }
   .verdict small { font-weight: 400; }
   .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); background: var(--bg); border-radius: 12px; overflow: hidden; }

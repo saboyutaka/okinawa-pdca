@@ -11,7 +11,8 @@ import Icon from '../../components/Icon.astro';
 import Sz from '../../components/Sz.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import { yearLabel, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
+import Says from '../../components/Says.astro';
+import { yearLabel, yearLong, yearsLong, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuDept, isShort, ikkatsuRows, planSourceLink } from '../../lib/plans.ts';
 import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -73,21 +74,18 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
   return link ? [{ href: link.href, year: y }] : [];
 });
 ---
-<Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${IKKATSU_YEARS.map(yearLabel).join('・')}）の評価・将来像・部局でさがせます。`}>
+<Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${yearsLong(IKKATSU_YEARS[0], IKKATSU_YEARS[IKKATSU_YEARS.length - 1])}）の評価・将来像・部局でさがせます。`}>
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="一括交付金の事業をさがす" />
   <h1>一括交付金の事業をさがす</h1>
-  <p class="lead">
+  <p class="secondary lead">
     一括交付金（ソフト）を使った県の事業 {fmt(rows.length)}件を、{IKKATSU_YEARS.map(yearLabel).join('・')}の<Term word="一括交付金の事後評価" label="事後評価" />つきでさがせます。
     名前を押すと、施策のページで成果目標・予算の執行・今後の方針を見られます。
   </p>
-  <div class="bubble-row says">
-    <span class="avatar" aria-hidden="true">!</span>
-    <div class="bubble small">
-      <p><strong>沖縄県PDCA（施策・主な取組の評価）とは別の評価です。</strong>主な取組の進捗状況は活動の量を計画と比べ、事後評価は事業ごとの成果目標に届いたかを見るので、同じ事業でも結果が違うことがあります。</p>
-    </div>
-  </div>
+  <Says who="!">
+    <p><strong>沖縄県PDCA（施策・主な取組の評価）とは別の評価です。</strong>主な取組の進捗状況は活動の量を計画と比べ、事後評価は事業ごとの成果目標に届いたかを見るので、同じ事業でも結果が違うことがあります。</p>
+  </Says>
 
-  <form class="filters sticker search-form" role="search" aria-label="一括交付金の事業の絞り込み" data-filter="#ik-list" data-count="#count" data-empty="#empty" data-summary="#active">
+  <form class="filters sticker" role="search" aria-label="一括交付金の事業の絞り込み" data-filter="#ik-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（事業・担当課・施策の名前、事業の内容）
       <input type="search" name="q" placeholder="例: 離島、観光、人材育成" />
     </label>
@@ -166,22 +164,16 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
     </p>
     <p>
       施策は事業ごとの検証シートに書かれた施策のコードで結び付けています。主な取組とは結び付けていません（同じ事業でも名前や単位が違い、1つの事業が複数の取組にまたがることがあるため）。
-      出典: 沖縄県「<ExtLink href={LINKS.ikkatsu} after="」">{IKKATSU.name}</ExtLink>（{sources.map((s, i) => <>{i > 0 && '・'}<ExtLink href={s.href}>{yearLabel(s.year)}の総括表</ExtLink></>)}）。
+      出典: 沖縄県「<ExtLink href={LINKS.ikkatsu} after="」">{IKKATSU.name}</ExtLink>（{sources.map((s, i) => <>{i > 0 && '・'}<ExtLink href={s.href}>{yearLong(s.year)}の総括表</ExtLink></>)}）。
     </p>
   </div>
 </Base>
 
 <style>
   .says { margin-top: 12px; }
-  .says .bubble p { margin: 0; }
-  .search-form { margin-top: 16px; }
-  .search-form .q input { font-size: 1rem; min-height: 44px; }
-  .filters label .own { margin-left: 4px; }
   .glegend { margin: 8px 0 12px; color: var(--ink-2); line-height: 1.7; }
   .gl-head { margin-right: 10px; }
   .glegend ul { display: inline; list-style: none; padding: 0; margin: 0; color: var(--ink); }
   .glegend li { display: inline-block; margin-right: 12px; }
-  .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.08rem; margin: 2em 0 0.6em; }
-  .gt-name { flex: 1 1 12em; min-width: 0; }
   .note { margin-top: 1.5em; }
 </style>

@@ -6,6 +6,7 @@
 // カードの id（row.anchor）は、成果指標の一覧・指標のマップ・計画の目次・シェア用のページから飛ぶ先
 import Icon from './Icon.astro';
 import SeikaRoute from './SeikaRoute.astro';
+import RouteVals from './RouteVals.astro';
 import SeikaSays from './SeikaSays.astro';
 import SeikaPastSays from './SeikaPastSays.astro';
 import ShareMenu from './ShareMenu.astro';
@@ -39,11 +40,7 @@ const rm = kankoOfSeika(row.href);
     </div>
   </div>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
-  <p class="sc-vals">
-    {vals.map((v, j) => (
-      <span class:list={['v', v.now && 'now']}>{j > 0 && <span class="arrow" aria-hidden="true">→ </span>}<span class="v-l">{v.label}</span> <span class="v-n">{v.v}</span>{v.y && <span class="v-y">（{v.y}）</span>}</span>
-    ))}
-  </p>
+  <RouteVals vals={vals} />
   <SeikaRoute row={row} />
   {says && x.explanation && <SeikaSays r={x} />}
   {past && <SeikaPastSays rows={seikaPastSays(row)} year={x.year} />}
@@ -69,12 +66,5 @@ const rm = kankoOfSeika(row.href);
   .sc-rate b { font-family: var(--font-num); font-weight: 600; font-size: 1.35rem; line-height: 1.3; }
   .sc-rate b.word { font-family: var(--font-display); font-size: 1rem; }
   .meta { margin: 2px 0 4px; }
-  /* スタート → いま → ゴールの値を1行で（入らなければ値の切れ目で折り返し、矢印は次の値と一緒に送る）。いまだけ濃い太字 */
-  .sc-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin: 6px 0 0; font-size: 0.9375rem; color: var(--ink-2); line-height: 1.6; }
-  .v-l { font-size: 0.75rem; font-weight: 700; }
-  .v-n { font-family: var(--font-num); font-weight: 600; color: var(--ink); }
-  .now .v-n { font-size: 1.1rem; }
-  .v-y { font-size: 0.75rem; white-space: nowrap; }
-  .arrow { color: var(--muted); margin-right: 3px; }
   .rm-note { margin: 12px 0 0; }
 </style>

@@ -5,7 +5,7 @@
 import Stamps from './Stamps.astro';
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
-import { yearLabel, type YearGroup } from '../lib/data.ts';
+import { yearLabel, yearLong, type YearGroup } from '../lib/data.ts';
 import { gradeOf, planSourceLink, ikkatsuStamps, ikkatsuAnchor } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../lib/types.ts';
@@ -75,8 +75,8 @@ const sheet = j.sheet_source ? planSourceLink('ikkatsu', j.sheet_source, j.sheet
   )}
   <p class="small src">
     出典: {src ? <ExtLink href={src.href}>総括表 {j.page}ページ</ExtLink> : '—'}{sheet && <>、<ExtLink href={sheet.href}>検証シート（{sheet.label}）</ExtLink></>}
-    {j.shisaku_from && <span class="secondary">（{yearLabel(j.year)}の検証シートが読めないため、施策は{yearLabel(j.shisaku_from)}の記載によります）</span>}
-    {j.shisaku_ref && <span class="secondary">（{yearLabel(j.year)}の検証シートは画像だけのPDFのため、施策のコード「{j.shisaku_ref.printed}」{j.sheet_image?.fields.includes('dept') && '・担当部課'}{j.sheet_image?.fields.includes('budget') && '・予算'}は画像を見て読み取っています）</span>}
+    {j.shisaku_from && <span class="secondary">（{yearLong(j.year)}の検証シートが読めないため、施策は{yearLong(j.shisaku_from)}の記載によります）</span>}
+    {j.shisaku_ref && <span class="secondary">（{yearLong(j.year)}の検証シートは画像だけのPDFのため、施策のコード「{j.shisaku_ref.printed}」{j.sheet_image?.fields.includes('dept') && '・担当部課'}{j.sheet_image?.fields.includes('budget') && '・予算'}は画像を見て読み取っています）</span>}
   </p>
 </article>
 

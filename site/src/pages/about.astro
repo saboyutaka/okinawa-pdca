@@ -46,7 +46,7 @@ import SecHead from '../components/SecHead.astro';
 
   <SecHead id="gijutsu">使っている技術</SecHead>
   <p>報告書の取得からサイトの公開まで、次の道具で作っています。</p>
-  <dl class="tech sticker">
+  <dl class="dl-rows sticker">
     <div>
       <dt>データの読み取り</dt>
       <dd>
@@ -92,7 +92,7 @@ import SecHead from '../components/SecHead.astro';
   <p>文字と背景色のコントラストの基準（WCAG など）や、ウェブアクセシビリティの規格（JIS X 8341-3 など）に沿っています。</p>
 
   <SecHead id="unei">運営と問い合わせ</SecHead>
-  <dl class="facts sticker">
+  <dl class="dl-rows sticker about-facts">
     <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
     <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></dd></div>
     <div><dt>制作協力</dt><dd>{PROJECT.collaborators.join('、')}</dd></div>
@@ -104,13 +104,5 @@ import SecHead from '../components/SecHead.astro';
 </Base>
 
 <style>
-  .tech { display: grid; gap: 12px; margin: 8px 0 16px; }
-  .tech > div { display: grid; grid-template-columns: 9em 1fr; gap: 4px 16px; }
-  .tech dt { font-family: var(--font-display); font-weight: 700; }
-  .tech dd { margin: 0; }
-  .facts { display: grid; gap: 10px; margin: 8px 0 16px; max-width: 40em; }
-  .facts > div { display: grid; grid-template-columns: 10em 1fr; gap: 4px 16px; }
-  .facts dt { font-family: var(--font-display); font-weight: 700; }
-  .facts dd { margin: 0; }
-  @media (max-width: 560px) { .tech > div, .facts > div { grid-template-columns: 1fr; } }
+  .about-facts { max-width: 40em; }
 </style>

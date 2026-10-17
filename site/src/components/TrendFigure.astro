@@ -1,16 +1,17 @@
 ---
-// 4年間の推移の図と「表で見る」（トップ・将来像・くらしのテーマのページ）。数は lib/data.ts の trendPoints。
-// 節の見出しと頭の文（割合の幅）はページに置く
+// 4年間の推移の節の中身（トップ・将来像・くらしのテーマ・部局のページ）。頭の文（割合の幅）・図・「表で見る」。数は lib/data.ts の trendPoints。
+// 節の見出しはページに置く。name は図の題の後ろに添える名前（部局のページ）
 import TrendChart from './TrendChart.astro';
 import { yearLong, type TrendRow } from '../lib/data.ts';
-import { fmt } from '../lib/format.ts';
+import { band, fmt } from '../lib/format.ts';
 
-interface Props { points: TrendRow[] }
-const { points } = Astro.props;
+interface Props { points: TrendRow[]; name?: string }
+const { points, name } = Astro.props;
 ---
+<p class="small secondary lead">この4年、主な取組の「順調」は{band(points.map((p) => p.a))}、計画値に届いた成果指標は{band(points.map((p) => p.b))}で推移しています。</p>
 <figure class="sticker trend">
   <figcaption>
-    <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合</div>
+    <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合{name && `（${name}）`}</div>
   </figcaption>
   <TrendChart points={points} />
   <details>
@@ -34,5 +35,4 @@ const { points } = Astro.props;
 
 <style>
   .trend { margin-top: 0; }
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
 </style>

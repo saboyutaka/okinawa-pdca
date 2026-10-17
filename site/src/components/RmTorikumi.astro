@@ -1,7 +1,7 @@
 ---
 // 観光ロードマップの主な取組1つ。R5・R6の進捗状況のスタンプ、活動指標、決算見込額、沖縄県PDCAの同じ取組へのリンク
 import Stamps from './Stamps.astro';
-import { yearLabel, statusOf, toneOfStatus, sectionHref } from '../lib/data.ts';
+import { yearLabel, yearLong, statusOf, toneOfStatus, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, type KankoTorikumiGroup } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 
@@ -35,10 +35,10 @@ const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[year
   {g.pdca.length > 0 ? (
     <div class="small pdca">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a> <span class="code-no">施策 {p.shisaku.code}</span></>)}</div>
   ) : <div class="small secondary">沖縄県PDCAの主な取組には、同じ名前の取組がありません。</div>}
-  {t.year !== RM_LATEST && <div class="small secondary">{yearLabel(t.year + 1)}の報告には、この名前の取組はありません。</div>}
+  {t.year !== RM_LATEST && <div class="small secondary">{yearLong(t.year + 1)}の報告には、この名前の取組はありません。</div>}
   {t.summary && t.summary !== '―' && (
     <details>
-      <summary>{yearLabel(t.year)}の活動概要</summary>
+      <summary>{yearLong(t.year)}の活動概要</summary>
       <p class="small">{t.summary}</p>
     </details>
   )}

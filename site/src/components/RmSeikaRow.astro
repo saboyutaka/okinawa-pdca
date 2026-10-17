@@ -18,23 +18,10 @@ const srText = `基準値と比べた判定 ${r.judgement}。基準値 ${withUni
 ---
 <li class="m-row">
   <div class="m-head"><a class="name-link" href={r.href}>{x.name}</a>{u && <small class="secondary">（{u}）</small>}</div>
-  <div class="sub small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>
+  <div class="m-sub small secondary">施策 <a class="sub-link" href={r.href.split('#')[0] + '#rm-' + r.rm.id}>{r.rm.name}</a> <span class="code-no">{r.rm.code}</span></div>
   <div class="m-viz" aria-hidden="true">
     <Chip tone={j.tone} shape={j.shape} text={r.judgement} title={j.note} />
     <RmSeikaSpark x={x} />
   </div>
   <span class="sr-only">{srText}</span>
 </li>
-
-<style>
-  /* 並びと幅は沖縄県PDCAの成果指標の行（components/SeikaRow.astro）と同じ */
-  .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head viz" "sub viz"; gap: 2px 20px; align-items: center; }
-  .m-head { grid-area: head; min-width: 0; }
-  .sub { grid-area: sub; }
-  .m-viz { grid-area: viz; display: grid; grid-template-columns: 6.5em 120px; gap: 12px; align-items: center; }
-  .m-viz :global(.spark) { width: 100%; height: auto; }
-  @media (max-width: 640px) {
-    .m-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 2px 12px; align-items: start; }
-    .m-viz { grid-template-columns: 1fr; gap: 4px; }
-  }
-</style>

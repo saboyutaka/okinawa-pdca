@@ -3,6 +3,7 @@
 import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Term from '../../components/Term.astro';
+import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, rateBin,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept, shisakuDepts, amountEntries, currentDeptOf,
@@ -46,8 +47,8 @@ const rows = depts.map((d) => ({ label: d.name, href: `/bukyoku/${d.slug}/`, cou
 
   <StatusChart title={`部局別 主な取組の進捗状況（${yearLong(LATEST)}）`} categories={STATUSES} rows={rows} />
 
-  <section aria-labelledby="list-h">
-    <h2 id="list-h">部局ごとのようす</h2>
+  <section aria-labelledby="list">
+    <SecHead id="list">部局ごとのようす</SecHead>
     <p class="small secondary lead">主な取組・<Term word="成果指標" />・予算は{yearLong(LATEST)}のものです。予算は取組に書かれた予算事業の決算見込額です。</p>
     <ul class="row-list">
       {depts.map((d) => (

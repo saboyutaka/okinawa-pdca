@@ -47,7 +47,7 @@ const picked = pop ? categories.flatMap((c, k) => pop.items.filter((x) => x.key 
       {picked.map(({ c, k }) => <span class:list={['seg', `tone-${c.tone}`, c.hatch && 'hatch']} data-k={k}></span>)}
     </div>
     <template set:html={cellPopHtml(picked.map(({ x }) => x))}></template>
-    {pop.keys && <span class="pick-hint" aria-hidden="true">← → で移り、Enter で開けます</span>}
+    {pop.keys && <span class="key-hint pick-hint" aria-hidden="true">← → で移り、Enter で開けます</span>}
   </span>
 ) : (
   <div class:list={['sbar', size, cells && 'cells', cells && squares && 'squares']} role="img" aria-label={aria}>
@@ -94,10 +94,7 @@ const picked = pop ? categories.flatMap((c, k) => pop.items.filter((x) => x.key 
   .pick .sbar { width: fit-content; max-width: 100%; } /* フォーカスの枠を四角の並びにそわせる */
   .pick .sbar:focus-visible { outline-offset: 4px; border-radius: 4px; }
   /* キーボードで止まったときだけ、キーの使い方を四角の下に小さく出す（読み上げは aria-label の終わりで伝える） */
-  .pick-hint {
-    display: none; position: absolute; left: 0; top: calc(100% + 5px); z-index: 2; padding: 0 8px; font-size: 0.75rem; font-weight: 700; line-height: 1.6; white-space: nowrap;
-    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
-  }
+  .pick-hint { left: 0; top: calc(100% + 5px); z-index: 2; }
   .pick:has(.sbar:focus-visible) .pick-hint { display: block; }
   /* スマホでは指で押しやすいよう、小さい四角を指標のマップのマスと同じ大きさにする */
   @media (max-width: 640px) {

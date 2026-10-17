@@ -16,6 +16,8 @@ import ShuyouSays from '../../components/ShuyouSays.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import ShuyouStatusTag from '../../components/ShuyouStatusTag.astro';
 import Toc from '../../components/Toc.astro';
+import Says from '../../components/Says.astro';
+import SecHead from '../../components/SecHead.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
 import { kihonDescription } from '../../lib/describe.ts';
@@ -64,7 +66,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 ---
 <Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, kihonHead(k.id))} ogType="article">
   <Hierarchy items={planParents({ kihon: k.id })} page={k.name} />
-  <header class="sticker lift k-head">
+  <header class="sticker lift page-head">
     <HeadKind kind="基本施策" code={k.code} />
     <h1>{k.name}</h1>
     {/* 頭の箱: 最新の年度の主要指標の達成状況（施策のページの頭の判定の箱と同じ地の色の箱）。将来像のページの基本施策の行と同じく、
@@ -78,13 +80,9 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       </div>
     )}
     {k.mezasu && (
-      <div class="bubble-row says">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <div class="small secondary label">目指す姿（県の報告書から）</div>
-          <p class="first">{oneLine(k.mezasu)}</p>
-        </div>
-      </div>
+      <Says label="目指す姿（県の報告書から）">
+        <p>{oneLine(k.mezasu)}</p>
+      </Says>
     )}
   </header>
 
@@ -100,13 +98,13 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   />
 
   <section aria-labelledby="shuyou">
-    <h2 id="shuyou" class="anchor"><Term word="主要指標" /></h2>
-    <p class="small secondary lead">この基本施策の成果をはかる県の物差しごとに、スタート（基準値）からゴール（R9の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
+    <SecHead id="shuyou" class="anchor">主要指標</SecHead>
+    <p class="small secondary lead">この基本施策の成果をはかる県の物差し（<Term word="主要指標" />）ごとに、スタート（基準値）からゴール（令和9年度の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
     {shuyouLatest.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
-        <summary>{yearLabel(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
+        <summary>{yearLong(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
         {shuyouPast.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
       </details>
     )}
@@ -116,14 +114,14 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   </section>
 
   <section aria-labelledby="list">
-    <h2 id="list" class="anchor">施策（{shisaku.length}）</h2>
+    <SecHead id="list" class="anchor">施策（{shisaku.length}）</SecHead>
     <JudgeLegend />
     {/* 施策展開ごとの箱。5つの将来像のページの基本施策の箱と同じく、頭に列の見出し（ShisakuHead）を1回だけ置き、
         行は左の列に施策と成果指標、右の列に主な取組の四角（components/ShisakuItem.astro の toriList） */}
     {tenkai.map(([tid, tname]) => (
       <>
         <h3>{tname}</h3>
-        <div class="sticker s-box">
+        <div class="sticker list-box">
           <ShisakuHead />
           <ul class="row-list">
             {shisaku.filter((s) => s.tenkai_id === tid).map((s) => <ShisakuItem s={s} toriList />)}
@@ -137,63 +135,52 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   </section>
 
   <section aria-labelledby="progress">
-    <h2 id="progress" class="anchor">主な取組の進捗（この基本施策の合計）</h2>
+    <SecHead id="progress" class="anchor">主な取組の進捗（この基本施策の合計）</SecHead>
     <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
   </section>
 
   {h && (
     <section aria-labelledby="hyoka">
-      <h2 id="hyoka" class="anchor">県によるふりかえり（R4〜R6の3年間）</h2>
+      <SecHead id="hyoka" class="anchor">県によるふりかえり（令和4〜6年度の3年間）</SecHead>
       <p class="small secondary lead">県の<Term word="評価検証報告書" />（{HYOKA.published}）が、この基本施策の成果と課題をまとめたものです。</p>
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          {h.intro && <p class="intro">{h.intro}</p>}
-          <h3>主な施策の成果</h3>
-          <ul class="pts">{h.results.map((r) => <li>{r}</li>)}</ul>
-        </div>
-      </div>
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <h3>主な課題</h3>
-          {h.issues.map((x) => (
-            <>
-              {x.head && <h4>{x.head}</h4>}
-              <ul class="pts">{x.items.map((t) => <li>{t}</li>)}</ul>
-            </>
-          ))}
-        </div>
-      </div>
+      <Says class="voice">
+        {h.intro && <p class="intro">{h.intro}</p>}
+        <h3>主な施策の成果</h3>
+        <ul class="pts">{h.results.map((r) => <li>{r}</li>)}</ul>
+      </Says>
+      <Says class="voice">
+        <h3>主な課題</h3>
+        {h.issues.map((x) => (
+          <>
+            {x.head && <h4>{x.head}</h4>}
+            <ul class="pts">{x.items.map((t) => <li>{t}</li>)}</ul>
+          </>
+        ))}
+      </Says>
     </section>
   )}
 
   <ShareBox kind="基本施策" name={k.name} />
 
   <section aria-labelledby="source">
-    <h2 id="source" class="anchor">出典</h2>
+    <SecHead id="source" class="anchor">出典</SecHead>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
-    {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
+    {hSrc && <p class="small">県によるふりかえり（令和4〜6年度）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
     {renamed.length > 0 && <p class="small">{renamed.map((x) => `主要指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/data/#kazoekata">年度をつないでいます</a>。</p>}
   </section>
 </Base>
 
 <style>
   /* 頭は施策ページと同じ太いステッカー。目指す姿は県の吹き出しに入れる */
-  .k-head { display: grid; gap: 4px; margin-top: 12px; }
-  .k-head h1 { margin: 2px 0 10px; }
   /* 頭の主要指標の箱。指標ごとに1行で、名前の後ろに達成状況の札（入らなければ札を次の行へ送る） */
-  .sh-now { display: grid; gap: 6px; margin-bottom: 12px; padding: 12px 18px; }
+  .sh-now { display: grid; gap: 6px; padding: 12px 18px; }
   .sh-l { font-size: 0.875rem; color: var(--ink-2); }
   .sh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .sh-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
   .sh-list .name-link { font-size: 1.0625rem; }
   @media (max-width: 640px) { .sh-now { padding: 10px 14px; } }
-  .label { font-weight: 700; margin-bottom: 4px; }
   .past { margin-top: 18px; }
-  .says .first { margin: 4px 0 0; }
-  .report-no { white-space: nowrap; }
   .voice { margin-top: 14px; }
   .voice h3 { margin: 0.6em 0 0.3em; font-size: 1.02rem; }
   .voice h4 { margin: 0.8em 0 0.2em; font-size: 0.95rem; }
@@ -203,6 +190,4 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */
   .rm-note { margin-top: 14px; }
   /* 施策展開ごとの箱: 列の見出しの行の下に、細い線で区切った施策の行（.row-list の枠と影は外して箱に任せる） */
-  .s-box { padding: 0; overflow: hidden; }
-  .s-box .row-list { border: 0; border-radius: 0; box-shadow: none; border-top: 1.5px solid var(--grid); }
 </style>
