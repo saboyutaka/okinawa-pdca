@@ -2,6 +2,7 @@
 // 成果指標1つのゴールまでの道のりの図と、そのすぐ下の「表で見る」（SeikaTable）、図を読むのに要る注意（目標値が文・基準値を検証票で補った）。
 // 施策ページのカード（SeikaCard）で使う。凡例（SeikaKey）は使う側で1回だけ出す。
 // 中期実施計画で基準値・目標値が新しくなったことは、表の計画期間ごとの基準値・目標値で見られるので書かない。図を描けない指標（目標が「〜との差の縮小」など）は、表を開いて出す
+import ExtLink from './ExtLink.astro';
 import SeikaChart from './SeikaChart.astro';
 import SeikaTable from './SeikaTable.astro';
 import { sourceLink, textGoalChartRow, type SeikaGroup } from '../lib/data.ts';
@@ -22,7 +23,7 @@ const baseFix = x.base_fix && sourceLink(x.base_fix.source, x.base_fix.page);
 {textGoal && <p class="small secondary note">目標値が数ではないため、図に計画値とゴールはありません。</p>}
 {x.base_fix && (
   <p class="small secondary note">
-    基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <a href={baseFix.href} rel="noopener">{baseFix.label}</a> : '部局の「成果指標」検証票'}の値を載せています。
+    基準値は、県の報告書では列の幅が足りず「{x.base_fix.printed}」と印字されているため、{baseFix ? <ExtLink href={baseFix.href}>{baseFix.label}</ExtLink> : '部局の「成果指標」検証票'}の値を載せています。
   </p>
 )}
 
