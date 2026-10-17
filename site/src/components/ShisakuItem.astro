@@ -16,14 +16,16 @@
 import Chip from './Chip.astro';
 import StatusBar from './StatusBar.astro';
 import Icon from './Icon.astro';
-import { LATEST, yearLabel, STATUSES, judgeOf, statusOf, toneOfStatus, countBy, getKihonList, rateText, rateTone, torikumiCells, seikaGroupsOf, type Shisaku } from '../lib/data.ts';
+import { LATEST, yearLabel, STATUSES, judgeOf, toneOfStatus, getKihonList, rateText, rateTone, torikumiCells, seikaGroupsOf, type Shisaku } from '../lib/data.ts';
+import { shisakuHead, total } from '../lib/heads.ts';
 import { JUDGE_UI } from '../lib/icons.ts';
 
 interface Props { s: Shisaku; attrs?: Record<string, string>; kihon?: boolean; toriList?: boolean }
 const { s, attrs = {}, kihon: showKihon = false, toriList = false } = Astro.props;
 const kihon = showKihon ? getKihonList().find((k) => k.id === s.kihon_id) : null;
-const latestTori = s.torikumi.filter((t) => t.year === LATEST);
-const counts = countBy(latestTori, statusOf, STATUSES.map((x) => x.key));
+// 最新の年度の主な取組の進捗状況（施策のページの頭と同じ。lib/heads.ts）
+const counts = shisakuHead(s).tori;
+const toriN = total(counts);
 const ok = counts['順調'] || 0;
 const seika = s.seika.filter((x) => x.year === LATEST);
 const j = judgeOf(s.judges[LATEST]);
@@ -50,7 +52,7 @@ const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year =
             {seikaGroups.map((g) => <li><a class="s-name name-link" href={g.href}>{g.name}</a> <Chip tone={rateTone(g.latest)} text={rateText(g.latest)} /><span class="sr-only">（達成率）</span></li>)}
           </ul>
         )}
-        {latestTori.length > 0 && (
+        {toriN > 0 && (
           <details class="open-d">
             <summary>
               <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
@@ -66,8 +68,8 @@ const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year =
     ) : (
       <>
         <span class="tori">
-          取組 <b>{ok}/{latestTori.length}</b>順調
-          {latestTori.length > 0 && <StatusBar categories={STATUSES} context={context} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
+          取組 <b>{ok}/{toriN}</b>順調
+          {toriN > 0 && <StatusBar categories={STATUSES} context={context} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
         </span>
         <span class="seika">
           成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}

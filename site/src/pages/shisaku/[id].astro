@@ -25,7 +25,7 @@ import { themesOf } from '../../lib/themes.ts';
 import { joinLines, firstSentence } from '../../lib/text.ts';
 import { fmt } from '../../lib/format.ts';
 import { shisakuDescription } from '../../lib/describe.ts';
-import { shisakuHead } from '../../lib/heads.ts';
+import { shisakuHead, total } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
@@ -46,7 +46,6 @@ const themes = themesOf(s.id);
 
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = shisakuHead(s);
-const toriLatest = s.torikumi.filter((t) => t.year === LATEST);
 const toriCounts = head.tori;
 const seikaLatest = sRows.filter((r) => r.latest.year === LATEST);
 const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
@@ -131,7 +130,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         <div class="why">
           <div class="why-l"><Term word="主な取組" /></div>
           <a class="why-a" href="#torikumi">
-            <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}</b> 件が順調</span>
+            <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(total(toriCounts))}</b> 件が順調</span>
             <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} cells squares />
           </a>
         </div>

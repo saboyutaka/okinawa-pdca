@@ -19,14 +19,10 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import SecHead from '../../components/SecHead.astro';
-import {
-  LATEST, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
-  getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries, trendPoints,
-} from '../../lib/data.ts';
-import type { TorikumiRow } from '../../lib/types.ts';
+import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, trendPoints } from '../../lib/data.ts';
 import { pct, yen } from '../../lib/format.ts';
 import { futureDescription } from '../../lib/describe.ts';
-import { futureHead } from '../../lib/heads.ts';
+import { futureHead, kihonHead, total } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['future/[id]'];
@@ -36,10 +32,6 @@ const { v } = Astro.props;
 const pre = `${v.id}-`;
 const statusKeys = STATUSES.map((s) => s.key);
 const kihon = getKihonList().filter((k) => k.shouraizou === v.id);
-const shisaku = getShisakuList().filter((s) => s.shouraizou === v.id);
-const tori = getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre));
-const seika = getSeika(LATEST).filter((s) => s.shisaku_id.startsWith(pre));
-const isOk = (t: TorikumiRow) => t.status === '順調';
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = futureHead(v.id);
 const judgeCounts = head.judges;
@@ -53,11 +45,11 @@ const trend = trendPoints((t) => t.shisaku_id.startsWith(pre), (s) => s.shisaku_
 // 基本施策ごと。基本施策の名前の下に、主要指標（達成状況の札とスタート → いま → ゴールの値）と主な取組の進捗状況の棒を並べる（components/KihonRow.astro）。
 // 成果指標は施策の単位の物差しなので、基本施策の行には出さない（頭の3つの段・施策の判定・4年間の推移・成果指標をさがすにある）
 const kihonRows = kihon.map((k) => {
-  const t = tori.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
+  const counts = kihonHead(k.id).tori;
   return {
     ...k,
     shuyou: shuyou.filter((r) => r.kihon.id === k.id),
-    tori: { n: t.length, ok: t.filter(isOk).length, counts: countBy(t, statusOf, statusKeys) },
+    tori: { n: total(counts), ok: counts['順調'], counts },
   };
 });
 // 主な取組の区分の一覧は凡例の箱にせず、行の「順調」を押すと短い説明と一緒に出す（components/KeyBrief.astro。どれかの基本施策で使っている区分）。
@@ -77,9 +69,9 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     <h1>{v.name}</h1>
     <HeadStats items={[
       { label: '基本施策', n: kihon.length, href: '#kihon' },
-      { label: '施策', n: shisaku.length, href: `/shisaku/?s=${v.id}` },
+      { label: '施策', n: head.shisaku.length, href: `/shisaku/?s=${v.id}` },
     ]} />
-    <Ladder shuyou={shuyou} seika={countBy(seika, rateBin, RATE_BINS.map((b) => b.key))} tori={countBy(tori, statusOf, statusKeys)} q={`s=${v.id}`} shuyouHref="#kihon" shuyouCells />
+    <Ladder shuyou={shuyou} seika={head.rates} tori={head.tori} q={`s=${v.id}`} shuyouHref="#kihon" shuyouCells />
   </header>
 
   <Toc
