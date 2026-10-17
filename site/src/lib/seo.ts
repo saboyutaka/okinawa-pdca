@@ -55,7 +55,7 @@ export const ldJson = (data: object) => JSON.stringify(data).replace(/</g, '\\u0
 // 作っているのは Code for Okinawa で、県ではない。県の資料は isBasedOn（このサイトがもとにしたもの）として、作り手を県にして書く
 const ORG = { '@type': 'Organization', name: PROJECT.org, url: PROJECT.orgUrl };
 const PREF = { '@type': 'GovernmentOrganization', name: '沖縄県' };
-// 読み取った県の資料（このサイトについての「出典」と同じ）
+// 読み取った県の資料（データについての「出典」と同じ）
 const SOURCES = [
   { name: '沖縄県PDCA実施結果', url: LINKS.kekka },
   { name: '沖縄県PDCA（各部局の「主な取組」検証票）', url: LINKS.pdca },

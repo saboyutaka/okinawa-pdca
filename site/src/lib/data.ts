@@ -206,7 +206,7 @@ export function getKihonList() {
 
 // 主要指標の数（県の概要版「主要指標の達成状況」の「主要指標N指標」。R4〜R7 とも49）。付属資料の表は1行に複数の指標が並ぶので、行の数（37）とは違う
 export const SHUYOU_COUNT: Record<number, number> = { 2022: 49, 2023: 49, 2024: 49, 2025: 49 };
-// 概要版の「成果指標の達成状況」の「うちN指標が計画値を達成」（このサイトの数え方（rateBin の 100%以上）とは数件ずれる。about の注意点）
+// 概要版の「成果指標の達成状況」の「うちN指標が計画値を達成」（このサイトの数え方（rateBin の 100%以上）とは数件ずれる。データについての注意点）
 export const SEIKA_REACHED_PUBLISHED: Record<number, number> = { 2022: 204, 2023: 211, 2024: 220, 2025: 204 };
 
 export function getShuyou(kihonId: string) {

@@ -1,5 +1,5 @@
 ---
-// 計画の階層（将来像 → 基本施策 → 施策 → 主な取組）と、それぞれの成果をはかる指標、くらしのテーマ（このサイト独自の分類）のつながりの図（このサイトについてのページ）。
+// 計画の階層（将来像 → 基本施策 → 施策 → 主な取組）と、それぞれの成果をはかる指標、くらしのテーマ（このサイト独自の分類）のつながりの図（沖縄県PDCAについてのページ）。
 // 文字のまま読めるように SVG にせず、箱と線を CSS の grid で並べる。PC は「指標 ─ 計画の階層 ┄ くらしのテーマ」の3列、スマホは階層の幹の下に指標をぶら下げる1列。
 // 方眼ノートに手で描いたような見た目にする。揺らすのは枠と線（疑似要素と空の span）だけで、文字には SVG のフィルターをかけない（読みにくくなるため）。
 // くらしのテーマは県の計画の分類ではないので、テープで貼った付箋にして、点線の枠と点線のつなぎで分ける。数は最新の年度で、親1つあたりの子の数は幅（最小〜最大）で出す
@@ -83,7 +83,7 @@ const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜$
     <div class="pm-t">
       <span class="pm-tape" aria-hidden="true"></span>
       <p class="pm-h"><a class="name-link" href="/theme/">くらしのテーマ</a><span class="pm-n">{themes.length}</span><span class="own">このサイト独自の分類</span></p>
-      <p class="pm-d">施策を、名前に含まれる言葉で分野ごとに集めたもの。その施策の主な取組・成果指標も入る（<a href="#theme">決め方</a>）</p>
+      <p class="pm-d">施策を、名前に含まれる言葉で分野ごとに集めたもの。その施策の主な取組・成果指標も入る（<a href="/data/#theme">決め方</a>）</p>
       <p class="pm-tags"><ThemeTags ids={themes.slice(0, 4).map((t) => t.id)} label={false} /> など</p>
     </div>
     <span class="pm-l l2" aria-hidden="true"></span>

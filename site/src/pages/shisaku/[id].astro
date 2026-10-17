@@ -281,7 +281,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         );
       })}
     </ul>
-    {renamed.length > 0 && <p class="small">{renamed.map((x) => `成果指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
+    {renamed.length > 0 && <p class="small">{renamed.map((x) => `成果指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/data/#kazoekata">年度をつないでいます</a>。</p>}
     {aliases.map((al) => <p class="small">{al.ys.map(yearLabel).join('・')}の報告書では、成果指標「{al.name}」は「{al.printed}」の名前で、同じ名前のほかの指標と並んで載っています。このサイトでは、{al.from}での名前で出しています。</p>)}
   </section>
 </Base>

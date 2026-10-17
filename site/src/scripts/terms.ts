@@ -1,7 +1,7 @@
 // 用語（components/Term.astro）を押すと、短い説明を吹き出しで出す。その場所だけの一言（data-term-note）があれば説明の下に足す。
 // data-term-brief があれば、説明の代わりに、その id の <template> の中身（短い説明と区分の一覧など）を写す
 // Esc か「×」で閉じ、押したボタンにフォーカスを戻す
-import { TERMS } from '../lib/terms.ts';
+import { OWN_TERMS, TERMS } from '../lib/terms.ts';
 
 let pop: HTMLDivElement | undefined;
 let from: HTMLElement | null = null;
@@ -23,8 +23,7 @@ function build() {
   const note = document.createElement('p');
   note.className = 'termpop-note';
   const link = document.createElement('a');
-  link.href = '/about/#yougo';
-  link.textContent = '用語の一覧';
+  link.className = 'termpop-link';
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'termpop-close';
@@ -46,7 +45,11 @@ function open(btn: HTMLElement) {
   const tpl = btn.dataset.termBrief ? document.getElementById(btn.dataset.termBrief) : null;
   brief.replaceChildren(...(tpl instanceof HTMLTemplateElement ? [tpl.content.cloneNode(true)] : []));
   brief.hidden = !brief.childElementCount;
-  body.textContent = TERMS[word] || '';
+  const own = OWN_TERMS[word];
+  body.textContent = own?.text ?? TERMS[word] ?? '';
+  const link = pop.querySelector<HTMLAnchorElement>('.termpop-link')!;
+  link.href = own?.href ?? '/pdca/#yougo';
+  link.textContent = own ? 'くわしく' : '用語の一覧';
   body.hidden = !brief.hidden;
   const note = pop.querySelector<HTMLElement>('.termpop-note')!;
   note.textContent = btn.dataset.termNote || '';

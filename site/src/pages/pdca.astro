@@ -1,0 +1,53 @@
+---
+// 沖縄県PDCA（県が施策と主な取組を毎年度点検する仕組み）の説明。about・data との分け方は docs/design.md の5章
+import Base from '../layouts/Base.astro';
+import { LATEST, yearLong, amountEntries, getFinanceReference } from '../lib/data.ts';
+import { fmt } from '../lib/format.ts';
+import { LINKS } from '../lib/links.ts';
+import { TERMS } from '../lib/terms.ts';
+import ExtLink from '../components/ExtLink.astro';
+import SecHead from '../components/SecHead.astro';
+import PlanMap from '../components/PlanMap.astro';
+
+// 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
+const torikumiBudget = Math.round(amountEntries(LATEST, 'estimate').reduce((s, e) => s + e.amount, 0) / 1e5);
+const prefBudget = getFinanceReference().prefecture;
+---
+<Base title="沖縄県PDCAについて" description="沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策と主な取組の毎年度の点検）の仕組み・計画の階層と指標のつながり・達成率の物差し・用語">
+  <h1>沖縄県PDCAについて</h1>
+  <p class="lead">
+    沖縄県が毎年度、施策と主な取組を点検している仕組み「沖縄県PDCA」について、県の資料をもとにまとめています。このサイトがどの資料をどう読み、どう数えたかは<a href="/data/">データについて</a>にあります。
+  </p>
+
+  <SecHead id="shikumi">沖縄県PDCAとは</SecHead>
+  <p>
+    沖縄県は「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン基本計画</ExtLink>を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と主な取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。その検証結果が「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で、毎年度、前の年度の分が公表されます（公表の時期は年度によって違い、令和4年度対象は令和6年3月、令和5年度対象は令和6年11月、令和6年度対象は令和7年8月、令和7年度対象は令和8年8月）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou} after="」">沖縄県PDCAの概要</ExtLink>で説明されています。
+  </p>
+
+  <SecHead id="kaisou">計画の階層と指標のつながり</SecHead>
+  <PlanMap />
+  <ul>
+    <li id="torikumi">
+      <strong>主な取組は、県の事業のすべてではありません。</strong>県が実施計画で、施策ごとに「課題の解決に向けた手段となる具体的な事業等」として選んだもので、PDCAはこの主な取組を対象にしています。県の一般会計（令和{prefBudget.year - 2018}年度当初 {fmt(prefBudget.total)}億円）に対して、このサイトで集計した主な取組の予算事業は{yearLong(LATEST)}の決算見込額で約{fmt(torikumiBudget)}億円です（一般会計には人件費や借金の返済も含むので、比べるのは目安です。<a href="/yosan/zaigen/">予算の財源のしくみ</a>）。主な取組に入っていない県の事業のほか、国・市町村・民間の取組もあり、成果指標の数字はそれらや社会情勢にも左右されます。「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
+    </li>
+    <li>令和4〜6年度は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度は令和6年度）、令和7年度からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（令和7〜9年度、目標年度は令和9年度）です。令和7年度に、取組の一部と指標の基準値・目標値が見直されています。</li>
+  </ul>
+
+  <SecHead id="tasseiritsu">達成率の物差し</SecHead>
+  <ul>
+    <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>令和7年度から目標値・計画値が新しくなったため、令和6年度以前と令和7年度以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>
+    <li><strong>主要指標の達成率は、令和9年度の目標値に対する割合です。</strong>成果指標の達成率とは物差しが違うので、並べて比べられません。</li>
+  </ul>
+
+  <SecHead id="yougo">用語</SecHead>
+  <p class="small secondary">本文の点線の下線が付いた言葉を押しても、同じ説明が出ます。</p>
+  <dl class="terms sticker">
+    {Object.entries(TERMS).map(([w, d]) => <div><dt>{w}</dt><dd>{d}</dd></div>)}
+  </dl>
+</Base>
+
+<style>
+  .terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 24px; margin: 8px 0 0; }
+  .terms dt { font-family: var(--font-display); font-weight: 700; }
+  .terms dd { margin: 2px 0 0; font-size: 0.9375rem; }
+</style>
