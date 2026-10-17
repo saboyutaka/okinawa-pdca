@@ -10,7 +10,7 @@ import Term from '../../components/Term.astro';
 import SeikaCard from '../../components/SeikaCard.astro';
 import SeikaSays from '../../components/SeikaSays.astro';
 import SeikaPastSays from '../../components/SeikaPastSays.astro';
-import ToriRow from '../../components/ToriRow.astro';
+import ToriList from '../../components/ToriList.astro';
 import Prose from '../../components/Prose.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
 import HeadKind from '../../components/HeadKind.astro';
@@ -18,7 +18,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
-  getKihonList, torikumiRows, seikaGroupsOf, sourceLink, deptHref, planParents, torikumiCells,
+  getKihonList, getTorikumiGroups, seikaGroupsOf, sourceLink, deptHref, planParents,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
 import { themesOf } from '../../lib/themes.ts';
@@ -36,7 +36,8 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { s } = Astro.props;
 const kihon = getKihonList().find((k) => k.id === s.kihon_id)!;
-const tRows = torikumiRows(s);
+// 主な取組（年度をまたいだまとまり。報告書の順）
+const tRows = getTorikumiGroups().filter((g) => g.shisaku.id === s.id);
 const sRows = seikaGroupsOf(s.id);
 const yearsDesc = [...YEARS].reverse();
 const themes = themesOf(s.id);
@@ -74,8 +75,7 @@ const renamed = sRows.flatMap((r) => {
   const fs = seikaFormerNames(r);
   return fs.length ? [{ name: r.name, fs }] : [];
 });
-const { reached } = head;
-// 達成率の札は、成果指標のカードと同じ言い方（lib/data.ts の seikaVerdict。報告書の欄が「達成」「未達成」のものは言葉だけ）
+// 頭の成果指標の札は、成果指標のカードと同じ言い方（lib/data.ts の seikaVerdict。報告書の欄が「達成」「未達成」のものは言葉だけ）
 
 const j = judgeOf(s.judges[LATEST]);
 const judgeStamps = YEARS.map((y) => {
@@ -116,17 +116,22 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         <span class="now-yl">4年間</span>
         <Stamps items={judgeStamps} label="4年間の判定" size="small" pop={0.22} />
       </div>
-      {/* 判定のもと（成果指標の達成率と、主な取組のうち順調の割合）。本文の節と同じ「成果指標 → 主な取組」の順 */}
+      {/* 判定のもと（成果指標の達成率と、主な取組のうち順調の割合）。本文の節と同じ「成果指標 → 主な取組」の順。
+          成果指標はほとんどの施策で1〜2つなので、数ではなく指標の名前と達成率の札を1指標1行で出し、名前を押すとその指標のカードへ移る。
+          主な取組は数と1件1つの四角で出し、押すと主な取組の節へ移る（取組の名前と進捗状況は節の一覧にある） */}
       <div class="now-why">
         <div class="why">
           <div class="why-l"><Term word="成果指標" /></div>
-          <div class="why-v"><b>{fmt(reached)}/{fmt(seikaLatest.length)}</b> が計画値に到達</div>
-          {seikaLatest.length > 0 && <div class="chips">{seikaLatest.map((r) => { const v = seikaVerdict(r.latest); return <Chip tone={v.tone} text={v.chip} />; })}</div>}
+          <ul class="why-s">
+            {seikaLatest.map((r) => { const v = seikaVerdict(r.latest); return <li><a class="name-link" href={`#${r.anchor}`}>{r.name}</a> <Chip tone={v.tone} text={v.chip} /></li>; })}
+          </ul>
         </div>
         <div class="why">
           <div class="why-l"><Term word="主な取組" /></div>
-          <div class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}</b> 件が順調</div>
-          {toriLatest.length > 0 && <StatusBar categories={STATUSES} context={`${yearLabel(LATEST)}の主な取組 `} pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s), keys: true }} />}
+          <a class="why-a" href="#torikumi">
+            <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}</b> 件が順調</span>
+            <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} cells squares />
+          </a>
         </div>
       </div>
     </div>
@@ -179,17 +184,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 
   <section aria-labelledby="torikumi">
     <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と<Term word="活動指標" />の計画・実績を一覧で確かめられます。名前を押すと、4年間の歩みや予算、県の検証と改善案まで見られます。</p>
-    <ul class="row-list tlist">
-      {toriActive.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
-    </ul>
+    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と、それを決めた<Term word="活動指標" />の計画と実績・決算見込額・4年間の歩みが分かります。予算の推移と県の検証・改善案は、取組のページにあります。</p>
+    <ToriList rows={toriActive} />
     {toriEnded.length > 0 && (
       <details class="past">
         <summary>{yearLabel(LATEST)}の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
         <p class="small secondary">R7から中期実施計画になり、取組が入れ替わったり、名前が変わったりしたものがあります。印は、最後に報告があった年度の進捗状況です。</p>
-        <ul class="row-list">
-          {toriEnded.map((row) => <ToriRow row={row} shisakuId={s.id} />)}
-        </ul>
+        <ToriList rows={toriEnded} old />
       </details>
     )}
     {rmShisaku.length > 0 && (
@@ -311,6 +312,15 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .why { display: grid; gap: 6px; align-content: start; min-width: 0; }
   .why-l { font-size: 0.875rem; color: var(--ink-2); }
   .why-v b { font-family: var(--font-num); font-weight: 600; font-size: 1.3rem; }
+  /* 成果指標: 名前のすぐ後ろに達成率の札（基本施策・くらしのテーマのページの施策の行と同じ並び） */
+  .why-s { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .why-s li { line-height: 1.7; }
+  .why-s :global(.chip) { white-space: nowrap; vertical-align: -1px; }
+  /* 主な取組: 数と四角をまとめて節へのリンクにする。数の文字に名前のリンクと同じ薄い下線を付け、四角はリンクの一部として押させる（四角ごとの吹き出しは出さない） */
+  .why-a { display: grid; gap: 6px; justify-items: start; color: inherit; text-decoration: none; }
+  .why-a .why-v { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
+  .why-a:hover .why-v { text-decoration-color: var(--ink); }
+  .why-a :global(.sbar) { pointer-events: none; }
   .label { font-weight: 700; margin-bottom: 4px; }
   .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
@@ -320,8 +330,6 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     .now .k { font-size: 1.8rem; }
     .now-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
   }
-  .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-  .tlist { margin-top: 12px; }
   .past { margin-top: 18px; }
   /* 札は文の頭に置いて、文と一緒に折り返す（flex にすると、かっこ・リンク・文が別々の箱になり、スマホでばらばらに折り返す） */
   .rm-note { margin: 16px 0 0; }

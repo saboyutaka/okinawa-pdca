@@ -1,0 +1,31 @@
+---
+// 施策のページの主な取組の一覧の箱。基本施策・くらしのテーマのページの施策の一覧（ShisakuHead と ShisakuItem の toriList）と同じく、
+// 箱の頭に列の見出し「進捗状況｜主な取組と活動指標」を1回だけ置き、行（ToriRow）を細い線で区切って並べる。
+// 札の列の幅（--st）は見出しと行で同じにする。old は最新の年度の報告に無い取組の一覧（札に年度が付くので、札の列を広くする）。
+// 札の列の見出しは、行の札がそれぞれ進捗状況の言葉なので読ませない。スマホの幅では札の列が無いので出さない
+import ToriRow from './ToriRow.astro';
+import type { TorikumiGroup } from '../lib/data.ts';
+
+interface Props { rows: TorikumiGroup[]; old?: boolean }
+const { rows, old = false } = Astro.props;
+---
+<div class:list={['sticker', 't-box', old && 'old']}>
+  <p class="t-head"><span class="t-hs" aria-hidden="true">進捗状況</span><span class="t-hm">主な取組と活動指標</span></p>
+  <ul class="row-list">
+    {rows.map((g) => <ToriRow g={g} />)}
+  </ul>
+</div>
+
+<style>
+  .t-box { --st: 5.6rem; padding: 0; overflow: hidden; margin-top: 12px; }
+  .t-box.old { --st: 7.6rem; }
+  .t-box .row-list { border: 0; border-radius: 0; box-shadow: none; border-top: 1.5px solid var(--grid); }
+  .t-head { display: grid; grid-template-columns: var(--st) minmax(0, 1fr); gap: 0 12px; align-items: baseline; margin: 0; padding: 10px 16px 6px; background: var(--paper); }
+  .t-hs { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+  .t-hm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; }
+  /* スマホの幅では行に札の列が無い（札は名前の前。ToriRow）ので、見出しは1つだけ */
+  @media (max-width: 640px) {
+    .t-head { display: block; }
+    .t-hs { display: none; }
+  }
+</style>
