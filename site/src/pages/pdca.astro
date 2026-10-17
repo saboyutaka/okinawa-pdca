@@ -1,7 +1,7 @@
 ---
 // 沖縄県PDCA（県が施策と主な取組を毎年度点検する仕組み）の説明。about・data との分け方は docs/design.md の5章
 import Base from '../layouts/Base.astro';
-import { LATEST, yearLabel, amountEntries, getFinanceReference } from '../lib/data.ts';
+import { LATEST, yearLong, amountEntries, getFinanceReference } from '../lib/data.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import { TERMS } from '../lib/terms.ts';
@@ -28,15 +28,15 @@ const prefBudget = getFinanceReference().prefecture;
   <PlanMap />
   <ul>
     <li id="torikumi">
-      <strong>主な取組は、県の事業のすべてではありません。</strong>県が実施計画で、施策ごとに「課題の解決に向けた手段となる具体的な事業等」として選んだもので、PDCAはこの主な取組を対象にしています。県の一般会計（令和{prefBudget.year - 2018}年度当初 {fmt(prefBudget.total)}億円）に対して、このサイトで集計した主な取組の予算事業は{yearLabel(LATEST)}の決算見込額で約{fmt(torikumiBudget)}億円です（一般会計には人件費や借金の返済も含むので、比べるのは目安です。<a href="/yosan/zaigen/">予算の財源のしくみ</a>）。主な取組に入っていない県の事業のほか、国・市町村・民間の取組もあり、成果指標の数字はそれらや社会情勢にも左右されます。「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
+      <strong>主な取組は、県の事業のすべてではありません。</strong>県が実施計画で、施策ごとに「課題の解決に向けた手段となる具体的な事業等」として選んだもので、PDCAはこの主な取組を対象にしています。県の一般会計（令和{prefBudget.year - 2018}年度当初 {fmt(prefBudget.total)}億円）に対して、このサイトで集計した主な取組の予算事業は{yearLong(LATEST)}の決算見込額で約{fmt(torikumiBudget)}億円です（一般会計には人件費や借金の返済も含むので、比べるのは目安です。<a href="/yosan/zaigen/">予算の財源のしくみ</a>）。主な取組に入っていない県の事業のほか、国・市町村・民間の取組もあり、成果指標の数字はそれらや社会情勢にも左右されます。「取組は順調だが、成果は遅れている」施策では、こうした主な取組の外の要因が効いていることもあります。
     </li>
-    <li>R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度R6）、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
+    <li>令和4〜6年度は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度は令和6年度）、令和7年度からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（令和7〜9年度、目標年度は令和9年度）です。令和7年度に、取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
 
   <SecHead id="tasseiritsu">達成率の物差し</SecHead>
   <ul>
-    <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>R7から目標値・計画値が新しくなったため、R6以前とR7以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>
-    <li><strong>主要指標の達成率は、R9の目標値に対する割合です。</strong>成果指標の達成率とは物差しが違うので、並べて比べられません。</li>
+    <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>令和7年度から目標値・計画値が新しくなったため、令和6年度以前と令和7年度以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>
+    <li><strong>主要指標の達成率は、令和9年度の目標値に対する割合です。</strong>成果指標の達成率とは物差しが違うので、並べて比べられません。</li>
   </ul>
 
   <SecHead id="yougo">用語</SecHead>
