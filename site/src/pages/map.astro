@@ -92,7 +92,7 @@ const KIND = {
           <span class="im-name"><Term word={k.term} note={outcomeNote(k)} /><span class="im-n">(<b data-map-count>{fmt(n[k.kind])}</b><span class="sr-only">{k.unit}</span>)</span></span>
         </div>
       ))}
-      <span class="im-hint" aria-hidden="true">矢印キーで移り、Enter で開けます</span>
+      <span class="key-hint im-hint" aria-hidden="true">矢印キーで移り、Enter で開けます</span>
     </div>
     <div class="im-grid" tabindex="0" role="img" data-map-grid
       aria-label={mapLabel(yl, MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, counts: counts(k.kind), hit: null })))}>
@@ -110,7 +110,7 @@ const KIND = {
         </div>
       ))}
     </div>
-    <div class="im-pop" data-map-pop aria-live="polite" hidden></div>
+    <div class="cellpop im-pop" data-map-pop aria-live="polite" hidden></div>
   </div>
 
   <section class="map-key sticker" aria-labelledby="map-key-h">
@@ -153,7 +153,7 @@ const KIND = {
      左の細い列が将来像の丸の番号。主要指標は列の数で幅を決め、残りを成果指標と活動指標で 22:78 に分ける（数の比で、どの幅でも将来像ごとの行の高さがほぼそろう） */
   .imap .im-cols, .imap .im-row, .imap .im-tiers { display: flex; gap: 0 16px; align-items: flex-start; }
   .imap .im-cols { position: sticky; top: 0; z-index: 3; align-items: baseline; padding: 2px 0 6px; background: var(--paper); border-bottom: 1.5px solid var(--grid); }
-  .imap .im-cg { flex: none; width: var(--w-gt); font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; color: var(--ink-2); }
+  .imap .im-cg { flex: none; width: var(--w-gt); font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; color: var(--muted); }
   .imap :is(.im-col, .im-tier)[data-tier="shuyou"] { flex: none; width: var(--w-shuyou); }
   .imap :is(.im-col, .im-tier)[data-tier="seika"] { flex: 22 1 0; min-width: 0; }
   .imap :is(.im-col, .im-tier)[data-tier="katsudou"] { flex: 78 1 0; min-width: 0; }
@@ -165,10 +165,7 @@ const KIND = {
   .imap .im-grid { margin-top: 2px; padding: 0 4px 2px; margin-inline: -4px; border-radius: 8px; }
   .imap .im-grid:focus-visible { outline: 3px solid var(--pop); outline-offset: 2px; }
   /* キーボードでマス目に止まったときだけ、キーの使い方を見出しの右に出す（読み上げはマス目の aria-label の終わりで伝える） */
-  .imap .im-hint {
-    display: none; position: absolute; right: 0; bottom: 6px; padding: 0 8px; font-size: 0.75rem; font-weight: 700; line-height: 1.6;
-    background: var(--paper); border: 1.5px solid var(--pop); border-radius: 999px;
-  }
+  .imap .im-hint { right: 0; bottom: 6px; }
   .imap:has(.im-grid:focus-visible) .im-hint { display: block; }
   .imap .im-row { padding: 5px 0; }
   .imap .im-row + .im-row { border-top: 1.5px solid var(--grid); }
@@ -186,33 +183,12 @@ const KIND = {
   .imap .mc.dim { opacity: 0.16; }
   .imap .mc.sel { outline: 2.5px solid var(--ink); outline-offset: 1.5px; opacity: 1; }
   @media (hover: hover) { .imap .im-cells .mc:hover { outline: 2px solid var(--ink-2); outline-offset: 1px; } }
-  :is(.map-key, .imap .imp-head) .mc { width: 12px; height: 12px; }
+  :is(.map-key, .imap .cp-head) .mc { width: 12px; height: 12px; }
 
   /* 吹き出し: 押したマスの下（画面に入らなければ上）に出し、尾（--ax はマスの真ん中の位置）でマスを指す */
-  .imap .im-pop {
-    position: absolute; z-index: 6; width: min(380px, calc(100vw - 16px)); padding: 10px 40px 12px 14px;
-    background: var(--paper); color: var(--ink); border: 2.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--shadow);
-  }
-  .imap .im-pop::before {
-    content: ''; position: absolute; left: calc(var(--ax, 50%) - 8px); top: -9px; width: 14px; height: 14px; background: var(--paper);
-    border: solid var(--line); border-width: 2.5px 0 0 2.5px; transform: rotate(45deg); border-radius: 3px 0 0 0;
-  }
-  .imap .im-pop.above::before { top: auto; bottom: -9px; transform: rotate(225deg); }
-  .imap .imp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; margin: 0; }
-  .imap .imp-tier { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
-  .imap .imp-year { font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; color: var(--ink-2); }
-  .imap .imp-name { margin: 4px 0 0; font-size: 0.9375rem; line-height: 1.6; }
-  /* キーワードに当たった文字（計画の目次と同じ。状態の色と混ぜないよう、装飾の青の地に下線） */
-  .imap .im-pop mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--pop); border-radius: 2px; }
-  .imap .imp-sub { margin: 2px 0 0; }
+  /* 吹き出しは押せる四角の吹き出し（styles/global.css の .cellpop）と同じ形。マップの中に置くので、重なりの順はマップの中だけで決める */
+  .imap .im-pop { z-index: 6; }
   .imap .imp-l { font-weight: 700; color: var(--ink-2); margin-right: 6px; }
-  /* 値は「基準値 45.2%」の組を横に流す（吹き出しを小さく保つ） */
-  .imap .imp-vals { display: flex; flex-wrap: wrap; gap: 0 14px; margin: 6px 0 0; font-size: 0.8125rem; line-height: 1.6; }
-  .imap .imp-vals div { display: flex; gap: 6px; min-width: 0; }
-  .imap .imp-vals dt { flex: none; font-weight: 700; color: var(--ink-2); }
-  .imap .imp-vals dd { margin: 0; overflow-wrap: anywhere; }
-  .imap .imp-close { position: absolute; top: 4px; right: 4px; width: 34px; height: 34px; border-radius: 50%; font: inherit; font-size: 1.1rem; color: var(--ink-2); background: none; border: 0; cursor: pointer; }
-  .imap .imp-close:hover { background: var(--sky); }
 
   /* 凡例（マップの下の箱）: 指標ごとに1行。マスと同じ色の四角と、状態の形と文字 */
   .map-key { margin-top: 14px; padding: 14px 20px; }

@@ -3,6 +3,7 @@
 import Base from '../layouts/Base.astro';
 import ExtLink from '../components/ExtLink.astro';
 import Share from '../components/Share.astro';
+import Says from '../components/Says.astro';
 import { yearLong } from '../lib/data.ts';
 import { LINKS, PROJECT } from '../lib/links.ts';
 import { BOSHU, BOSHU_PAST, KANGAEKATA, GOIKENBAKO, HASHTAG, TAG_PAGES, boshuState, dayText, periodText } from '../lib/iken.ts';
@@ -37,7 +38,7 @@ const endText = `${ey}年${em}月${ed}日`;
       </div>
       {state === 'open' && <p class="call-sub">{dayText(BOSHU.end, false)}まで受け付けています。</p>}
       {state === 'before' && <p class="call-sub">{dayText(BOSHU.start)}から受け付けます。</p>}
-      <dl class="facts">
+      <dl class="dl-rows">
         <div><dt>募集期間</dt><dd>{periodText(BOSHU)}</dd></div>
         <div><dt>募集しているところ</dt><dd>沖縄県 企画部 企画調整課</dd></div>
         <div><dt>出し方</dt><dd>県の「意見提出用紙」で、郵送・FAX・電子メール・電子申請</dd></div>
@@ -85,7 +86,7 @@ const endText = `${ey}年${em}月${ed}日`;
     X・Threads・Bluesky は、タグとこのサイトへのリンクを入れた投稿画面を開きます。Facebook はリンクだけが入るので、#{HASHTAG} を書き足してください。LINE は知り合いに送る画面です。将来像・基本施策・施策・主な取組・成果指標・部局・くらしのテーマのページの終わりのシェアからは、そのページへのリンクを付けて投稿できます。
   </p>
   <p class="small">#{HASHTAG} の投稿を見る: {TAG_PAGES.map((t, i) => <>{i > 0 && '・'}<ExtLink href={t.href}>{t.label}</ExtLink></>)}</p>
-  <p class="x-note small">SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p>
+  <Says who="!" class="x-note"><p>SNS に書いたことは、県への意見にはなりません。県に届けたいときは、県民意見募集か県民ご意見箱を使ってください。</p></Says>
 
   <h2>このサイトへの意見</h2>
   <p>
@@ -123,14 +124,9 @@ const endText = `${ey}年${em}月${ed}日`;
   }
   .harigami::before { left: -18px; transform: rotate(-35deg); }
   .harigami::after { right: -18px; transform: rotate(35deg); }
-  .facts { display: grid; gap: 8px; margin: 8px 0 12px; }
-  .facts > div { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 2px 16px; }
-  .facts dt { font-family: var(--font-display); font-weight: 700; }
-  .facts dd { margin: 0; }
-  @media (max-width: 560px) { .facts > div { grid-template-columns: 1fr; } }
   .ways { max-width: 46em; padding-left: 1.2em; }
   .ways li + li { margin-top: 8px; }
   .tag-word { font-family: var(--font); font-size: 1rem; font-weight: 400; color: var(--ink-2); margin-left: 6px; }
   .share-row { margin: 12px 0; }
-  .x-note { max-width: 46em; background: var(--paper); border: 2px solid var(--hair); border-radius: 14px; padding: 10px 16px; }
+  .x-note { max-width: 46em; margin: 12px 0; }
 </style>

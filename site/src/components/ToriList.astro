@@ -9,7 +9,7 @@ import type { TorikumiGroup } from '../lib/data.ts';
 interface Props { rows: TorikumiGroup[]; old?: boolean }
 const { rows, old = false } = Astro.props;
 ---
-<div class:list={['sticker', 't-box', old && 'old']}>
+<div class:list={['sticker', 'list-box', 't-box', old && 'old']}>
   <p class="t-head"><span class="t-hs" aria-hidden="true">進捗状況</span><span class="t-hm">主な取組と活動指標</span></p>
   <ul class="row-list">
     {rows.map((g) => <ToriRow g={g} />)}
@@ -17,9 +17,8 @@ const { rows, old = false } = Astro.props;
 </div>
 
 <style>
-  .t-box { --st: 5.6rem; padding: 0; overflow: hidden; margin-top: 12px; }
+  .t-box { --st: 5.6rem; margin-top: 12px; }
   .t-box.old { --st: 7.6rem; }
-  .t-box .row-list { border: 0; border-radius: 0; box-shadow: none; border-top: 1.5px solid var(--grid); }
   .t-head { display: grid; grid-template-columns: var(--st) minmax(0, 1fr); gap: 0 12px; align-items: baseline; margin: 0; padding: 10px 16px 6px; background: var(--paper); }
   .t-hs { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
   .t-hm { font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; }

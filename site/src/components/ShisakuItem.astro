@@ -109,8 +109,7 @@ const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year =
   .open-d { flex-basis: 100%; }
   .open-d > summary { display: flex; align-items: center; gap: 8px; padding: 0; color: inherit; font-size: inherit; font-weight: 400; list-style: none; }
   .open-d > summary :global(.sbar) { flex: 0 1 auto; min-width: 0; }
-  .chev { flex: none; width: 14px; height: 14px; fill: none; stroke: var(--link); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .open-d[open] .chev { transform: rotate(180deg); }
+  .chev { width: 14px; height: 14px; stroke: var(--link); }
   .open-d > summary::-webkit-details-marker { display: none; }
   .open-d > summary :global(.sbar) { pointer-events: none; }
   .open-d[open] > summary { margin-bottom: 6px; }

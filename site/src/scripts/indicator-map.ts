@@ -150,10 +150,10 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (code === '-') return close();
     const [, label, tone] = t.cats[Number(code)];
     const mark = t.shapes ? iconSvg(tone) : `<i class="mc tone-${tone}" aria-hidden="true"></i>`;
-    const head = `<p class="imp-head"><span class="imp-tier">${esc(t.term)}</span><span class="chip">${mark}<span>${esc(label)}</span></span><span class="imp-year">${yl(y)}</span></p>`;
-    const closeBtn = '<button type="button" class="imp-close" data-map-close aria-label="閉じる">×</button>';
+    const head = `<p class="cp-head"><span class="cp-term">${esc(t.term)}</span><span class="chip">${mark}<span>${esc(label)}</span></span><span class="cp-year">${yl(y)}</span></p>`;
+    const closeBtn = '<button type="button" class="cp-close" data-map-close aria-label="閉じる">×</button>';
     pop.hidden = false;
-    pop.innerHTML = head + '<p class="imp-sub small secondary">読み込んでいます…</p>' + closeBtn;
+    pop.innerHTML = head + '<p class="cp-sub small secondary">読み込んでいます…</p>' + closeBtn;
     window.era?.fix(pop); // 西暦で表示しているときは、大きさを測る前に書き換える（lib/era.ts）
     place();
     let body: string;
@@ -161,23 +161,23 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       const data = await load(t);
       if (sel?.t !== t || sel.i !== i || yearOf() !== y) return; // 読んでいるあいだに、ほかのマス・年度に移った
       if (data.check !== t.head.dataset.check) {
-        body = '<p class="imp-sub small">サイトが新しくなったため、このページのマスと中身が合いません。ページを読み込み直してください。</p>';
+        body = '<p class="cp-sub small">サイトが新しくなったため、このページのマスと中身が合いません。ページを読み込み直してください。</p>';
       } else {
         const item = data.items[i];
         const x = item.y[years.indexOf(y)]!;
         const [pcode, pname, phref] = data.parents[item.p];
         const words = wordsOf();
         body = [
-          `<p class="imp-name"><a class="name-link" href="${esc(item.h)}">${marked(item.n, words)}</a></p>`,
-          x.n ? `<p class="imp-sub small secondary">${yl(y)}の報告の名前: ${marked(x.n, words)}</p>` : '',
-          `<p class="imp-sub small secondary">${t.parent} <a class="sub-link" href="${esc(phref)}">${marked(pname, words)}</a> <span class="code-no">${esc(pcode)}</span></p>`,
-          x.sub != null ? `<p class="imp-sub small"><span class="imp-l">${t.term}</span>${x.sub ? marked(x.sub, words) : '—'}</p>` : '',
-          `<dl class="imp-vals">${x.v.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`,
+          `<p class="cp-name"><a class="name-link" href="${esc(item.h)}">${marked(item.n, words)}</a></p>`,
+          x.n ? `<p class="cp-sub small secondary">${yl(y)}の報告の名前: ${marked(x.n, words)}</p>` : '',
+          `<p class="cp-sub small secondary">${t.parent} <a class="sub-link" href="${esc(phref)}">${marked(pname, words)}</a> <span class="code-no">${esc(pcode)}</span></p>`,
+          x.sub != null ? `<p class="cp-sub small"><span class="imp-l">${t.term}</span>${x.sub ? marked(x.sub, words) : '—'}</p>` : '',
+          `<dl class="cp-vals">${x.v.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`,
         ].join('');
       }
     } catch {
       if (sel?.t !== t || sel.i !== i) return;
-      body = '<p class="imp-sub small">中身を読み込めませんでした。通信を確かめて、もう一度マスを押してください。</p>';
+      body = '<p class="cp-sub small">中身を読み込めませんでした。通信を確かめて、もう一度マスを押してください。</p>';
     }
     pop.innerHTML = head + body + closeBtn;
     window.era?.fix(pop);

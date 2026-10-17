@@ -55,7 +55,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
   <header class="sticker lift badge-head t-hero">
-    <span class="bh-badge ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+    <span class="bh-badge theme-ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <HeadKind kind="くらしのテーマ" term={false} />
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
     <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
@@ -110,10 +110,7 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 <style>
   /* 頭（styles/global.css の .badge-head）。地は白のままにし、段の箱はステッカーの中の箱（.inset）と同じ地の色で分ける。
      ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
-  .ico { display: grid; place-items: center; border-radius: 50%; background: var(--pink); border-style: solid; border-color: var(--line); }
-  .ico :global(.theme-ic) { width: 42px; height: 42px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .t-hero :global(.ladder) { background: var(--bg); }
-  @media (max-width: 520px) { .ico :global(.theme-ic) { width: 21px; height: 21px; } }
 
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
   .sz-ribbon .n { white-space: nowrap; }

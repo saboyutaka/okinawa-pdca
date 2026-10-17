@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
 import BarList from '../../components/BarList.astro';
 import Term from '../../components/Term.astro';
+import Says from '../../components/Says.astro';
 import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.ts';
 import { fmt, yen, pct } from '../../lib/format.ts';
 import { IKKATSU_YEARS, IKKATSU_HREF, ikkatsuRows } from '../../lib/plans.ts';
@@ -107,10 +108,10 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
       ))}
     </div>
     {loan > 0 && (
-      <p class="notice small">
-        「県単等」のうち{yen(loan)}は県単融資事業費（中小企業などへの融資の原資）です。県の歳入の「諸収入」には、県が貸したお金の返済（貸付金元利収入）が入ります。
-        融資の原資は、こうして返済されて戻ってくるお金とみられ、ほかの事業費とは性格が違います。これを除くと、県単等は約{fmt(Math.round(oku(byKey['県単等'] - loan)))}億円です。
-      </p>
+      <Says who="!" class="notice">
+        <p>「県単等」のうち{yen(loan)}は県単融資事業費（中小企業などへの融資の原資）です。県の歳入の「諸収入」には、県が貸したお金の返済（貸付金元利収入）が入ります。
+        融資の原資は、こうして返済されて戻ってくるお金とみられ、ほかの事業費とは性格が違います。これを除くと、県単等は約{fmt(Math.round(oku(byKey['県単等'] - loan)))}億円です。</p>
+      </Says>
     )}
   </section>
 

@@ -39,7 +39,7 @@ const judgeUsed = keys.filter((key) => themes.some((t) => (t.judges[key] || 0) >
   <ul class="themes">
     {themes.map((t) => (
       <li class="sticker theme-card" id={t.id}>
-        <div class="nm"><span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span><a class="name-link" href={`/theme/${t.id}/`}>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</a></div>
+        <div class="nm"><span class="theme-ico" aria-hidden="true"><ThemeIcon id={t.id} /></span><a class="name-link" href={`/theme/${t.id}/`}>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}</a></div>
         <span class="cnt num">{fmt(t.ids.length)}施策</span>
         <div class="j-row">
           <span class="j-l"><Term word="推進状況" label="判定" brief="key-judge" /></span>
@@ -68,8 +68,6 @@ const judgeUsed = keys.filter((key) => themes.some((t) => (t.judges[key] || 0) >
   .j-l { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); line-height: 1.2; }
   .nm { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 1.05rem; line-height: 1.35; }
   .nw { white-space: nowrap; } /* 名前は、入りきらない狭い画面でだけ「・」の後ろで折り返す（トップのテーマの札と同じ） */
-  .ico { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--pink); }
-  .ico :global(.theme-ic) { width: 21px; height: 21px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* 施策の数は棒の分母として添えるだけなので、棒の図の右の件数（StatusChart）と同じく小さな灰色の字 */
   .cnt { font-size: 0.875rem; color: var(--ink-2); white-space: nowrap; }
   .rest { margin-top: 24px; }
