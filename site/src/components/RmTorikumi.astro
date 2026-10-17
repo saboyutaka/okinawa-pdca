@@ -4,6 +4,7 @@ import Stamps from './Stamps.astro';
 import { yearLabel, yearLong, statusStamps, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, type KankoTorikumiGroup } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
+import { isBlankCell } from '../lib/text.ts';
 
 interface Props { g: KankoTorikumiGroup; years: number[]; id: string }
 const { g, years, id } = Astro.props;
@@ -36,7 +37,7 @@ const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[year
     <div class="small pdca">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a> <span class="code-no">施策 {p.shisaku.code}</span></>)}</div>
   ) : <div class="small secondary">沖縄県PDCAの主な取組には、同じ名前の取組がありません。</div>}
   {t.year !== RM_LATEST && <div class="small secondary">{yearLong(t.year + 1)}の報告には、この名前の取組はありません。</div>}
-  {t.summary && t.summary !== '―' && (
+  {!isBlankCell(t.summary) && (
     <details>
       <summary>{yearLong(t.year)}の活動概要</summary>
       <p class="small">{t.summary}</p>

@@ -1,9 +1,9 @@
 // lib/plans.ts の、データを読まずに決まる関数（一括交付金の事後評価の区分・部局・カードの id）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GRADES, gradeOf, isShort, ikkatsuDept, ikkatsuAnchor, ikkatsuStamps, IKKATSU_YEARS, countGrades, countRmJudgements, RM_JUDGEMENTS } from '../src/lib/plans.ts';
+import { GRADES, gradeOf, isShort, ikkatsuDept, ikkatsuAnchor, ikkatsuStamps, IKKATSU_YEARS, countGrades, countRmJudgements, RM_JUDGEMENTS, rmLatestIndex } from '../src/lib/plans.ts';
 import type { YearGroup } from '../src/lib/data.ts';
-import type { IkkatsuJigyoRow } from '../src/lib/types.ts';
+import type { IkkatsuJigyoRow, KankoSeikaRow } from '../src/lib/types.ts';
 
 test('事後評価の区分: 目標に届かなかったのは △一部達成・未達成', () => {
   assert.deepEqual(GRADES.map((x) => x.key), ['達成', '概ね達成', '一部達成', '未達成']);
@@ -42,4 +42,12 @@ test('countGrades・countRmJudgements: 区分の並びのまま数え、評価�
   assert.deepEqual(Object.keys(rm), RM_JUDGEMENTS.map((j) => j.key));
   assert.equal(rm['前進'], 1);
   assert.equal(rm['その他'], 1);
+});
+
+test('rmLatestIndex: 観光ロードマップの成果指標の最新の実績値は、実績値の欄のうち最後に値があるもの', () => {
+  const row = (actual_raw: string[]) => ({ actual_raw }) as KankoSeikaRow;
+  assert.equal(rmLatestIndex(row(['10', '12', '15'])), 2);
+  assert.equal(rmLatestIndex(row(['10', '12', '―'])), 1);
+  assert.equal(rmLatestIndex(row(['10', ' ‐ ', 'ー'])), 0);
+  assert.equal(rmLatestIndex(row(['', '－', '―'])), -1);
 });
