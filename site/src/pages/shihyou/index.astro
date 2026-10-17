@@ -26,7 +26,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
   <h1>成果指標をさがす</h1>
   <p class="secondary lead">施策ごとの成果をはかる<Term word="成果指標" />です。{yearLong(LATEST)}の報告にある{fmt(latestCount)}指標と、前の年度まで使われていた{fmt(pastCount)}指標をさがせます。基本施策ごとの大きな数字（平均寿命・観光収入など）は、<Term word="主要指標" />として<a href="/future/">将来像</a>のページで見られます。</p>
 
-  <form class="filters sticker search-form" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
+  <form class="filters sticker" role="search" aria-label="成果指標の絞り込み" data-filter="#seika-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（指標の名前・施策・担当部課）
       <input type="search" name="q" placeholder="例: 観光、離島、子ども、二酸化炭素" />
     </label>
@@ -116,7 +116,4 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
 </Base>
 
 <style>
-  .search-form .q input { font-size: 1rem; min-height: 44px; }
-  .group-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
-  .gt-name { flex: 1 1 12em; min-width: 0; }
 </style>

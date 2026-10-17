@@ -12,17 +12,16 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import ShisakuHead from '../../components/ShisakuHead.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import ThemeIcon from '../../components/ThemeIcon.astro';
+import HeadKind from '../../components/HeadKind.astro';
 import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
-import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import ExtLink from '../../components/ExtLink.astro';
+import JudgeSection from '../../components/JudgeSection.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import { getShisakuList, getShouraizou, getKihonList, trendPoints } from '../../lib/data.ts';
-import { band, fmt } from '../../lib/format.ts';
-import { LINKS } from '../../lib/links.ts';
+import { fmt } from '../../lib/format.ts';
 import { themeDescription } from '../../lib/describe.ts';
 import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
@@ -55,9 +54,9 @@ const visions = getShouraizou()
 const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`).join('')}です。`;
 ---
 <Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
-  <header class="sticker lift t-hero">
-    <span class="ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
-    <div class="t-kicker">くらしのテーマ</div>
+  <header class="sticker lift badge-head t-hero">
+    <span class="bh-badge ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
+    <HeadKind kind="くらしのテーマ" term={false} />
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
     <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
     <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
@@ -72,16 +71,11 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
     head={{ kind: 'くらしのテーマ', tag: 'ttag', title: t.label }}
   />
 
-  <section aria-labelledby="judge-h">
-    <h2 id="judge-h" class="anchor">施策の判定</h2>
-    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。</p>
-    {/* マスを押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く */}
-    <JudgeMatrix counts={head.judges} hrefOf={(k) => `/shisaku/?theme=${t.id}&judge=${k}`} />
-  </section>
+  {/* マスを押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く */}
+  <JudgeSection counts={head.judges} hrefOf={(k) => `/shisaku/?theme=${t.id}&judge=${k}`} />
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
-    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
     <TrendFigure points={trend} />
   </section>
 
@@ -114,25 +108,12 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
 </Base>
 
 <style>
-  /* 頭。PC はアイコンを左に大きく置き、右に「くらしのテーマ」・名前・件数の札。スマホはアイコンを小さくして「くらしのテーマ」の行に並べ、名前を全幅にする。
-     段の問いと答え（Ladder）は将来像のページと同じく頭の中に置き、余白もトップのヒーロー・将来像のページと同じにする（段の位置がそろうように）。
-     地は白のままにし、段の箱はステッカーの中の箱（.inset）と同じ地の色で分ける。ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
-  .t-hero {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "ico kicker" "ico name" "ico stats" "ladder ladder";
-    gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px;
-  }
-  .ico { grid-area: ico; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; background: var(--pink); border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); }
+  /* 頭（styles/global.css の .badge-head）。地は白のままにし、段の箱はステッカーの中の箱（.inset）と同じ地の色で分ける。
+     ピンクはアイコンの丸と「このサイト独自の分類」の印だけ */
+  .ico { display: grid; place-items: center; border-radius: 50%; background: var(--pink); border-style: solid; border-color: var(--line); }
   .ico :global(.theme-ic) { width: 42px; height: 42px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .t-kicker { grid-area: kicker; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
-  .t-hero h1 { grid-area: name; margin: 4px 0 10px; }
-  .t-hero :global(.head-stats) { grid-area: stats; }
-  .t-hero :global(.ladder) { grid-area: ladder; background: var(--bg); }
-  @media (max-width: 520px) {
-    .t-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ico kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
-    .ico { width: 36px; height: 36px; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
-    .ico :global(.theme-ic) { width: 21px; height: 21px; }
-    .t-hero h1 { margin-top: 8px; }
-  }
+  .t-hero :global(.ladder) { background: var(--bg); }
+  @media (max-width: 520px) { .ico :global(.theme-ic) { width: 21px; height: 21px; } }
 
   .sz-ribbon { margin: 1.6em 0 0.8em; font-size: 1rem; }
   .sz-ribbon .n { white-space: nowrap; }

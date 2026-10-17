@@ -1,16 +1,17 @@
 ---
-// 取組が載っている年度の札。kind="new" は最新の年度の報告から新しく載った取組（「R7から」）、kind="ended" は最新の年度の報告に無い取組（「R6まで」。year は最後に載った年度）。
+// 取組・指標が載っている年度の札。kind="new" は最新の年度の報告から新しく載ったもの（「R7から」）、kind="ended" は最新の年度の報告に無いもの（「R6まで」。year は最後に載った年度）。
+// what は読み上げと説明で何のことか（成果指標をさがすの行は「指標」）。
 // どの取組に付けるかは、取組をさがすの「4年間の様子」の「R7で新しく出た」「R7の報告に無い」と同じ（lib/data.ts の PATTERNS の new・ended）。
 // 取組をさがすの行は scripts/torikumi-search.ts が同じ形で書く。href を渡すと札をリンクにする（取組のページの頭から、取組をさがすのその絞り込みへ）
 import { LATEST, yearLabel } from '../lib/data.ts';
 
-interface Props { kind: 'new' | 'ended'; year?: number; href?: string }
-const { kind, year = LATEST, href } = Astro.props;
+interface Props { kind: 'new' | 'ended'; year?: number; href?: string; what?: string }
+const { kind, year = LATEST, href, what = '取組' } = Astro.props;
 const yl = yearLabel(year);
 // 札の文字・読み上げで続ける言葉・マウスを乗せたときの説明・リンクのときの説明
 const [text, read, title, linkTitle] = kind === 'new'
-  ? [`${yl}から`, '新しく載った取組', `${yl}の報告から新しく載った取組`, `${yl}の報告から新しく載った取組をさがす`]
-  : [`${yl}まで`, '載っていた取組', `${yl}の報告まで載っていた取組`, `${yearLabel(LATEST)}の報告に無い取組をさがす`];
+  ? [`${yl}から`, `新しく載った${what}`, `${yl}の報告から新しく載った${what}`, `${yl}の報告から新しく載った${what}をさがす`]
+  : [`${yl}まで`, `載っていた${what}`, `${yl}の報告まで載っていた${what}`, `${yearLabel(LATEST)}の報告に無い${what}をさがす`];
 const cls = ['year-tag', kind];
 ---
 {href ? (

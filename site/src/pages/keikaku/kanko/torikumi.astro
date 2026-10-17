@@ -29,7 +29,7 @@ const stOf = (g: KankoTorikumiGroup) => {
   <h1>{KANKO.short}の取組をさがす</h1>
   <p class="secondary lead">観光ロードマップの<Term word="主な取組" /> {fmt(rows.length)}件を、{years.map(yearLabel).join('・')}の進捗状況つきでさがせます。</p>
 
-  <form class="filters sticker search-form" role="search" aria-label="観光ロードマップの取組の絞り込み" data-filter="#rm-list" data-count="#count" data-empty="#empty" data-summary="#active">
+  <form class="filters sticker" role="search" aria-label="観光ロードマップの取組の絞り込み" data-filter="#rm-list" data-count="#count" data-empty="#empty" data-summary="#active">
     <label class="q" data-label="キーワード">キーワード（取組の名前・所管課・施策・活動指標）
       <input type="search" name="q" placeholder="例: 空手、クルーズ、離島、観光振興課" />
     </label>
@@ -72,7 +72,7 @@ const stOf = (g: KankoTorikumiGroup) => {
       if (!items.length) return null;
       return (
         <section data-group>
-          <h2 class="group-title">{k.name} <span class="code-no">基本施策 {k.code}</span></h2>
+          <h2 class="group-title"><span class="gt-name">{k.name} <span class="code-no">基本施策 {k.code}</span></span></h2>
           <ul class="row-list">
             {items.map((g) => {
               const t = g.latest;
@@ -115,6 +115,4 @@ const stOf = (g: KankoTorikumiGroup) => {
 </Base>
 
 <style>
-  .search-form .q input { font-size: 1rem; min-height: 44px; }
-  .group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 1.05rem; margin: 1.8em 0 0.6em; }
 </style>

@@ -11,6 +11,7 @@ import BudgetItem from '../../components/BudgetItem.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Toc from '../../components/Toc.astro';
+import Says from '../../components/Says.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, countBy,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
@@ -104,32 +105,29 @@ const suspects = getSuspects();
 ---
 <Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移と、一括交付金（ソフト）の事業の事後評価です。">
 
-  <header class="sticker lift head">
+  <header class="sticker lift page-head">
     <h1>予算と財源</h1>
     <p class="lead">
       各部局の検証票に書かれた、<Term word="主な取組" />の予算事業の金額と財源をまとめました。
       財源の意味や沖縄振興予算との違いは<a href="/yosan/zaigen/">予算の財源のしくみ</a>で説明しています。
     </p>
-    <div class="bubble-row says">
-      <span class="avatar" aria-hidden="true">!</span>
-      <div class="bubble small">
-        <p><strong>合計は目安です。</strong>県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています。<a href="#note">数え方</a>）。</p>
-      </div>
-    </div>
+    <Says who="!">
+      <p><strong>合計は目安です。</strong>県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています。<a href="#note">数え方</a>）。</p>
+    </Says>
   </header>
 
-  <div class="facts">
-    <div class="sticker fact">
+  <div class="tiles">
+    <div class="sticker tile">
       <div class="tile-label">{yearLabel(LATEST)}の決算見込額</div>
       <div class="tile-value">{yen(sum(estimate))}</div>
       <div class="tile-sub">{yearLabel(LATEST - 1)}の決算額 {yen(sum(settled))}、{yearLabel(LATEST + 1)}の当初予算額 {yen(sum(initial))}</div>
     </div>
-    <div class="sticker fact">
+    <div class="sticker tile">
       <div class="tile-label">うち一括交付金（{yearLabel(LATEST)}の決算見込額）</div>
       <div class="tile-value">{yen(soft + hard)}<small>（{pct(soft + hard, sum(estimate))}）</small></div>
       <div class="tile-sub split"><span class="swatch series-2">ソフト</span> {yen(soft)}　<span class="swatch series-3">ハード</span> {yen(hard)}</div>
     </div>
-    <div class="sticker fact">
+    <div class="sticker tile">
       <span class="ik-tag">{IKKATSU.short}</span>
       <div class="tile-label">{yearLabel(IKKATSU_LATEST)}に成果目標を達成した事業</div>
       <div class="tile-value">{fmt(ikCounts['達成'] || 0)}/{fmt(ikLatest.length)}<small>事業</small></div>
@@ -268,13 +266,7 @@ const suspects = getSuspects();
 </Base>
 
 <style>
-  .head { display: grid; gap: 8px; margin-top: 12px; }
-  .head h1 { margin: 0; }
-  .head .lead { margin: 0; }
-  .says .bubble p { margin: 0; }
-  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
-  .fact { display: grid; gap: 6px; align-content: start; justify-items: start; }
-  .fact .split { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+  .tile .split { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
   .funds { margin-top: 16px; padding: 12px 20px; }
   .funds summary { margin: 0; }
   .funds ul { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; font-size: 0.9rem; }

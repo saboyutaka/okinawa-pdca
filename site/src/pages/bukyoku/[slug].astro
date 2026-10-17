@@ -3,11 +3,12 @@
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
+import HeadKind from '../../components/HeadKind.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import DonutCard from '../../components/DonutCard.astro';
 import Moves, { type MoveGroup } from '../../components/Moves.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import TrendChart from '../../components/TrendChart.astro';
+import TrendFigure from '../../components/TrendFigure.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import AmountChart from '../../components/AmountChart.astro';
 import Sz from '../../components/Sz.astro';
@@ -135,8 +136,8 @@ const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
 <Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, head)} ogType="article">
-  <header class="sticker lift d-head">
-    <div class="kind">沖縄県の部局</div>
+  <header class="sticker lift page-head">
+    <HeadKind kind="部局" term={false} />
     <h1>{dept.name}</h1>
     <HeadStats items={[
       { label: '課', n: sections.length, href: '#ka' },
@@ -196,30 +197,7 @@ const sources = deptSourcePages(dept.name);
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
     {drawTrend ? (
       <>
-        <figure class="sticker">
-          <figcaption>
-            <div class="chart-title">「順調」の取組と、計画値に届いた成果指標の割合（{dept.name}）</div>
-            <div class="chart-caption">点を押すと、その年度の値を出します（キーボードでは左右の矢印キー）。</div>
-          </figcaption>
-          <TrendChart points={trend} />
-          <details>
-            <summary>表で見る</summary>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>年度</th><th class="num">主な取組</th><th class="num">うち順調</th><th class="num">成果指標</th><th class="num">うち計画値に到達</th></tr></thead>
-                <tbody>
-                  {trend.map((p) => (
-                    <tr>
-                      <th>{yearLong(p.y)}（{period(p.y)}）</th>
-                      <td class="num">{fmt(p.aN)}</td><td class="num">{fmt(p.aOk)}（{p.a.toFixed(1)}%）</td>
-                      <td class="num">{fmt(p.bN)}</td><td class="num">{fmt(p.bOk)}（{p.b.toFixed(1)}%）</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </figure>
+        <TrendFigure points={trend} name={dept.name} />
         <details class="breakdown">
           <summary>内訳を見る（進捗状況・達成率の区分ごと）</summary>
           <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
@@ -364,18 +342,12 @@ const sources = deptSourcePages(dept.name);
 </Base>
 
 <style>
-  .d-head { display: grid; gap: 4px; margin-top: 12px; }
-  .d-head h1 { margin: 2px 0 8px; }
-  .kind { font-size: 0.9375rem; color: var(--ink-2); }
-  .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  .chart-caption { font-size: 0.875rem; color: var(--ink-2); }
   .breakdown { margin-top: 16px; }
   .b-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: center; }
   .b-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
   .b-amt { display: grid; justify-items: end; text-align: right; }
   .b-amt .big { font-size: 1.2rem; white-space: nowrap; }
   @media (max-width: 560px) { .b-row { grid-template-columns: 1fr; } .b-amt { justify-items: start; text-align: left; } }
-  .filters { margin-top: 12px; }
   #dept-lists h3 { margin-top: 1.8em; }
   #dept-lists h4 { margin: 1.2em 0 0.5em; font-size: 0.98rem; }
 </style>

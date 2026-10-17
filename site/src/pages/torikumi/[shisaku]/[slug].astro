@@ -27,6 +27,7 @@ import { yen } from '../../../lib/format.ts';
 import { firstSentence } from '../../../lib/text.ts';
 import { torikumiHead } from '../../../lib/describe.ts';
 import ExtLink from '../../../components/ExtLink.astro';
+import Says from '../../../components/Says.astro';
 import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
 import type { AmountKind } from '../../../lib/types.ts';
@@ -169,7 +170,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 ---
 <Base {...torikumiHead(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
-  <header class="sticker lift head">
+  <header class="sticker lift page-head">
     <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOf(s.id)}>
       {reposts.length > 0 && <span class="common">{commonShisakuCount(g)}施策に共通 {reposts.map((o, i) => <>{i > 0 && '、'}<a class="sub-link" href={o.group.href} title={`施策 ${o.group.shisaku.name}`}>{o.group.shisaku.code}-{o.group.latest.no}<span class="sr-only">（施策 {o.group.shisaku.name}の同じ取組）</span></a>{o.partial && `（${yearsText(o.years)}）`}</>)}</span>}
       {g.patterns.includes('new') && <YearTag kind="new" href="/torikumi/?pat=new" />}{g.patterns.includes('ended') && <YearTag kind="ended" year={t.year} href="/torikumi/?pat=ended" />}
@@ -185,7 +186,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
         ))}
       </dl>
     )}
-    <div class="meta">
+    <div class="head-meta">
       <span>所管: {secHref ? <a class="sub-link" href={secHref}>{t.section}</a> : t.section}</span>
       {latestRec?.actor && <span>実施主体: {latestRec.actor.replace(/,/g, '・')}</span>}
       {rm.length > 0 && <a class="plan-tag" href="#rm">{KANKO.short}でも評価</a>}
@@ -217,13 +218,9 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       </div>
     </div>
     {latestRec?.activity && (
-      <div class="bubble-row says">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <div class="small secondary label">ひとことで言うと（検証票の「取組内容」から）</div>
-          <p class="first">{latestRec.activity}</p>
-        </div>
-      </div>
+      <Says label="ひとことで言うと（検証票の「取組内容」から）">
+        <p class="says-first">{latestRec.activity}</p>
+      </Says>
     )}
   </header>
 
@@ -303,13 +300,10 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
         <>
           {card}
           {latestBasis && (
-            <div class="bubble-row says basis">
-              <span class="avatar" aria-hidden="true">県</span>
-              <div class="bubble">
-                <div class="small secondary label">進捗の判定の根拠（{yearLabel(t.year)}・部局の検証票）</div>
-                <p class="prose">{latestBasis}</p>
-              </div>
-            </div>
+            <Says class="basis">
+              <Fragment slot="label">進捗の判定の根拠（{yearLabel(t.year)}・部局の検証票）</Fragment>
+              <p class="prose">{latestBasis}</p>
+            </Says>
           )}
         </>
       );
@@ -503,10 +497,6 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 
 <style>
   .report-no { white-space: nowrap; }
-  .head { display: grid; gap: 12px; }
-  .head > :global(.head-kind) { margin-bottom: -6px; }
-  .head h1 { margin: 0; }
-  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
   .common { font-size: 0.8125rem; color: var(--ink-2); }
   .common a { white-space: nowrap; } /* 番号の途中で折り返さない */
   /* 前回までの取組・後続の取組。PC は 見出し | 取組 の2列、スマホは見出しの下に取組 */
@@ -542,14 +532,11 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .now-years { grid-area: years; display: flex; align-items: center; gap: 10px; max-width: 340px; }
   .now-yl { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .now-years :global(.stamps) { flex: 1; }
-  .label { font-weight: 700; margin-bottom: 4px; }
-  .says .first { margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
     .now { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "act" "years"; gap: 12px; }
     .now-years { max-width: none; padding-top: 12px; border-top: 1.5px solid var(--grid); }
   }
   .basis { margin-top: 14px; }
-  .basis .prose { margin: 4px 0 0; }
   .past { margin-top: 14px; }
   .kcard { margin-top: 12px; }
   .k-span { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }

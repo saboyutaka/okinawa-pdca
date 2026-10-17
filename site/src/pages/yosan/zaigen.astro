@@ -56,7 +56,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
 ---
 <Base title="予算の財源のしくみ" description="沖縄県PDCAの取組の予算に出てくる財源（県単等・一括交付金・内閣府計上・各省計上）の意味と、沖縄振興予算や県の一般会計との関係をまとめています。">
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="財源のしくみ" />
-  <header class="sticker lift head">
+  <header class="sticker lift page-head">
     <h1>予算の財源のしくみ</h1>
     <p class="lead">
       <a href="/yosan/">予算と財源</a>では、県の主な取組に書かれた予算事業を「主な財源」ごとに分けて集計しています。
@@ -64,7 +64,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
     </p>
   </header>
 
-  <section class="card points" aria-labelledby="points">
+  <section class="sticker points" aria-labelledby="points">
     <h2 id="points">ポイント</h2>
     <ul>
       <li>このサイトの予算の合計（{yearLabel(LATEST)}の決算見込額で約{fmt(Math.round(oku(total)))}億円）は、<strong>県の取組の予算</strong>です。国が沖縄のために組む<strong>沖縄振興予算（{reiwa(shinko.year)} {fmt(shinko.total)}億円）とは別のもの</strong>です。</li>
@@ -79,7 +79,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
     <p class="small secondary">金額は{yearLong(LATEST)}の報告の決算見込額で、同じ予算事業の重複と誤記の疑いがある金額を除いたものです。</p>
     <div class="funds">
       {funds.map((f) => (
-        <article class="card fund">
+        <article class="sticker fund">
           <h3><span class={`swatch series-${f.series}`}>{f.key}</span></h3>
           <p class="fund-amount"><strong>{yen(f.amount)}</strong> <span class="secondary small">（{pct(f.amount, total)}）</span></p>
           <p class="fund-short">{f.short}</p>
@@ -173,14 +173,10 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
 </Base>
 
 <style>
-  .head { display: grid; gap: 8px; margin-top: 12px; }
-  .head h1 { margin: 0; }
-  .head .lead { margin: 0; }
   .points { margin-top: 20px; }
   .points h2 { margin-top: 0; font-size: 1.1rem; }
   .points ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
   .funds { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .funds .card + .card { margin-top: 0; }
   .ik-note { background: var(--bg); border-radius: 12px; padding: 8px 12px; }
   .fund h3 { margin: 0 0 4px; }
   .fund h3 .swatch { font-size: 1rem; font-weight: 700; }

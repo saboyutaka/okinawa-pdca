@@ -28,6 +28,7 @@ import { shisakuDescription } from '../../lib/describe.ts';
 import { shisakuHead } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
+import Says from '../../components/Says.astro';
 import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -98,10 +99,10 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
   <Hierarchy items={planParents({ shisaku: s.id })} page={s.name} />
-  <header class="sticker lift head">
+  <header class="sticker lift page-head">
     <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)} />
     <h1>{s.name}</h1>
-    <div class="meta">
+    <div class="head-meta">
       <span>関係部等: {s.depts.length ? s.depts.map((d, i) => <>{i > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</span>
     </div>
     <div class="now inset">
@@ -136,17 +137,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       </div>
     </div>
     {s.houkou && (
-      <div class="bubble-row says">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <div class="small secondary label">ひとことで言うと（実施計画の「施策の方向」から）</div>
-          <p class="first">{firstSentence(s.houkou)}</p>
-          <details>
-            <summary>施策の方向をすべて読む</summary>
-            <p class="prose small">{joinLines(s.houkou)}</p>
-          </details>
-        </div>
-      </div>
+      <Says label="ひとことで言うと（実施計画の「施策の方向」から）">
+        <p class="says-first">{firstSentence(s.houkou)}</p>
+        <details>
+          <summary>施策の方向をすべて読む</summary>
+          <p class="prose small">{joinLines(s.houkou)}</p>
+        </details>
+      </Says>
     )}
   </header>
 
@@ -205,22 +202,16 @@ const rmShisaku = kankoOfPdcaShisaku(s);
     <h2 id="check" class="anchor">県のふりかえりと、これから</h2>
     <p class="small secondary lead">施策検証票に県が書いた、施策の推進状況の分析（Check）と推進戦略案（Action）です。</p>
     {latest && latest.check && (
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <h3>ふりかえり（{yearLong(LATEST)}・Check）</h3>
-          <Prose text={latest.check} />
-        </div>
-      </div>
+      <Says class="voice">
+        <h3>ふりかえり（{yearLong(LATEST)}・Check）</h3>
+        <Prose text={latest.check} />
+      </Says>
     )}
     {latest && latest.action && (
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <h3>これからどうする（{yearLong(LATEST)}・Action）</h3>
-          <Prose text={latest.action} />
-        </div>
-      </div>
+      <Says class="voice">
+        <h3>これからどうする（{yearLong(LATEST)}・Action）</h3>
+        <Prose text={latest.action} />
+      </Says>
     )}
     {/* 前の年度は1つの箱に細い線で区切って並べる（年度ごとの太いステッカーを積むと重いため）。見出しの言葉は最新の年度とそろえ、
         Check と Action は中の箱（.inset）に分ける */}
@@ -289,12 +280,8 @@ const rmShisaku = kankoOfPdcaShisaku(s);
 <style>
   /* 判定は取組のページの進捗状況と同じく、頭の中の箱にハンコと4年間のスタンプを横に並べ（題名は全幅で折り返す）、
      細い線の下に判定のもと（成果指標・主な取組）を置く（取組のページの頭の活動指標と同じ形）。スマホでは ハンコ → 判定のもと → 4年間 の順。丸いハンコは施策の判定だけ */
-  .head { display: grid; gap: 12px; margin-top: 12px; }
-  .head > :global(.head-kind) { margin-bottom: -6px; }
-  .head h1 { margin: 0; }
   .report-no { white-space: nowrap; }
-  .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 0.9375rem; color: var(--ink-2); }
-  .meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .head-meta > span { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .now { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "l years" "why why"; align-items: center; gap: 10px 40px; padding: 12px 18px; }
   .now-l { grid-area: l; display: flex; align-items: center; gap: 16px; min-width: 0; }
   .now .circle {
@@ -321,8 +308,6 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   .why-a .why-v { text-decoration-line: underline; text-decoration-color: var(--hair); text-decoration-thickness: 2px; }
   .why-a:hover .why-v { text-decoration-color: var(--ink); }
   .why-a :global(.sbar) { pointer-events: none; }
-  .label { font-weight: 700; margin-bottom: 4px; }
-  .says .first { font-size: 1rem; margin: 4px 0 0; font-weight: 700; }
   @media (max-width: 640px) {
     .now { grid-template-columns: minmax(0, 1fr); grid-template-areas: "l" "why" "years"; gap: 12px; padding: 12px 14px; }
     .now-why { grid-template-columns: minmax(0, 1fr); }

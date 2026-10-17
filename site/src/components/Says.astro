@@ -1,0 +1,14 @@
+---
+// 吹き出し。who="県" は県の資料の言葉（実施計画・報告書・検証票）、who="!" はこのサイトからの読むときの注意（小さな字）。
+// label は頭の小さな見出し（「県による説明（R7・〇〇課）」など。Term を入れるときは label のスロット）。中身はスロット
+interface Props { who?: '県' | '!'; label?: string; class?: string }
+const { who = '県', label, class: cls } = Astro.props;
+const hasLabel = Boolean(label) || Astro.slots.has('label');
+---
+<div class:list={['bubble-row', 'says', cls]}>
+  <span class="avatar" aria-hidden="true">{who}</span>
+  <div class:list={['bubble', who === '!' && 'small']}>
+    {hasLabel && <div class="says-label small secondary">{label}<slot name="label" /></div>}
+    <slot />
+  </div>
+</div>

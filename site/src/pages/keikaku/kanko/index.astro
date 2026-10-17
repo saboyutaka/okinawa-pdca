@@ -1,6 +1,7 @@
 ---
 // 沖縄観光推進ロードマップ（第6次沖縄県観光振興基本計画の実施計画）の PDCA。基本施策・施策展開の一覧と年度ごとの進み具合
 import Base from '../../../layouts/Base.astro';
+import HeadKind from '../../../components/HeadKind.astro';
 import StatusChart from '../../../components/StatusChart.astro';
 import StatusBar from '../../../components/StatusBar.astro';
 import Term from '../../../components/Term.astro';
@@ -8,6 +9,7 @@ import RmSeikaRow from '../../../components/RmSeikaRow.astro';
 import SeikaKey from '../../../components/SeikaKey.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import Toc from '../../../components/Toc.astro';
+import Says from '../../../components/Says.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
@@ -43,34 +45,31 @@ const seikaAll = kankoSeikaList();
 const SEIKA_SHOW = 10;
 ---
 <Base title={`${KANKO.name}（個別計画）`} description={`${KANKO.basis}の実施計画「${KANKO.name}」のPDCA（成果指標と主な取組の評価）を、施策展開ごとに整理しています。`} ogType="article">
-  <header class="sticker lift head">
-    <div><span class="plan-tag">個別計画</span></div>
+  <header class="sticker lift page-head">
+    <HeadKind plan="個別計画" />
     <h1>{KANKO.name}</h1>
-    <p class="meta small">
-      {KANKO.basis}の実施計画・{KANKO.period}　所管: {KANKO.dept}　<ExtLink href={LINKS.kankoRm}>県のページ</ExtLink>
+    <p class="head-meta">
+      <span>{KANKO.basis}の実施計画・{KANKO.period}</span><span>所管: {KANKO.dept}</span><ExtLink href={LINKS.kankoRm}>県のページ</ExtLink>
     </p>
-    <div class="bubble-row says">
-      <span class="avatar" aria-hidden="true">!</span>
-      <div class="bubble small">
-        <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>施策の番号（例: 1-ア-①）も沖縄県PDCAとは別です。</p>
-      </div>
-    </div>
+    <Says who="!">
+      <p><strong>沖縄県PDCA（新・沖縄21世紀ビジョン実施計画）とは別の計画の評価です。</strong>施策の番号（例: 1-ア-①）も沖縄県PDCAとは別です。</p>
+    </Says>
   </header>
 
-  <div class="facts">
-    <div class="sticker fact">
+  <div class="tiles">
+    <div class="sticker tile">
       <div class="tile-label"><Term word="主な取組" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}<small>件が順調</small></div>
       <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
       <a class="small" href={KANKO_TORIKUMI_HREF}>取組をさがす</a>
     </div>
-    <div class="sticker fact">
+    <div class="sticker tile">
       <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}<small>が基準値より前進</small></div>
       <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
       <a class="small" href="#seika-list">成果指標の一覧</a>
     </div>
-    <div class="sticker fact">
+    <div class="sticker tile">
       <div class="tile-label">沖縄県PDCAと重なるもの（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{pct(overlap, tori.length)}</div>
       <div class="tile-sub">主な取組 {fmt(tori.length)}件のうち{fmt(overlap)}件、成果指標 {fmt(seika.length)}のうち{fmt(seikaOverlap)}は、沖縄県PDCAにも同じ名前のものがあります。</div>
@@ -155,14 +154,8 @@ const SEIKA_SHOW = 10;
 </Base>
 
 <style>
-  .head { display: grid; gap: 8px; margin-top: 12px; }
   .row-list { margin-top: 8px; }
   .more-row { margin-top: 14px; }
-  .head h1 { margin: 0; }
-  .meta { margin: 0; color: var(--ink-2); }
-  .says .bubble p { margin: 0 0 4px; }
-  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
-  .fact { display: grid; gap: 6px; align-content: start; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 16px; align-items: center; margin-top: 6px; }
   @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 </style>

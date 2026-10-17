@@ -7,13 +7,13 @@ import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../lib/routes.ts';
 import Base from '../../layouts/Base.astro';
 import Sz from '../../components/Sz.astro';
+import HeadKind from '../../components/HeadKind.astro';
 import Ladder from '../../components/Ladder.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import Chunk from '../../components/Chunk.astro';
 import KeyBrief from '../../components/KeyBrief.astro';
 import Term from '../../components/Term.astro';
-import JudgeMatrix from '../../components/JudgeMatrix.astro';
-import ExtLink from '../../components/ExtLink.astro';
+import JudgeSection from '../../components/JudgeSection.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
@@ -23,8 +23,7 @@ import {
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries, trendPoints,
 } from '../../lib/data.ts';
 import type { TorikumiRow } from '../../lib/types.ts';
-import { band, pct, yen } from '../../lib/format.ts';
-import { LINKS } from '../../lib/links.ts';
+import { pct, yen } from '../../lib/format.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead } from '../../lib/heads.ts';
 
@@ -70,10 +69,10 @@ const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e
 const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 ---
 <Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
-  <header class:list={['sticker', 'lift', 'v-hero', `sz-${v.id}`]}>
-    <Sz id={v.id} sr={false} class="hero-badge" />
+  <header class:list={['sticker', 'lift', 'badge-head', 'v-hero', `sz-${v.id}`]}>
+    <Sz id={v.id} sr={false} class="bh-badge" />
     {/* 番号は印にあるので「将来像」の後ろの番号は読み上げだけ */}
-    <div class="v-kicker"><span><Term word="将来像" /><span class="sr-only">{v.id}</span></span><span class="tag">{yearLong(LATEST)}の結果</span></div>
+    <HeadKind kind="将来像"><span class="sr-only">{v.id}</span><span class="tag">{yearLong(LATEST)}の結果</span></HeadKind>
     <h1>{v.name}</h1>
     <HeadStats items={[
       { label: '基本施策', n: kihon.length, href: '#kihon' },
@@ -101,15 +100,10 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
     </ul>
   </section>
 
-  <section aria-labelledby="judge-h">
-    <h2 id="judge-h" class="anchor">施策の判定</h2>
-    <p class="small secondary lead">施策の<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />をもとに沖縄県が毎年評価し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で公表しています。</p>
-    <JudgeMatrix counts={judgeCounts} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
-  </section>
+  <JudgeSection counts={judgeCounts} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
 
   <section aria-labelledby="trend-h">
     <h2 id="trend-h" class="anchor">4年間の推移</h2>
-    <p class="small secondary lead">この4年、主な取組の「順調」は{band(trend.map((p) => p.a))}、計画値に届いた成果指標は{band(trend.map((p) => p.b))}で推移しています。</p>
     <TrendFigure points={trend} />
   </section>
 
@@ -128,22 +122,10 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 </Base>
 
 <style>
-  /* 頭。PC は番号の印を左に大きく置き、右に「将来像」・名前・件数の札。スマホは印を小さくして「将来像」の行に並べ、名前を全幅にする。
-     3つの段の問いと答え（Ladder）はトップのヒーローと同じく頭の中に置き、余白もトップのヒーローと同じにする（段の位置がそろうように） */
-  .v-hero {
-    display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-areas: "badge kicker" "badge name" "badge stats" "ladder ladder";
-    gap: 0 18px; align-items: center; margin-top: 12px; padding: 24px 24px 28px; background: var(--szw);
-  }
-  .v-hero :global(.hero-badge) { grid-area: badge; width: 76px; height: 76px; font-size: 2.2rem; border-width: 3px; box-shadow: 3px 3px 0 var(--shadow); }
-  .v-kicker { grid-area: kicker; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); }
-  .v-hero h1 { grid-area: name; margin: 4px 0 10px; }
-  .v-hero :global(.head-stats) { grid-area: stats; }
-  .v-hero :global(.ladder) { grid-area: ladder; }
-  @media (max-width: 520px) {
-    .v-hero { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "badge kicker" "name name" "stats stats" "ladder ladder"; column-gap: 10px; }
-    .v-hero :global(.hero-badge) { width: 36px; height: 36px; font-size: 1.15rem; border-width: 2.5px; box-shadow: 2px 2px 0 var(--shadow); }
-    .v-hero h1 { margin-top: 8px; }
-  }
+  /* 頭（styles/global.css の .badge-head）の地は将来像の淡い色、印は将来像の番号 */
+  .v-hero { background: var(--szw); }
+  .v-hero :global(.bh-badge) { font-size: 2.2rem; }
+  @media (max-width: 520px) { .v-hero :global(.bh-badge) { font-size: 1.15rem; } }
 
 
   /* 基本施策は1つずつカード（components/KihonRow.astro）にし、PC は2列に並べる（1列だと右が空くため）。同じ行のカードは高さをそろえる */

@@ -16,6 +16,7 @@ import ShuyouSays from '../../components/ShuyouSays.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import ShuyouStatusTag from '../../components/ShuyouStatusTag.astro';
 import Toc from '../../components/Toc.astro';
+import Says from '../../components/Says.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
 import { kihonDescription } from '../../lib/describe.ts';
@@ -64,7 +65,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 ---
 <Base title={`${k.name}（沖縄県の基本施策）`} description={kihonDescription(k.name, kihonHead(k.id))} ogType="article">
   <Hierarchy items={planParents({ kihon: k.id })} page={k.name} />
-  <header class="sticker lift k-head">
+  <header class="sticker lift page-head">
     <HeadKind kind="基本施策" code={k.code} />
     <h1>{k.name}</h1>
     {/* 頭の箱: 最新の年度の主要指標の達成状況（施策のページの頭の判定の箱と同じ地の色の箱）。将来像のページの基本施策の行と同じく、
@@ -78,13 +79,9 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
       </div>
     )}
     {k.mezasu && (
-      <div class="bubble-row says">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <div class="small secondary label">目指す姿（県の報告書から）</div>
-          <p class="first">{oneLine(k.mezasu)}</p>
-        </div>
-      </div>
+      <Says label="目指す姿（県の報告書から）">
+        <p>{oneLine(k.mezasu)}</p>
+      </Says>
     )}
   </header>
 
@@ -145,26 +142,20 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <section aria-labelledby="hyoka">
       <h2 id="hyoka" class="anchor">県によるふりかえり（R4〜R6の3年間）</h2>
       <p class="small secondary lead">県の<Term word="評価検証報告書" />（{HYOKA.published}）が、この基本施策の成果と課題をまとめたものです。</p>
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          {h.intro && <p class="intro">{h.intro}</p>}
-          <h3>主な施策の成果</h3>
-          <ul class="pts">{h.results.map((r) => <li>{r}</li>)}</ul>
-        </div>
-      </div>
-      <div class="bubble-row voice">
-        <span class="avatar" aria-hidden="true">県</span>
-        <div class="bubble">
-          <h3>主な課題</h3>
-          {h.issues.map((x) => (
-            <>
-              {x.head && <h4>{x.head}</h4>}
-              <ul class="pts">{x.items.map((t) => <li>{t}</li>)}</ul>
-            </>
-          ))}
-        </div>
-      </div>
+      <Says class="voice">
+        {h.intro && <p class="intro">{h.intro}</p>}
+        <h3>主な施策の成果</h3>
+        <ul class="pts">{h.results.map((r) => <li>{r}</li>)}</ul>
+      </Says>
+      <Says class="voice">
+        <h3>主な課題</h3>
+        {h.issues.map((x) => (
+          <>
+            {x.head && <h4>{x.head}</h4>}
+            <ul class="pts">{x.items.map((t) => <li>{t}</li>)}</ul>
+          </>
+        ))}
+      </Says>
     </section>
   )}
 
@@ -181,18 +172,14 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
 
 <style>
   /* 頭は施策ページと同じ太いステッカー。目指す姿は県の吹き出しに入れる */
-  .k-head { display: grid; gap: 4px; margin-top: 12px; }
-  .k-head h1 { margin: 2px 0 10px; }
   /* 頭の主要指標の箱。指標ごとに1行で、名前の後ろに達成状況の札（入らなければ札を次の行へ送る） */
-  .sh-now { display: grid; gap: 6px; margin-bottom: 12px; padding: 12px 18px; }
+  .sh-now { display: grid; gap: 6px; padding: 12px 18px; }
   .sh-l { font-size: 0.875rem; color: var(--ink-2); }
   .sh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .sh-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
   .sh-list .name-link { font-size: 1.0625rem; }
   @media (max-width: 640px) { .sh-now { padding: 10px 14px; } }
-  .label { font-weight: 700; margin-bottom: 4px; }
   .past { margin-top: 18px; }
-  .says .first { margin: 4px 0 0; }
   .report-no { white-space: nowrap; }
   .voice { margin-top: 14px; }
   .voice h3 { margin: 0.6em 0 0.3em; font-size: 1.02rem; }

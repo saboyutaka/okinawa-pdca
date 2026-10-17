@@ -7,14 +7,12 @@ import HeadKind from './HeadKind.astro';
 interface Props { kind: string; name: string; to: string; place: string }
 const { kind, name, to, place } = Astro.props;
 ---
-<header class="sticker lift jump">
+<header class="sticker lift page-head">
   <HeadKind kind={kind} />
   <h1>{name}</h1>
   <p><a href={to}>{place}で、この{kind}を見る</a></p>
 </header>
 
 <style>
-  .jump { display: grid; gap: 12px; margin-top: 12px; }
-  .jump > :global(.head-kind) { margin-bottom: -6px; }
-  h1, p { margin: 0; }
+  p { margin: 0; }
 </style>

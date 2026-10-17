@@ -1,5 +1,6 @@
 ---
 // 成果指標の、ある年度の県による説明（「県」の印の吹き出し）。施策ページのカード（最新の年度）と前の年度の説明（SeikaPastSays）で使う
+import Says from './Says.astro';
 import { yearLabel } from '../lib/data.ts';
 import { joinLines } from '../lib/text.ts';
 import type { SeikaRow } from '../lib/types.ts';
@@ -7,15 +8,11 @@ import type { SeikaRow } from '../lib/types.ts';
 interface Props { r: SeikaRow }
 const { r } = Astro.props;
 ---
-<div class="bubble-row says">
-  <span class="avatar" aria-hidden="true">県</span>
-  <div class="bubble">
-    <div class="small secondary label">県による説明（{yearLabel(r.year)}・{r.dept}）</div>
-    <p class="prose small">{joinLines(r.explanation)}</p>
-  </div>
-</div>
+<Says>
+  <Fragment slot="label">県による説明（{yearLabel(r.year)}・{r.dept}）</Fragment>
+  <p class="prose small">{joinLines(r.explanation)}</p>
+</Says>
 
 <style>
   .says { margin-top: 14px; }
-  .says .prose { margin: 4px 0 0; }
 </style>
