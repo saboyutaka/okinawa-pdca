@@ -24,7 +24,7 @@ import { JUDGE_UI } from '../../lib/icons.ts';
 import { themesOf } from '../../lib/themes.ts';
 import { joinLines, firstSentence } from '../../lib/text.ts';
 import { fmt } from '../../lib/format.ts';
-import { shisakuDescription } from '../../lib/describe.ts';
+import { shisakuMeta } from '../../lib/describe.ts';
 import { shisakuHead, total } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
@@ -96,7 +96,7 @@ const ikPast = ikkatsu.filter((g) => g.latest.year !== IKKATSU_LATEST);
 const ikCounts = countGrades(ikLatest.map((g) => g.latest), (j) => j.grade_label);
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
-<Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
+<Base {...shisakuMeta(s.name, head)} ogType="article">
   <Hierarchy items={planParents({ shisaku: s.id })} page={s.name} />
   <header class="sticker lift page-head">
     <HeadKind kind="施策" code={s.code} themes={themes.map((t) => t.id)} />

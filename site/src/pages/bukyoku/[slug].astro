@@ -33,7 +33,7 @@ import {
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
-import { deptDescription } from '../../lib/describe.ts';
+import { deptMeta } from '../../lib/describe.ts';
 import { allHead, deptHead, total } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -135,7 +135,7 @@ const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
-<Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, head)} ogType="article">
+<Base {...deptMeta(dept.name, head)} ogType="article">
   <header class="sticker lift page-head">
     <HeadKind kind="部局" term={false} />
     <h1>{dept.name}</h1>

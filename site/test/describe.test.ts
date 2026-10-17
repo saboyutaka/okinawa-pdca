@@ -4,10 +4,12 @@ import assert from 'node:assert/strict';
 import {
   breakdown, toriText, seikaText, judgesText,
   shisakuDescription, torikumiDescription, seikaDescription, kihonDescription, futureDescription, deptDescription, themeDescription,
-  torikumiTitle, seikaTitle, torikumiMeta, seikaMeta, shuyouMeta, katsudouMeta, statusRuns, shorten,
+  torikumiTitle, seikaTitle, torikumiMeta, seikaMeta, shuyouMeta, katsudouMeta, shisakuMeta, kihonMeta, futureMeta, deptMeta, themeMeta, statusRuns, shorten,
 } from '../src/lib/describe.ts';
-import { LATEST, STATUSES, statusOf, countBy, countJudges, getShisakuList, getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
+import { LATEST, STATUSES, DEPTS, statusOf, countBy, countJudges, getKihonList, getShisakuList, getShouraizou, getSeikaGroups, getShuyouGroups, getTorikumiGroups } from '../src/lib/data.ts';
 import { getActivityShares } from '../src/lib/katsudou.ts';
+import { deptHead, futureHead, kihonHead, shisakuHead, themeHead } from '../src/lib/heads.ts';
+import { getThemes } from '../src/lib/themes.ts';
 import type { SeikaRow } from '../src/lib/types.ts';
 
 const STATUS_KEYS = STATUSES.map((s) => s.key);
@@ -118,6 +120,19 @@ test('成果指標のシェア用のページの題名と説明文は、ほか�
   const metas = getSeikaGroups().map(seikaMeta);
   assert.deepEqual(dupes(metas, 'title'), []);
   assert.deepEqual(dupes(metas, 'description'), []);
+});
+
+test('施策・基本施策・将来像・部局・くらしのテーマのページの題名と説明文は、ほかのページと同じにならない', () => {
+  const metas = [
+    ...getShisakuList().map((s) => shisakuMeta(s.name, shisakuHead(s))),
+    ...getKihonList().map((k) => kihonMeta(k.name, kihonHead(k.id))),
+    ...getShouraizou().map((v) => futureMeta(v.id, v.name, futureHead(v.id))),
+    ...DEPTS.map((d) => deptMeta(d.name, deptHead(d.name))),
+    ...getThemes().map((t) => themeMeta(t.label, themeHead(t))),
+  ];
+  assert.deepEqual(dupes(metas, 'title'), []);
+  assert.deepEqual(dupes(metas, 'description'), []);
+  for (const h of metas) assert.ok(!/undefined|NaN|\n/.test(h.title + h.description), h.description);
 });
 
 test('主要指標・活動指標のシェア用のページ: 題名に指標の名前（活動指標は取組の名前も）、説明文に最新の報告の値と名前が入る', () => {

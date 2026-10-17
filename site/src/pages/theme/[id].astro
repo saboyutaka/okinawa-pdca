@@ -22,7 +22,7 @@ import JudgeSection from '../../components/JudgeSection.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import { getShouraizou, getKihonList, trendPoints } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
-import { themeDescription } from '../../lib/describe.ts';
+import { themeMeta } from '../../lib/describe.ts';
 import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
@@ -53,7 +53,7 @@ const visions = getShouraizou()
 // 決め方の言葉（「このサイト独自の分類」を押すと、分け方の説明の下に出す）
 const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`).join('')}です。`;
 ---
-<Base title={`${t.label}（くらしのテーマ）`} description={themeDescription(t.label, head)} ogType="article">
+<Base {...themeMeta(t.label, head)} ogType="article">
   <header class="sticker lift badge-head t-hero">
     <span class="bh-badge theme-ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <HeadKind kind="くらしのテーマ" term={false} />
