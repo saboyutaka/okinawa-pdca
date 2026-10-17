@@ -33,12 +33,14 @@ export interface MapKindInfo {
   shapes: boolean; // 凡例と中身の札に状態の形を付けるか（主要指標は付けない。docs/design.md の2章）
   cats: MapCat[];
 }
-export const MAP_KINDS: MapKindInfo[] = [
-  { kind: 'shuyou', term: '主要指標', outcome: '最終アウトカム', unit: '指標', measure: '主要指標の達成率', param: 'shuyou', shapes: false, cats: SHUYOU_BINS.map((b) => ({ key: b.key, label: b.label, tone: b.tone })) },
-  { kind: 'seika', term: '成果指標', outcome: '初期アウトカム', unit: '指標', measure: '達成率', param: 'rate', shapes: true, cats: RATE_BINS.map((b) => ({ key: b.key, label: b.key, tone: b.tone })) },
-  { kind: 'katsudou', term: '活動指標', outcome: 'アウトプット', unit: '件', measure: '進捗状況', param: 'status', shapes: true, cats: STATUSES.map((s) => ({ key: s.key, label: s.key, tone: s.tone })) },
-];
-const infoOf = (kind: MapKind) => MAP_KINDS.find((k) => k.kind === kind)!;
+const KINDS: { [K in MapKind]: MapKindInfo & { kind: K } } = {
+  shuyou: { kind: 'shuyou', term: '主要指標', outcome: '最終アウトカム', unit: '指標', measure: '主要指標の達成率', param: 'shuyou', shapes: false, cats: SHUYOU_BINS.map((b) => ({ key: b.key, label: b.label, tone: b.tone })) },
+  seika: { kind: 'seika', term: '成果指標', outcome: '初期アウトカム', unit: '指標', measure: '達成率', param: 'rate', shapes: true, cats: RATE_BINS.map((b) => ({ key: b.key, label: b.key, tone: b.tone })) },
+  katsudou: { kind: 'katsudou', term: '活動指標', outcome: 'アウトプット', unit: '件', measure: '進捗状況', param: 'status', shapes: true, cats: STATUSES.map((s) => ({ key: s.key, label: s.key, tone: s.tone })) },
+};
+// 指標のマップの列の順
+export const MAP_KINDS: MapKindInfo[] = Object.values(KINDS);
+export const infoOf = (kind: MapKind): MapKindInfo => KINDS[kind];
 
 // マス1つ。c は年度（YEARS の順）ごとの区分の番号（cats の何番目か。報告に無い年度は '-'）
 export interface MapCell { s: number; c: string; dept: string; themes: string[] }

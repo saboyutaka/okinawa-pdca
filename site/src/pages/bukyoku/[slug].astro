@@ -6,7 +6,7 @@ import Base from '../../layouts/Base.astro';
 import HeadKind from '../../components/HeadKind.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import DonutCard from '../../components/DonutCard.astro';
-import Moves, { type MoveGroup } from '../../components/Moves.astro';
+import Moves from '../../components/Moves.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -28,7 +28,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, currentDeptOf, budgetKey, countStatuses, countRates,
+  FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, currentDeptOf, budgetKey, countStatuses, countRates, type MoveGroup,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -105,11 +105,12 @@ const seikaRows = YEARS.map((y) => ({
 
 // 前の年度からの変化。かかわる施策の判定（lib/data.ts の JUDGE_TRENDS）と、主な取組の進捗状況（PATTERNS）を、良くなったものと悪くなったものの対で並べる
 const relatedShisaku = related.map((r) => r.s);
+const judgeMoves: MoveGroup = { label: 'かかわる施策の判定', unit: '施策', items: [
+  { tone: 'good', title: '判定が上がった', n: relatedShisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?dept=${q}&trend=up` },
+  { tone: 'serious', title: '判定が下がった', n: relatedShisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?dept=${q}&trend=down` },
+] };
 const moves: MoveGroup[] = [
-  ...(related.length ? [{ label: 'かかわる施策の判定', unit: '施策', items: [
-    { tone: 'good' as const, title: '判定が上がった', n: relatedShisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?dept=${q}&trend=up` },
-    { tone: 'serious' as const, title: '判定が下がった', n: relatedShisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?dept=${q}&trend=down` },
-  ] }] : []),
+  ...(related.length ? [judgeMoves] : []),
   { label: '主な取組の進捗状況', unit: '件', items: [
     { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
     { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },

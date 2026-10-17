@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
-import { yearLabel, yearLong, yearsLong } from './years.ts';
+import { yearLabel, yearsLong } from './years.ts';
 import { SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
@@ -765,6 +765,8 @@ export const PATTERNS = {
   ended: (st) => !st.at(-1), // 最新の年度の報告に無い（終了・名称変更）
 } satisfies Record<string, (st: Statuses) => boolean>;
 export type Pattern = keyof typeof PATTERNS;
+// 部局の「前の年度からの変化」の札の1組（components/Moves.astro）。施策の判定の移り変わり（JUDGE_TRENDS）か取組の4年間の様子（PATTERNS）の件数と、その一覧へのリンク
+export interface MoveGroup { label: string; unit: string; items: { tone: Tone; title: string; n: number; href: string }[] }
 // 取組の年度の順の進捗状況（報告の無い年度は null。PATTERNS に渡す）
 export const statusesOf = (g: YearGroup<TorikumiRow>): Statuses => YEARS.map((y) => (g.years[y] ? statusOf(g.years[y]) : null));
 // 年度ごとの進捗状況のスタンプ（components/Stamps.astro に渡す形。観光ロードマップの取組は years に報告のある年度を渡す）

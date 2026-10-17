@@ -7,7 +7,7 @@ import Chip from '../components/Chip.astro';
 import Sz from '../components/Sz.astro';
 import ExtLink from '../components/ExtLink.astro';
 import { YEARS, LATEST, yearLabel, yearLong, DEPTS } from '../lib/data.ts';
-import { MAP_KINDS, MAP_SEARCH_FALLBACK, mapCells, mapCheck, mapCounts, mapDataFallback, mapDataPath, mapRows, mapSearchPath } from '../lib/map-data.ts';
+import { MAP_KINDS, MAP_SEARCH_FALLBACK, infoOf, mapCells, mapCheck, mapCounts, mapDataFallback, mapDataPath, mapRows, mapSearchPath, type MapKind, type MapKindInfo } from '../lib/map-data.ts';
 import { mapLabel } from '../lib/map-label.ts';
 import { LINKS } from '../lib/links.ts';
 import { TERMS } from '../lib/terms.ts';
@@ -25,12 +25,11 @@ const used = new Set(MAP_KINDS.flatMap((k) => mapCells(k.kind).map((c) => c.dept
 const depts = DEPTS.filter((d) => used.has(d.name));
 const at = YEARS.indexOf(LATEST);
 const yl = yearLabel(LATEST);
-const counts = (kind: (typeof MAP_KINDS)[number]['kind']) =>
-  MAP_KINDS.find((k) => k.kind === kind)!.cats.map((c, i) => [c.label, mapCells(kind).filter((x) => x.c[at] === String(i)).length] as [string, number]);
+const counts = (kind: MapKind) => infoOf(kind).cats.map((c, i): [string, number] => [c.label, mapCells(kind).filter((x) => x.c[at] === String(i)).length]);
 const n = Object.fromEntries(MAP_KINDS.map((k) => [k.kind, mapCounts(k.kind)[at]]));
 const rows = mapRows();
 // 列の見出しの指標の名前を押すと、説明の下に県の報告書での呼び名（最終アウトカムなど）の説明を出す
-const outcomeNote = (k: (typeof MAP_KINDS)[number]) => `「${k.outcome}」は、${TERMS[k.outcome]}`;
+const outcomeNote = (k: MapKindInfo) => `「${k.outcome}」は、${TERMS[k.outcome]}`;
 // 指標ごとの区分の絞り込みの見出しと、押したときの中身の親
 const KIND = {
   shuyou: { bin: '主要指標の達成率', parent: '基本施策' },
@@ -96,7 +95,7 @@ const KIND = {
           <div class="im-tiers">
             {r.tiers.map((t) => (
               <div class="im-tier" data-tier={t.kind}>
-                <p class="im-tl">{MAP_KINDS.find((k) => k.kind === t.kind)!.term}</p>
+                <p class="im-tl">{infoOf(t.kind).term}</p>
                 <div class="im-cells" set:html={t.html} />
               </div>
             ))}
