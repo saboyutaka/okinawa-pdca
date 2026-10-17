@@ -7,10 +7,10 @@ import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 ---
-<Base title="このサイトについて" description="このサイトのなりたち・作り手・使っている技術・表示・アクセシビリティ">
+<Base title="このサイトについて" description="このサイトのなりたち・シビックテック・使っている技術・デザイン・アクセシビリティ">
   <h1>このサイトについて</h1>
   <p class="lead">
-    沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が作っていて、県は関わっていません。
+    沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が<a href="#civictech">シビックテック</a>の取り組みとして作っていて、県は関わっていません。
   </p>
   <p>沖縄県PDCAの仕組みと用語は<a href="/pdca/">沖縄県PDCAについて</a>、このサイトが読んだ資料・数え方・注意点は<a href="/data/">データについて</a>にまとめています。</p>
 
@@ -26,6 +26,13 @@ import SecHead from '../components/SecHead.astro';
   <p>
     サイトの名前「{SITE.name}」には、計画が描いた沖縄のみらいが、いまどこまで来たかを見る、という意味を込めています。
     縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。
+  </p>
+
+  <SecHead id="civictech">シビックテックとは</SecHead>
+  <p>市民（シビック）がテクノロジー（テック）を使って、地域や行政の課題に自分たちで取り組むことです。行政が公開している資料やデータを、だれもが使いやすい形にするのも、その一つです。</p>
+  <p>このサイトもその取り組みの一つです。作っている <a href="/code-for-okinawa/">{PROJECT.org}</a> は、沖縄で活動するシビックテックのコミュニティです。</p>
+  <p>
+    <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています（<a href="/code-for-okinawa/">{PROJECT.org} とは</a>）。
   </p>
 
   <SecHead id="gijutsu">使っている技術</SecHead>
@@ -58,9 +65,6 @@ import SecHead from '../components/SecHead.astro';
       </dd>
     </div>
   </dl>
-  <p>
-    <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています（<a href="/code-for-okinawa/">{PROJECT.org} とは</a>）。
-  </p>
 
   <SecHead id="design">サイトデザイン</SecHead>
   <ul>
