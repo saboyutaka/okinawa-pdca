@@ -76,7 +76,6 @@ const secHref = sectionHref(t.section);
           <p>{t.summary}</p>
         </div>
       )}
-      <p class="go"><a href={g.href}>取組のページで、予算の推移や県の検証と改善案を見る</a></p>
     </div>
   </details>
 </li>
@@ -94,7 +93,7 @@ const secHref = sectionHref(t.section);
   .tr-more > summary::-webkit-details-marker { display: none; }
   .chev { flex: none; width: 14px; height: 14px; fill: none; stroke: var(--link); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tr-more[open] .chev { transform: rotate(180deg); }
-  /* 開いた中: 頭に要点（ハイライト）を横に並べ（入らなければ折り返す）、細い線の下にやったことと、取組のページへのリンク */
+  /* 開いた中: 頭に要点（ハイライト）を横に並べ（入らなければ折り返す）、細い線の下にやったこと */
   .tr-body { display: grid; gap: 10px; margin: 8px 0 2px; padding: 12px 14px; border-radius: 12px; }
   .hl { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 36px; }
   .hl-i { display: grid; gap: 2px; min-width: 0; }
@@ -107,7 +106,6 @@ const secHref = sectionHref(t.section);
   .hl-years :global(.stamps) { width: 15rem; max-width: 100%; }
   .did { padding-top: 10px; border-top: 1.5px solid var(--grid); }
   .did p { margin: 2px 0 0; font-size: 0.875rem; line-height: 1.7; }
-  .go { margin: 0; font-size: 0.8125rem; }
   /* PC の幅では、詳細のボタンを行の右上（名前の行の高さ）に置き、名前と指標はその幅を空ける。開いた中は行の下に出す */
   @media (min-width: 641px) {
     .tr { grid-template-columns: var(--st, 5.6rem) minmax(0, 1fr) 4em; grid-template-areas: "st name ." ". ind ." ". more more"; }
