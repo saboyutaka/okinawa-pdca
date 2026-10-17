@@ -1,9 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import { LATEST, yearLabel, STATUSES, DEPTS, getTorikumiGroups, getShouraizou } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
-import { getThemes } from '../../lib/themes.ts';
 import { KANKO, KANKO_TORIKUMI_HREF } from '../../lib/plans.ts';
 import { SEARCH_DATA_FALLBACK, SEARCH_SUMMARY_FALLBACK, searchDataPath, searchSummaryPath } from '../../lib/search-data.ts';
 
@@ -23,12 +23,7 @@ const dataPath = searchDataPath();
       <input type="search" name="q" placeholder="例: 離島、子ども、観光、所管課の名前" />
     </label>
     <FilterMore id="tori-more">
-    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-      <select name="theme">
-        <option value="">すべて</option>
-        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-      </select>
-    </label>
+    <ThemeFilter />
     <label data-label="将来像">将来像
       <select name="s">
         <option value="">すべて</option>

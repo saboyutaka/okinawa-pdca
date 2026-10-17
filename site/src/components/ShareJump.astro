@@ -2,9 +2,10 @@
 // シェア用のページ（lib/routes.ts の SHARE_ROUTES）の中身。開くとすぐに指標を見せる場所へ移る（layouts/Base.astro の jump）ので、ふつうは見えない。
 // スクリプトが動かないときのために、何の指標かと、見せる場所へのリンクだけを置く
 import HeadKind from './HeadKind.astro';
+import type { TermWord } from '../lib/terms.ts';
 
 // place は見せる場所のページ（「施策「〇〇」のページ」）
-interface Props { kind: string; name: string; to: string; place: string }
+interface Props { kind: TermWord; name: string; to: string; place: string }
 const { kind, name, to, place } = Astro.props;
 ---
 <header class="sticker lift page-head">

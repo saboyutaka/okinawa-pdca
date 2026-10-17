@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, refText, eraRef,
-  statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
+  statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, shuyouPartCount, childRange, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
   shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, shuyouSteps, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
@@ -118,6 +118,21 @@ test('judgesOf: 見通しの欄を名前ごとに分ける', () => {
   assert.equal(judgesOf('男性:目標達成 補足'), null);
   assert.equal(judgesOf('知らない言い方'), null);
   assert.equal(judgesOf(''), null);
+});
+
+test('shuyouPartCount: 主要指標の1行に並ぶ指標の数を、見通しの欄の名前の数で数える', () => {
+  assert.equal(shuyouPartCount({ judgement: '目標達成' }), 1);
+  assert.equal(shuyouPartCount({ judgement: '男性:目標達成\n女性:達成は困難' }), 2);
+  // 決まった言い方でない・空の欄も1指標
+  assert.equal(shuyouPartCount({ judgement: '知らない言い方' }), 1);
+  assert.equal(shuyouPartCount({ judgement: '' }), 1);
+});
+
+test('childRange: 親1つあたりの子の数の最小〜最大', () => {
+  const rows = [{ p: 'a', n: 2 }, { p: 'a', n: 1 }, { p: 'b', n: 1 }, { p: 'c', n: 4 }];
+  assert.equal(childRange(rows, (r) => r.p), '1〜2');
+  assert.equal(childRange(rows, (r) => r.p, (r) => r.n), '1〜4');
+  assert.equal(childRange([{ p: 1 }, { p: 1 }], (r) => r.p), '2〜2');
 });
 
 test('halfWidth: 全角の英数字と「，」「．」「％」を半角にする', () => {

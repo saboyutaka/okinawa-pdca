@@ -5,6 +5,7 @@
 import Base from '../../layouts/Base.astro';
 import Hierarchy from '../../components/Hierarchy.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import IkkatsuRow from '../../components/IkkatsuRow.astro';
 import Chip from '../../components/Chip.astro';
 import Icon from '../../components/Icon.astro';
@@ -14,7 +15,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import Says from '../../components/Says.astro';
 import { yearLabel, yearLong, yearsLong, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuDept, isShort, ikkatsuRows, planSourceLink, countGrades } from '../../lib/plans.ts';
-import { getThemes, themeIdsOf } from '../../lib/themes.ts';
+import { themeIdsOf } from '../../lib/themes.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt } from '../../lib/format.ts';
 import type { IkkatsuJigyoRow } from '../../lib/types.ts';
@@ -114,12 +115,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
         {depts.map((d) => <option value={d.name}>{d.name}</option>)}
       </select>
     </label>
-    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-      <select name="theme">
-        <option value="">すべて</option>
-        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-      </select>
-    </label>
+    <ThemeFilter />
     <fieldset class="fgroup" data-label="将来像">
       <legend class="fgroup-label">将来像</legend>
       <div class="fchips">

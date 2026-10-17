@@ -18,7 +18,8 @@ interface Props {
   /** 区分ごとの数（pop を渡すときは pop.items から数える） */
   counts?: Record<string, number>;
   unit?: string;
-  context?: string;
+  /** 読み上げとツールチップの頭に付ける、何の棒か（「〇〇 主な取組」） */
+  label?: string;
   /** 棒の中に割合を書く区分（入りきるときだけ） */
   labelKey?: string;
   size?: 'normal' | 'mini';
@@ -29,14 +30,15 @@ interface Props {
    *  shapes は区分の札に状態の形を付けるか（主要指標は付けない。docs/design.md の2章）、keys はキーボードで1件ずつ移れるようにするか */
   pop?: { term: string; year: string; items: CellItem[]; shapes?: boolean; keys?: boolean };
 }
-const { categories, unit = '件', context = '', labelKey = categories[0]?.key, size = 'normal', pop } = Astro.props;
+const { categories, unit = '件', label, labelKey = categories[0]?.key, size = 'normal', pop } = Astro.props;
+const head = label ? `${label} ` : '';
 const cells = Boolean(pop || Astro.props.cells);
 const squares = Boolean(pop || Astro.props.squares);
 const counts = pop ? countBy(pop.items, (x) => x.key, categories.map((c) => c.key)) : Astro.props.counts ?? {};
 const total = categories.reduce((s, c) => s + (counts[c.key] || 0), 0);
 const segs = categories.filter((c) => counts[c.key] > 0).map((c) => ({ ...c, n: counts[c.key] }));
-const aria = `${context}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}${pop?.keys ? '。← → で1件ずつ中身を出し、Enter でそのページを開きます' : ''}`;
-const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${unit}（${pct(s.n, total)}）`, 'data-tip-label': `${context}${s.key}` });
+const aria = `${head}${segs.map((s) => `${s.key} ${fmt(s.n)}${unit}（${pct(s.n, total)}）`).join('、')}${pop?.keys ? '。← → で1件ずつ中身を出し、Enter でそのページを開きます' : ''}`;
+const tip = (s: (typeof segs)[number]) => ({ 'data-tip-value': `${fmt(s.n)}${unit}（${pct(s.n, total)}）`, 'data-tip-label': `${head}${s.key}` });
 // 押すと出す四角（区分ごとにまとめる）と、その中身（lib/cell-pop.ts）
 const picked = pop ? categories.flatMap((c, k) => pop.items.filter((x) => x.key === c.key).map((x) => ({ c, k, x }))) : [];
 ---

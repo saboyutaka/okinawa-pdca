@@ -8,8 +8,8 @@ import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
 import { LATEST, PLAN_PERIODS, yearLabel, refText, toneOfJudgement, judgesOf, joinCell, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
 
-interface Props { row: ShuyouGroup; part: ShuyouPart }
-const { row, part: p } = Astro.props;
+interface Props { g: ShuyouGroup; part: ShuyouPart }
+const { g, part: p } = Astro.props;
 const aligned = p.drawable;
 // 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
 const periods = PLAN_PERIODS.flatMap((ys) => {
@@ -20,7 +20,7 @@ const cols = periods.flatMap((q) => q.ys.map((y, i) => ({ y, p: q, first: i === 
 const cell = (k: number, ...more: (string | false)[]) => [...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
 const span = (q: (typeof periods)[number], ...more: (string | false)[]) => [...more, q !== periods[0] && 'sep', !q.cur && 'off'];
 const judge = (raw: string | undefined) => (raw ? judgesOf(raw) ?? joinCell(raw) : null);
-const src = (y: number) => row.years[y] && sourceLink(row.years[y].source, row.years[y].page);
+const src = (y: number) => g.years[y] && sourceLink(g.years[y].source, g.years[y].page);
 ---
 <details open={!aligned}>
   <summary>表で見る</summary>

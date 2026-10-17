@@ -6,12 +6,12 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
+  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
-import { themeHead, total } from '../src/lib/heads.ts';
+import { allHead, futureHead, themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
 import {
   planSourceLink, kankoSeikaList, kankoShisakuList, RM_JUDGEMENTS, IKKATSU_LATEST, ikkatsuGroups, ikkatsuOf, ikkatsuHref, ikkatsuAnchor, ikkatsuDept,
@@ -126,6 +126,16 @@ test('どのくらしのテーマも4年度とも主な取組と成果指標が�
     ];
   });
   none(bad, (x) => x);
+});
+
+test('県全体の頭の主な取組の内訳は、取組をさがすの最新の年度の件数と同じで、将来像ごとの頭の合計とも同じ', () => {
+  // 頭は最新の年度の行（lib/heads.ts）、取組をさがすは年度をまたいでまとめた取組で数えるので、トップの3つの段の数とリンク先の件数がずれないか
+  const all = allHead();
+  const latest = getTorikumiGroups().flatMap((g) => g.statuses.at(-1) ?? []);
+  assert.deepEqual(all.tori, countStatuses(latest, (s) => s));
+  const futures = getShouraizou().map((v) => futureHead(v.id));
+  for (const k of Object.keys(all.tori)) assert.equal(futures.reduce((n, h) => n + (h.tori[k] || 0), 0), all.tori[k], k);
+  assert.equal(futures.reduce((n, h) => n + h.seika, 0), all.seika);
 });
 
 test('どのくらしのテーマにもアイコンがある', () => {

@@ -3,6 +3,10 @@
 // Esc か「×」で閉じ、押したボタンにフォーカスを戻す
 import { OWN_TERMS, TERMS } from '../lib/terms.ts';
 
+// data-term の文字で引く（どちらにも無い言葉は undefined）
+const texts: Partial<Record<string, string>> = TERMS;
+const owns: Partial<Record<string, { text: string; href: string }>> = OWN_TERMS;
+
 let pop: HTMLDivElement | undefined;
 let from: HTMLElement | null = null;
 function build() {
@@ -45,8 +49,8 @@ function open(btn: HTMLElement) {
   const tpl = btn.dataset.termBrief ? document.getElementById(btn.dataset.termBrief) : null;
   brief.replaceChildren(...(tpl instanceof HTMLTemplateElement ? [tpl.content.cloneNode(true)] : []));
   brief.hidden = !brief.childElementCount;
-  const own = OWN_TERMS[word];
-  body.textContent = own?.text ?? TERMS[word] ?? '';
+  const own = owns[word];
+  body.textContent = own?.text ?? texts[word] ?? '';
   const link = pop.querySelector<HTMLAnchorElement>('.termpop-link')!;
   link.href = own?.href ?? '/pdca/#yougo';
   link.textContent = own ? 'くわしく' : '用語の一覧';

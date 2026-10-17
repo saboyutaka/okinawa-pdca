@@ -8,17 +8,17 @@
 // 行が多いので要素と属性を減らし、色と太さは styles/global.css の .spark で付ける（scoped な style を置くと、要素ごとに属性が付いて重くなる）
 import { YEARS, PLAN_PERIODS, textGoalChartRow, type ChartRow, type ChartYear, type SeikaGroup } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup }
+interface Props { g: SeikaGroup }
 type Pt = [x: number, y: number];
-const { row } = Astro.props;
+const { g } = Astro.props;
 const W = 120;
 const H = 40;
 const PAD = 5; // 上下の余白（点がはみ出ないように）
 const SLOTS = PLAN_PERIODS.flat();
 const sw = W / SLOTS.length;
 const num = (v: number | null | undefined): v is number => v != null && Number.isFinite(v);
-const textGoal = textGoalChartRow(row);
-const chart: ChartRow = textGoal ?? row;
+const textGoal = textGoalChartRow(g);
+const chart: ChartRow = textGoal ?? g;
 const years = YEARS.map((y) => chart.years[y]).filter(Boolean);
 const last = years[years.length - 1];
 const act = years.filter((r): r is ChartYear & { actual: number } => num(r.actual));

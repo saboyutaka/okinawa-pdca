@@ -6,7 +6,7 @@ import Base from '../../layouts/Base.astro';
 import HeadKind from '../../components/HeadKind.astro';
 import HeadStats from '../../components/HeadStats.astro';
 import DonutCard from '../../components/DonutCard.astro';
-import Moves, { type MoveGroup } from '../../components/Moves.astro';
+import Moves from '../../components/Moves.astro';
 import JudgeMatrix from '../../components/JudgeMatrix.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
 import StatusChart from '../../components/StatusChart.astro';
@@ -18,22 +18,23 @@ import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import SecHead from '../../components/SecHead.astro';
-import { getThemes, themeIdsOf } from '../../lib/themes.ts';
+import { themeIdsOf } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
-  getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountTotal, deptAmountEntries, budgetKey, countStatuses, countRates,
+  FUNDS, AMOUNT_KINDS, amountTotal, deptAmountEntries, budgetKey, countStatuses, countRates, type MoveGroup,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
-import { deptDescription } from '../../lib/describe.ts';
-import { deptHead, total } from '../../lib/heads.ts';
+import { deptMeta } from '../../lib/describe.ts';
+import { allHead, deptHead, total } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['bukyoku/[slug]'];
@@ -46,10 +47,10 @@ const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
 const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
 const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
-const allTori = getTorikumi(LATEST);
-const allSeika = getSeika(LATEST);
-const allToriRate = pct(allTori.filter((t) => t.status === '順調').length, allTori.length);
-const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
+// 県全体（lib/heads.ts）
+const all = allHead();
+const allToriRate = pct(all.tori['順調'], total(all.tori));
+const allSeikaRate = pct(all.reached, all.seika);
 
 // この部局がかかわる施策: 関係部等に名前がある施策と、関係部等には無いがこの部局の取組がある施策（lib/data.ts の shisakuDepts。施策をさがすの部局の絞り込みと同じ）
 const related = getShisakuList().flatMap((s) => {
@@ -104,11 +105,12 @@ const seikaRows = YEARS.map((y) => ({
 
 // 前の年度からの変化。かかわる施策の判定（lib/data.ts の JUDGE_TRENDS）と、主な取組の進捗状況（PATTERNS）を、良くなったものと悪くなったものの対で並べる
 const relatedShisaku = related.map((r) => r.s);
+const judgeMoves: MoveGroup = { label: 'かかわる施策の判定', unit: '施策', items: [
+  { tone: 'good', title: '判定が上がった', n: relatedShisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?dept=${q}&trend=up` },
+  { tone: 'serious', title: '判定が下がった', n: relatedShisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?dept=${q}&trend=down` },
+] };
 const moves: MoveGroup[] = [
-  ...(related.length ? [{ label: 'かかわる施策の判定', unit: '施策', items: [
-    { tone: 'good' as const, title: '判定が上がった', n: relatedShisaku.filter((s) => s.trends.includes('up')).length, href: `/shisaku/?dept=${q}&trend=up` },
-    { tone: 'serious' as const, title: '判定が下がった', n: relatedShisaku.filter((s) => s.trends.includes('down')).length, href: `/shisaku/?dept=${q}&trend=down` },
-  ] }] : []),
+  ...(related.length ? [judgeMoves] : []),
   { label: '主な取組の進捗状況', unit: '件', items: [
     { tone: 'good', title: '遅れから「順調」に戻った', n: mine.filter((g) => g.patterns.includes('recover')).length, href: `/torikumi/?dept=${q}&pat=recover` },
     { tone: 'serious', title: '新しく遅れが出た', n: mine.filter((g) => g.patterns.includes('newdelay')).length, href: `/torikumi/?dept=${q}&pat=newdelay` },
@@ -134,7 +136,7 @@ const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
 const shisakuById = new Map(getShisakuList().map((s) => [s.id, s]));
 const sources = deptSourcePages(dept.name);
 ---
-<Base title={`沖縄県${dept.name}の取組`} description={deptDescription(dept.name, head)} ogType="article">
+<Base {...deptMeta(dept.name, head)} ogType="article">
   <header class="sticker lift page-head">
     <HeadKind kind="部局" term={false} />
     <h1>{dept.name}</h1>
@@ -255,12 +257,7 @@ const sources = deptSourcePages(dept.name);
         <input type="search" name="q" placeholder="例: 離島、子ども" />
       </label>
       <FilterMore id="dept-more">
-        <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-          <select name="theme">
-            <option value="">すべて</option>
-            {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-          </select>
-        </label>
+        <ThemeFilter />
       </FilterMore>
     </form>
     <div class="active-filters" id="active" hidden></div>
@@ -275,14 +272,14 @@ const sources = deptSourcePages(dept.name);
         <ul class="row-list">
           {seikaLatest.map((x) => {
             const s = shisakuById.get(x.shisaku_id);
-            const row = seikaGroupOf(x)!; // どの成果指標の行も、施策の成果指標のまとまりにある
+            const g = seikaGroupOf(x)!; // どの成果指標の行も、施策の成果指標のまとまりにある
             return (
               <SeikaRow
                 x={x}
-                row={row}
+                g={g}
                 shisaku={s}
-                href={seikaHref(x.shisaku_id, row.key)}
-                attrs={{ 'data-item': '', 'data-theme': themeIdsOf(x.shisaku_id).join('|'), 'data-text': `${row.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
+                href={seikaHref(x.shisaku_id, g.key)}
+                attrs={{ 'data-item': '', 'data-theme': themeIdsOf(x.shisaku_id).join('|'), 'data-text': `${g.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );
           })}

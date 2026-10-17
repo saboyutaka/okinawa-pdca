@@ -2,8 +2,9 @@
 // 行の右の割合と、その前の小さな言葉（「順調 88.2%」）。言葉は用語のボタンで、押すと短い説明と区分の一覧（ページの KeyBrief）を出す。
 // 数は棒の読み上げ（件数と割合）にあるので、読み上げでは読まない
 import Term from './Term.astro';
+import type { TermWord } from '../lib/terms.ts';
 
-interface Props { word: string; label: string; brief: string; value: string; class?: string }
+interface Props { word: TermWord; label: string; brief: string; value: string; class?: string }
 const { word, label, brief, value, class: cls } = Astro.props;
 ---
 <span class:list={['key-num', cls]}><span class="kn-l"><Term word={word} label={label} brief={brief} /></span><span aria-hidden="true">{value}</span></span>

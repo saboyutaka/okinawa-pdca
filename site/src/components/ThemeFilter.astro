@@ -1,0 +1,10 @@
+---
+// 一覧の絞り込みの「くらしのテーマ」の欄（このサイト独自の分類なので、そうと分かる印を付ける）。値はテーマの id で、一覧の行の data-theme と比べる
+import { getThemes } from '../lib/themes.ts';
+---
+<label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
+  <select name="theme">
+    <option value="">すべて</option>
+    {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
+  </select>
+</label>

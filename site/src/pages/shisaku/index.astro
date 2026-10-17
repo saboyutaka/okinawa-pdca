@@ -4,9 +4,10 @@ import ShisakuItem from '../../components/ShisakuItem.astro';
 import Icon from '../../components/Icon.astro';
 import Sz from '../../components/Sz.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import { LATEST, yearLabel, yearLong, JUDGES, DEPTS, getShisakuList, getShouraizou, getKihonList, shisakuDepts, type JudgeTrend } from '../../lib/data.ts';
-import { getThemes } from '../../lib/themes.ts';
+import { themeIdsOf } from '../../lib/themes.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
@@ -14,12 +15,10 @@ import ExtLink from '../../components/ExtLink.astro';
 const shisaku = getShisakuList();
 const shouraizou = getShouraizou();
 const kihon = getKihonList();
-const themes = getThemes();
 // 部局は、関係部等にある部局と、その施策に主な取組がある部局（部局のページの施策と同じ数え方。lib/data.ts の shisakuDepts）。並びは県の部局の一覧の順
 const deptsOf = new Map(shisaku.map((s) => [s.id, shisakuDepts(s).map((d) => d.dept)]));
 const depts = DEPTS.map((d) => d.name).filter((name) => [...deptsOf.values()].some((ds) => ds.includes(name)));
 const groups = kihon.map((k) => ({ kihon: k, items: shisaku.filter((s) => s.kihon_id === k.id) }));
-const themeIdsOf = (id: string) => themes.filter((t) => t.ids.includes(id)).map((t) => t.id).join('|');
 // 判定の移り変わり（数え方は lib/data.ts の JUDGE_TRENDS。施策の trends に入っている）。short は頭のリンクの短い言い方（左から続けて読む）。
 // 頭のリンクは前の年度からの上がった・下がったの2つだけを同じ重みで並べ、「3年続けて遅れ」は絞り込みだけに置く（遅れを前に出さない）
 const trends = ([
@@ -39,12 +38,7 @@ const headTrends = trends.filter((t) => t.key !== 'streak');
       <input type="search" name="q" placeholder="例: 離島、子ども、観光" />
     </label>
     <FilterMore id="shisaku-more">
-    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-      <select name="theme">
-        <option value="">すべて</option>
-        {themes.map((t) => <option value={t.id}>{t.label}</option>)}
-      </select>
-    </label>
+    <ThemeFilter />
     <label data-label="部局">担当部局
       <select name="dept">
         <option value="">すべて</option>
@@ -98,7 +92,7 @@ const headTrends = trends.filter((t) => t.key !== 'streak');
                 'data-judge': s.judges[LATEST] ?? '',
                 'data-trend': s.trends.join('|'),
                 'data-dept': deptsOf.get(s.id)!.join('|'),
-                'data-theme': themeIdsOf(s.id),
+                'data-theme': themeIdsOf(s.id).join('|'),
                 'data-text': `${s.code} ${s.name} ${s.tenkai_name} ${k.name} ${s.kankei} ${s.torikumi.filter((t) => t.year === LATEST).map((t) => t.name).join(' ')}`,
               }}
             />

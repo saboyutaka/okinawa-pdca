@@ -53,7 +53,7 @@ const visions = getShouraizou().map((v) => {
                   </ul>
                 )}
               </div>
-              <div class="k-bar"><span class="k-bl" aria-hidden="true">主な取組</span><StatusBar categories={STATUSES} counts={k.tori} context={`${k.name} 主な取組 `} size="mini" /></div>
+              <div class="k-bar"><span class="k-bl" aria-hidden="true">主な取組</span><StatusBar categories={STATUSES} counts={k.tori} label={`${k.name} 主な取組`} size="mini" /></div>
             </li>
           ))}
         </ul>
