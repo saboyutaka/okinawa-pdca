@@ -16,21 +16,17 @@ import SecHead from '../components/SecHead.astro';
 
   <SecHead id="naritachi">このサイトのなりたち</SecHead>
   <p>
-    私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>を行いました。
-    貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読み、パブリックコメントを提出しました。
+    私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>を行いました。貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読み、パブリックコメントを提出しました。
   </p>
   <p>
-    その計画が{yearLong(YEARS[0])}に始まってから{YEARS.length}年。県による評価も{yearLabel(YEARS[0])}〜{yearLabel(LATEST)}の{YEARS.length}年分が公表されています。
-    そこで決められた計画や施策のいまを振り返るために、このサイトを作りました。
+    その計画が{yearLong(YEARS[0])}に始まってから{YEARS.length}年。県による評価も{yearLabel(YEARS[0])}〜{yearLabel(LATEST)}の{YEARS.length}年分が公表されています。そこで決められた計画や施策のいまを振り返るために、このサイトを作りました。
   </p>
   <p>
-    サイトの名前「{SITE.name}」には、計画が描いた沖縄のみらいが、いまどこまで来たかを見る、という意味を込めています。
-    縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。
+    サイトの名前「{SITE.name}」には、計画が描いた沖縄のみらいが、いまどこまで来たかを見る、という意味を込めています。縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。
   </p>
 
   <SecHead id="civictech">シビックテックとは</SecHead>
-  <p>市民（シビック）がテクノロジー（テック）を使って、地域や行政の課題に自分たちで取り組むことです。行政が公開している資料やデータを、だれもが使いやすい形にするのも、その一つです。</p>
-  <p>このサイトもその取り組みの一つです。</p>
+  <p>市民（シビック）がテクノロジー（テック）を使って、地域や行政の課題に自分たちで取り組むことです。このサイトのように、行政が公開している資料やデータを、だれもが使いやすい形にするのも、その一つです。</p>
 
   <SecHead id="code-for-okinawa">{PROJECT.org}</SecHead>
   <p>
@@ -65,7 +61,7 @@ import SecHead from '../components/SecHead.astro';
     </div>
     <div>
       <dt>公開</dt>
-      <dd><ExtLink href="https://workers.cloudflare.com/">Cloudflare Workers</ExtLink> で公開していて、GitHub で更新が入ると自動でデプロイされます。前もって書き出したファイルをそのまま配っているので、サーバー料金をかけずに公開しています。</dd>
+      <dd><ExtLink href="https://workers.cloudflare.com/">Cloudflare Workers</ExtLink> で配信していて、GitHub で更新が入ると自動でデプロイされます。前もって書き出したファイルをそのまま配っているので、サーバー料金をかけずに公開しています。</dd>
     </div>
     <div>
       <dt>開発</dt>
@@ -74,7 +70,7 @@ import SecHead from '../components/SecHead.astro';
     <div>
       <dt>AI</dt>
       <dd>
-        読み取りのプログラムやサイトの多くは、AI（Anthropic の <ExtLink href="https://claude.com/product/claude-code">Claude Code</ExtLink>。開発当時のモデルは Claude Opus 5.5）と一緒に書いています。何をどう見せるかは人が AI と相談して決め、その決まりを文書にしてリポジトリに置いています。AI はその文書を読んで作業ごとにプログラムを書き、テスト・型の確認・公表値との突き合わせを通したうえで、画面を PC とスマホの幅で撮って見た目を確かめます。作業ごとに GitHub の Pull Request にして、人が確かめてから取り込みます。
+        読み取りのプログラムやサイトの多くは、AI（Anthropic の <ExtLink href="https://claude.com/product/claude-code">Claude Code</ExtLink>。開発当時のモデルは Claude Opus 5.5）と一緒に書いています。何をどう見せるかは人が AI と相談して決め、その決まりを文書にしてリポジトリに置いています。AI はその文書を読んで作業ごとにプログラムを書き、テスト・型の確認・公表値との突き合わせを通したうえで、画面を PC とスマホの幅で撮って見た目を確かめます。変更は GitHub の Pull Request にして、人が確かめてから取り込みます。
       </dd>
     </div>
   </dl>
