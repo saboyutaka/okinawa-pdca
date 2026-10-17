@@ -4,6 +4,7 @@
 //    いまの節のリンクが見えるように目次だけを横にずらす（ページは動かさない）
 //  - 目次が画面の上に貼り付いたら stuck を付け、何のページかの1行（.toc-head）を出す。目次のすぐ前の目印（.toc-mark）が画面の上から出たかで決める。
 //    IntersectionObserver は、# のリンクで画面の下から上へ一度に跳ぶと（目印が画面に入らないまま）知らせないので、スクロールのたびに位置を見る
+import { hashId } from './hash.ts';
 import { moving } from './motion.ts';
 
 // 見出しの上の端がここ（画面の上からの px）より上に来たら、その節にいる。# で跳んだ見出しの位置（目次のあるページの scroll-padding-top 104px）より少し下
@@ -11,7 +12,7 @@ const LINE = 120;
 for (const toc of document.querySelectorAll<HTMLElement>('.toc')) {
   const strip = toc.querySelector<HTMLElement>('.toc-links');
   const links = [...toc.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')].flatMap((a) => {
-    const h = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+    const h = document.getElementById(hashId(a.hash));
     return h ? [{ a, h }] : [];
   });
   const mark = toc.previousElementSibling;

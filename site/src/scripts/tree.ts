@@ -23,6 +23,7 @@ import { esc } from '../lib/html.ts';
 import { matchesAll, searchText, searchWords, splitMatches, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
 import { getJsonOr } from './fetch-json.ts';
+import { hashId } from './hash.ts';
 import { bump, reveal } from './motion.ts';
 
 // ---------------------------------------------------------------- 描く
@@ -451,7 +452,7 @@ async function init(tree: HTMLElement) {
     window.scrollTo(0, saved.y);
   } else {
     // # の行き先（/mokuji/#s-1-1-a-1 など）が目次の中にあれば、親を開いてそこへ動く（scripts/disclosure.ts は目次を描く前に動くので、ここで行う）
-    const id = decodeURIComponent(location.hash.slice(1));
+    const id = hashId();
     const target = id ? document.getElementById(id) : null;
     if (target && tree.contains(target)) {
       for (let d = target.parentElement?.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
