@@ -55,6 +55,14 @@ make extract       # PDF を読んで data/extracted を作り直し、公表値
 
 データの読み違いやサイトの不具合は [Issue](https://github.com/saboyutaka/okinawa-pdca/issues) へ。県の施策への意見を県に伝える方法は、サイトの[意見を伝えたい人へ](https://okinawa-miraima.com/iken/)にある。
 
+## ライセンス
+
+このリポジトリは、下のものを除いて [MIT ライセンス](LICENSE)（このサイト独自のくらしのテーマの分け方 `data/reference/themes.json` も MIT）。
+
+- `data/extracted` と `data/raw` の台帳: 沖縄県の報告書から読み取ったもので、報告書の著作権は沖縄県にある。使うときは出典（`file_url` と PDF のページ）の報告書で確かめ、[沖縄県ホームページの著作権の決まり](https://www.pref.okinawa.jp/about/1018114.html)に従う。
+- `data/reference/finance.json`: 国（内閣府）と県の資料から転記した数字（出典はファイルの `sources`）。
+- フォント（`site/src/fonts/`）は SIL Open Font License 1.1（ライセンスは `site/public/fonts/`）、シェアボタンのロゴ（`site/src/lib/share-icons.ts`）は Simple Icons の CC0-1.0。
+
 ## 公開
 
 main に push すると Cloudflare Workers でビルドして公開される（[docs/deploy.md](docs/deploy.md)）。
