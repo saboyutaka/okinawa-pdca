@@ -220,6 +220,17 @@ export const getKihonList = once(() => {
 // 主要指標の数（県の概要版「主要指標の達成状況」の「主要指標N指標」。R4〜R7 とも49）。付属資料の表は1行に複数の指標が並ぶので、行の数（37）とは違う
 export const SHUYOU_COUNT: Record<number, number> = { 2022: 49, 2023: 49, 2024: 49, 2025: 49 };
 
+// 付属資料の主要指標の1行に並ぶ指標の数（県の数え方。見通しの欄の名前「男性:」「女性:」などの数で、名前が無ければ1）
+export const shuyouPartCount = (r: { judgement: string | null }) => Math.max(1, judgesOf(r.judgement)?.length ?? 0);
+
+// 親1つあたりの子の数の幅（「4〜13」）。size は子1つの数（主要指標の行なら shuyouPartCount）
+export function childRange<T>(rows: T[], parent: (r: T) => string | number, size: (r: T) => number = () => 1) {
+  const n = new Map<string | number, number>();
+  for (const r of rows) n.set(parent(r), (n.get(parent(r)) || 0) + size(r));
+  const v = [...n.values()];
+  return `${Math.min(...v)}〜${Math.max(...v)}`;
+}
+
 export function getShuyou(kihonId: string) {
   return load('shuyou').filter((s) => s.kihon_id === kihonId);
 }

@@ -6,7 +6,7 @@
 import Sz from './Sz.astro';
 import Term from './Term.astro';
 import ThemeTags from './ThemeTags.astro';
-import { LATEST, yearLong, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouByYear, judgesOf, SHUYOU_COUNT } from '../lib/data.ts';
+import { LATEST, yearLong, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouByYear, shuyouPartCount, childRange, SHUYOU_COUNT } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { fmt } from '../lib/format.ts';
 
@@ -19,21 +19,10 @@ const shuyou = getShuyouByYear(LATEST);
 // 主要指標の数は付属資料の表の行（37）ではなく、県の数え方（1行に男女別・離島と過疎地域などの指標が並ぶものを別に数える）。
 // 付属資料の欄は印字の時点で切れているもの（2-(8)）があり、行から数えられないので、概要版の数を使う。基本施策ごとの幅は、見通しの欄の名前（「男性:」など）の数で数える
 const shuyouCount = SHUYOU_COUNT[LATEST];
-const shuyouParts = (r: (typeof shuyou)[number]) => Math.max(1, judgesOf(r.judgement)?.length ?? 0);
-const shuyouPerKihon = new Map<string, number>();
-for (const r of shuyou) shuyouPerKihon.set(r.kihon_id, (shuyouPerKihon.get(r.kihon_id) || 0) + shuyouParts(r));
-const shuyouRange = `${Math.min(...shuyouPerKihon.values())}〜${Math.max(...shuyouPerKihon.values())}`;
+const shuyouRange = childRange(shuyou, (r) => r.kihon_id, shuyouPartCount);
 const themes = getThemes();
-// 親1つあたりの子の数の幅（「4〜13」）
-function range<T>(rows: T[], parent: (r: T) => string | number) {
-  const n = new Map<string | number, number>();
-  for (const r of rows) n.set(parent(r), (n.get(parent(r)) || 0) + 1);
-  const v = [...n.values()];
-  return `${Math.min(...v)}〜${Math.max(...v)}`;
-}
-const tenkai = new Map<string, Set<string>>();
-for (const s of shisaku) tenkai.set(s.kihon_id, (tenkai.get(s.kihon_id) || new Set()).add(s.tenkai_id));
-const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜${Math.max(...[...tenkai.values()].map((t) => t.size))}`;
+// 施策展開（施策の行の tenkai_id。基本施策の番号から始まる）
+const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.kihon_id])).values()];
 ---
 <figure class="pmap sticker">
   <svg class="pm-defs" width="0" height="0" aria-hidden="true" focusable="false">
@@ -53,7 +42,7 @@ const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜$
       <p class="pm-d">計画がめざす沖縄の姿</p>
       <p class="pm-sz">{shouraizou.map((s) => <a href={`/future/${s.id}/`} title={s.name}><Sz id={s.id} /></a>)}</p>
     </div>
-    <p class="pm-c c1">1つの将来像に <span class="nw">基本施策 {range(kihon, (k) => k.shouraizou)}</span></p>
+    <p class="pm-c c1">1つの将来像に <span class="nw">基本施策 {childRange(kihon, (k) => k.shouraizou)}</span></p>
     <div class="pm-p p2">
       <p class="pm-h"><a class="name-link" href="/future/">基本施策</a><span class="pm-n">{kihon.length}</span></p>
       <p class="pm-d">将来像を実現するための大きな柱</p>
@@ -62,16 +51,16 @@ const tenkaiRange = `${Math.min(...[...tenkai.values()].map((t) => t.size))}〜$
       <p class="pm-h"><span class="pm-name">主要指標</span><span class="pm-n">{shuyouCount}</span></p>
       <p class="pm-d">基本施策の最終的な成果をはかる（1つの基本施策に {shuyouRange}）</p>
     </div>
-    <p class="pm-c c2">1つの基本施策に <span class="nw">施策展開 {tenkaiRange}、</span><span class="nw">施策 {range(shisaku, (s) => s.kihon_id)}</span></p>
+    <p class="pm-c c2">1つの基本施策に <span class="nw">施策展開 {childRange(tenkai, (kihonId) => kihonId)}、</span><span class="nw">施策 {childRange(shisaku, (s) => s.kihon_id)}</span></p>
     <div class="pm-p p3">
       <p class="pm-h"><a class="name-link" href="/shisaku/">施策</a><span class="pm-n">{shisaku.length}</span></p>
       <p class="pm-d">分野ごとの取り組みのまとまり。県が毎年付ける<Term word="推進状況" label="判定" />（A〜G）は、主な取組の「順調」の割合と成果指標の<Term word="達成率" />で決まる</p>
     </div>
     <div class="pm-i i3">
       <p class="pm-h"><a class="name-link" href="/shihyou/">成果指標</a><span class="pm-n">{fmt(seika.length)}</span></p>
-      <p class="pm-d">施策の成果（くらしや地域の変化）をはかる（1つの施策に {range(seika, (s) => s.shisaku_id)}）</p>
+      <p class="pm-d">施策の成果（くらしや地域の変化）をはかる（1つの施策に {childRange(seika, (s) => s.shisaku_id)}）</p>
     </div>
-    <p class="pm-c c3">1つの施策に <span class="nw">主な取組 {range(torikumi, (t) => t.shisaku_id)}</span></p>
+    <p class="pm-c c3">1つの施策に <span class="nw">主な取組 {childRange(torikumi, (t) => t.shisaku_id)}</span></p>
     <div class="pm-p p4">
       <p class="pm-h"><a class="name-link" href="/torikumi/">主な取組</a><span class="pm-n">{fmt(torikumi.length)}</span></p>
       <p class="pm-d">施策を進める手段として県が選んだ事業</p>
