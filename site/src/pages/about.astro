@@ -1,5 +1,5 @@
 ---
-// このサイトそのもの（なりたち・使っている技術・表示・アクセシビリティ）。pdca・data との分け方は docs/design.md の5章
+// このサイトそのもの（なりたち・シビックテックと作り手・使っている技術・デザイン・アクセシビリティ・運営と問い合わせ）。pdca・data との分け方は docs/design.md の5章
 import Base from '../layouts/Base.astro';
 import { YEARS, LATEST, yearLabel, yearLong } from '../lib/data.ts';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
@@ -7,10 +7,10 @@ import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 ---
-<Base title="このサイトについて" description="このサイトのなりたち・シビックテック・使っている技術・デザイン・アクセシビリティ">
+<Base title="このサイトについて" description="このサイトのなりたち・作っている Code for Okinawa とシビックテック・使っている技術・デザイン・アクセシビリティ・運営と問い合わせ先">
   <h1>このサイトについて</h1>
   <p class="lead">
-    沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="/code-for-okinawa/">{PROJECT.org}</a> が<a href="#civictech">シビックテック</a>の取り組みとして作っていて、県は関わっていません。
+    沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="#code-for-okinawa">{PROJECT.org}</a> が<a href="#civictech">シビックテック</a>の取り組みとして作っていて、県は関わっていません。
   </p>
   <p>沖縄県PDCAの仕組みと用語は<a href="/pdca/">沖縄県PDCAについて</a>、このサイトが読んだ資料・数え方・注意点は<a href="/data/">データについて</a>にまとめています。</p>
 
@@ -30,9 +30,22 @@ import SecHead from '../components/SecHead.astro';
 
   <SecHead id="civictech">シビックテックとは</SecHead>
   <p>市民（シビック）がテクノロジー（テック）を使って、地域や行政の課題に自分たちで取り組むことです。行政が公開している資料やデータを、だれもが使いやすい形にするのも、その一つです。</p>
-  <p>このサイトもその取り組みの一つです。作っている <a href="/code-for-okinawa/">{PROJECT.org}</a> は、沖縄で活動するシビックテックのコミュニティです。</p>
+  <p>このサイトもその取り組みの一つです。</p>
+
+  <SecHead id="code-for-okinawa">{PROJECT.org}</SecHead>
   <p>
-    <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています（<a href="/code-for-okinawa/">{PROJECT.org} とは</a>）。
+    {PROJECT.org} は、沖縄で活動するシビックテックのコミュニティです。沖縄のオープンデータを広め、地域の課題を解決するアイデアを考えて、テクノロジーを使って解決に取り組んでいます。市民が参加する、開かれたコミュニティです。
+  </p>
+  <p>
+    全国各地の「Code for ○○」と同じく、Code for Japan のブリゲード（地域のコミュニティ）として活動しています。
+  </p>
+  <ul>
+    <li><ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink></li>
+    <li><ExtLink href={PROJECT.orgGithub}>{PROJECT.org} の GitHub</ExtLink></li>
+    <li><ExtLink href={PROJECT.brigades}>Code for Japan のブリゲードの一覧</ExtLink></li>
+  </ul>
+  <p>
+    <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています。
   </p>
 
   <SecHead id="gijutsu">使っている技術</SecHead>
@@ -81,6 +94,17 @@ import SecHead from '../components/SecHead.astro';
   <SecHead id="accessibility">アクセシビリティ</SecHead>
   <p>目が見えない・見えにくい人、色の見分けがつきにくい人、マウスを使えない人でも使いやすいように配慮しています。読み上げソフトやキーボードだけでも同じ内容に届くようにし、図の値は文字でも、順調・遅れなどの状態は色だけでなく形と文字でも読めます。端末で動きを減らす設定にしていれば、動きを付けずに表示します。</p>
   <p>文字と地の色のコントラストの基準（WCAG など）や、ウェブアクセシビリティの規格（JIS X 8341-3 など）に沿っています。</p>
+
+  <SecHead id="unei">運営と問い合わせ</SecHead>
+  <dl class="facts sticker">
+    <div><dt>作っている団体</dt><dd>{PROJECT.org}</dd></div>
+    <div><dt>管理している人</dt><dd>{PROJECT.maintainerName}（<ExtLink href={PROJECT.maintainerX} after="）">@{PROJECT.maintainer}</ExtLink></dd></div>
+    <div><dt>制作協力</dt><dd>{PROJECT.collaborators.join('、')}</dd></div>
+  </dl>
+  <p>まちがいの報告やご意見は、X の <ExtLink href={PROJECT.maintainerX}>@{PROJECT.maintainer}</ExtLink> へお寄せください。</p>
+  <p>
+    <strong>このサイトの内容について、沖縄県へは問い合わせないでください。</strong>このサイトの集計・分類・表示は {PROJECT.org} が行っているもので、県は関わっていません。報告書そのものの内容については、県の担当（<ExtLink href={LINKS.kikakuChousei} after="）">企画部企画調整課</ExtLink>へお問い合わせください。
+  </p>
 </Base>
 
 <style>
@@ -88,5 +112,9 @@ import SecHead from '../components/SecHead.astro';
   .tech > div { display: grid; grid-template-columns: 9em 1fr; gap: 4px 16px; }
   .tech dt { font-family: var(--font-display); font-weight: 700; }
   .tech dd { margin: 0; }
-  @media (max-width: 560px) { .tech > div { grid-template-columns: 1fr; } }
+  .facts { display: grid; gap: 10px; margin: 8px 0 16px; max-width: 40em; }
+  .facts > div { display: grid; grid-template-columns: 10em 1fr; gap: 4px 16px; }
+  .facts dt { font-family: var(--font-display); font-weight: 700; }
+  .facts dd { margin: 0; }
+  @media (max-width: 560px) { .tech > div, .facts > div { grid-template-columns: 1fr; } }
 </style>

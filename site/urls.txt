@@ -18,7 +18,6 @@
 /bukyoku/seikatsu-fukushi/
 /bukyoku/shoko/
 /bukyoku/somu/
-/code-for-okinawa/
 /data/
 /future/
 /future/1/
