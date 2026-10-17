@@ -1,5 +1,5 @@
 ---
-// このサイトそのもの（なりたち・シビックテックと作り手・使っている技術・デザイン・アクセシビリティ・運営と問い合わせ）。pdca・data との分け方は docs/design.md の5章
+// このサイトそのもの（なりたち・シビックテックと作り手・使っている技術・ソースコードとライセンス・デザイン・アクセシビリティ・運営と問い合わせ）。pdca・data との分け方は docs/design.md の5章
 import Base from '../layouts/Base.astro';
 import { YEARS, LATEST, yearLong, yearsLong } from '../lib/data.ts';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
@@ -7,7 +7,7 @@ import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 ---
-<Base title="このサイトについて" description="このサイトのなりたち・作っている Code for Okinawa とシビックテック・使っている技術・デザイン・アクセシビリティ・運営と問い合わせ先">
+<Base title="このサイトについて" description="このサイトのなりたち・作っている Code for Okinawa とシビックテック・使っている技術・ソースコードとライセンス・デザイン・アクセシビリティ・運営と問い合わせ先">
   <h1>このサイトについて</h1>
   <p class="lead">
     沖縄県が公表している「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の報告書を読み取り、施策と取組がどこまで進んだかを見やすくまとめ直した非公式のサイトです。<a href="#code-for-okinawa">{PROJECT.org}</a> が<a href="#civictech">シビックテック</a>の取り組みとして作っていて、県は関わっていません。
@@ -74,6 +74,14 @@ import SecHead from '../components/SecHead.astro';
       </dd>
     </div>
   </dl>
+
+  <SecHead id="license">ソースコードとライセンス</SecHead>
+  <p>
+    このサイトのソースコード（報告書を読み取るプログラムとサイト）は <ExtLink href={PROJECT.repo}>GitHub</ExtLink> で公開しています。<ExtLink href={`${PROJECT.repo}/blob/main/LICENSE`}>MIT ライセンス</ExtLink>なので、だれでも使ったり手を加えたりできます。
+  </p>
+  <p>
+    報告書から読み取った内容（施策・取組の名前、活動・検証などの文章、数字）は県の資料のもので、MIT ライセンスの対象ではありません。報告書の著作権は沖縄県にあります。引用するときは、各ページの「出典」から元の報告書を開いて確かめ、<ExtLink href={LINKS.chosakuken}>沖縄県ホームページの著作権の決まり</ExtLink>に従ってください。
+  </p>
 
   <SecHead id="design">サイトデザイン</SecHead>
   <ul>

@@ -1,4 +1,4 @@
-// 県の公式ページ（説明文の用語のリンク先）。URL は 2026-10-10 に開けることを確認した（kihonKeikaku は 2026-10-13）
+// 県の公式ページ（説明文の用語のリンク先）。URL は 2026-10-10 に開けることを確認した（kihonKeikaku は 2026-10-13、chosakuken は 2026-10-17）
 export const LINKS = {
   pdca: 'https://www.pref.okinawa.jp/kensei/shisaku/1014252/index.html', // 沖縄県PDCA（入口）
   pdcaGaiyou: 'https://www.pref.okinawa.jp/kensei/shisaku/1014252/1014253/1023439.html', // 沖縄県PDCAの概要
@@ -12,6 +12,7 @@ export const LINKS = {
   kankoPlan: 'https://www.pref.okinawa.jp/shigoto/kankotokusan/1011671/1011741/1011762/index.html', // 沖縄県観光振興基本計画
   ikkatsu: 'https://www.pref.okinawa.jp/kensei/yosan/1015205/1015216/index.html', // 沖縄振興特別推進交付金の事後評価（年度別）
   hyoka: 'https://www.pref.okinawa.jp/kensei/shisaku/1014211/1014223/1039989.html', // 新・沖縄21世紀ビジョン基本計画 評価検証報告書
+  chosakuken: 'https://www.pref.okinawa.jp/about/1018114.html', // 県のホームページの免責事項・著作権（県の資料の転用・引用の決まり。/about/ のライセンスの節）
 };
 
 // このサイトの名前。計画が描いた沖縄のみらいが、いまどこまで来たかを見る。口で言うときは縮めて「みらいま」（SNS のハッシュタグは lib/iken.ts の HASHTAG）。
@@ -29,6 +30,7 @@ export const PROJECT = {
   org: 'Code for Okinawa',
   orgUrl: 'https://code4okinawa.org/',
   orgGithub: 'https://github.com/CodeforOkinawa',
+  repo: 'https://github.com/saboyutaka/okinawa-pdca', // このサイトのソースコード（/about/ のライセンスの節）
   brigades: 'https://www.code4japan.org/brigade', // Code for Japan のブリゲード（地域のコミュニティ）の一覧
   maintainerName: '立花 豊',
   maintainer: 'saboyutaka',
