@@ -17,6 +17,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import ShuyouStatusTag from '../../components/ShuyouStatusTag.astro';
 import Toc from '../../components/Toc.astro';
 import Says from '../../components/Says.astro';
+import SecHead from '../../components/SecHead.astro';
 import { oneLine } from '../../lib/text.ts';
 import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../../lib/plans.ts';
 import { kihonDescription } from '../../lib/describe.ts';
@@ -97,13 +98,13 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   />
 
   <section aria-labelledby="shuyou">
-    <h2 id="shuyou" class="anchor"><Term word="主要指標" /></h2>
-    <p class="small secondary lead">この基本施策の成果をはかる県の物差しごとに、スタート（基準値）からゴール（R9の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
+    <SecHead id="shuyou" class="anchor">主要指標</SecHead>
+    <p class="small secondary lead">この基本施策の成果をはかる県の物差し（<Term word="主要指標" />）ごとに、スタート（基準値）からゴール（令和9年度の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
     {shuyouLatest.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
-        <summary>{yearLabel(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
+        <summary>{yearLong(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
         {shuyouPast.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
       </details>
     )}
@@ -113,7 +114,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   </section>
 
   <section aria-labelledby="list">
-    <h2 id="list" class="anchor">施策（{shisaku.length}）</h2>
+    <SecHead id="list" class="anchor">施策（{shisaku.length}）</SecHead>
     <JudgeLegend />
     {/* 施策展開ごとの箱。5つの将来像のページの基本施策の箱と同じく、頭に列の見出し（ShisakuHead）を1回だけ置き、
         行は左の列に施策と成果指標、右の列に主な取組の四角（components/ShisakuItem.astro の toriList） */}
@@ -134,13 +135,13 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   </section>
 
   <section aria-labelledby="progress">
-    <h2 id="progress" class="anchor">主な取組の進捗（この基本施策の合計）</h2>
+    <SecHead id="progress" class="anchor">主な取組の進捗（この基本施策の合計）</SecHead>
     <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
   </section>
 
   {h && (
     <section aria-labelledby="hyoka">
-      <h2 id="hyoka" class="anchor">県によるふりかえり（R4〜R6の3年間）</h2>
+      <SecHead id="hyoka" class="anchor">県によるふりかえり（令和4〜6年度の3年間）</SecHead>
       <p class="small secondary lead">県の<Term word="評価検証報告書" />（{HYOKA.published}）が、この基本施策の成果と課題をまとめたものです。</p>
       <Says class="voice">
         {h.intro && <p class="intro">{h.intro}</p>}
@@ -162,10 +163,10 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
   <ShareBox kind="基本施策" name={k.name} />
 
   <section aria-labelledby="source">
-    <h2 id="source" class="anchor">出典</h2>
+    <SecHead id="source" class="anchor">出典</SecHead>
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
-    {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
+    {hSrc && <p class="small">県によるふりかえり（令和4〜6年度）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
     {renamed.length > 0 && <p class="small">{renamed.map((x) => `主要指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/data/#kazoekata">年度をつないでいます</a>。</p>}
   </section>
 </Base>

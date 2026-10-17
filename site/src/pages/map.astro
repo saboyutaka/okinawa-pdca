@@ -39,7 +39,7 @@ const KIND = {
   katsudou: { bin: '主な取組の進捗状況', parent: '施策' },
 };
 ---
-<Base title="指標のマップ" description={`沖縄県PDCAの主要指標${n.shuyou}・成果指標${n.seika}・主な取組の活動指標${fmt(n.katsudou)}件（${yearLong(LATEST)}）を、1マス＝1指標で将来像ごとに並べ、R4〜R7 の年度ごとの県の区分で色分けしたマップです。`}>
+<Base title="指標のマップ" description={`沖縄県PDCAの主要指標${n.shuyou}・成果指標${n.seika}・主な取組の活動指標${fmt(n.katsudou)}件（${yearLong(LATEST)}）を、1マス＝1指標で将来像ごとに並べ、令和4〜7年度の年度ごとの県の区分で色分けしたマップです。`}>
   <h1>指標のマップ</h1>
   <p class="secondary lead">
     <Term word="主要指標" />・<Term word="成果指標" />・<Term word="活動指標" />を、1マス＝1指標で将来像ごとに並べ、選んだ年度の県の区分で色分けしました。
@@ -82,7 +82,7 @@ const KIND = {
   <p class="result-count" aria-live="polite" data-map-result></p>
 
   <div class="imap sticker" data-map-root>
-    <p class="im-note small secondary" data-map-empty hidden>主要指標は、R5 の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
+    <p class="im-note small secondary" data-map-empty hidden>主要指標は、令和5年度の県の概要版の表が画像で、指標ごとの値を読み取れていないため出していません。</p>
     <p class="im-note small secondary" data-map-nofilter hidden>主要指標は基本施策ごとの指標で、部局・くらしのテーマに分けていないので、その条件ではどれも薄くなります。</p>
     <div class="im-cols">
       <span class="im-cg" aria-hidden="true">将来像</span>
@@ -115,7 +115,7 @@ const KIND = {
 
   <section class="map-key sticker" aria-labelledby="map-key-h">
     <h2 class="mk-title" id="map-key-h">色の見方</h2>
-    <p class="mk-lead small secondary">色は<span data-map-year>{yl}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
+    <p class="mk-lead small secondary">色は<span data-map-year>{yearLong(LATEST)}</span>の県の区分です。活動指標は、1マス＝1件の<Term word="主な取組" />です。</p>
     <dl class="mk-list small">
       {MAP_KINDS.map((k) => (
         <div class="mk-row">
@@ -127,7 +127,7 @@ const KIND = {
   </section>
 
   <p class="small secondary note">
-    並びは報告書の順です。R4〜R6 は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7 からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で、R7 に指標と目標値が見直されたので、年度を変えるとマスの数が変わります。
+    並びは報告書の順です。令和4〜6年度は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、令和7年度からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>で、令和7年度に指標と目標値が見直されたので、年度を変えるとマスの数が変わります。
     主な取組は延べ件数で、いくつかの施策に載る取組は施策ごとに1マスです。部局は最新の報告の担当部局で、くらしのテーマは<Term word="くらしのテーマ" label="このサイト独自の分類" />です。
   </p>
 </Base>

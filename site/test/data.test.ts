@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, planLabel, planIndex, withUnit, refText, eraRef,
+  yearLabel, yearLong, yearsLong, planLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
@@ -17,14 +17,16 @@ test('shouraizouName: 将来像の名前は語尾の「を目指して」を外�
   assert.equal(shouraizouName('〜を目指して進める島'), '〜を目指して進める島');
 });
 
-test('formerText: 前の名前を、その名前で載っていた年度（続く年度は「〜」でまとめる）と並べる', () => {
-  assert.equal(formerText([{ name: '旧名', years: [2022, 2023, 2024] }]), 'R4〜R6の報告では「旧名」');
-  assert.equal(formerText([{ name: 'A', years: [2022] }, { name: 'B', years: [2023, 2024] }]), 'R4の報告では「A」、R5〜R6の報告では「B」');
+test('formerText: 前の名前を、その名前で載っていた年度（続く年度は「〜」でまとめる。文章なので令和で書く）と並べる', () => {
+  assert.equal(formerText([{ name: '旧名', years: [2022, 2023, 2024] }]), '令和4〜6年度の報告では「旧名」');
+  assert.equal(formerText([{ name: 'A', years: [2022] }, { name: 'B', years: [2023, 2024] }]), '令和4年度の報告では「A」、令和5〜6年度の報告では「B」');
 });
 
 test('年度の書き方', () => {
   assert.equal(yearLabel(2025), 'R7');
   assert.equal(yearLong(2022), '令和4年度');
+  assert.equal(yearsLong(2022, 2024), '令和4〜6年度');
+  assert.equal(yearsLong(2025), '令和7年度');
   assert.equal(planLabel(2024), '前期実施計画（R4〜R6）');
   assert.equal(planLabel(2025), '中期実施計画（R7〜R9）');
 });

@@ -10,6 +10,7 @@ import SeikaKey from '../../../components/SeikaKey.astro';
 import ExtLink from '../../../components/ExtLink.astro';
 import Toc from '../../../components/Toc.astro';
 import Says from '../../../components/Says.astro';
+import SecHead from '../../../components/SecHead.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
@@ -88,9 +89,9 @@ const SEIKA_SHOW = 10;
   />
 
   <section aria-labelledby="list">
-    <h2 id="list" class="anchor">基本施策と施策展開</h2>
+    <SecHead id="list" class="anchor">基本施策と施策展開</SecHead>
+    <p class="small secondary lead">施策展開ごとに、{yearLong(RM_LATEST)}の主な取組がどこまで進んだか（県の<Term word="進捗状況" />の内訳）が分かります。</p>
     <p class="small"><a href={KANKO_TORIKUMI_HREF}>観光ロードマップの取組をさがす</a>（進捗状況・沖縄県PDCAとの重なり・部局で絞り込めます）</p>
-    <p class="small secondary lead">棒は{yearLabel(RM_LATEST)}の主な取組の進捗状況の内訳です。</p>
     {kihon.map((k) => (
       <>
         <h3>{k.name} <span class="code-no">基本施策 {k.code}</span></h3>
@@ -114,7 +115,7 @@ const SEIKA_SHOW = 10;
   </section>
 
   <section aria-labelledby="seika-list">
-    <h2 id="seika-list" class="anchor">成果指標（{yearLabel(RM_LATEST)}・{fmt(seikaAll.length)}）</h2>
+    <SecHead id="seika-list" class="anchor">成果指標（{yearLabel(RM_LATEST)}・{fmt(seikaAll.length)}）</SecHead>
     <p class="small secondary lead">報告書の順です。印は基準値と比べた県の判定（前進・横ばい・後退）です。観光の計画にしか無い指標が多くあります。</p>
     <SeikaKey mini rm />
     <ul class="row-list" id="rm-seika" data-more={SEIKA_SHOW}>{seikaAll.map((r) => <RmSeikaRow r={r} />)}</ul>
@@ -122,19 +123,19 @@ const SEIKA_SHOW = 10;
   </section>
 
   <section aria-labelledby="progress">
-    <h2 id="progress" class="anchor">年度ごとの進み具合</h2>
+    <SecHead id="progress" class="anchor">年度ごとの進み具合</SecHead>
     <p class="small secondary lead">主な取組の<Term word="進捗状況" />は沖縄県PDCAと同じ区分で、成果指標は基準値と比べて良くなったか（前進・横ばい・後退）を見ます。</p>
     <StatusChart title="観光ロードマップの主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
     <StatusChart title="観光ロードマップの成果指標の達成状況（基準値との比較）" categories={RM_JUDGEMENTS} rows={seikaRows} unit="指標" />
     {unreadable.map((y) => (
       <p class="small secondary">
-        {yearLong(y.year)}の実施報告書（本編）は、文字に変換できないフォントで作られていて読み取れませんでした。{yearLabel(y.year)}は概要版の件数（主な取組{fmt(y.torikumi)}件・成果指標{fmt(y.seika)}のうち前進{fmt(y.zenshin)}）だけを載せています。成果指標の{yearLabel(y.year)}の実績値は、R5・R6の報告書に載っている値です。
+        {yearLong(y.year)}の実施報告書（本編）は、文字に変換できないフォントで作られていて読み取れませんでした。{yearLong(y.year)}は概要版の件数（主な取組{fmt(y.torikumi)}件・成果指標{fmt(y.seika)}のうち前進{fmt(y.zenshin)}）だけを載せています。成果指標の{yearLong(y.year)}の実績値は、令和5・6年度の報告書に載っている値です。
       </p>
     ))}
   </section>
 
   <section aria-labelledby="pdca">
-    <h2 id="pdca" class="anchor">沖縄県PDCAとの関係</h2>
+    <SecHead id="pdca" class="anchor">沖縄県PDCAとの関係</SecHead>
     <ul class="small">
       <li>観光ロードマップは、新・沖縄21世紀ビジョン基本計画を上位の計画とする「<ExtLink href={LINKS.kankoPlan} after="」">{KANKO.basis}</ExtLink>の施策を具体化した実施計画です。沖縄県PDCAの施策（339）とは別に、観光の施策（85）を立てています。</li>
       <li>主な取組は、同じ年度に同じ名前の取組が沖縄県PDCAにもあれば、取組のページへのリンクを付けています（名前が少し違っても、よく似ていて決算見込額が同じものを含みます）。沖縄県PDCAの取組のページからも、観光ロードマップの施策をたどれます。</li>
@@ -145,7 +146,7 @@ const SEIKA_SHOW = 10;
   </section>
 
   <section aria-labelledby="source">
-    <h2 id="source" class="anchor">出典</h2>
+    <SecHead id="source" class="anchor">出典</SecHead>
     <p class="small">沖縄県「<ExtLink href={LINKS.kankoRm} after="」">{KANKO.name}</ExtLink>の年度別の「沖縄観光推進ロードマップPDCA実施結果」のページ。</p>
     <ul class="small">
       {RM_YEARS.map((y) => sources.filter((s) => s.year === y).map((s) => <li>{yearLong(y)}: <ExtLink href={s.file_url}>{s.link_text.replace(/\s*（\s*PDF[^）]*）\s*$/, '')}</ExtLink>（<ExtLink href={s.page_url} after="）">掲載ページ</ExtLink></li>))}

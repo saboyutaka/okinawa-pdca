@@ -240,7 +240,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       parts.push({ term: t.term, unit: t.unit, counts: t.cats.map((c, i) => [c[1], counts[i]]), hit: filtered ? hit : null });
     }
     grid.setAttribute('aria-label', mapLabel(yl(y), parts));
-    for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = yl(y);
+    for (const s of document.querySelectorAll('[data-map-year]')) s.textContent = `令和${y - 2018}年度`;
     root.querySelector<HTMLElement>('[data-map-empty]')!.hidden = !emptyShuyou;
     root.querySelector<HTMLElement>('[data-map-nofilter]')!.hidden = !(theme || dept) || emptyShuyou;
     // 条件に合う数（件数の行。読み上げだけ）。キーワードの文字を読んでいるあいだ・読めなかったときは、画面にもそう書く

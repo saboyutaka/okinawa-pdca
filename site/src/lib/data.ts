@@ -42,6 +42,8 @@ export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
 export const yearLabel = (y: number) => `R${y - 2018}`;
 export const yearLong = (y: number) => `令和${y - 2018}年度`;
+// 年度の範囲の文章での書き方（「令和4〜6年度」。1年なら「令和7年度」）。表・図・札は yearLabel で「R4〜R6」
+export const yearsLong = (from: number, to = from) => (from === to ? yearLong(from) : `令和${from - 2018}〜${to - 2018}年度`);
 // R4〜R6 は前期実施計画（目標年度R6）、R7からは中期実施計画（目標年度R9）。基準値・目標値が切り替わる
 export const planLabel = (y: number) => (y <= 2024 ? '前期実施計画（R4〜R6）' : '中期実施計画（R7〜R9）');
 // 成果指標の計画値の欄は計画期間の3年分が並ぶ。その年度の計画値が何番目か（scripts/check_extracted.py の plan_index と同じ）
@@ -684,17 +686,17 @@ interface SeikaAlias {
 export const SEIKA_ALIASES: SeikaAlias[] = [
   // R7 は3つとも内訳の無い名前。R4〜R6 は（大学）（短大）（専門学校）を付けて、同じ基準値で載っている
   {
-    shisaku: '5-3-c-3', printed: '新規学卒者（大学・短大・専門学校）の就職内定率', field: 'base_raw', from: '基準値が同じR4〜R6の報告書',
+    shisaku: '5-3-c-3', printed: '新規学卒者（大学・短大・専門学校）の就職内定率', field: 'base_raw', from: '基準値が同じ令和4〜6年度の報告書',
     names: { '85.7': '新規学卒者（大学・短大・専門学校）の就職内定率（大学）', '92': '新規学卒者（大学・短大・専門学校）の就職内定率（短大）', '90': '新規学卒者（大学・短大・専門学校）の就職内定率（専門学校）' },
   },
   // R4・R5 は2つとも同じ名前。R6 から（娯楽・入場費）（宿泊費）に分かれ、R6 の基準値が同じ
   {
-    shisaku: '3-2-c-4', printed: '一人当たり観光消費額（娯楽・入場費、宿泊費）', field: 'base_raw', from: '基準値が同じR6の報告書',
+    shisaku: '3-2-c-4', printed: '一人当たり観光消費額（娯楽・入場費、宿泊費）', field: 'base_raw', from: '基準値が同じ令和6年度の報告書',
     names: { '6,647': '一人当たり観光消費額（娯楽・入場費）', '23,398': '一人当たり観光消費額（宿泊費）' },
   },
   // R4〜R6 は2つとも同じ名前。R7 から（小学校）（中学校）に分かれ、基準値が同じ
   {
-    shisaku: '5-2-b-1', printed: '人が困っているときは、進んで助けていると考えている児童生徒の割合', field: 'base_raw', from: '基準値が同じR7の報告書',
+    shisaku: '5-2-b-1', printed: '人が困っているときは、進んで助けていると考えている児童生徒の割合', field: 'base_raw', from: '基準値が同じ令和7年度の報告書',
     names: { '82.1': '人が困っているときは、進んで助けていると考えている児童の割合（小学校）', '83.4': '人が困っているときは、進んで助けていると考えている生徒の割合（中学校）' },
   },
   // R4〜R6 は2つとも同じ名前で、基準値も0。観光ロードマップの報告書（R5・R6）には、同じ目標値・計画値で（オフライン参加者数）（オンライン参加者数）として載っている
@@ -1025,7 +1027,7 @@ export function formerNames(g: YearGroup<TorikumiRow>) {
 }
 // 前の名前を出典に書くときの文（「R4〜R6の報告では「〇〇」」）。取組・活動指標・成果指標で同じ書き方
 export const formerText = (fs: { name: string; years: number[] }[]) =>
-  fs.map((f) => `${f.years.length > 1 ? `${yearLabel(f.years[0])}〜${yearLabel(f.years[f.years.length - 1])}` : yearLabel(f.years[0])}の報告では「${f.name}」`).join('、');
+  fs.map((f) => `${yearsLong(f.years[0], f.years[f.years.length - 1])}の報告では「${f.name}」`).join('、');
 
 // 全施策の成果指標を、年度をまたいで1行にまとめたもの
 // href は施策のページのカード（anchor はその id）、share はシェア用のページ
@@ -1627,7 +1629,7 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
       const v = p?.values[k] ?? '';
       if (y > LATEST && !blankCell(v)) cur.years.push({ y, rows: [{ plan: v, actual: '' }], single: true, status: '', achs: [], ach: '', future: true });
     });
-    if (cur.years.some((r) => r.future)) planFrom = `${yearLabel(LATEST)}の部局の検証票の「年度別計画」`;
+    if (cur.years.some((r) => r.future)) planFrom = `${yearLong(LATEST)}の部局の検証票の「年度別計画」`;
   }
   return runs.reverse().flatMap((run, k) => {
     // 前の年度の名前（書き方の違い（sameKey）だけのものは出さない。成果指標の seikaFormerNames と同じ）

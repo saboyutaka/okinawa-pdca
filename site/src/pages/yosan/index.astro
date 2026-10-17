@@ -12,6 +12,7 @@ import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Toc from '../../components/Toc.astro';
 import Says from '../../components/Says.astro';
+import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, countBy,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
@@ -74,7 +75,7 @@ const visionItems = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sz: s.id,
   note: s.name,
-  href: `/future/${s.id}/#yosan-h`,
+  href: `/future/${s.id}/#yosan`,
   n: oku(sum(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
 }));
 
@@ -149,11 +150,11 @@ const suspects = getSuspects();
   />
 
   <section aria-labelledby="suii">
-    <h2 id="suii" class="anchor">財源別の推移</h2>
-    <p class="small secondary lead">色は予算事業の主な財源です。</p>
+    <SecHead id="suii" class="anchor">財源別の推移</SecHead>
+    <p class="small secondary lead">主な取組の予算事業の金額が、年度ごとにどの財源（県単等・一括交付金・内閣府計上・各省計上）でまかなわれているかが分かります。</p>
     <AmountChart
       title="取組に書かれた予算事業の金額（財源別）"
-      caption="R3〜R6は決算額、R7は決算見込額、R8は当初予算額。"
+      caption="令和3〜6年度は決算額、令和7年度は決算見込額、令和8年度は当初予算額。"
       categories={FUNDS}
       rows={trendRows}
     />
@@ -171,7 +172,7 @@ const suspects = getSuspects();
   </section>
 
   <section aria-labelledby="ikkatsu">
-    <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業と事後評価</h2>
+    <SecHead id="ikkatsu" class="anchor">一括交付金（ソフト）の事業と事後評価</SecHead>
     <p class="small secondary lead">主な取組の評価とは別に、一括交付金（ソフト）を使った事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています。</p>
     <StatusChart title="事後評価の結果" caption="成果目標の達成率による県の評価。" categories={GRADES} rows={ikYearRows} unit="事業" />
     <StatusChart title={`将来像ごとの事業（${yearLabel(IKKATSU_LATEST)}）`} caption="事業の施策で分けています。押すと、その将来像の事業をさがせます。" categories={GRADES} rows={ikSzRows} unit="事業" legend={false} />
@@ -180,14 +181,14 @@ const suspects = getSuspects();
   </section>
 
   <section aria-labelledby="bunya">
-    <h2 id="bunya" class="anchor">部局別・将来像別（{yearLong(LATEST)}の決算見込額）</h2>
+    <SecHead id="bunya" class="anchor">部局別・将来像別（{yearLong(LATEST)}の決算見込額）</SecHead>
     <p class="small secondary lead">件数ではなく金額（億円）です。名前を押すと、部局・将来像のページの予算を見られます。</p>
     <BarList title="部局別" caption="最新の報告での所管部局。" items={deptItems} unit="億円" />
     <BarList title="将来像別" items={visionItems} unit="億円" />
   </section>
 
   <section aria-labelledby="jigyo">
-    <h2 id="jigyo" class="anchor">金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</h2>
+    <SecHead id="jigyo" class="anchor">金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</SecHead>
     <p class="small secondary lead">同じ名前の予算事業をまとめた上位{fmt(top.length)}件です。1つの予算事業が複数の取組を支えていることがあります。</p>
     <ul class="row-list">{top.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
     <h3>財源ごとに見る</h3>
@@ -198,16 +199,16 @@ const suspects = getSuspects();
         <ul class="row-list">{f.rows.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
       </details>
     ))}
-    <p class="small secondary">取組の進捗状況は{yearLabel(LATEST)}の報告の判定です。</p>
+    <p class="small secondary">取組の進捗状況は{yearLong(LATEST)}の報告の判定です。</p>
   </section>
 
   <section aria-labelledby="note">
-    <h2 id="note" class="anchor">データの注意</h2>
+    <SecHead id="note" class="anchor">データの注意</SecHead>
     <ul class="small notes">
       <li>県の予算全体ではなく、PDCAの主な取組に書かれている予算事業だけの金額です。県の人件費や借金の返済は入りません。国直轄や市町村の事業は、取組の予算事業として財源に「国直轄」「市町村」と書かれた分（わずか）だけが「その他」に入ります。企業局の事業や流域下水道事業会計など、一般会計ではない会計の事業も含みます。</li>
       <li>同じ予算事業が複数の取組に同じ金額で書かれていることが多いため、同じ予算事業・財源・金額は1回だけ数えています（部局・将来像は、最初に出てくる取組のものに寄せます）。</li>
       <li>県単融資事業費（年650億円前後）のように、貸付の原資（融資枠）を計上している事業も含みます。</li>
-      <li>部局の検証票が手に入らない取組（病院事業局など）は含みません。{yearLabel(LATEST)}は主な取組{fmt(coverageLatest[1])}件のうち{fmt(coverageLatest[0])}件（{pct(coverageLatest[0], coverageLatest[1])}）の予算を読めています。</li>
+      <li>部局の検証票が手に入らない取組（病院事業局など）は含みません。{yearLong(LATEST)}は主な取組{fmt(coverageLatest[1])}件のうち{fmt(coverageLatest[0])}件（{pct(coverageLatest[0], coverageLatest[1])}）の予算を読めています。</li>
       <li>くわしくは<a href="/data/#kazoekata">このサイトでの数え方</a>と<a href="/yosan/zaigen/">予算の財源のしくみ</a>。</li>
     </ul>
 
@@ -244,8 +245,8 @@ const suspects = getSuspects();
     <details class="sticker cad anchor" id="coverage">
       <summary>部局票がある範囲</summary>
       <p class="small secondary">
-        総括報告書の主な取組のうち、部局の検証票から予算の記載を読めたものの数です（部局は最新の報告での所管部局で数えています）。企業局は県企業局のサイトの設定（robots.txt）で自動取得できないため、手動でダウンロードしたものを使っています（R5の1ファイルはまだありません）。
-        病院事業局は表の形が特殊で読み取れておらず、R4はファイルが見つかりません（リンク切れ）。県警本部はR6の検証票が公開ページに見当たりません。
+        総括報告書の主な取組のうち、部局の検証票から予算の記載を読めたものの数です（部局は最新の報告での所管部局で数えています）。企業局は県企業局のサイトの設定（robots.txt）で自動取得できないため、手動でダウンロードしたものを使っています（令和5年度の1ファイルはまだありません）。
+        病院事業局は表の形が特殊で読み取れておらず、令和4年度はファイルが見つかりません（リンク切れ）。県警本部は令和6年度の検証票が公開ページに見当たりません。
       </p>
       <div class="table-wrap">
         <table>

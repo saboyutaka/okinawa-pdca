@@ -21,6 +21,7 @@ import FilterMore from '../../components/FilterMore.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
+import SecHead from '../../components/SecHead.astro';
 import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy,
@@ -162,10 +163,10 @@ const sources = deptSourcePages(dept.name);
 
   <Toc
     links={[
-      related.length > 0 && { href: '#judge-h', label: '施策の判定' },
-      { href: '#moves-h', label: '前の年度からの変化' },
+      related.length > 0 && { href: '#judge', label: '施策の判定' },
+      { href: '#moves', label: '前の年度からの変化' },
       { href: '#ka', label: '課ごとの取組' },
-      { href: '#trend-h', label: '4年間の推移' },
+      { href: '#trend', label: '4年間の推移' },
       { href: '#yosan', label: '予算' },
       { href: '#lists', label: '成果指標・施策' },
       { href: '#source', label: '出典' },
@@ -174,27 +175,27 @@ const sources = deptSourcePages(dept.name);
   />
 
   {related.length > 0 && (
-    <section aria-labelledby="judge-h">
-      <h2 id="judge-h" class="anchor">かかわる施策の判定（{yearLong(LATEST)}）</h2>
+    <section aria-labelledby="judge">
+      <SecHead id="judge" class="anchor">かかわる施策の判定（{yearLong(LATEST)}）</SecHead>
       <p class="small secondary lead">関係部等にこの部局の名前がある施策と、この部局の主な取組がある施策です。マスを押すと、{dept.name}とその判定で絞り込んだ施策の一覧を開きます。</p>
       <JudgeMatrix counts={judgeCounts} caption={`${dept.name}がかかわる${fmt(related.length)}施策`} hrefOf={(k) => `/shisaku/?dept=${q}&judge=${k}`} />
     </section>
   )}
 
-  <section aria-labelledby="moves-h">
-    <h2 id="moves-h" class="anchor">前の年度からの変化</h2>
-    <p class="small secondary lead">{yearLabel(LATEST - 1)}と{yearLabel(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
+  <section aria-labelledby="moves">
+    <SecHead id="moves" class="anchor">前の年度からの変化</SecHead>
+    <p class="small secondary lead">{yearLong(LATEST - 1)}と{yearLong(LATEST)}の報告を比べました。判定は A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えません。取組の遅れ＝やや遅れ・大幅遅れ・未着手。</p>
     <Moves groups={moves} />
   </section>
 
   <section aria-labelledby="ka">
-    <h2 id="ka" class="anchor">課ごとの主な取組</h2>
+    <SecHead id="ka" class="anchor">課ごとの主な取組</SecHead>
     <p class="small secondary lead">{yearLong(LATEST)}の主な取組の<Term word="進捗状況" />です。課の名前を押すと、その課の取組を取組をさがすで開きます。</p>
     <StatusChart title={`${dept.name}の課（${yearLong(LATEST)}）`} categories={STATUSES} rows={sectionRows} />
   </section>
 
-  <section aria-labelledby="trend-h">
-    <h2 id="trend-h" class="anchor">4年間の推移</h2>
+  <section aria-labelledby="trend">
+    <SecHead id="trend" class="anchor">4年間の推移</SecHead>
     {drawTrend ? (
       <>
         <TrendFigure points={trend} name={dept.name} />
@@ -207,19 +208,19 @@ const sources = deptSourcePages(dept.name);
     ) : (
       <StatusChart title="主な取組の進捗状況" categories={STATUSES} rows={progressRows} />
     )}
-    <p class="small secondary">R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。R7で基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
+    <p class="small secondary">令和4〜6年度は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>、令和7年度からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>です。令和7年度に基準値・目標値・計画値が新しくなったため、成果指標の割合は計画期間をまたいで単純には比べられません。</p>
     {REORGANIZED.has(dept.name) && (
-      <p class="small secondary">令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。R4の数は、その取組がR5以降に所管されている部局に寄せて数えています。</p>
+      <p class="small secondary">令和5年度の組織再編で、旧子ども生活福祉部・旧保健医療部から取組が移ってきています。令和4年度の数は、その取組が令和5年度以降に所管されている部局に寄せて数えています。</p>
     )}
   </section>
 
   <section aria-labelledby="yosan">
-    <h2 id="yosan" class="anchor">予算</h2>
+    <SecHead id="yosan" class="anchor">予算</SecHead>
     {budgetRows.some((r) => Object.values(r.amounts).some((v) => v > 0)) ? (
       <>
         <AmountChart
           title="取組に書かれた予算事業の金額（財源別）"
-          caption={`${yearLabel(LATEST)}の報告の前年度決算額・決算見込額・翌年度当初予算額。同じ予算事業の重複を除いています。`}
+          caption={`${yearLong(LATEST)}の報告の前年度決算額・決算見込額・翌年度当初予算額。同じ予算事業の重複を除いています。`}
           categories={FUNDS}
           rows={budgetRows}
         />
@@ -249,8 +250,8 @@ const sources = deptSourcePages(dept.name);
   </section>
 
   <section aria-labelledby="lists" id="dept-lists">
-    <h2 id="lists" class="anchor">{dept.name}の成果指標・施策</h2>
-    <p class="small">{dept.name}の主な取組（{yearLabel(LATEST)}・{fmt(latest.length)}件）は、<a href={`/torikumi/?dept=${q}`}>取組をさがす</a>で進捗状況や4年間の様子で絞り込んで見られます。</p>
+    <SecHead id="lists" class="anchor">{dept.name}の成果指標・施策</SecHead>
+    <p class="small">{dept.name}の{yearLong(LATEST)}の主な取組（{fmt(latest.length)}件）は、<a href={`/torikumi/?dept=${q}`}>取組をさがす</a>で進捗状況や4年間の様子で絞り込んで見られます。</p>
     <form class="filters sticker" role="search" aria-label="この部局の一覧の絞り込み" data-filter="#dept-lists" data-count="#dcount" data-empty="#dempty" data-summary="#active">
       <label class="q" data-label="キーワード">キーワード（指標・施策の名前）
         <input type="search" name="q" placeholder="例: 離島、子ども" />
@@ -329,7 +330,7 @@ const sources = deptSourcePages(dept.name);
   <ShareBox kind="部局" name={dept.name} />
 
   <section aria-labelledby="source">
-    <h2 id="source" class="anchor">出典</h2>
+    <SecHead id="source" class="anchor">出典</SecHead>
     <p class="small">主な取組の進捗状況・成果指標・施策の判定は、県の「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の総括報告書から読み取っています（1件ずつの出典は、施策と取組のページにあります）。予算は、部局ごとの検証票から読み取っています。</p>
     {sources.length > 0 && (
       <ul class="small">

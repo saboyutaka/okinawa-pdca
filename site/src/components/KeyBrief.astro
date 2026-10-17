@@ -23,7 +23,7 @@ const KINDS: Record<Props['kind'], { text: string; label: string; items: Item[] 
     items: JUDGE_GROUPS.map((g) => ({ key: g.key, text: g.label, tone: g.tone, shape: g.shape })),
   },
   shuyou: {
-    text: '基準値から目標値（R9）までのうち、どこまで進んだかを県が示した割合です。基準値より悪くなるとマイナスになります。',
+    text: '基準値から目標値（令和9年度）までのうち、どこまで進んだかを県が示した割合です。基準値より悪くなるとマイナスになります。',
     label: '達成率の区分',
     items: SHUYOU_BINS.map((b) => ({ key: b.key, text: b.label, tone: b.tone })),
   },

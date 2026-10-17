@@ -18,6 +18,7 @@ import TrendFigure from '../../components/TrendFigure.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
+import SecHead from '../../components/SecHead.astro';
 import {
   LATEST, yearLong, STATUSES, RATE_BINS, statusOf, rateBin, countBy,
   getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus, amountEntries, trendPoints,
@@ -84,16 +85,16 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
   <Toc
     links={[
       { href: '#kihon', label: '基本施策' },
-      { href: '#judge-h', label: '施策の判定' },
-      { href: '#trend-h', label: '4年間の推移' },
-      { href: '#yosan-h', label: '予算' },
+      { href: '#judge', label: '施策の判定' },
+      { href: '#trend', label: '4年間の推移' },
+      { href: '#yosan', label: '予算' },
     ]}
     head={{ kind: '将来像', sz: v.id, title: v.name }}
   />
 
   <section aria-labelledby="kihon">
-    <h2 id="kihon" class="anchor">基本施策ごとの<Term word="主要指標" />と主な取組</h2>
-    <p class="small secondary lead">主要指標の札は、スタート（基準値）からゴール（R9の目標値）までのうち、どこまで進んだかの県の区分と達成率です。</p>
+    <SecHead id="kihon" class="anchor">基本施策ごとの主要指標と主な取組</SecHead>
+    <p class="small secondary lead">基本施策ごとに、沖縄の姿をはかる<Term word="主要指標" />がゴール（令和9年度の目標値）に向けてどこまで進んだか（県の区分と達成率）と、主な取組の進み具合が分かります。</p>
     <KeyBrief kind="status" used={toriUsed} />
     <ul class="k-list">
       {kihonRows.map((k) => <KihonRow kihon={k} shuyou={k.shuyou} tori={k.tori} />)}
@@ -102,13 +103,13 @@ const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
 
   <JudgeSection counts={judgeCounts} hrefOf={(k) => `/shisaku/?s=${v.id}&judge=${k}`} />
 
-  <section aria-labelledby="trend-h">
-    <h2 id="trend-h" class="anchor">4年間の推移</h2>
+  <section aria-labelledby="trend">
+    <SecHead id="trend" class="anchor">4年間の推移</SecHead>
     <TrendFigure points={trend} />
   </section>
 
-  <section aria-labelledby="yosan-h">
-    <h2 id="yosan-h" class="anchor">予算</h2>
+  <section aria-labelledby="yosan">
+    <SecHead id="yosan" class="anchor">予算</SecHead>
     <div class="sticker budget">
       <div class="tile-label">将来像{v.id}の主な取組に書かれた予算事業（決算見込額）</div>
       <div class="tile-value">{yen(budget)}</div>

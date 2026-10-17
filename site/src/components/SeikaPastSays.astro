@@ -12,7 +12,7 @@ const { rows, year } = Astro.props;
 {rows.length > 0 && (
   <details class="past-says">
     <summary>前の年度の県による説明（{rows.map((r) => yearLabel(r.year)).join('・')}）</summary>
-    {rows.some((r) => r.year <= 2024) && year >= 2025 && <p class="small secondary">R6までは前期<Term word="実施計画" />の基準値・計画値に対する説明です。</p>}
+    {rows.some((r) => r.year <= 2024) && year >= 2025 && <p class="small secondary">令和6年度までは前期<Term word="実施計画" />の基準値・計画値に対する説明です。</p>}
     {rows.map((r) => <SeikaSays r={r} />)}
   </details>
 )}

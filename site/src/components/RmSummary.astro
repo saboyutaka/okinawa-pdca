@@ -4,6 +4,7 @@
 // 主な取組の進捗状況と、成果指標の基準値との比較（前進・横ばい・後退）の内訳だけを出す（良い・悪いのどちらかの指標を選んで並べない）
 import StatusBar from './StatusBar.astro';
 import Term from './Term.astro';
+import SecHead from './SecHead.astro';
 import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.ts';
 import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika } from '../lib/plans.ts';
 import { fmt } from '../lib/format.ts';
@@ -13,9 +14,9 @@ const toriCounts = countBy(tori, statusOf, STATUSES.map((s) => s.key));
 const seika = kankoSeika(RM_LATEST);
 const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
 ---
-<section class="sticker plan-sum" aria-labelledby="plan-sum-h">
+<section class="sticker plan-sum" aria-labelledby="keikaku">
   <div><span class="plan-tag">個別計画</span></div>
-  <h2 id="plan-sum-h">県の観光の計画でも評価しています</h2>
+  <SecHead id="keikaku" class="ps-h">県の観光の計画でも評価しています</SecHead>
   <p class="small">「<a href={KANKO.href}>{KANKO.name}</a>」（{KANKO.basis}の実施計画）は、このテーマとは別の、県の<Term word="観光ロードマップ" label="計画" />です。</p>
   <div class="ps-nums">
     <div class="inset">
@@ -36,7 +37,7 @@ const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEME
 
 <style>
   .plan-sum { margin-top: 18px; display: grid; gap: 8px; }
-  .plan-sum h2 { margin: 0; font-size: 1.15rem; }
+  .ps-h { margin: 0; font-size: 1.15rem; }
   .plan-sum p { margin: 0; }
   .ps-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
   .ps-nums > div { display: grid; gap: 4px; padding: 10px 12px; }

@@ -16,6 +16,7 @@ import { getThemes } from '../lib/themes.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
+import SecHead from '../components/SecHead.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
 const latestTori = getTorikumi(LATEST);
@@ -71,17 +72,17 @@ const boshu = boshuState();
     </div>
   </form>
 
-  <section id="themes" aria-labelledby="themes-h">
+  <section aria-labelledby="themes">
     {/* 「このサイト独自の分類」の印は、くらしのテーマの一覧と同じく、押すと分け方の説明が出る用語のボタン */}
-    <h2 id="themes-h">気になるテーマから見てみよう<Term word="くらしのテーマ" label="このサイト独自の分類" class="own" /></h2>
+    <SecHead id="themes">気になるテーマから見てみよう<Term slot="after" word="くらしのテーマ" label="このサイト独自の分類" class="own" /></SecHead>
     <p class="small secondary lead">くらしの{getThemes().length}のテーマごとに、県の施策・取組・成果指標をまとめて見られます。</p>
     <ThemeTiles items={getThemes().map((t) => ({ id: t.id, label: t.label, href: `/theme/${t.id}/` }))} />
     <p class="small more-link"><a href="/theme/">テーマを一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
-  <section aria-labelledby="vision-h">
-    <h2 id="vision-h">5つの<Term word="将来像" />、それぞれの進み具合</h2>
-    <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの将来像を掲げています。</p>
+  <section aria-labelledby="vision">
+    <SecHead id="vision">5つの将来像、それぞれの進み具合</SecHead>
+    <p class="small secondary lead">「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>は、めざす沖縄の姿として5つの<Term word="将来像" />を掲げています。</p>
     <ul class="row-list visions">
       {visions.map((v) => (
         <li class:list={['vision', `sz-${v.id}`]}>
@@ -96,13 +97,13 @@ const boshu = boshuState();
 
   <JudgeSection counts={judgeCounts} title="県の「判定」はこう決まる" />
 
-  <section aria-labelledby="trend-h">
-    <h2 id="trend-h">4年間の推移</h2>
+  <section aria-labelledby="trend">
+    <SecHead id="trend">4年間の推移</SecHead>
     <TrendFigure points={trend} />
   </section>
 
-  <section aria-labelledby="iken-h">
-    <h2 id="iken-h">意見を伝えるには</h2>
+  <section aria-labelledby="iken">
+    <SecHead id="iken">意見を伝えるには</SecHead>
     <div class="sticker iken">
       <p>
         {/* 募集の期間の外はパブリックコメントに触れず、いまできること（県の窓口・SNS）を書く。終わった募集は /iken/ に */}

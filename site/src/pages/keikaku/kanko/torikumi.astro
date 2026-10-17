@@ -6,7 +6,7 @@ import Hierarchy from '../../../components/Hierarchy.astro';
 import FilterMore from '../../../components/FilterMore.astro';
 import Stamps from '../../../components/Stamps.astro';
 import Term from '../../../components/Term.astro';
-import { STATUSES, DELAYS, yearLabel, statusOf, toneOfStatus, sectionHref, deptOf, DEPTS } from '../../../lib/data.ts';
+import { STATUSES, DELAYS, yearLabel, yearLong, statusOf, toneOfStatus, sectionHref, deptOf, DEPTS } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, kankoYears, kankoKihon, kankoTorikumiRows, kankoShisakuHref, type KankoTorikumiGroup } from '../../../lib/plans.ts';
 import { fmt } from '../../../lib/format.ts';
 
@@ -109,8 +109,8 @@ const stOf = (g: KankoTorikumiGroup) => {
   </div>
   <p id="empty" class="secondary" hidden>条件に合う取組はありません。</p>
   <p class="small secondary">
-    {yearLabel(RM_LATEST)}の報告にある取組は{fmt(latestCount)}件で、そのうち{fmt(rows.filter((g) => g.years[RM_LATEST] && g.pdca.length).length)}件は沖縄県PDCAにも同じ名前の主な取組があります（全体では{fmt(overlap)}件）。
-    R4 の実施報告書（本編）は読み取れないため、進捗状況は R5・R6 だけです。同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています。
+    {yearLong(RM_LATEST)}の報告にある取組は{fmt(latestCount)}件で、そのうち{fmt(rows.filter((g) => g.years[RM_LATEST] && g.pdca.length).length)}件は沖縄県PDCAにも同じ名前の主な取組があります（全体では{fmt(overlap)}件）。
+    令和4年度の実施報告書（本編）は読み取れないため、進捗状況は令和5・6年度だけです。同じ施策の中で名前が同じ取組を、年度をまたいで1件にまとめています。
   </p>
 </Base>
 

@@ -27,6 +27,7 @@ import { themeHead } from '../../lib/heads.ts';
 import { KANKO } from '../../lib/plans.ts';
 import RmSummary from '../../components/RmSummary.astro';
 import Term from '../../components/Term.astro';
+import SecHead from '../../components/SecHead.astro';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['theme/[id]'];
@@ -58,15 +59,15 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
     <span class="bh-badge theme-ico" aria-hidden="true"><ThemeIcon id={t.id} /></span>
     <HeadKind kind="くらしのテーマ" term={false} />
     <h1>{t.label.split(/(?<=・)/).map((w) => <span class="nw">{w}</span>)}<Term word="くらしのテーマ" label="このサイト独自の分類" note={wordsNote} class="own" /></h1>
-    <HeadStats items={[{ label: '施策', n: items.length, href: '#list-h' }]} />
+    <HeadStats items={[{ label: '施策', n: items.length, href: '#list' }]} />
     <Ladder seika={head.rates} tori={head.tori} q={`theme=${t.id}`} />
   </header>
 
   <Toc
     links={[
-      { href: '#judge-h', label: '施策の判定' },
-      { href: '#trend-h', label: '4年間の推移' },
-      { href: '#list-h', label: '施策' },
+      { href: '#judge', label: '施策の判定' },
+      { href: '#trend', label: '4年間の推移' },
+      { href: '#list', label: '施策' },
     ]}
     head={{ kind: 'くらしのテーマ', tag: 'ttag', title: t.label }}
   />
@@ -74,13 +75,13 @@ const wordsNote = `このテーマの言葉は${t.words.map((w) => `「${w}」`)
   {/* マスを押すと、テーマと判定の両方で絞り込んだ施策の一覧を開く */}
   <JudgeSection counts={head.judges} hrefOf={(k) => `/shisaku/?theme=${t.id}&judge=${k}`} />
 
-  <section aria-labelledby="trend-h">
-    <h2 id="trend-h" class="anchor">4年間の推移</h2>
+  <section aria-labelledby="trend">
+    <SecHead id="trend" class="anchor">4年間の推移</SecHead>
     <TrendFigure points={trend} />
   </section>
 
-  <section aria-labelledby="list-h">
-    <h2 id="list-h" class="anchor">施策（{fmt(items.length)}）</h2>
+  <section aria-labelledby="list">
+    <SecHead id="list" class="anchor">施策（{fmt(items.length)}）</SecHead>
     <JudgeLegend />
     {visions.map((v) => (
       <>

@@ -29,6 +29,7 @@ import { shisakuHead } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
+import SecHead from '../../components/SecHead.astro';
 import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -164,14 +165,14 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   </Toc>
 
   <section aria-labelledby="seika">
-    <h2 id="seika" class="anchor">成果指標</h2>
+    <SecHead id="seika" class="anchor">成果指標</SecHead>
     <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
     {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} past={!pastSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
     {pastSays && <SeikaPastSays rows={pastSays} year={LATEST} />}
     {seikaPast.length > 0 && (
       <details class="past">
-        <summary>{yearLabel(LATEST)}の報告に無い成果指標（{seikaPast.length}）</summary>
+        <summary>{yearLong(LATEST)}の報告に無い成果指標（{seikaPast.length}）</summary>
         {seikaPast.map((row) => <SeikaCard row={row} says={!endedSays} past={!endedPastSays} />)}
         {endedSays && <SeikaSays r={endedSays} />}
         {endedPastSays && endedSays && <SeikaPastSays rows={endedPastSays} year={endedSays.year} />}
@@ -180,13 +181,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   </section>
 
   <section aria-labelledby="torikumi">
-    <h2 id="torikumi" class="anchor"><Term word="主な取組" /></h2>
-    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ 取組ごとに、{yearLabel(LATEST)}の<Term word="進捗状況" />と、それを決めた<Term word="活動指標" />の計画と実績・決算見込額・4年間の歩みが分かります。予算の推移と県の検証・改善案は、取組のページにあります。</p>
+    <SecHead id="torikumi" class="anchor">主な取組</SecHead>
+    <p class="small secondary lead">県の活動は、計画どおりに進んでいる？ <Term word="主な取組" label="取組" />ごとに、{yearLong(LATEST)}の<Term word="進捗状況" />と、それを決めた<Term word="活動指標" />の計画と実績・決算見込額・4年間の歩みが分かります。予算の推移と県の検証・改善案は、取組のページにあります。</p>
     <ToriList rows={toriActive} />
     {toriEnded.length > 0 && (
       <details class="past">
-        <summary>{yearLabel(LATEST)}の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
-        <p class="small secondary">R7から中期実施計画になり、取組が入れ替わったり、名前が変わったりしたものがあります。印は、最後に報告があった年度の進捗状況です。</p>
+        <summary>{yearLong(LATEST)}の報告に無い取組（終了・名前の変更など {toriEnded.length}件）</summary>
+        <p class="small secondary">令和7年度から中期実施計画になり、取組が入れ替わったり、名前が変わったりしたものがあります。印は、最後に報告があった年度の進捗状況です。</p>
         <ToriList rows={toriEnded} old />
       </details>
     )}
@@ -199,7 +200,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   </section>
 
   <section aria-labelledby="check">
-    <h2 id="check" class="anchor">県のふりかえりと、これから</h2>
+    <SecHead id="check" class="anchor">県のふりかえりと、これから</SecHead>
     <p class="small secondary lead">施策検証票に県が書いた、施策の推進状況の分析（Check）と推進戦略案（Action）です。</p>
     {latest && latest.check && (
       <Says class="voice">
@@ -233,7 +234,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   {/* 一括交付金の事後評価は沖縄県PDCAとは別の評価なので、県のふりかえり（PDCA の流れ）の後ろに置く */}
   {ikkatsu.length > 0 && (
     <section aria-labelledby="ikkatsu">
-      <h2 id="ikkatsu" class="anchor">一括交付金（ソフト）の事業</h2>
+      <SecHead id="ikkatsu" class="anchor">一括交付金（ソフト）の事業</SecHead>
       <p class="small secondary lead">主な取組の評価とは別に、この施策に当たる一括交付金（ソフト）の事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />したもの（◎達成・○概ね達成・△一部達成・未達成）です。</p>
       {ikLatest.length > 0 && (
         <div class="ik-sum">
@@ -244,7 +245,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
       {ikPast.length > 0 && (
         <details class="past">
-          <summary>{yearLabel(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
+          <summary>{yearLong(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
           <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
         </details>
       )}
@@ -256,7 +257,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   <ShareBox kind="施策" name={s.name} />
 
   <section aria-labelledby="source">
-    <h2 id="source" class="anchor">出典</h2>
+    <SecHead id="source" class="anchor">出典</SecHead>
     <p class="small">県の報告書での番号は<strong class="report-no">施策 {s.code}</strong>（<span class="report-no">基本施策 {kihon?.code}</span>）です。</p>
     <ul class="small">
       {yearsDesc.map((y) => {

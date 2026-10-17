@@ -13,6 +13,7 @@ import RmSeika from '../../../components/RmSeika.astro';
 import RmTorikumi from '../../../components/RmTorikumi.astro';
 import Toc from '../../../components/Toc.astro';
 import Says from '../../../components/Says.astro';
+import SecHead from '../../../components/SecHead.astro';
 import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.ts';
 import { joinLines, firstSentence } from '../../../lib/text.ts';
@@ -59,7 +60,7 @@ const next = all[i + 1];
     const past = Object.values(s.years).filter((r) => r.year !== s.year && (r.check || r.action)).sort((a, b) => b.year - a.year);
     return (
       <section class="rm-shisaku" aria-labelledby={`rm-${s.id}`}>
-        <div class="name-row"><h2 id={`rm-${s.id}`} class="anchor">{s.name}</h2><span class="code-no" title="観光ロードマップの報告書での番号">施策 {s.code}</span></div>
+        <div class="name-row"><SecHead id={`rm-${s.id}`} class="anchor rm-h">{s.name}</SecHead><span class="code-no" title="観光ロードマップの報告書での番号">施策 {s.code}</span></div>
         <p class="small secondary meta">関係部等: {depts.length ? depts.map((d, k) => <>{k > 0 && '、'}{deptHref(d) ? <a class="sub-link" href={deptHref(d)}>{d}</a> : d}</>) : (s.kankei || '—')}</p>
         {s.houkou && (
           <Says label="ひとことで言うと（観光ロードマップの「施策の方向」から）" class="houkou">
@@ -85,7 +86,7 @@ const next = all[i + 1];
         <div class="tcards">{active.map((g) => <RmTorikumi g={g} years={years} id={kankoTorikumiAnchor(s.id, g.key)} />)}</div>
         {ended.length > 0 && (
           <details class="past">
-            <summary>{yearLabel(RM_LATEST)}の報告に無い取組（{ended.length}件）</summary>
+            <summary>{yearLong(RM_LATEST)}の報告に無い取組（{ended.length}件）</summary>
             <div class="tcards">{ended.map((g) => <RmTorikumi g={g} years={years} id={kankoTorikumiAnchor(s.id, g.key)} />)}</div>
           </details>
         )}
@@ -107,7 +108,7 @@ const next = all[i + 1];
         <p class="small src">
           出典（観光ロードマップの報告書での番号は<span class="report-no">施策 {s.code}</span>）: {Object.values(s.years).sort((a, b) => b.year - a.year).map((r, k) => {
             const a = planSourceLink('kanko', r.source, r.page);
-            return <>{k > 0 && '、'}{a ? <ExtLink href={a.href}>{yearLabel(r.year)} 実施報告書 {r.page}ページ</ExtLink> : yearLabel(r.year)}</>;
+            return <>{k > 0 && '、'}{a ? <ExtLink href={a.href}>{yearLong(r.year)} 実施報告書 {r.page}ページ</ExtLink> : yearLong(r.year)}</>;
           })}
         </p>
       </section>
@@ -124,7 +125,7 @@ const next = all[i + 1];
 <style>
   .rm-shisaku { margin-top: 36px; padding-top: 4px; border-top: 2.5px solid var(--line); }
   .rm-shisaku > .name-row { margin-top: 18px; }
-  .rm-shisaku h2 { margin: 0 0 6px; }
+  .rm-h { margin: 0 0 6px; }
   .rm-shisaku h3 { margin: 1.4em 0 0.5em; }
   .houkou { margin-top: 10px; }
   .seika { display: grid; gap: 12px; }

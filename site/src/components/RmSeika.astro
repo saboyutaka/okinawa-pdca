@@ -6,7 +6,7 @@
 import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Says from './Says.astro';
-import { yearLabel, withUnit, refText, sectionHref } from '../lib/data.ts';
+import { yearLabel, yearLong, withUnit, refText, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
 import { joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
@@ -34,7 +34,7 @@ const down = nums && target < base;
 const j = rmJudgementOf(x.judgement || 'その他');
 const reached = x.rate_raw === '達成' || (x.rate != null && x.rate >= 100) || (progress != null && progress >= 1);
 const verdict = {
-  前進: reached ? 'スタートの基準値より良くなり、R6の目標値に届いています' : 'スタートの基準値より良くなっていますが、R6の目標値にはまだ届いていません',
+  前進: reached ? 'スタートの基準値より良くなり、令和6年度の目標値に届いています' : 'スタートの基準値より良くなっていますが、令和6年度の目標値にはまだ届いていません',
   横ばい: 'スタートの基準値から変わっていません',
   後退: 'スタートの基準値より悪くなっています',
   その他: '目標値の設定が難しいなどで、基準値と比べられません',
@@ -45,7 +45,7 @@ const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達�
 const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
 const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
 const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
-const note = ref ? `この指標の${yl}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yl}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
+const note = ref ? `この指標の${yearLong(x.year)}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yearLong(x.year)}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
 
 // ③ 道のりの図のデータ（components/SeikaChart.astro と同じ形）。年度ごとに、その年度の実績値と、計画期間の計画値の並び
 const years: SeikaChartYear[] = x.years.map((yy, k) => ({
