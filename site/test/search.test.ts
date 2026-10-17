@@ -1,7 +1,7 @@
 // 表記ゆれをそろえる・一覧の検索の比べ方（lib/search.ts）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { foldVariants, searchText, searchWords, matchesAll, matchRanges } from '../src/lib/search.ts';
+import { foldVariants, searchText, searchWords, matchesAll, matchRanges, splitMatches } from '../src/lib/search.ts';
 
 const hit = (text: string, q: string) => matchesAll(searchText(text), searchWords(q));
 
@@ -45,4 +45,11 @@ test('matchRanges: 当たった所を元の文字の位置で返し、重なり�
   // NFKC で字の数が変わるもの（㎡ → m2）も、元の1字ごと印を付ける
   assert.deepEqual(mark('100㎡以上', 'm2'), ['㎡']);
   assert.deepEqual(mark('観光', '離島'), []);
+});
+
+test('splitMatches: 当たった所とそうでない所に順に分ける（言葉が無ければ全部が当たっていない所）', () => {
+  assert.deepEqual(splitMatches('離島の離島振興', searchWords('離島')), [
+    { text: '', hit: false }, { text: '離島', hit: true }, { text: 'の', hit: false }, { text: '離島', hit: true }, { text: '振興', hit: false },
+  ]);
+  assert.deepEqual(splitMatches('観光', []), [{ text: '観光', hit: false }]);
 });

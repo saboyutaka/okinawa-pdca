@@ -4,9 +4,10 @@
 //  - 吹き出しは1つを使い回し、押した四角の下（画面に入らなければ上）に置いて、尾で四角を指す。同じ四角をもう一度押す・×・Esc・吹き出しの外を押すと閉じる
 //  - Tab で止まる並び（tabindex を付けたもの）は、止まっただけでは開かず、← → Home End で1件ずつ移って中身を出し、Enter でそのページへ移る。
 //    フォーカスが並びと吹き出しの外へ出たら閉じる
-import { esc } from '../lib/html.ts';
+import { popClose, popHead } from '../lib/cell-pop.ts';
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { reveal } from './motion.ts';
+import { placePop } from './pop-place.ts';
 
 type Cat = [label: string, tone: Tone];
 interface Sel { wrap: HTMLElement; cells: HTMLElement[]; i: number }
@@ -31,21 +32,12 @@ function build() {
   return p;
 }
 
-// 吹き出しを四角の下に置き、画面の下に入らなければ上に置く（上にも入らなければ下）。横は画面の中に収め、尾は四角の真ん中を指す
+// 吹き出しは body に置くので、ページのスクロールの量を足して置く
 function place() {
   if (!sel || !pop) return;
   const cell = sel.cells[sel.i];
   if (!cell.offsetParent) return close(); // 絞り込みなどで行が隠れた
-  const c = cell.getBoundingClientRect();
-  const w = pop.offsetWidth;
-  const h = pop.offsetHeight;
-  const vw = document.documentElement.clientWidth;
-  const left = Math.max(8, Math.min(c.left + c.width / 2 - w / 2, vw - w - 8));
-  const below = c.bottom + 12 + h <= innerHeight - 8 || c.top - 12 - h < 8;
-  pop.classList.toggle('above', !below);
-  pop.style.left = `${left + scrollX}px`;
-  pop.style.top = `${(below ? c.bottom + 12 : c.top - 12 - h) + scrollY}px`;
-  pop.style.setProperty('--ax', `${c.left + c.width / 2 - left}px`);
+  placePop(pop, cell.getBoundingClientRect(), { x: scrollX, y: scrollY });
 }
 
 function show(wrap: HTMLElement, i: number) {
@@ -56,8 +48,7 @@ function show(wrap: HTMLElement, i: number) {
   cells[i].classList.add('sel');
   const [label, tone] = (JSON.parse(wrap.dataset.cats!) as Cat[])[Number(cells[i].dataset.k)];
   const mark = wrap.dataset.shapes === 'true' ? iconSvg(tone) : `<i class="cp-sq tone-${tone}" aria-hidden="true"></i>`;
-  pop.innerHTML = `<p class="cp-head"><span class="cp-term">${esc(wrap.dataset.term!)}</span><span class="chip">${mark}<span>${esc(label)}</span></span><span class="cp-year">${esc(wrap.dataset.year!)}</span></p>`
-    + '<button type="button" class="cp-close" data-cp-close aria-label="閉じる">×</button>';
+  pop.innerHTML = popHead(wrap.dataset.term!, mark, label, wrap.dataset.year!) + popClose('data-cp-close');
   const body = wrap.querySelector('template')!.content.children[i];
   if (body) pop.insertBefore(body.cloneNode(true), pop.lastChild);
   pop.hidden = false;

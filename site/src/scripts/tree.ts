@@ -20,7 +20,7 @@
 //    指標（PC では名前の横、スマホでは開いた中の行）にも止まらない（マウスで押すリンクにする）
 import { fmt } from '../lib/format.ts';
 import { esc } from '../lib/html.ts';
-import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
+import { matchesAll, searchText, searchWords, splitMatches, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
 import { getJsonOr } from './fetch-json.ts';
 import { bump, reveal } from './motion.ts';
@@ -371,22 +371,18 @@ async function init(tree: HTMLElement) {
   const painted = new Set<HTMLElement>();
   const paint = (el: HTMLElement, words: SearchWord[] | null) => {
     const text = original.get(el)!;
-    const ranges = words ? matchRanges(text, words) : [];
-    if (!ranges.length) {
+    const parts = splitMatches(text, words ?? []);
+    if (!parts.some((p) => p.hit)) {
       el.textContent = text;
       painted.delete(el);
       return;
     }
-    const parts: (string | HTMLElement)[] = [];
-    let at = 0;
-    for (const [a, b] of ranges) {
+    el.replaceChildren(...parts.map((p) => {
+      if (!p.hit) return p.text;
       const m = document.createElement('mark');
-      m.textContent = text.slice(a, b);
-      parts.push(text.slice(at, a), m);
-      at = b;
-    }
-    parts.push(text.slice(at));
-    el.replaceChildren(...parts);
+      m.textContent = p.text;
+      return m;
+    }));
     painted.add(el);
   };
 

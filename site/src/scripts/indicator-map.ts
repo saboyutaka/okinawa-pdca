@@ -13,14 +13,16 @@
 //    Home・End で最初・最後に移る。絞り込んでいるときは、条件に合うマスだけを移る（薄くしたマスは飛ばす。押せば選べる）。
 //    吹き出しが出ているときは Enter でその指標のページへ移る
 import { fmt } from '../lib/format.ts';
+import { popClose, popHead, popVals } from '../lib/cell-pop.ts';
 import { esc } from '../lib/html.ts';
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
-import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
+import { matchesAll, searchText, searchWords, splitMatches, type SearchWord } from '../lib/search.ts';
 import type { MapData, MapSearch } from '../lib/map-data.ts';
 import { yearLabel as yl, yearLong } from '../lib/years.ts';
 import { getJsonOr } from './fetch-json.ts';
 import { bump, reveal } from './motion.ts';
+import { placePop } from './pop-place.ts';
 
 type Cat = [key: string, label: string, tone: Tone];
 interface Tier {
@@ -39,15 +41,7 @@ interface Tier {
 }
 
 // キーワードに当たった字に印を付けた HTML（計画の目次と同じ）
-const marked = (text: string, words: SearchWord[]) => {
-  let out = '';
-  let at = 0;
-  for (const [a, b] of words.length ? matchRanges(text, words) : []) {
-    out += `${esc(text.slice(at, a))}<mark>${esc(text.slice(a, b))}</mark>`;
-    at = b;
-  }
-  return out + esc(text.slice(at));
-};
+const marked = (text: string, words: SearchWord[]) => splitMatches(text, words).map((p) => (p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text))).join('');
 
 const form = document.querySelector<HTMLFormElement>('form[data-map-form]');
 const root = document.querySelector<HTMLElement>('[data-map-root]');
@@ -114,20 +108,11 @@ function init(form: HTMLFormElement, root: HTMLElement) {
 
   let sel: { t: Tier; i: number } | null = null;
 
-  // 吹き出しをマスの下に置き、画面の下に入らなければ上に置く（上にも入らなければ下）。横は画面の中に収め、尾はマスの真ん中を指す
+  // 吹き出しはマップの箱の中に置くので、箱の左上を基準にして置く
   const place = () => {
     if (!sel) return;
-    const c = sel.t.cells[sel.i].getBoundingClientRect();
     const box = root.getBoundingClientRect();
-    const w = pop.offsetWidth;
-    const h = pop.offsetHeight;
-    const vw = document.documentElement.clientWidth;
-    const left = Math.max(8, Math.min(c.left + c.width / 2 - w / 2, vw - w - 8));
-    const below = c.bottom + 12 + h <= innerHeight - 8 || c.top - 12 - h < 8;
-    pop.classList.toggle('above', !below);
-    pop.style.left = `${left - box.left}px`;
-    pop.style.top = `${(below ? c.bottom + 12 : c.top - 12 - h) - box.top}px`;
-    pop.style.setProperty('--ax', `${c.left + c.width / 2 - left}px`);
+    placePop(pop, sel.t.cells[sel.i].getBoundingClientRect(), { x: -box.left, y: -box.top });
   };
 
   const close = () => {
@@ -145,8 +130,8 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (code === '-') return close();
     const [, label, tone] = t.cats[Number(code)];
     const mark = t.shapes ? iconSvg(tone) : `<i class="mc tone-${tone}" aria-hidden="true"></i>`;
-    const head = `<p class="cp-head"><span class="cp-term">${esc(t.term)}</span><span class="chip">${mark}<span>${esc(label)}</span></span><span class="cp-year">${yl(y)}</span></p>`;
-    const closeBtn = '<button type="button" class="cp-close" data-map-close aria-label="閉じる">×</button>';
+    const head = popHead(t.term, mark, label, yl(y));
+    const closeBtn = popClose('data-map-close');
     pop.hidden = false;
     pop.innerHTML = head + '<p class="cp-sub small secondary">読み込んでいます…</p>' + closeBtn;
     window.era?.fix(pop); // 西暦で表示しているときは、大きさを測る前に書き換える（lib/era.ts）
@@ -167,7 +152,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
           x.n ? `<p class="cp-sub small secondary">${yl(y)}の報告の名前: ${marked(x.n, words)}</p>` : '',
           `<p class="cp-sub small secondary">${t.parent} <a class="sub-link" href="${esc(phref)}">${marked(pname, words)}</a> <span class="code-no">${esc(pcode)}</span></p>`,
           x.sub != null ? `<p class="cp-sub small"><span class="imp-l">${t.term}</span>${x.sub ? marked(x.sub, words) : '—'}</p>` : '',
-          `<dl class="cp-vals">${x.v.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`,
+          popVals(x.v),
         ].join('');
       }
     } catch {
