@@ -26,7 +26,7 @@ import SecHead from '../../components/SecHead.astro';
 import { themeIdsOf } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
-  getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
+  getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
   FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, currentDeptOf, budgetKey, countStatuses, countRates,
 } from '../../lib/data.ts';
@@ -34,7 +34,7 @@ import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
 import { deptDescription } from '../../lib/describe.ts';
-import { deptHead, total } from '../../lib/heads.ts';
+import { allHead, deptHead, total } from '../../lib/heads.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['bukyoku/[slug]'];
@@ -47,10 +47,10 @@ const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
 const reached = (s: SeikaRowT) => rateBin(s) === '100%以上';
 const seikaLatest = getSeika(LATEST).filter((s) => seikaDept(s) === dept.name);
-const allTori = getTorikumi(LATEST);
-const allSeika = getSeika(LATEST);
-const allToriRate = pct(allTori.filter((t) => t.status === '順調').length, allTori.length);
-const allSeikaRate = pct(allSeika.filter(reached).length, allSeika.length);
+// 県全体（lib/heads.ts）
+const all = allHead();
+const allToriRate = pct(all.tori['順調'], total(all.tori));
+const allSeikaRate = pct(all.reached, all.seika);
 
 // この部局がかかわる施策: 関係部等に名前がある施策と、関係部等には無いがこの部局の取組がある施策（lib/data.ts の shisakuDepts。施策をさがすの部局の絞り込みと同じ）
 const related = getShisakuList().flatMap((s) => {

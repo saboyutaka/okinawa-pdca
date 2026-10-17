@@ -8,28 +8,18 @@ import Sz from '../components/Sz.astro';
 import JudgeSection from '../components/JudgeSection.astro';
 import TrendFigure from '../components/TrendFigure.astro';
 import Share from '../components/Share.astro';
-import {
-  YEARS, LATEST, yearLong, yearsLong, countJudges,
-  getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount, countStatuses, countRates,
-} from '../lib/data.ts';
+import { YEARS, LATEST, yearLong, yearsLong, getShouraizou, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
-import { futureHead } from '../lib/heads.ts';
+import { allHead, futureHead } from '../lib/heads.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
-// 年度をまたいでまとめた取組（取組をさがすと同じ数え方）
-const groups = getTorikumiGroups();
-const L = YEARS.length - 1;
-const latestGroups = groups.filter((g) => g.statuses[L]);
-// ヒーローの3つの段（components/Ladder.astro）: 主要指標の達成状況・成果指標の達成率・主な取組の進捗状況の内訳
+// ヒーローの3つの段（components/Ladder.astro）: 主要指標の達成状況・成果指標の達成率・主な取組の進捗状況の内訳。施策の判定のマス目も県全体の数（lib/heads.ts）
 const shuyou = getShuyouStatus();
-const seikaCounts = countRates(getSeika(LATEST));
-const toriCounts = countStatuses(latestGroups, (g) => g.statuses[L]!);
-const shisaku = getShisakuList();
-const judgeCounts = countJudges(shisaku);
+const head = allHead();
 
 
 // 将来像ごと。主要指標の達成状況の内訳のマス目の棒と、主な取組の進捗状況の内訳の棒の2段（components/Tiers.astro。5つの将来像のページの基本施策の行と同じ順）。
@@ -55,7 +45,7 @@ const boshu = boshuState();
       沖縄県は毎年、「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを点検し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>として公表しています。<br />
       その結果（{yearsLong(YEARS[0], LATEST)}）を、<a href="/data/#shutten">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
-    <Ladder shuyou={shuyou} seika={seikaCounts} tori={toriCounts} toriDistinct={distinctTorikumiCount(LATEST)} />
+    <Ladder shuyou={shuyou} seika={head.rates} tori={head.tori} toriDistinct={distinctTorikumiCount(LATEST)} />
   </section>
 
   <form class="search sticker" action="/shisaku/" method="get" role="search" aria-label="さがす">
@@ -91,7 +81,7 @@ const boshu = boshuState();
     <p class="small more-link"><a href="/future/">将来像を一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
-  <JudgeSection counts={judgeCounts} title="県の「判定」はこう決まる" />
+  <JudgeSection counts={head.judges} title="県の「判定」はこう決まる" />
 
   <section aria-labelledby="trend">
     <SecHead id="trend">4年間の推移</SecHead>

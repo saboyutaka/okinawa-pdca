@@ -39,6 +39,9 @@ export function shisakuHead(s: Shisaku): Head & { judge: string | null } {
   };
 }
 
+// 県全体: トップのヒーローと、部局のページの「県全体は〇%」
+export const allHead = (): AreaHead => area(getShisakuList(), countStatuses(getTorikumi(LATEST), statusOf), getSeika(LATEST));
+
 // 将来像: 施策のコードが将来像の番号で始まるもの
 export function futureHead(id: number): AreaHead {
   const pre = `${id}-`;
