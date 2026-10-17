@@ -58,6 +58,8 @@ function search(form: HTMLFormElement) {
     const a = el('a', 'sub-link', sname) as HTMLAnchorElement;
     a.href = `/shisaku/${sid}/`;
     s.append(a, ' ', el('span', 'code-no', code));
+    // 複数の施策に載っている同じ取組（再掲）。同じ名前の行がほかの施策にもあるわけが分かるように、施策の後ろに書く
+    if (row[13]) s.append(`・${row[13]}施策に共通`);
     // 最新の年度の報告から新しく載った取組（「R7から」）と、最新の年度の報告に無い取組（「R6まで」）の札（components/YearTag.astro と同じ形）
     const kind = row[11].includes('new') ? 'new' : row[11].includes('ended') ? 'ended' : '';
     if (kind) {
@@ -154,8 +156,8 @@ function search(form: HTMLFormElement) {
       // 4年間の様子は、ビルド時に lib/data.ts の PATTERNS で決めたものを見る（トップや将来像の数とそろえるため）
       if (pat && !r[11].includes(pat)) return false;
       if (plan && !r[12].includes(plan)) return false;
-      // ほかの取組とのつながりも、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
-      if (link && !r[13].includes(link)) return false;
+      // 複数の施策に共通（再掲）も、ビルド時に lib/data.ts の relatedOf で決めたもの（取組のページの頭に出るものと同じ）
+      if (link && !r[13]) return false;
       // 名前などとやったことを合わせた中に、すべての言葉があれば当たり（言葉ごとに別の欄にあってもよい）
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;
@@ -188,17 +190,24 @@ function search(form: HTMLFormElement) {
   function renderActive() {
     const chips: HTMLElement[] = [];
     for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
-      if (!input.value) continue;
+      const box = input instanceof HTMLInputElement && input.type === 'checkbox' ? input : null;
+      if (box ? !box.checked : !input.value) continue;
       const i = chips.length;
       const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
-      const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : `「${input.value}」`;
-      const b = el('button', 'active-chip', `${label}: ${text}`) as HTMLButtonElement;
+      const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : box ? box.dataset.text : `「${input.value}」`;
+      // チェックボックスは、その文字だけで条件が分かるので見出しを付けない
+      const b = el('button', 'active-chip', box ? text : `${label}: ${text}`) as HTMLButtonElement;
       b.type = 'button';
-      b.setAttribute('aria-label', `${label} ${text} の条件を外す`);
+      b.setAttribute('aria-label', `${box ? '' : `${label} `}${text} の条件を外す`);
       const x = el('span', '', '×');
       x.setAttribute('aria-hidden', 'true');
       b.append(x);
-      b.addEventListener('click', () => { input.value = ''; refocus = i; apply(); });
+      b.addEventListener('click', () => {
+        if (box) box.checked = false;
+        else input.value = '';
+        refocus = i;
+        apply();
+      });
       chips.push(b);
     }
     active.hidden = chips.length === 0;
@@ -209,9 +218,11 @@ function search(form: HTMLFormElement) {
     }
   }
 
+  // チェックボックスは、URL の値がその値のときだけ入れる（?link=repost。前にあった ?link=before などは入れない）
   for (const [k, v] of new URLSearchParams(location.search)) {
     const input = form.elements.namedItem(k) as HTMLInputElement | null;
-    if (input) input.value = v;
+    if (input?.type === 'checkbox') input.checked = input.value === v;
+    else if (input) input.value = v;
   }
   // 絞り込み中の札は、URL の条件からデータを待たずに出す（データが届いてから出すと、そのぶん件数と一覧が下にずれる）
   renderActive();

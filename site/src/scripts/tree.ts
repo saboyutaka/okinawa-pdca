@@ -58,7 +58,8 @@ function shisakuRow(s: TreeShisaku) {
   const cs: Count[] = [['取組', s.torikumi.length], ['成果指標', s.seika.length, 'seika']];
   const rows = [
     ...s.seika.map((l) => indRow(l, '成果指標', 'seika', true)),
-    ...s.torikumi.map(([no, name, href, act]) => `<li role="none" class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><span class="nm"><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a>${actInd(act, href)}</span></div></li>`),
+    // 複数の施策に載っている取組は、名前の後ろに「2施策に共通」（同じ名前の行がほかの施策の下にもあるわけが分かるように）
+    ...s.torikumi.map(([no, name, href, act, common]) => `<li role="none" class="leaf" data-q="取組"><div class="tb"><span class="no" aria-hidden="true">${no}</span><span class="nm"><a class="name-link" href="${esc(href)}" ${ti(5)}>${sr(`取組${no}`)}<span class="qn">${esc(name)}</span></a>${common ? `<span class="common">${common}施策に共通</span>` : ''}${actInd(act, href)}</span></div></li>`),
   ];
   return `<li role="none" class="nd lv3" id="s-${esc(s.id)}" data-q="施策"><div class="tb"><span class="no" aria-hidden="true">${esc(s.no)}</span><span class="nm"><a class="name-link" href="/shisaku/${esc(s.id)}/" ${ti(4, rows.length > 0)}>${sr(`施策${s.no}`)}<span class="qn">${esc(s.name)}</span></a>${inds(s.seika, '成果指標', 'seika', true)} ${counts(cs)}</span></div>${
     rows.length ? `${toggle(3, cs)}<ul role="group">${rows.join('')}</ul></details>` : '<span class="tg" aria-hidden="true"><span class="tw tw-none"></span></span>'

@@ -61,20 +61,18 @@ const dataPath = searchDataPath();
         <option value="ended">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
-    <label data-label="つながり">ほかの取組とのつながり
-      <select name="link">
-        <option value="">すべて</option>
-        <option value="before">前回までの取組がある</option>
-        <option value="after">後続の取組がある</option>
-        <option value="repost">関連の取組（再掲）がある</option>
-      </select>
-    </label>
     <label data-label="個別計画">個別計画
       <select name="plan">
         <option value="">すべて</option>
         <option value="kanko">{KANKO.short}でも評価されている</option>
       </select>
     </label>
+    <fieldset class="fgroup" data-label="共通">
+      <legend class="fgroup-label">複数の施策に共通</legend>
+      <div class="fchips">
+        <label class="fchip"><input type="checkbox" name="link" value="repost" data-text="複数の施策に共通の取組だけ" /><span>共通の取組だけ</span></label>
+      </div>
+    </fieldset>
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>

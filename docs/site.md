@@ -9,7 +9,7 @@
 - 数え方は `lib/data.ts` に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。
 - 取組の活動指標の図と表は `lib/data.ts` の `activityRuns`。活動指標が途中で変わった取組は活動指標ごと（`group`。同じ活動指標かは `katsudouKey` で比べる。書き方の違いと「（累計）」「（内訳）」の付け外しはそろえ、名前が言い回しだけ変わったものは `lib/renames.ts` の `KATSUDOU_RENAMES` で読み替えてつなぎ、run の見出しは新しい年度の名前、前の名前は `formers` に入れて取組のページの出典に書く。`docs/data.md` の 8章）に、目標・実績が2行以上に分かれた活動指標（「５回／200名」「北部15項目／西表11項目」。42件）は行ごと（`part` に行の札）に run を分け、取組のページは同じ `group` の行のカードを1つの見出しの下に並べる。単位の無い数（「18」「0」）はそのまとまりの単位とみなして図に置く。分け方の規則は `docs/data.md` の 4.1。
   - `PATTERNS`: 取組の4年間の様子（4年とも遅れ・3年以上遅れ・遅れから順調に など）。部局の「前の年度からの変化」（`components/Moves.astro`）と取組をさがすの絞り込みが使う。
-  - `relatedOf`: 取組のほかの取組とのつながり（前回までの取組・後続の取組・関連の取組（再掲）。選び方は [data.md](data.md) の「前回までの取組」「関連の取組」の行）。取組のページの頭と、取組をさがすの「ほかの取組とのつながり」が使う。
+  - `relatedOf`: 取組のほかの取組とのつながり（前回までの取組・後続の取組・再掲。選び方は [data.md](data.md) の「前回までの取組」「再掲」の行）。取組のページの頭と、取組をさがすの「複数の施策に共通」の絞り込みが使う。載っている施策の数（「2施策に共通」）は `commonShisakuCount`、重なりを除いた取組の数（トップ）は `distinctTorikumiCount`。
   - `JUDGE_TRENDS`: 施策の判定の移り変わり（上がった・下がった・3年続けて遅れ）。A → B → C〜F → G の順で比べ、C〜F の中での入れ替わりは数えない。施策をさがすの絞り込み（`?trend=`）と、部局の「前の年度からの変化」が使う。
   - `JUDGE_CELLS`: 判定の区分表（[data.md](data.md) の 6.3）。判定のマス目（`components/JudgeMatrix.astro`）と、印字された判定が区分表どおりかを確かめるテストが使う。
   - `shisakuDepts`: 部局がかかわる施策（関係部等に名前がある施策と、その部局の取組がある施策）。
@@ -30,7 +30,7 @@
 
 ## 3. lib とスクリプト
 
-- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`map-data.ts`（指標のマップのマスと、押したときに読む JSON）・`cell-pop.ts`（押せる四角の中身の HTML。下の `cell-pop.ts`）・`map-label.ts`（指標のマップのマス目の読み上げ。ブラウザでも読み込む）、`format.ts`（数の書き方）、`renames.ts`（名前が変わっても同じ取組・成果指標とみなすものの一覧。[data.md](data.md) の8章）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
+- `src/lib/`: `data.ts`（読み込みとページ用の形・数え方）、`describe.ts`（ページの説明文。6章）、`plans.ts`（観光ロードマップ・一括交付金・評価検証報告書）、`themes.ts`（くらしのテーマ）、`icons.ts`（状態と判定の形）、`terms.ts`（用語の説明）、`text.ts`（PDF の改行の整形）、`search.ts`（表記ゆれをそろえる・検索の比べ方・当たった所。ブラウザでも読み込む）、`search-data.ts`・`tree-data.ts`（取組をさがす・計画の目次がブラウザで読む JSON）、`map-data.ts`（指標のマップのマスと、押したときに読む JSON）・`cell-pop.ts`（押せる四角の中身の HTML。下の `cell-pop.ts`）・`map-label.ts`（指標のマップのマス目の読み上げ。ブラウザでも読み込む）、`format.ts`（数の書き方）、`renames.ts`（名前が変わっても同じ取組・成果指標とみなすもの、名前を変えて別の施策に載っている取組の一覧。[data.md](data.md) の8章）、`links.ts`（サイトの名前と外部の URL）、`era.ts`（年を西暦で表示するときの書き換え。下の `era.ts` と7章）、`routes.ts`（動的なページの URL と、公開した URL の一覧の確かめ。8章）、`iken.ts`・`share.ts`・`like.ts`（意見募集とシェアといいね）。
 - `worker/api.ts`（Cloudflare の Worker）: `/api/` を受ける。いまは、いいねの `POST /api/like?page=<ページのパス>` に 204 を返すだけ。サイトで Worker が動くのはここだけ（[deploy.md](deploy.md) の1章）。
 - `scripts/urls.ts`（node。`make urls`）: 公開した URL の一覧（`urls.txt`）を書き直す（8章）。
 - `src/scripts/`（ブラウザ）: 入口は `site.ts` の1つだけで、どのページも `layouts/Base.astro` の `<head>` でこれを読み込む（7章）。スクリプトを足すときは、ページや部品に `<script>` を書かず、`src/scripts/` のファイルにして `site.ts` から import する。どのページでも動くので、自分の部品が無いページでは何もしないように書く（`for (... of document.querySelectorAll(...))` か、要素が無ければ戻る）。動く順は `site.ts` の import の順。例外は、年を西暦で表示するときに読む `/era-<ハッシュ>.js`（`lib/era.ts` の `ERA_JS`。7章）。
