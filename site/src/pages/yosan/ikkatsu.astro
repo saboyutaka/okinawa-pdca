@@ -12,7 +12,7 @@ import Sz from '../../components/Sz.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import Says from '../../components/Says.astro';
-import { yearLabel, yearLong, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
+import { yearLabel, yearLong, yearsLong, countBy, getShisaku, getShisakuList, getKihonList, getShouraizou, DEPTS, type YearGroup } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuDept, isShort, ikkatsuRows, planSourceLink } from '../../lib/plans.ts';
 import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -74,7 +74,7 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
   return link ? [{ href: link.href, year: y }] : [];
 });
 ---
-<Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${IKKATSU_YEARS.map(yearLabel).join('・')}）の評価・将来像・部局でさがせます。`}>
+<Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${yearsLong(IKKATSU_YEARS[0], IKKATSU_YEARS[IKKATSU_YEARS.length - 1])}）の評価・将来像・部局でさがせます。`}>
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="一括交付金の事業をさがす" />
   <h1>一括交付金の事業をさがす</h1>
   <p class="secondary lead">
