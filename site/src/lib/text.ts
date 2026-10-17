@@ -1,8 +1,13 @@
 // PDFから読んだ文章の改行を整える。文の途中の折り返しはつなぎ、見出し・箇条の頭・文末の改行は残す
 // 報告書の表の値の改行を空白にして1行にする（「1,032万t-CO₂\n（R3年度）」→「1,032万t-CO₂ （R3年度）」）。空なら —
 export const oneLine = (v: string | null | undefined) => (v || '—').replace(/\s*\n\s*/g, ' ');
-// 報告書の欄が空か（空白と「-」「―」などだけ。目標値が文の成果指標の計画値の欄など）。ブラウザのスクリプト（scripts/charts.ts）でも読むので、ほかのファイルを import しない
-export const isBlankCell = (s: string) => !/[^\s\-－―—‐]/.test(s);
+// 報告書の欄が空か（空白と「-」「―」「ー」などだけ。目標値が文の成果指標の計画値の欄・部局票の改善案の欄など）。
+// ブラウザのスクリプト（scripts/charts.ts）でも読むので、ほかのファイルを import しない（下の isNumOnly・withUnit も）
+export const isBlankCell = (s: string | null | undefined) => !/[^\s\-－―—‐ーｰ]/.test(s || '');
+// 報告書の欄が数だけか（「1,234」「△5.2」。全角の数字も）
+export const isNumOnly = (raw: string | null | undefined) => /^[-△]?[\d,.]+$/.test((raw || '').normalize('NFKC'));
+// 報告書の表記に単位を付ける。数だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）。空なら —
+export const withUnit = (raw: string | null | undefined, unit?: string | null) => (raw && isNumOnly(raw) && unit ? `${raw}${unit}` : raw || '—');
 
 export function joinLines(text: string | null | undefined) {
   let out = '';

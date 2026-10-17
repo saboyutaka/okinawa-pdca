@@ -1,7 +1,7 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
 import { fmt } from '../lib/format.ts';
-import { isBlankCell } from '../lib/text.ts';
+import { isBlankCell, withUnit } from '../lib/text.ts';
 import { PLAN_PERIODS, periodLabel, periodName, planIndex, yearLabel as yl } from '../lib/years.ts';
 import type { ActivityYear } from '../lib/katsudou.ts';
 import { showRows, hide, onEsc, type TipRow } from './tip.ts';
@@ -57,7 +57,6 @@ function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   if (text != null) e.textContent = window.era?.text(text) ?? text;
   return e;
 }
-const withUnit = (raw: string | null | undefined, unit: string) => (raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC')) && unit ? `${raw}${unit}` : raw || '—');
 function niceTicks(lo: number, hi: number, n = 4) {
   const raw = (hi - lo || 1) / n;
   const mag = 10 ** Math.floor(Math.log10(raw));

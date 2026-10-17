@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, withUnit, refText, eraRef,
+  yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
@@ -52,15 +52,6 @@ test('judgeByGrid: 県の区分表のマス（A・B は「順調」の割合40%�
 
 test('planIndex: 計画値の欄の何番目か（前期は R4 から、中期は R7 から数える）', () => {
   assert.deepEqual([2022, 2023, 2024, 2025, 2026, 2027].map(planIndex), [0, 1, 2, 0, 1, 2]);
-});
-
-test('withUnit: 数字だけの欄にだけ単位を付ける', () => {
-  assert.equal(withUnit('1,234', '件'), '1,234件');
-  assert.equal(withUnit('△5.2', '%'), '△5.2%');
-  assert.equal(withUnit('35件（R２年）', '件'), '35件（R２年）');
-  assert.equal(withUnit('12', ''), '12');
-  assert.equal(withUnit('', '件'), '—');
-  assert.equal(withUnit(null, '件'), '—');
 });
 
 test('eraRef: 主要指標の値の年・年度は、数字を半角に、元号を R・H にそろえ、年・年度だけのものは「R3」にする', () => {
@@ -129,9 +120,9 @@ test('judgesOf: 見通しの欄を名前ごとに分ける', () => {
   assert.equal(judgesOf(''), null);
 });
 
-test('halfWidth: 全角の英数字だけを半角にする', () => {
+test('halfWidth: 全角の英数字と「，」「．」「％」を半角にする', () => {
   assert.equal(halfWidth('３兆２，８８５億円'), '3兆2,885億円');
-  assert.equal(halfWidth('ＣＯ₂ 100㎡ 50％'), 'CO₂ 100㎡ 50％');
+  assert.equal(halfWidth('ＣＯ₂ 100㎡ ５０．５％'), 'CO₂ 100㎡ 50.5%');
 });
 
 test('nameKey: 空白・中黒・句読点・括弧を除き、全角を半角にする', () => {

@@ -43,8 +43,7 @@ export interface YearGroup<T> {
 export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
 export { yearLabel, yearLong, yearsLong, PLAN_PERIODS, periodName, periodLabel, planIndex } from './years.ts';
-// 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
-export const withUnit = (raw: string | null | undefined, unit?: string | null) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+export { withUnit } from './text.ts';
 // 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
 // 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
 export const refText = (raw: string | null | undefined) => {
@@ -232,8 +231,9 @@ export function getShuyouByYear(year: number) {
 // 成果指標と同じ「ゴールまでの道のり」の図に置くため、ここで数を読み取る。画面に出す値は報告書の文字で、読み取った数は図の位置にだけ使う
 const MULT: Record<string, number> = { 兆: 1e12, 億: 1e8, 百万: 1e6, 万: 1e4, 千: 1e3 };
 const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]));
-// 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
-export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+// 全角の英数字と「，」「．」「％」を半角にする（「㎡」「CO₂」はそのまま）。報告書の印字は全角と半角がまじる（計画「１施設」・実績「1施設」）ので、
+// 値を半角にそろえて見せるところ（ページとカードの画像）はどこもこれを使う
+export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 // 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
 export const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
 
@@ -1407,6 +1407,8 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
 export const amountEntries = (report: number, kind: AmountKind) => amountEntriesOf(report)(kind);
 // 金額の合計（千円）
 export const amountTotal = (es: readonly { amount: number }[]) => es.reduce((s, e) => s + e.amount, 0);
+// 部局の金額の一覧。部局は、予算事業を寄せた取組の最新の報告での所管部局（currentDeptOf。部局のページ・部局の一覧・予算と財源のページで同じ）
+export const deptAmountEntries = (report: number, kind: AmountKind, deptName: string) => amountEntries(report, kind).filter((e) => currentDeptOf(report, e.shisaku_id, e.key) === deptName);
 
 // 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
 // funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）
