@@ -9,8 +9,8 @@ import JudgeSection from '../components/JudgeSection.astro';
 import TrendFigure from '../components/TrendFigure.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, STATUSES, RATE_BINS, yearLong, yearsLong, rateBin, countBy, countJudges,
-  getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount,
+  YEARS, LATEST, yearLong, yearsLong, countJudges,
+  getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount, countStatuses, countRates,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { futureHead } from '../lib/heads.ts';
@@ -26,8 +26,8 @@ const L = YEARS.length - 1;
 const latestGroups = groups.filter((g) => g.statuses[L]);
 // ヒーローの3つの段（components/Ladder.astro）: 主要指標の達成状況・成果指標の達成率・主な取組の進捗状況の内訳
 const shuyou = getShuyouStatus();
-const seikaCounts = countBy(getSeika(LATEST), rateBin, RATE_BINS.map((b) => b.key));
-const toriCounts = countBy(latestGroups, (g) => g.statuses[L]!, STATUSES.map((s) => s.key));
+const seikaCounts = countRates(getSeika(LATEST));
+const toriCounts = countStatuses(latestGroups, (g) => g.statuses[L]!);
 const shisaku = getShisakuList();
 const judgeCounts = countJudges(shisaku);
 

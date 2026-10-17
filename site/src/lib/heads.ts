@@ -1,15 +1,13 @@
 // ページの頭に出す最新の年度の数（施策の判定・主な取組の進捗状況・成果指標の達成率の内訳）。
 // ページの説明文（lib/describe.ts）と SNS のカードの画像（lib/card.ts）は、どちらもここで数えた数を使う（ページごとに数えると、カードとページの数がずれるため）
 import {
-  LATEST, RATE_BINS, STATUSES, countBy, countJudges, getSeika, getSeikaGroups, getShisakuList, getTorikumi, getTorikumiGroups,
-  rateBin, seikaDept, seikaGroupsOf, shisakuDepts, statusOf, type Shisaku,
+  LATEST, countJudges, getSeika, getSeikaGroups, getShisakuList, getTorikumi, getTorikumiGroups,
+  seikaDept, seikaGroupsOf, shisakuDepts, statusOf, countStatuses, countRates, type Shisaku,
 } from './data.ts';
 import type { Theme } from './themes.ts';
 import type { SeikaRow } from './types.ts';
 
 type Counts = Record<string, number>;
-const statusKeys = STATUSES.map((s) => s.key);
-const rateKeys = RATE_BINS.map((b) => b.key);
 
 export interface Head {
   tori: Counts; // 主な取組の進捗状況の内訳
@@ -27,7 +25,7 @@ const sum = (c: Counts) => Object.values(c).reduce((a, n) => a + n, 0);
 export const total = sum;
 
 function seikaHead(rows: SeikaRow[]): Pick<Head, 'rates' | 'seika' | 'reached'> {
-  const rates = countBy(rows, rateBin, rateKeys);
+  const rates = countRates(rows);
   return { rates, seika: rows.length, reached: rates['100%以上'] };
 }
 const area = (shisaku: Shisaku[], tori: Counts, seika: SeikaRow[]): AreaHead => ({ shisaku, judges: countJudges(shisaku), tori, ...seikaHead(seika) });
@@ -36,7 +34,7 @@ const area = (shisaku: Shisaku[], tori: Counts, seika: SeikaRow[]): AreaHead => 
 export function shisakuHead(s: Shisaku): Head & { judge: string | null } {
   return {
     judge: s.judges[LATEST],
-    tori: countBy(s.torikumi.filter((t) => t.year === LATEST), statusOf, statusKeys),
+    tori: countStatuses(s.torikumi.filter((t) => t.year === LATEST), statusOf),
     ...seikaHead(seikaGroupsOf(s.id).filter((r) => r.latest.year === LATEST).map((r) => r.latest)),
   };
 }
@@ -46,7 +44,7 @@ export function futureHead(id: number): AreaHead {
   const pre = `${id}-`;
   return area(
     getShisakuList().filter((s) => s.shouraizou === id),
-    countBy(getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre)), statusOf, statusKeys),
+    countStatuses(getTorikumi(LATEST).filter((t) => t.shisaku_id.startsWith(pre)), statusOf),
     getSeika(LATEST).filter((x) => x.shisaku_id.startsWith(pre)),
   );
 }
@@ -57,7 +55,7 @@ export function kihonHead(id: string): AreaHead {
   const ids = new Set(shisaku.map((s) => s.id));
   return area(
     shisaku,
-    countBy(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === LATEST)), statusOf, statusKeys),
+    countStatuses(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === LATEST)), statusOf),
     getSeika(LATEST).filter((x) => ids.has(x.shisaku_id)),
   );
 }
@@ -68,7 +66,7 @@ export function themeHead(t: Theme): AreaHead {
   const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && t.idSet.has(r.shisaku.id));
   return area(
     getShisakuList().filter((s) => t.idSet.has(s.id)),
-    countBy(tori, (g) => statusOf(g.latest), statusKeys),
+    countStatuses(tori, (g) => statusOf(g.latest)),
     seika.map((r) => r.latest),
   );
 }
@@ -79,7 +77,7 @@ export function deptHead(name: string): AreaHead {
   const tori = getTorikumiGroups().filter((g) => g.dept === name && g.latest.year === LATEST);
   return area(
     getShisakuList().filter((s) => shisakuDepts(s).some((d) => d.dept === name)),
-    countBy(tori, (g) => statusOf(g.latest), statusKeys),
+    countStatuses(tori, (g) => statusOf(g.latest)),
     getSeika(LATEST).filter((x) => seikaDept(x) === name),
   );
 }

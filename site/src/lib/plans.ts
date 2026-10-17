@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, compareShisakuId, type Shisaku, type YearGroup } from './data.ts';
+import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, compareShisakuId, countBy, type Shisaku, type YearGroup } from './data.ts';
 import { once, onceBy } from './memo.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
@@ -42,6 +42,8 @@ export const RM_JUDGEMENTS: { key: string; tone: Tone; shape?: Shape; note: stri
   { key: 'その他', tone: 'blank', note: '目標値の設定が難しいなどで比べられない' },
 ];
 export const rmJudgementOf = (key: string) => RM_JUDGEMENTS.find((j) => j.key === key) || RM_JUDGEMENTS[3];
+// 観光ロードマップの成果指標の判定の内訳（判定の無いものは「その他」）
+export const countRmJudgements = (rows: { judgement: string }[]) => countBy(rows, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
 
 export const kankoYears = () => load('kanko/years');
 export const kankoKihon = () => load('kanko/kihon');
@@ -199,6 +201,8 @@ export const GRADES: { key: string; mark: string; tone: Tone; shape: Shape; note
   { key: '未達成', mark: '未', tone: 'critical', shape: 'square', note: '達成率70%未満で、どの目標値も未達成' },
 ];
 export const gradeOf = (label: string) => GRADES.find((g) => g.key === label);
+// 事後評価の内訳（評価の無いものは「なし」）。labelOf は1件の評価（総括表の grade_label）
+export const countGrades = <T>(rows: T[], labelOf: (r: T) => string) => countBy(rows, (r) => labelOf(r) || 'なし', GRADES.map((g) => g.key));
 // 目標に届かなかった評価（△一部達成・未達成）
 export const isShort = (label: string) => label === '一部達成' || label === '未達成';
 // 年度ごとの評価のスタンプ（components/Stamps.astro に渡す形）

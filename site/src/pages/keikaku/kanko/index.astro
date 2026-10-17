@@ -11,31 +11,30 @@ import ExtLink from '../../../components/ExtLink.astro';
 import Toc from '../../../components/Toc.astro';
 import Says from '../../../components/Says.astro';
 import SecHead from '../../../components/SecHead.astro';
-import { STATUSES, statusOf, countBy, yearLabel, yearLong } from '../../../lib/data.ts';
+import { STATUSES, statusOf, yearLabel, yearLong, countStatuses } from '../../../lib/data.ts';
 import {
   KANKO, RM_YEARS, RM_LATEST, RM_JUDGEMENTS, kankoYears, kankoKihon, kankoTenkaiList, kankoTorikumi, kankoSeika,
-  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, type KankoTenkai,
+  kankoTenkaiHref, planSources, KANKO_TORIKUMI_HREF, kankoSeikaList, countRmJudgements, type KankoTenkai,
 } from '../../../lib/plans.ts';
 import { LINKS } from '../../../lib/links.ts';
 import { fmt, pct } from '../../../lib/format.ts';
 
 const statusKeys = STATUSES.map((s) => s.key);
-const judgeKeys = RM_JUDGEMENTS.map((j) => j.key);
 const years = kankoYears();
 const unreadable = years.filter((y) => !y.readable);
 const tori = kankoTorikumi(RM_LATEST);
-const toriCounts = countBy(tori, statusOf, statusKeys);
+const toriCounts = countStatuses(tori, statusOf);
 const seika = kankoSeika(RM_LATEST);
-const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', judgeKeys);
+const judgeCounts = countRmJudgements(seika);
 const overlap = tori.filter((t) => t.pdca.length).length;
 const seikaOverlap = seika.filter((s) => s.pdca.length).length;
 // 読めない年度は概要版の件数（進捗状況の内訳）で並べる
 const progressRows = years.map((y) => ({
   label: yearLabel(y.year),
   sub: y.readable ? undefined : '概要版の件数',
-  counts: y.readable ? countBy(kankoTorikumi(y.year), statusOf, statusKeys) : { ...Object.fromEntries(statusKeys.map((k) => [k, 0])), ...y.status },
+  counts: y.readable ? countStatuses(kankoTorikumi(y.year), statusOf) : { ...Object.fromEntries(statusKeys.map((k) => [k, 0])), ...y.status },
 }));
-const seikaRows = years.filter((y) => y.readable).map((y) => ({ label: yearLabel(y.year), counts: countBy(kankoSeika(y.year), (s) => s.judgement || 'その他', judgeKeys) }));
+const seikaRows = years.filter((y) => y.readable).map((y) => ({ label: yearLabel(y.year), counts: countRmJudgements(kankoSeika(y.year)) }));
 const tenkai = kankoTenkaiList();
 const kihon = kankoKihon();
 const latestOf = (t: KankoTenkai) => t.shisaku.flatMap((s) => s.torikumi.filter((g) => g.years[RM_LATEST]).map((g) => g.years[RM_LATEST]));
@@ -104,7 +103,7 @@ const SEIKA_SHOW = 10;
                 <div class="name-row"><a class="name-link" href={kankoTenkaiHref(t.id)}>{t.name}</a><span class="code-no">施策展開 {t.code}</span></div>
                 <div class="row">
                   <div class="small secondary">施策 {fmt(t.shisaku.length)}・主な取組 {fmt(ts.length)}件・成果指標 {fmt(ss.length)}（前進 {fmt(ss.filter((s) => s.judgement === '前進').length)}）</div>
-                  <StatusBar categories={STATUSES} counts={countBy(ts, statusOf, statusKeys)} context={`${t.name} 主な取組 `} size="mini" />
+                  <StatusBar categories={STATUSES} counts={countStatuses(ts, statusOf)} context={`${t.name} 主な取組 `} size="mini" />
                 </div>
               </li>
             );

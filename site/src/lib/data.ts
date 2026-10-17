@@ -180,6 +180,11 @@ export function countBy<T>(rows: T[], keyFn: (r: T) => string, keys: string[]) {
   return out;
 }
 
+// 主な取組の進捗状況の内訳（STATUSES の並びのまま、0の区分も残す）。keyOf は1件の進捗状況（行なら statusOf）
+export const countStatuses = <T>(rows: T[], keyOf: (r: T) => string) => countBy(rows, keyOf, STATUSES.map((s) => s.key));
+// 成果指標の計画値に対する達成率の内訳（RATE_BINS の並びのまま、0の区分も残す）
+export const countRates = (rows: Rate[]) => countBy(rows, rateBin, RATE_BINS.map((b) => b.key));
+
 // ページの URL が重ならないか（重なると、どちらかのページが書き出されない）。what は「取組のページ」など
 export function assertUnique<T>(items: T[], url: (x: T) => string, what: string) {
   const seen = new Set<string>();

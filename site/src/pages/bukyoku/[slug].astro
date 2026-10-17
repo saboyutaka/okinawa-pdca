@@ -24,10 +24,10 @@ import ExtLink from '../../components/ExtLink.astro';
 import SecHead from '../../components/SecHead.astro';
 import { getThemes, themeIdsOf } from '../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin, countBy,
+  YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey,
+  FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey, countStatuses, countRates,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -41,7 +41,6 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { dept } = Astro.props;
 const q = encodeURIComponent(dept.name);
-const statusKeys = STATUSES.map((s) => s.key);
 const last = YEARS.length - 1;
 const mine = getTorikumiGroups().filter((g) => g.dept === dept.name);
 const latest = mine.filter((g) => g.statuses[last]);
@@ -79,7 +78,7 @@ const sectionRows = sections
     label: sectionName(sec) || sec,
     id: sectionAnchor(sec),
     href: `/torikumi/?dept=${q}&q=${encodeURIComponent(sectionName(sec) || sec)}`,
-    counts: countBy(latest.filter((g) => g.section === sec), (g) => g.statuses[last]!, statusKeys),
+    counts: countStatuses(latest.filter((g) => g.section === sec), (g) => g.statuses[last]!),
   }))
   .sort((a, b) => Object.values(b.counts).reduce((x, y) => x + y, 0) - Object.values(a.counts).reduce((x, y) => x + y, 0));
 
@@ -95,12 +94,12 @@ const drawTrend = trend.every((p) => p.aN > 0 && p.bN > 0);
 const progressRows = YEARS.map((y, i) => ({
   label: yearLabel(y),
   sub: periodName(y),
-  counts: countBy(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!, statusKeys),
+  counts: countStatuses(mine.filter((g) => g.statuses[i]), (g) => g.statuses[i]!),
 }));
 const seikaRows = YEARS.map((y) => ({
   label: yearLabel(y),
   sub: periodName(y),
-  counts: countBy(getSeika(y).filter((s) => seikaDept(s) === dept.name), rateBin, RATE_BINS.map((b) => b.key)),
+  counts: countRates(getSeika(y).filter((s) => seikaDept(s) === dept.name)),
 }));
 
 // 前の年度からの変化。かかわる施策の判定（lib/data.ts の JUDGE_TRENDS）と、主な取組の進捗状況（PATTERNS）を、良くなったものと悪くなったものの対で並べる

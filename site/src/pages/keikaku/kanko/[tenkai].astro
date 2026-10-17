@@ -14,7 +14,7 @@ import RmTorikumi from '../../../components/RmTorikumi.astro';
 import Toc from '../../../components/Toc.astro';
 import Says from '../../../components/Says.astro';
 import SecHead from '../../../components/SecHead.astro';
-import { STATUSES, statusOf, countBy, yearLabel, yearLong, deptHref, splitDepts } from '../../../lib/data.ts';
+import { STATUSES, statusOf, yearLabel, yearLong, deptHref, splitDepts, countStatuses } from '../../../lib/data.ts';
 import { KANKO, RM_LATEST, KANKO_TORIKUMI_HREF, kankoYears, kankoKihon, kankoTenkaiList, kankoTenkaiHref, kankoTorikumiAnchor, kankoSeikaAnchor, planSourceLink } from '../../../lib/plans.ts';
 import { joinLines, firstSentence } from '../../../lib/text.ts';
 import { fmt } from '../../../lib/format.ts';
@@ -25,7 +25,6 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { t } = Astro.props;
 const kihon = kankoKihon().find((k) => k.id === t.kihon_id);
-const statusKeys = STATUSES.map((s) => s.key);
 // 進捗状況のスタンプは本編を読めた年度だけ（R4 は読めない）
 const years = kankoYears().filter((y) => y.readable).map((y) => y.year);
 const all = kankoTenkaiList();
@@ -54,7 +53,7 @@ const next = all[i + 1];
     const active = s.torikumi.filter((g) => g.years[RM_LATEST]);
     const ended = s.torikumi.filter((g) => !g.years[RM_LATEST]);
     const seika = s.seika.filter((g) => g.years[RM_LATEST]);
-    const counts = countBy(active.map((g) => g.years[RM_LATEST]), statusOf, statusKeys);
+    const counts = countStatuses(active.map((g) => g.years[RM_LATEST]), statusOf);
     // 観光ロードマップの関係部等は「、」区切り（沖縄県PDCA は区切り無しでつながっている）
     const depts = (s.kankei || '').split(/[、,，]/).flatMap(splitDepts);
     const past = Object.values(s.years).filter((r) => r.year !== s.year && (r.check || r.action)).sort((a, b) => b.year - a.year);

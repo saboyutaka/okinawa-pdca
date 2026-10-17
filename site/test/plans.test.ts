@@ -1,7 +1,7 @@
 // lib/plans.ts の、データを読まずに決まる関数（一括交付金の事後評価の区分・部局・カードの id）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GRADES, gradeOf, isShort, ikkatsuDept, ikkatsuAnchor, ikkatsuStamps, IKKATSU_YEARS } from '../src/lib/plans.ts';
+import { GRADES, gradeOf, isShort, ikkatsuDept, ikkatsuAnchor, ikkatsuStamps, IKKATSU_YEARS, countGrades, countRmJudgements, RM_JUDGEMENTS } from '../src/lib/plans.ts';
 import type { YearGroup } from '../src/lib/data.ts';
 import type { IkkatsuJigyoRow } from '../src/lib/types.ts';
 
@@ -34,4 +34,12 @@ test('ikkatsuStamps: 年度ごとの評価。評価の無い年度・報告の�
   assert.deepEqual(st.map((x) => x.year), IKKATSU_YEARS);
   assert.deepEqual(st.map((x) => x.text), ['—', '評価なし', '未 未達成']);
   assert.deepEqual(st.map((x) => x.tone), [null, null, 'critical']);
+});
+
+test('countGrades・countRmJudgements: 区分の並びのまま数え、評価・判定の無いものは「なし」「その他」', () => {
+  assert.deepEqual(countGrades([{ g: '達成' }, { g: '' }, { g: '未達成' }], (x) => x.g), { 達成: 1, 概ね達成: 0, 一部達成: 0, 未達成: 1, なし: 1 });
+  const rm = countRmJudgements([{ judgement: '前進' }, { judgement: '' }]);
+  assert.deepEqual(Object.keys(rm), RM_JUDGEMENTS.map((j) => j.key));
+  assert.equal(rm['前進'], 1);
+  assert.equal(rm['その他'], 1);
 });

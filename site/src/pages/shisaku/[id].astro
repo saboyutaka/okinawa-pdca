@@ -17,7 +17,7 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
   getKihonList, getTorikumiGroups, seikaGroupsOf, sourceLink, deptHref, planParents,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -30,7 +30,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
-import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
+import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['shisaku/[id]'];
@@ -94,7 +94,7 @@ const ikkatsu = ikkatsuOf(s.id);
 const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
 const ikLatest = ikkatsu.filter((g) => g.latest.year === ikYear);
 const ikPast = ikkatsu.filter((g) => g.latest.year !== ikYear);
-const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 'なし', GRADES.map((x) => x.key));
+const ikCounts = countGrades(ikLatest.map((g) => g.latest), (j) => j.grade_label);
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">

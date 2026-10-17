@@ -14,11 +14,11 @@ import Toc from '../../components/Toc.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, countBy,
+  YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
   currentDeptOf, torikumiPage, type AmountEntry,
 } from '../../lib/data.ts';
-import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds } from '../../lib/plans.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct } from '../../lib/format.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
@@ -50,11 +50,10 @@ const hard = fundSum(estimate, '一括交付金（ハード）');
 // 一括交付金（ソフト）の事後評価
 const ikGroups = ikkatsuGroups();
 const ikLatest = ikGroups.filter((g) => g.years[IKKATSU_LATEST]);
-const gradeKeys = GRADES.map((x) => x.key);
-const ikCounts = countBy(ikLatest, (g) => g.years[IKKATSU_LATEST].grade_label || 'なし', gradeKeys);
+const ikCounts = countGrades(ikLatest, (g) => g.years[IKKATSU_LATEST].grade_label);
 const ikYearRows = IKKATSU_YEARS.map((y) => ({
   label: yearLabel(y),
-  counts: countBy(ikGroups.filter((g) => g.years[y]), (g) => g.years[y].grade_label || 'なし', gradeKeys),
+  counts: countGrades(ikGroups.filter((g) => g.years[y]), (g) => g.years[y].grade_label),
 }));
 // 将来像は、事業の最初の施策の将来像
 const szOf = (g: (typeof ikGroups)[number]) => ikkatsuShisakuIds(g).map(getShisaku).find((s) => s)?.shouraizou;
@@ -62,7 +61,7 @@ const ikSzRows = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sub: s.name,
   href: `${IKKATSU_HREF}?s=${s.id}`,
-  counts: countBy(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label || 'なし', gradeKeys),
+  counts: countGrades(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label),
 }));
 
 // 部局別・将来像別（最新の報告での所管部局）

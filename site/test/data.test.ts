@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText, budgetSeriesOf, budgetTableOf,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
 import { activityQty } from '../src/lib/katsudou.ts';
@@ -414,4 +414,11 @@ test('budgetTableOf: 予算事業ごとに、お金の年度の列と金額の�
   // 行は当初予算額 → 決算見込額 → 決算額の順に読むので、当初予算額の名前の予算事業が先に来る
   assert.deepEqual(groups.map((g) => [g.name, [...g.cells.keys()]]), [['A事業（改）', ['initial|2026']], ['A事業', ['estimate|2025', 'settled|2024']], ['', ['settled|2024']]]);
   assert.deepEqual(groups[2].cells.get('settled|2024'), { sum: 0, n: 0, raws: ['一部'], suspect: false });
+});
+
+test('countStatuses・countRates: 区分の並びのまま数え、0の区分も残す', () => {
+  const st = countStatuses([{ status: '順調' }, { status: '' }, { status: '順調' }], statusOf);
+  assert.deepEqual(Object.entries(st), [['順調', 2], ['概ね順調', 0], ['やや遅れ', 0], ['大幅遅れ', 0], ['未着手', 0], ['記載なし', 1]]);
+  const rt = countRates([{ rate: 120, rate_raw: '120%' }, { rate: null, rate_raw: '未達成' }, { rate: null, rate_raw: '-' }]);
+  assert.deepEqual(Object.values(rt), [1, 0, 0, 1, 1]);
 });
