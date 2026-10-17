@@ -12,6 +12,7 @@
 //    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
 //    Home・End で最初・最後に移る。絞り込んでいるときは、条件に合うマスだけを移る（薄くしたマスは飛ばす。押せば選べる）。
 //    吹き出しが出ているときは Enter でその指標のページへ移る
+import { esc } from '../lib/html.ts';
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
@@ -36,7 +37,6 @@ interface Tier {
 
 const nf = new Intl.NumberFormat('ja-JP');
 const yl = (y: number) => `R${y - 2018}`;
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 // キーワードに当たった字に印を付けた HTML（計画の目次と同じ）
 const marked = (text: string, words: SearchWord[]) => {
   let out = '';

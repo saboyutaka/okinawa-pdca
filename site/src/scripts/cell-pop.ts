@@ -4,6 +4,7 @@
 //  - 吹き出しは1つを使い回し、押した四角の下（画面に入らなければ上）に置いて、尾で四角を指す。同じ四角をもう一度押す・×・Esc・吹き出しの外を押すと閉じる
 //  - Tab で止まる並び（tabindex を付けたもの）は、止まっただけでは開かず、← → Home End で1件ずつ移って中身を出し、Enter でそのページへ移る。
 //    フォーカスが並びと吹き出しの外へ出たら閉じる
+import { esc } from '../lib/html.ts';
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { reveal } from './motion.ts';
 
@@ -12,7 +13,6 @@ interface Sel { wrap: HTMLElement; cells: HTMLElement[]; i: number }
 
 let pop: HTMLDivElement | undefined;
 let sel: Sel | null = null;
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const cellsOf = (wrap: HTMLElement) => [...wrap.querySelectorAll<HTMLElement>('.sbar .seg')];
 const groupOf = (wrap: HTMLElement) => wrap.querySelector<HTMLElement>('.sbar[tabindex]');
 

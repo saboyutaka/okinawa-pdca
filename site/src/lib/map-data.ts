@@ -12,6 +12,7 @@ import {
   getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
   getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
+import { esc } from './html.ts';
 import { themeIdsOf } from './themes.ts';
 import type { Tone } from './icons.ts';
 import type { ShuyouGaiyouRow, SeikaRow, TorikumiRow } from './types.ts';
@@ -172,7 +173,6 @@ export const mapCells = (kind: MapKind) => all()[kind].cells;
 
 // マスの HTML。約2,000個あるので、Astro が範囲をしぼるための属性を付けず、短く書くため文字列にする（見た目は pages/map.astro の全体の CSS）。
 // 最新の年度の色を付け、最新の報告に無いマスは隠す（スクリプトが動かないときは、最新の年度のまま見える）
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const LATEST_AT = YEARS.indexOf(LATEST);
 export function cellHtml(kind: MapKind, c: MapCell) {
   const k = c.c[LATEST_AT];

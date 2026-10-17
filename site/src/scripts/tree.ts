@@ -18,13 +18,13 @@
 //    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。
 //    フォーカスするのは名前のリンク（施策展開は名前）で、▶ の丸（summary）は Tab で止めない（マウスと、読み上げソフトでタップして開け閉めするため）。
 //    指標（PC では名前の横、スマホでは開いた中の行）にも止まらない（マウスで押すリンクにする）
+import { esc } from '../lib/html.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
 import { bump, reveal } from './motion.ts';
 
 // ---------------------------------------------------------------- 描く
 
-const esc = (s: string | number) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 // すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数で、指標の種類（出す指標の data-show の値）を入れる
 // （PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
 // ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）。そこで読むので、画面の数は読ませない（docs/design.md の9章）
