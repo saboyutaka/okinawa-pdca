@@ -11,7 +11,7 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Stamps from './Stamps.astro';
 import YearTag from './YearTag.astro';
-import { YEARS, LATEST, STATUSES, yearLabel, statusOf, toneOfStatus, sectionHref, halfWidth, nameKey, activityAchievement, activityAchievements, type TorikumiGroup } from '../lib/data.ts';
+import { LATEST, STATUSES, yearLabel, statusOf, toneOfStatus, statusStamps, sectionHref, halfWidth, nameKey, activityAchievement, activityAchievements, type TorikumiGroup } from '../lib/data.ts';
 import { yen } from '../lib/format.ts';
 
 interface Props { g: TorikumiGroup }
@@ -29,7 +29,7 @@ const values = (t.lines ?? [{ target: t.target, actual: t.actual }]).map((l) => 
 const ach = activityAchievement(g, t.year);
 const achs = activityAchievements(g, t.year).map((x) => ({ ...x, name: nameKey(t.indicator).startsWith(nameKey(x.name)) ? '' : x.name }));
 const achNamed = achs.some((x) => x.name);
-const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+const stamps = statusStamps(g);
 const secHref = sectionHref(t.section);
 ---
 <li class:list={['tr', old && 'old']}>

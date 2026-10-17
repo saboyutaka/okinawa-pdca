@@ -1,14 +1,14 @@
 ---
 // 観光ロードマップの主な取組1つ。R5・R6の進捗状況のスタンプ、活動指標、決算見込額、沖縄県PDCAの同じ取組へのリンク
 import Stamps from './Stamps.astro';
-import { yearLabel, yearLong, statusOf, toneOfStatus, sectionHref } from '../lib/data.ts';
+import { yearLabel, yearLong, statusStamps, sectionHref } from '../lib/data.ts';
 import { RM_LATEST, type KankoTorikumiGroup } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 
 interface Props { g: KankoTorikumiGroup; years: number[]; id: string }
 const { g, years, id } = Astro.props;
 const t = g.latest;
-const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+const stamps = statusStamps(g, years);
 // 決算見込額。1つのセルに金額が2行以上印字されているもの（どう足すかは報告書に書かれていない）は、行ごとに円で出して並べる
 const amountText = (raw: string) => {
   const m = raw.trim().match(/^([\d,]+)$/);

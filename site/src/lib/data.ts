@@ -9,7 +9,7 @@ import { foldVariants } from './search.ts';
 import { yearLabel, yearLong, yearsLong } from './years.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
-  AmountKind, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
+  AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
 } from './types.ts';
 
 const ROOT = path.resolve(process.cwd(), '../data/extracted');
@@ -751,6 +751,9 @@ export const PATTERNS = {
 export type Pattern = keyof typeof PATTERNS;
 // 取組の年度の順の進捗状況（報告の無い年度は null。PATTERNS に渡す）
 export const statusesOf = (g: YearGroup<TorikumiRow>): Statuses => YEARS.map((y) => (g.years[y] ? statusOf(g.years[y]) : null));
+// 年度ごとの進捗状況のスタンプ（components/Stamps.astro に渡す形。観光ロードマップの取組は years に報告のある年度を渡す）
+export const statusStamps = (g: { years: Record<number, { status: string }> }, years = YEARS) =>
+  years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
 
 // 全施策の取組を、年度をまたいで1行にまとめたもの。部局は最新年度の所管部局（docs/data.md 7.2）
 export interface TorikumiGroup extends YearGroup<TorikumiRow> {
@@ -1269,6 +1272,61 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
   if (hit) return hit;
   const named = byName.get(`${year}|${torikumiKey(shisakuId, key)}`);
   return named ? { ...named, matchedByName: true } : undefined;
+}
+
+// 主な取組1つの予算（取組のページ）。reports は報告年度と、その年度の部局票の予算の表（新しい報告から。部局票の無い報告は入れない）
+export type ReportBudgets = [report: number, blocks: BudgetBlock[]][];
+// 予算の推移。各報告に前年度の決算額・その年度の決算見込額・翌年度の当初予算額が載っているので、年度ごとに確定に近い金額（決算 → 決算見込 → 当初予算）を選ぶ。
+// 1つの取組に予算事業が複数あるときは合計する（桁の誤記の疑いがある金額は入れない）
+const SERIES_KINDS: AmountKind[] = ['settled', 'estimate', 'initial'];
+export function budgetSeriesOf(reports: ReportBudgets) {
+  const byFy = new Map<number, { fy: number; rank: number; kind: AmountKind; amount: number; report: number }>();
+  for (const [y, blocks] of reports) {
+    for (const kind of SERIES_KINDS) {
+      const fy = y + AMOUNT_KINDS[kind].offset;
+      const vals = blocks.flatMap((blk) => blk.rows).flatMap((r) => {
+        const v = r[kind];
+        return v != null && !r.suspect?.includes(kind) ? [v] : [];
+      });
+      if (!vals.length) continue;
+      const rank = SERIES_KINDS.indexOf(kind);
+      const cur = byFy.get(fy);
+      if (!cur || rank < cur.rank) byFy.set(fy, { fy, rank, kind, amount: vals.reduce((a, v) => a + v, 0), report: y });
+    }
+  }
+  return [...byFy.values()].sort((a, b) => a.fy - b.fy);
+}
+// 「表で見る」の予算の表。1つの年度の金額は 当初予算額 → 決算見込額 → 決算額 の順に確定していき、それぞれ前の年度・その年度・次の年度の報告に載っている。
+// 予算事業ごとに、お金の年度を列（活動指標の表と同じ向き）、確定していく順（BUDGET_STAGES）を行にして並べ直す。当初予算額は翌年度の予算事業名（name_next）で載っている。
+// cells のキーは「金額の種類|お金の年度」。fys は列にするお金の年度
+export const BUDGET_STAGES: AmountKind[] = ['initial', 'estimate', 'settled'];
+export interface BudgetCell { sum: number; n: number; raws: string[]; suspect: boolean }
+export function budgetTableOf(reports: ReportBudgets) {
+  const byName = new Map<string, { name: string; funds: Set<string>; cells: Map<string, BudgetCell> }>();
+  for (const [y, blocks] of reports) {
+    for (const blk of blocks) {
+      for (const kind of BUDGET_STAGES) {
+        const name = kind === 'initial' && !isNoBudgetName(blk.name_next) ? blk.name_next : blk.name;
+        const key = isNoBudgetName(name) ? '' : budgetKey(name);
+        const grp = byName.get(key) ?? { name: key ? name : '', funds: new Set<string>(), cells: new Map<string, BudgetCell>() };
+        byName.set(key, grp);
+        const ck = `${kind}|${y + AMOUNT_KINDS[kind].offset}`;
+        for (const r of blk.rows) {
+          const v = r[kind];
+          const raw = r[`${kind}_raw`];
+          if (v == null && isNoBudgetName(raw)) continue;
+          const c = grp.cells.get(ck) ?? { sum: 0, n: 0, raws: [], suspect: false };
+          grp.cells.set(ck, c);
+          if (v != null) { c.sum += v; c.n++; } else c.raws.push(raw);
+          if (r.suspect?.includes(kind)) c.suspect = true;
+          grp.funds.add(fundOf(kind === 'initial' ? r.source_next || r.source : r.source || r.source_next));
+        }
+      }
+    }
+  }
+  const groups = [...byName.values()].filter((x) => x.cells.size);
+  const fys = [...new Set(groups.flatMap((x) => [...x.cells.keys()].map((k) => Number(k.split('|')[1]))))].sort((a, b) => a - b);
+  return { groups, fys };
 }
 
 // 活動指標の計画・実績の「10件」「10件（20件）」の先頭の数と単位（かっこの中は累計や内訳）。「△0.0015t-CO₂/千㎥」の △ は減らす量。数で始まらなければ null
