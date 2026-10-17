@@ -129,7 +129,7 @@ const suspects = getSuspects();
       <span class="ik-tag">{IKKATSU.short}</span>
       <div class="tile-label">{yearLabel(IKKATSU_LATEST)}に成果目標を達成した事業</div>
       <div class="tile-value">{fmt(ikCounts['達成'] || 0)}/{fmt(ikLatest.length)}<small>事業</small></div>
-      <StatusBar categories={GRADES} counts={ikCounts} unit="事業" context={`${yearLabel(IKKATSU_LATEST)}の事後評価 `} size="mini" />
+      <StatusBar categories={GRADES} counts={ikCounts} unit="事業" label={`${yearLabel(IKKATSU_LATEST)}の事後評価`} size="mini" />
       <div class="tile-sub">一括交付金（ソフト）の事業ごとの、主な取組とは別の<Term word="一括交付金の事後評価" label="評価" />です。</div>
       <a class="small" href={IKKATSU_HREF}>一括交付金の事業をさがす</a>
     </div>

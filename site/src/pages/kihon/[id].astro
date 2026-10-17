@@ -100,11 +100,11 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <SecHead id="shuyou" class="anchor">主要指標</SecHead>
     <p class="small secondary lead">この基本施策の成果をはかる県の物差し（<Term word="主要指標" />）ごとに、スタート（基準値）からゴール（令和9年度の目標値）までどこまで来たかと、この先の県の見通しが分かります。</p>
     {shuyou.length === 0 && <p class="secondary">報告書に、この基本施策の主要指標の記載がありません。</p>}
-    {shuyouLatest.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
+    {shuyouLatest.map((g) => <ShuyouCard g={g} says={saysOf(g)} />)}
     {shuyouPast.length > 0 && (
       <details class="past">
         <summary>{yearLong(LATEST)}の報告に無い主要指標（{shuyouPast.length}）</summary>
-        {shuyouPast.map((row) => <ShuyouCard row={row} says={saysOf(row)} />)}
+        {shuyouPast.map((g) => <ShuyouCard g={g} says={saysOf(g)} />)}
       </details>
     )}
     {h?.shuyou && saysTo.length !== 1 && <ShuyouSays text={h.shuyou} />}

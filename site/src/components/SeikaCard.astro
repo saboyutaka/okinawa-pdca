@@ -3,7 +3,7 @@
 // ④県の説明（吹き出し。says={false} のときは出さない。施策のどの成果指標も同じ説明のときは、施策のページがカードの後ろに1回だけ出す）と、前の年度の説明（畳む。past={false} のときは出さない）
 // ⑤観光ロードマップの同じ指標。図はスタート・いま・ゴールの位置を見せるので、値は箱にせず1行にまとめる。
 // その年度の計画値と県の見通しは、図と表に任せる。「計画値にまだ届いていません」の文は、札にマウスを乗せると出し、読み上げでは読む。
-// カードの id（row.anchor）は、成果指標の一覧・指標のマップ・計画の目次・シェア用のページから飛ぶ先
+// カードの id（g.anchor）は、成果指標の一覧・指標のマップ・計画の目次・シェア用のページから飛ぶ先
 import Icon from './Icon.astro';
 import SeikaRoute from './SeikaRoute.astro';
 import RouteVals from './RouteVals.astro';
@@ -13,9 +13,9 @@ import ShareMenu from './ShareMenu.astro';
 import { LATEST, yearLabel, sectionHref, withUnit, refText, seikaVerdict, seikaPastSays, type SeikaGroupOfShisaku } from '../lib/data.ts';
 import { KANKO, RM_LATEST, kankoOfSeika } from '../lib/plans.ts';
 
-interface Props { row: SeikaGroupOfShisaku; says?: boolean; past?: boolean }
-const { row, says = true, past = true } = Astro.props;
-const x = row.latest;
+interface Props { g: SeikaGroupOfShisaku; says?: boolean; past?: boolean }
+const { g, says = true, past = true } = Astro.props;
+const x = g.latest;
 const u = x.unit;
 const verdict = seikaVerdict(x);
 const ref = refText(x.actual_ref_year);
@@ -27,23 +27,23 @@ const vals = [
   { label: 'ゴール', v: withUnit(x.target_raw, u), y: x.target_year },
 ];
 // 観光ロードマップ（個別計画）でも同じ成果指標で評価しているもの
-const rm = kankoOfSeika(row.href);
+const rm = kankoOfSeika(g.href);
 ---
-<article class="sticker scard" id={row.anchor}>
+<article class="sticker scard" id={g.anchor}>
   <div class="sc-head">
-    <h3>{row.name}{u && <span class="secondary small">（{u}）</span>}</h3>
+    <h3>{g.name}{u && <span class="secondary small">（{u}）</span>}</h3>
     <div class="sc-acts">
       <span class:list={['sc-rate', `tone-${verdict.tone || 'blank'}`]} title={verdict.text}>
         <Icon tone={verdict.tone} size={14} />{rateNum ? <><span class="sc-rate-l">達成率</span><b>{rateNum}</b></> : <b class="word">{verdict.chip}</b>}<span class="sr-only">。{verdict.text}</span>
       </span>
-      <ShareMenu path={row.share} kind="成果指標" name={row.name} />
+      <ShareMenu path={g.share} kind="成果指標" name={g.name} />
     </div>
   </div>
   <p class="small secondary meta">担当: {sectionHref(x.dept) ? <a class="sub-link" href={sectionHref(x.dept)}>{x.dept}</a> : (x.dept || '—')}</p>
   <RouteVals vals={vals} />
-  <SeikaRoute row={row} />
+  <SeikaRoute g={g} />
   {says && x.explanation && <SeikaSays r={x} />}
-  {past && <SeikaPastSays rows={seikaPastSays(row)} year={x.year} />}
+  {past && <SeikaPastSays rows={seikaPastSays(g)} year={x.year} />}
   {rm.length > 0 && (
     <p class="small rm-note">
       <span class="plan-tag">{KANKO.short}</span> 県の観光の<a href="/keikaku/">個別計画</a>でも、同じ成果指標で評価しています（沖縄県PDCAとは別の評価）:

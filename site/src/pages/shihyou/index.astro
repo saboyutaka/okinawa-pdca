@@ -87,7 +87,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
               return (
                 <SeikaRow
                   x={x}
-                  row={r}
+                  g={r}
                   shisaku={r.shisaku}
                   href={seikaHref(r.shisaku.id, r.key)}
                   attrs={{

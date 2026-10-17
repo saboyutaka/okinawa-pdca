@@ -130,7 +130,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
           <div class="why-l"><Term word="主な取組" /></div>
           <a class="why-a" href="#torikumi">
             <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(total(toriCounts))}</b> 件が順調</span>
-            <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} cells squares />
+            <StatusBar categories={STATUSES} counts={toriCounts} label={`${yearLabel(LATEST)}の主な取組`} cells squares />
           </a>
         </div>
       </div>
@@ -165,13 +165,13 @@ const rmShisaku = kankoOfPdcaShisaku(s);
   <section aria-labelledby="seika">
     <SecHead id="seika" class="anchor">成果指標</SecHead>
     <p class="small secondary lead">施策の成果は、計画どおりに出ている？ 県が決めた物差しごとに、ゴールまでどこまで来たかをグラフで確かめられます。</p>
-    {seikaLatest.map((row) => <SeikaCard row={row} says={!seikaSays} past={!pastSays} />)}
+    {seikaLatest.map((g) => <SeikaCard g={g} says={!seikaSays} past={!pastSays} />)}
     {seikaSays && <SeikaSays r={seikaSays} />}
     {pastSays && <SeikaPastSays rows={pastSays} year={LATEST} />}
     {seikaPast.length > 0 && (
       <details class="past">
         <summary>{yearLong(LATEST)}の報告に無い成果指標（{seikaPast.length}）</summary>
-        {seikaPast.map((row) => <SeikaCard row={row} says={!endedSays} past={!endedPastSays} />)}
+        {seikaPast.map((g) => <SeikaCard g={g} says={!endedSays} past={!endedPastSays} />)}
         {endedSays && <SeikaSays r={endedSays} />}
         {endedPastSays && endedSays && <SeikaPastSays rows={endedPastSays} year={endedSays.year} />}
       </details>

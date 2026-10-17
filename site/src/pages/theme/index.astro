@@ -43,7 +43,7 @@ const judgeUsed = keys.filter((key) => themes.some((t) => (t.judges[key] || 0) >
         <span class="cnt num">{fmt(t.ids.length)}施策</span>
         <div class="j-row">
           <span class="j-l"><Term word="推進状況" label="判定" brief="key-judge" /></span>
-          <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" context={`${t.label}の施策の判定 `} size="mini" />
+          <StatusBar categories={JUDGE_GROUPS} counts={t.judges} unit="施策" label={`${t.label}の施策の判定`} size="mini" />
         </div>
       </li>
     ))}

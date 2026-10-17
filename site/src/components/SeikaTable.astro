@@ -9,16 +9,16 @@
 import { isBlankCell } from '../lib/text.ts';
 import { LATEST, PLAN_PERIODS, yearLabel, planIndex, withUnit, refText, type SeikaGroup } from '../lib/data.ts';
 
-interface Props { row: SeikaGroup; open?: boolean }
-const { row, open = false } = Astro.props;
+interface Props { g: SeikaGroup; open?: boolean }
+const { g, open = false } = Astro.props;
 const aligned = !open;
-const unit = row.latest.unit;
+const unit = g.latest.unit;
 // 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
 const periods = PLAN_PERIODS.flatMap((ys) => {
-  const r = ys.map((y) => row.years[y]).filter((x) => x != null).pop();
-  return r ? [{ ys, r, cur: ys.includes(row.latest.year) }] : [];
+  const r = ys.map((y) => g.years[y]).filter((x) => x != null).pop();
+  return r ? [{ ys, r, cur: ys.includes(g.latest.year) }] : [];
 });
-const cols = periods.flatMap((p) => p.ys.map((y, i) => ({ y, p, first: i === 0, rep: row.years[y] })));
+const cols = periods.flatMap((p) => p.ys.map((y, i) => ({ y, p, first: i === 0, rep: g.years[y] })));
 const cell = (k: number, ...more: (string | false)[]) => ['num', ...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
 const span = (p: (typeof periods)[number], ...more: (string | false)[]) => ['num', ...more, p !== periods[0] && 'sep', !p.cur && 'off'];
 // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は —
@@ -29,7 +29,7 @@ const rateOf = (r: (typeof cols)[number]['rep']) => (r ? (r.rate != null ? `${r.
   <summary>表で見る</summary>
   <div class="table-wrap">
     <table class:list={['year-table', aligned && 'aligned']}>
-      <caption class="sr-only">{row.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+      <caption class="sr-only">{g.name}の年度ごとの値{periods.length > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
       <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
       <thead>
         <tr><td></td>{cols.map((c, k) => <th scope="col" class:list={cell(k)}>{yearLabel(c.y)}{!c.rep && c.y > LATEST && <small class="secondary">これから</small>}</th>)}</tr>

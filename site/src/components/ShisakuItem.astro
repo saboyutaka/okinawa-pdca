@@ -32,7 +32,7 @@ const j = judgeOf(s.judges[LATEST]);
 const ui = j && JUDGE_UI[j.key];
 const judgeLabel = `${yearLabel(LATEST)}の判定`;
 const judgeValue = j ? `${j.key} ${j.label}` : '判定なし';
-const context = `${s.name} 主な取組 `;
+const barLabel = `${s.name} 主な取組`;
 // 行に出す成果指標（名前は施策のページの成果指標のカードへのリンク）
 const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year === LATEST) : [];
 ---
@@ -57,7 +57,7 @@ const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year =
             <summary>
               <svg class="chev" viewBox="0 0 12 12" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
               <span class="t-l">主な取組</span>
-              <StatusBar categories={STATUSES} counts={counts} context={context} size="mini" cells squares />
+              <StatusBar categories={STATUSES} counts={counts} label={barLabel} size="mini" cells squares />
             </summary>
             <ul class="p-list inset">
               {torikumiCells(s).map((x) => <li><span class="t-st" data-tip-label="進捗状況" data-tip-value={x.key}><Chip tone={toneOfStatus(x.key)} text={x.key} /></span><a class="name-link" href={x.href}>{x.name}</a></li>)}
@@ -69,7 +69,7 @@ const seikaGroups = toriList ? seikaGroupsOf(s.id).filter((g) => g.latest.year =
       <>
         <span class="tori">
           取組 <b>{ok}/{toriN}</b>順調
-          {toriN > 0 && <StatusBar categories={STATUSES} context={context} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
+          {toriN > 0 && <StatusBar categories={STATUSES} label={barLabel} size="mini" pop={{ term: '主な取組', year: yearLabel(LATEST), items: torikumiCells(s) }} />}
         </span>
         <span class="seika">
           成果指標{seika.length ? seika.map((x) => <Chip tone={rateTone(x)} text={rateText(x)} />) : ' —'}

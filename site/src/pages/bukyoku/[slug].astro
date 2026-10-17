@@ -272,14 +272,14 @@ const sources = deptSourcePages(dept.name);
         <ul class="row-list">
           {seikaLatest.map((x) => {
             const s = shisakuById.get(x.shisaku_id);
-            const row = seikaGroupOf(x)!; // どの成果指標の行も、施策の成果指標のまとまりにある
+            const g = seikaGroupOf(x)!; // どの成果指標の行も、施策の成果指標のまとまりにある
             return (
               <SeikaRow
                 x={x}
-                row={row}
+                g={g}
                 shisaku={s}
-                href={seikaHref(x.shisaku_id, row.key)}
-                attrs={{ 'data-item': '', 'data-theme': themeIdsOf(x.shisaku_id).join('|'), 'data-text': `${row.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
+                href={seikaHref(x.shisaku_id, g.key)}
+                attrs={{ 'data-item': '', 'data-theme': themeIdsOf(x.shisaku_id).join('|'), 'data-text': `${g.name} ${x.dept || ''} ${s?.code} ${s?.name}` }}
               />
             );
           })}

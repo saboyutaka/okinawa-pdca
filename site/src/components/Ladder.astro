@@ -81,7 +81,7 @@ const rungs: Rung[] = [
         </p>
         {r.note && <p class="r-note">{r.note}</p>}
       </div>
-      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} context={`${r.term}の${r.measure} `} labelKey=""
+      <StatusBar categories={r.cats} counts={Object.fromEntries(r.cats.map((c) => [c.key, c.n]))} unit={r.unit} label={`${r.term}の${r.measure}`} labelKey=""
         pop={r.items && { term: r.term, year: yearLabel(LATEST), items: r.items, shapes: false, keys: true }} />
     </li>
   ))}

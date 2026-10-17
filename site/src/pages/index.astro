@@ -74,7 +74,7 @@ const boshu = boshuState();
         <li class:list={['vision', `sz-${v.id}`]}>
           <Sz id={v.id} sr={false} class="big-badge" />
           <a class="v-name name-link" href={`/future/${v.id}/`}><span class="sr-only">将来像{v.id}　</span>{v.name}</a>
-          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} context={v.name} />
+          <Tiers class="v-tiers" shuyou={v.shuyou} tori={v.tori} label={v.name} />
         </li>
       ))}
     </ul>

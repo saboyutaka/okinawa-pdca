@@ -39,7 +39,7 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
           {r.href ? <a class="name-link" href={r.href}>{r.label}</a> : r.label}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
-        <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />
+        <StatusBar categories={used} counts={r.counts} unit={unit} label={r.label} />
         <div class="row-total num">{fmt(totalOf(r))}{unit}</div>
       </div>
     ))}

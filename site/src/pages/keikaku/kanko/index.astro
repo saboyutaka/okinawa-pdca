@@ -60,13 +60,13 @@ const SEIKA_SHOW = 10;
     <div class="sticker tile">
       <div class="tile-label"><Term word="主な取組" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(toriCounts['順調'] || 0)}/{fmt(tori.length)}<small>件が順調</small></div>
-      <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(RM_LATEST)}の主な取組 `} size="mini" />
+      <StatusBar categories={STATUSES} counts={toriCounts} label={`${yearLabel(RM_LATEST)}の主な取組`} size="mini" />
       <a class="small" href={KANKO_TORIKUMI_HREF}>取組をさがす</a>
     </div>
     <div class="sticker tile">
       <div class="tile-label"><Term word="成果指標" />（{yearLabel(RM_LATEST)}）</div>
       <div class="tile-value">{fmt(judgeCounts['前進'] || 0)}/{fmt(seika.length)}<small>が基準値より前進</small></div>
-      <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" context={`${yearLabel(RM_LATEST)}の成果指標 `} size="mini" />
+      <StatusBar categories={RM_JUDGEMENTS} counts={judgeCounts} unit="指標" label={`${yearLabel(RM_LATEST)}の成果指標`} size="mini" />
       <a class="small" href="#seika-list">成果指標の一覧</a>
     </div>
     <div class="sticker tile">
@@ -103,7 +103,7 @@ const SEIKA_SHOW = 10;
                 <div class="name-row"><a class="name-link" href={kankoTenkaiHref(t.id)}>{t.name}</a><span class="code-no">施策展開 {t.code}</span></div>
                 <div class="row">
                   <div class="small secondary">施策 {fmt(t.shisaku.length)}・主な取組 {fmt(ts.length)}件・成果指標 {fmt(ss.length)}（前進 {fmt(ss.filter((s) => s.judgement === '前進').length)}）</div>
-                  <StatusBar categories={STATUSES} counts={countStatuses(ts, statusOf)} context={`${t.name} 主な取組 `} size="mini" />
+                  <StatusBar categories={STATUSES} counts={countStatuses(ts, statusOf)} label={`${t.name} 主な取組`} size="mini" />
                 </div>
               </li>
             );

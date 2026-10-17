@@ -10,9 +10,9 @@ import YearTag from './YearTag.astro';
 import { LATEST, yearLabel, withUnit, refText, rateText, rateTone, type SeikaGroup, type Shisaku } from '../lib/data.ts';
 import type { SeikaRow as SeikaRecord } from '../lib/types.ts';
 
-// x はその年度の成果指標の行、row は年度をまたいだまとまり
-interface Props { x: SeikaRecord; row: SeikaGroup; shisaku: Shisaku | undefined; href: string; attrs?: Record<string, string> }
-const { x, row, shisaku: s, href, attrs = {} } = Astro.props;
+// x はその年度の成果指標の行、g は年度をまたいだまとまり
+interface Props { x: SeikaRecord; g: SeikaGroup; shisaku: Shisaku | undefined; href: string; attrs?: Record<string, string> }
+const { x, g, shisaku: s, href, attrs = {} } = Astro.props;
 const past = x.year !== LATEST;
 const rateLabel = `${yearLabel(x.year)}の達成率`;
 const ref = refText(x.actual_ref_year);
@@ -20,13 +20,13 @@ const srText = `${rateLabel} ${rateText(x)}。基準値 ${withUnit(x.base_raw, x
 ---
 <li class="m-row" {...attrs}>
   <div class="m-head">
-    <a class="name-link" href={href}>{row.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
+    <a class="name-link" href={href}>{g.name}</a>{x.unit && <small class="secondary">（{x.unit}）</small>}
     {past && <> <YearTag kind="ended" year={x.year} what="指標" /></>}
   </div>
   {s && <div class="m-sub small secondary">施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
   <div class="m-viz" aria-hidden="true">
     <Chip tone={rateTone(x)} text={rateText(x)} title={rateLabel} />
-    <SeikaSpark row={row} />
+    <SeikaSpark g={g} />
   </div>
   <span class="sr-only">{srText}</span>
 </li>
