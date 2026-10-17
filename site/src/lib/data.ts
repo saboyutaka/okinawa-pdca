@@ -835,7 +835,7 @@ export interface CellItem {
   sub?: { label: string; name: string; href: string; code: string };
   vals?: [label: string, value: string][];
 }
-// 施策の最新の報告の主な取組（報告書の順）を、進捗状況・名前・取組のページの四角にする（施策の行と施策のページの頭）
+// 施策の最新の報告の主な取組（報告書の順）を、進捗状況・名前・取組のページの四角にする（施策の行と、施策の SNS のカードの画像）
 export const torikumiCells = (s: Shisaku): CellItem[] =>
   s.torikumi.filter((t) => t.year === LATEST).map((t) => ({ key: statusOf(t), name: t.name, href: torikumiPage(s.id, t.key) ?? torikumiHref(s.id, t.key) }));
 
