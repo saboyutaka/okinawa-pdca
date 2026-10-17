@@ -18,6 +18,7 @@ import { fmt } from './format.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';
 import { PROJECT, SITE } from './links.ts';
+import { once } from './memo.ts';
 import { ROUTES, routePath } from './routes.ts';
 import { oneLine } from './text.ts';
 
@@ -835,9 +836,8 @@ export interface Card {
 export const cardImage = (page: string) => `/og${page.replace(/\/$/, '')}.png`;
 
 const LATEST_TEXT = yearLong(LATEST);
-let cards: Map<string, Card> | undefined;
-export function getCards(): Map<string, Card> {
-  if (cards) return cards;
+// 要素の木（node）は、ページの og:image のハッシュ（cardMeta）と画像を描くときの2回読むので、1度だけ作る
+export const getCards = once((): Map<string, Card> => {
   const list: Omit<Card, 'image'>[] = [
     ...ROUTES['shisaku/[id]']().map(({ params, props: { s } }) => ({
       page: routePath('shisaku/[id]', params),
@@ -900,9 +900,8 @@ export function getCards(): Map<string, Card> {
       node: () => katsudouCard(a),
     })),
   ];
-  cards = new Map(list.map((c) => [c.page, { ...c, image: cardImage(c.page) }]));
-  return cards;
-}
+  return new Map(list.map((c) => [c.page, { ...c, node: once(c.node), image: cardImage(c.page) }]));
+});
 
 // ページの og:image（layouts/Base.astro）。カードの無いページは null（サイト共通の画像を使う）。
 // 中身が変わると SNS が古い画像を出し続けないよう、中身のハッシュを ?v= に付ける（Cloudflare の静的ファイルはクエリを見ずに同じ画像を返す）

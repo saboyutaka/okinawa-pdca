@@ -9,6 +9,7 @@ import { getThemes, themeIdsOf } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
 import { sha8 } from './hashed.ts';
+import { once } from './memo.ts';
 
 // JSON の形（ブラウザのスクリプト pages/torikumi/index.astro もこの型で読む）
 export interface SearchData {
@@ -75,12 +76,9 @@ function build(): SearchData {
 }
 
 // 書き出す JSON（1回のビルドで1度だけ作る）
-let summary: SearchSummary | undefined;
-const searchSummary = () => (summary ??= buildSummary());
-let summaryJson: string | undefined;
-export const searchSummaryJson = () => (summaryJson ??= JSON.stringify(searchSummary()));
-let json: string | undefined;
-export const searchDataJson = () => (json ??= JSON.stringify(build()));
+const searchSummary = once(buildSummary);
+export const searchSummaryJson = once(() => JSON.stringify(searchSummary()));
+export const searchDataJson = once(() => JSON.stringify(build()));
 
 // 書き出す場所。名前は中身の SHA-256 の先頭8桁（取組のページの URL と同じ長さ）
 export const searchDataHash = () => sha8(searchDataJson());

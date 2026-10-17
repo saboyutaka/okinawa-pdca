@@ -13,6 +13,7 @@ import {
 } from './data.ts';
 import { sha8 } from './hashed.ts';
 import { esc } from './html.ts';
+import { once, onceBy } from './memo.ts';
 import { themeIdsOf } from './themes.ts';
 import type { Tone } from './icons.ts';
 import type { ShuyouGaiyouRow, SeikaRow, TorikumiRow } from './types.ts';
@@ -167,8 +168,7 @@ function buildKatsudou(): Built {
   return { cells, data: { parents: parents.list, items } };
 }
 
-let built: Record<MapKind, Built> | undefined;
-const all = () => (built ??= { shuyou: buildShuyou(), seika: buildSeika(), katsudou: buildKatsudou() });
+const all = once((): Record<MapKind, Built> => ({ shuyou: buildShuyou(), seika: buildSeika(), katsudou: buildKatsudou() }));
 export const mapCells = (kind: MapKind) => all()[kind].cells;
 
 // マスの HTML。約2,000個あるので、Astro が範囲をしぼるための属性を付けず、短く書くため文字列にする（見た目は pages/map.astro の全体の CSS）。
@@ -199,8 +199,7 @@ export const mapCounts = (kind: MapKind) => YEARS.map((_, i) => mapCells(kind).f
 export const mapCheck = (kind: MapKind) => sha8(JSON.stringify(mapCells(kind)));
 
 // 書き出す JSON（1回のビルドで1度だけ作る）と場所。名前は中身の SHA-256 の先頭8桁（計画の目次のデータ lib/tree-data.ts と同じ）
-const json: Partial<Record<MapKind, string>> = {};
-export const mapDataJson = (kind: MapKind) => (json[kind] ??= JSON.stringify({ check: mapCheck(kind), ...all()[kind].data } satisfies MapData));
+export const mapDataJson = onceBy((kind: MapKind) => JSON.stringify({ check: mapCheck(kind), ...all()[kind].data } satisfies MapData));
 export const mapDataHash = (kind: MapKind) => sha8(mapDataJson(kind));
 export const mapDataPath = (kind: MapKind) => `/map/${kind}-${mapDataHash(kind)}.json`;
 // 名前の変わらない控え。公開し直した直後に、キャッシュした前のページ（5分）から開くと、前のハッシュのファイルはもう無いので、こちらを読む
@@ -221,7 +220,6 @@ function buildSearch(): MapSearch {
   };
   return { shuyou: of('shuyou'), seika: of('seika'), katsudou: of('katsudou') };
 }
-let searchJson: string | undefined;
-export const mapSearchJson = () => (searchJson ??= JSON.stringify(buildSearch()));
+export const mapSearchJson = once(() => JSON.stringify(buildSearch()));
 export const mapSearchPath = () => `/map/search-${sha8(mapSearchJson())}.json`;
 export const MAP_SEARCH_FALLBACK = '/map/search.json';
