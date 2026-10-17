@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
-import { yearLabel, yearLong, yearsLong } from './years.ts';
+import { yearLabel, yearsLong } from './years.ts';
 import { SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
