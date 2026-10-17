@@ -11,8 +11,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, judgeOf, periodLabel, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
-  type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
+  type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import type { ActivityRun, ActivityShare } from './katsudou.ts';
 import { fmt } from './format.ts';
@@ -21,7 +21,7 @@ import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, t
 import { PROJECT, SITE } from './links.ts';
 import { once } from './memo.ts';
 import { ROUTES, routePath } from './routes.ts';
-import { oneLine } from './text.ts';
+import { isNumOnly, oneLine } from './text.ts';
 
 export const CARD_SIZE = { width: 1200, height: 630 };
 // 字の形は Noto Sans CJK JP の Bold だけ（src/fonts/card-bold.woff。使う字だけを切り出したもの）
@@ -662,7 +662,7 @@ function katsudouChart(run: ActivityRun, W: number, H: number, here: string): El
 // 成果指標の「スタート → いま → ゴール」（components/SeikaGoal.astro と同じ並び）の1行。数字だけの値は単位を小さく添える
 function goalStep(label: string, raw: string | null | undefined, unit: string, sub: string) {
   const v = oneLine(raw);
-  const isNum = /^[-△]?[\d,.]+$/.test(v.normalize('NFKC'));
+  const isNum = isNumOnly(v);
   return box(
     { alignItems: 'baseline', columnGap: 8, height: 42, minWidth: 0 },
     txt({ fontSize: 20, color: color('ink-2'), width: 92, flexShrink: 0 }, label),
@@ -708,9 +708,8 @@ function seikaCard(g: SeikaGroupOfShisaku) {
 }
 
 // 主要指標・活動指標の値の1行。数字を大きく、位と単位を小さく出す（「32,885億円」→ 32,885 億円。components/ShuyouCard.astro と同じ）。文の値はそのまま。
-// 報告書の印字は全角と半角の数字がまじる（計画「１施設」・実績「1施設」）ので、並べたときに数字の位置と幅がそろうよう、数字・カンマ・ピリオド・％は半角にする
+// 並べたときに数字の位置と幅がそろうよう、値は半角にそろえる（lib/data.ts の halfWidth）
 const DIGITS = /([-△]?\d[\d,.]*)/;
-const halfWidth = (s: string) => s.replace(/[０-９，．％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 function valueText(raw: string, unit = ''): El {
   const text = halfWidth(raw);
   if (!DIGITS.test(text)) return txt({ fontSize: 24, flexShrink: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, text, 1);
@@ -741,13 +740,8 @@ function shuyouCard(g: ShuyouGroupOfKihon) {
       ? judges.map((j) => box({ alignItems: 'center', columnGap: 8, flexShrink: 0 }, j.label && txt({ fontSize: 20, color: color('ink-2') }, j.label), icon(toneOfJudgement(j.key), null, 24), txt({ fontSize: 24 }, j.key)))
       : txt({ fontSize: 21, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }, oneLine(x.judgement), 1),
   );
-  // 単位の書かれていない数には指標の単位を添える。スタート・いま・ゴールの位は1つの部分の中でそろえる（lib/data.ts の sameScale）
-  const vals = (p: ShuyouPart) => {
-    const cs = [p.latest.b, p.latest.a, p.latest.t];
-    const ts = sameScale(cs.map((c) => c.text));
-    const unit = (c: Cell) => (c.value != null && !c.unit && p.scale === 1 ? p.unit : '');
-    return cs.map((c, i) => valueText(ts[i], unit(c)));
-  };
+  // スタート・いま・ゴールの値はページのカードと同じ（lib/data.ts の shuyouSteps）
+  const vals = (p: ShuyouPart) => shuyouSteps(p).map((s) => valueText(s.text, s.unit));
   const nowLabel = x.year === LATEST ? 'いま' : `${yearLabel(x.year)}の報告`;
   let body: Kid;
   if (g.parts.length > 1) {

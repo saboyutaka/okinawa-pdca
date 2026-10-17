@@ -7,26 +7,23 @@ import Chip from './Chip.astro';
 import Term from './Term.astro';
 import Says from './Says.astro';
 import { yearLabel, yearLong, withUnit, refText, sectionHref } from '../lib/data.ts';
-import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
-import { joinLines } from '../lib/text.ts';
+import { RM_LATEST, rmJudgementOf, rmLatestIndex, type KankoSeikaGroup } from '../lib/plans.ts';
+import { isBlankCell, isNumOnly, joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
 import { scriptJson } from '../lib/html.ts';
 
 interface Props { g: KankoSeikaGroup; id: string }
 const { g, id } = Astro.props;
 const x = g.latest;
-const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
+const u = isBlankCell(x.unit) ? '' : x.unit;
 const yl = yearLabel(x.year);
-const NO_VALUE = /^[\s\-－―—‐ー]*$/;
-const has = (raw: string | null | undefined) => !NO_VALUE.test(raw || '');
-// 最新の実績値は、実績値の欄（R4・R5・R6）のうち最後に値があるもの
-const i = x.actual_raw.map((v, k) => (has(v) ? k : -1)).filter((k) => k >= 0).pop();
-const latestRaw = i != null ? x.actual_raw[i] : '';
-const latestYear = i != null ? x.years[i] : '';
-const ref = i != null ? refText(x.ref_years[i]) : '';
-const planRaw = i != null && has(x.plan_raw?.[i]) ? x.plan_raw[i] : null;
+const i = rmLatestIndex(x);
+const latestRaw = i >= 0 ? x.actual_raw[i] : '';
+const latestYear = i >= 0 ? x.years[i] : '';
+const ref = i >= 0 ? refText(x.ref_years[i]) : '';
+const planRaw = i >= 0 && !isBlankCell(x.plan_raw?.[i]) ? x.plan_raw[i] : null;
 const { base, target } = x;
-const actual = i != null ? x.actual[i] : null;
+const actual = i >= 0 ? x.actual[i] : null;
 const nums = base != null && actual != null && target != null && [base, actual, target].every((v) => Number.isFinite(v)) && target !== base;
 const progress = nums ? (actual - base) / (target - base) : null;
 const down = nums && target < base;
@@ -43,10 +40,9 @@ const verdict = {
 const rateText = x.rate != null ? `達成率 ${x.rate}%` : x.rate_raw === '達成' || x.rate_raw === '未達成' ? x.rate_raw : '';
 
 // ② 数字。単位は小さく添えて、数字を折り返さない。文の値が長いときは縦に並べる
-const isNum = (raw: string | null | undefined) => raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC'));
-const parts = (raw: string) => (isNum(raw) ? [raw, u] : [raw || '—', '']);
-const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNum(raw) && (raw || '').length > 10);
-const note = ref ? `この指標の${yearLong(x.year)}の報告の実績値は、${ref}です。` : i != null && i < x.years.length - 1 ? `この指標の${yearLong(x.year)}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
+const parts = (raw: string) => (isNumOnly(raw) ? [raw, u] : [raw || '—', '']);
+const stack = [x.base_raw, latestRaw, x.target_raw].some((raw) => !isNumOnly(raw) && (raw || '').length > 10);
+const note = ref ? `この指標の${yearLong(x.year)}の報告の実績値は、${ref}です。` : i >= 0 && i < x.years.length - 1 ? `この指標の${yearLong(x.year)}の報告で、いちばん新しい実績値は${latestYear}の値です。` : undefined;
 
 // ③ 道のりの図のデータ（components/SeikaChart.astro と同じ形）。年度ごとに、その年度の実績値と、計画期間の計画値の並び
 const years: SeikaChartYear[] = x.years.map((yy, k) => ({

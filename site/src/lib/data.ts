@@ -7,6 +7,7 @@ import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
 import { yearLabel, yearsLong } from './years.ts';
+import { isNumOnly } from './text.ts';
 import { SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
@@ -43,8 +44,7 @@ export interface YearGroup<T> {
 export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
 export { yearLabel, yearLong, yearsLong, PLAN_PERIODS, periodName, periodLabel, planIndex } from './years.ts';
-// 報告書の表記に単位を付ける。数字だけの欄にだけ付ける（「35件（R２年）」のように単位があるものはそのまま）
-export const withUnit = (raw: string | null | undefined, unit?: string | null) => (raw && /^[-△]?[\d,.]+$/.test(raw) && unit ? `${raw}${unit}` : raw || '—');
+export { withUnit } from './text.ts';
 // 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
 // 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
 export const refText = (raw: string | null | undefined) => {
@@ -232,8 +232,9 @@ export function getShuyouByYear(year: number) {
 // 成果指標と同じ「ゴールまでの道のり」の図に置くため、ここで数を読み取る。画面に出す値は報告書の文字で、読み取った数は図の位置にだけ使う
 const MULT: Record<string, number> = { 兆: 1e12, 億: 1e8, 百万: 1e6, 万: 1e4, 千: 1e3 };
 const MULT_NAME = Object.fromEntries(Object.entries(MULT).map(([k, v]) => [v, k]));
-// 全角の英数字を半角にする（「㎡」「CO₂」「％」はそのまま）
-export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+// 全角の英数字と「，」「．」「％」を半角にする（「㎡」「CO₂」はそのまま）。報告書の印字は全角と半角がまじる（計画「１施設」・実績「1施設」）ので、
+// 値を半角にそろえて見せるところ（ページとカードの画像）はどこもこれを使う
+export const halfWidth = (s: string) => s.replace(/[０-９Ａ-Ｚａ-ｚ．，％]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 // 欄の中の折り返しを詰める（日本語の言葉の途中で折り返しているので、空白を入れない）
 export const joinCell = (raw: string | null | undefined) => (raw || '').replace(/\s*\n\s*/g, '').trim();
 
@@ -380,6 +381,12 @@ function partOf(label: string, name: string, cells: Record<number, PartCells>, l
   const drawable = ys.some((r) => r.actual != null) && (goal || ys.some((r) => r.base != null));
   return { label, name, years, unit: ref ? `${MULT_NAME[ref.scale] || ''}${ref.unit}` : '', scale: ref?.scale ?? 1, drawable, goal, latest: { ...years[latestYear], name } };
 }
+// 主要指標の部分の、数だけの値に添える単位（図の目盛りにも使う）。図の位が1でない指標（万t-CO₂ など）は、位の書かれていない数に単位を添えない（どの位の数か分からないため）
+export const shuyouUnit = (p: ShuyouPart) => (p.scale === 1 ? p.unit : '');
+// 主要指標の部分の最新の報告のスタート・いま・ゴールの値（ページのカードと SNS のカードの画像）。位は1つの部分の中でそろえ（sameScale。印字は「3兆2,885億円 → 34,516億円」のようにまちまち）、
+// 数だけの値には単位を添える
+export const shuyouSteps = (p: ShuyouPart) =>
+  sameScale([p.latest.b.text, p.latest.a.text, p.latest.t.text]).map((text) => ({ text, unit: isNumOnly(text) ? shuyouUnit(p) : '' }));
 
 // 成果指標で目標値が文のもの（「跡地における事業の取組を目指す」など）の図の材料。基準値・実績値も「3区域」「男性72.11年」のように
 // 単位や名前（指標の名前の括弧の中）付きで書かれていて数になっていないので、主要指標と同じように読む。図はゴールの丸を置かず、スタートと実績値だけを描く。
@@ -712,16 +719,8 @@ export function seikaRows(shisaku: Shisaku) {
   return [...rows.values()].sort((a, b) => b.latest.year - a.latest.year);
 }
 
-// 前の年度の報告での成果指標の名前（名前の変更でまとめた指標の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度（取組の formerNames と同じ形）
-export function seikaFormerNames(g: YearGroup<SeikaRow>) {
-  const m = new Map<string, number[]>();
-  const latest = sameKey(nameKey(seikaName(g.latest)));
-  for (const y of YEARS) {
-    const r = g.years[y];
-    if (r && sameKey(nameKey(seikaName(r))) !== latest) m.set(seikaName(r), [...(m.get(seikaName(r)) || []), y]);
-  }
-  return [...m].map(([name, years]) => ({ name, years }));
-}
+// 前の年度の報告での成果指標の名前と、その名前で載っていた年度（formersOf）
+export const seikaFormerNames = (g: YearGroup<SeikaRow>) => formersOf(namesByYear(g, seikaName), seikaName(g.latest));
 // 成果指標は施策のページのカードで見せる。カードの id は seika-<指標名の key のハッシュ8桁>。年度をまたいで同じ（名前が変わると別の id。SEIKA_RENAMES でまとめた指標は新しい名前の id）
 export const seikaAnchor = (key: string) => `seika-${keySlug(key)}`;
 export const seikaHref = (shisakuId: string, key: string) => `/shisaku/${shisakuId}/#${seikaAnchor(key)}`;
@@ -972,15 +971,15 @@ export function distinctTorikumiCount(year: number) {
   for (const g of gs) for (const r of repostsOf(g)) if (r.years.includes(year)) root.set(find(g), find(r.group));
   return new Set(gs.map(find)).size;
 }
-// 前の年度の報告での名前（書き方の違い・名前の変更でまとめた取組の、最新の報告と名前の key が違うもの）と、その名前で載っていた年度
-export function formerNames(g: YearGroup<TorikumiRow>) {
+// 前の年度の報告での名前（書き方の違い・名前の変更でまとめたものの、いまの名前と名前の key が違うもの）と、その名前で載っていた年度。
+// 取組・成果指標・活動指標で同じ比べ方（書き方の違いだけでも出す。前の年度の報告書をその名前で探せるように）
+export function formersOf(names: { name: string; y: number }[], latest: string) {
   const m = new Map<string, number[]>();
-  for (const y of YEARS) {
-    const r = g.years[y];
-    if (r && r.key !== g.latest.key) m.set(r.name, [...(m.get(r.name) || []), y]);
-  }
+  for (const { name, y } of names) if (nameKey(name) !== nameKey(latest)) m.set(name, [...(m.get(name) ?? []), y]);
   return [...m].map(([name, years]) => ({ name, years }));
 }
+const namesByYear = <T>(g: YearGroup<T>, nameOf: (r: T) => string) => YEARS.flatMap((y) => (g.years[y] ? [{ name: nameOf(g.years[y]), y }] : []));
+export const formerNames = (g: YearGroup<TorikumiRow>) => formersOf(namesByYear(g, (r) => r.name), g.latest.name);
 // 前の名前を出典に書くときの文（「R4〜R6の報告では「〇〇」」）。取組・活動指標・成果指標で同じ書き方
 export const formerText = (fs: { name: string; years: number[] }[]) =>
   fs.map((f) => `${yearsLong(f.years[0], f.years[f.years.length - 1])}の報告では「${f.name}」`).join('、');
@@ -1407,6 +1406,8 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
 export const amountEntries = (report: number, kind: AmountKind) => amountEntriesOf(report)(kind);
 // 金額の合計（千円）
 export const amountTotal = (es: readonly { amount: number }[]) => es.reduce((s, e) => s + e.amount, 0);
+// 部局の金額の一覧。部局は、予算事業を寄せた取組の最新の報告での所管部局（currentDeptOf。部局のページ・部局の一覧・予算と財源のページで同じ）
+export const deptAmountEntries = (report: number, kind: AmountKind, deptName: string) => amountEntries(report, kind).filter((e) => currentDeptOf(report, e.shisaku_id, e.key) === deptName);
 
 // 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
 // funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）
