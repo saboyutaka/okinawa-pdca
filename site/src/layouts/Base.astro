@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import '../styles/global.css';
 import { PROJECT, SITE } from '../lib/links.ts';
 import { LATEST, yearLong } from '../lib/data.ts';
-import { OG_IMAGE, absUrl, ldJson, websiteLd } from '../lib/seo.ts';
+import { OG_IMAGE, absUrl, websiteLd } from '../lib/seo.ts';
+import { scriptJson } from '../lib/html.ts';
 import { ERA_JS_PATH } from '../lib/era.ts';
 import { CARD_SIZE, cardMeta } from '../lib/card.ts';
 // 数字のフォント。styles/global.css の @font-face と同じファイル（/_astro/ にハッシュ付きの名前で書き出す。astro.config.ts の assetsInlineLimit）
@@ -140,7 +141,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES, ...(
     <link rel="icon" href={faviconIco} sizes="32x32" />
     <link rel="icon" href={faviconSvg.src} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={appleTouchIcon.src} />
-    {path === '/' && <script type="application/ld+json" is:inline set:html={ldJson(websiteLd(description))} />}
+    {path === '/' && <script type="application/ld+json" is:inline set:html={scriptJson(websiteLd(description))} />}
     <link rel="preload" href={fontUrl} as="font" type="font/woff2" crossorigin />
     <script type="speculationrules" is:inline set:html={SPECULATION_RULES} />
     {/* ブラウザのスクリプトは scripts/site.ts の1つだけ。<head> に置くと CSS と並んで早めに取りに行く（body の終わりに置くと、CSS が届くまで後回しにされていた）。

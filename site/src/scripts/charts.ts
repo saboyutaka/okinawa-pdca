@@ -1,6 +1,9 @@
 // [data-chart] の中の JSON から、表示幅に合わせて SVG の図を描く（幅を固定した SVG を縮めると、スマホで文字が小さくなりすぎるため）。
 // 図全体でタブは1回だけ止まり、左右の矢印キーで年度を移る。値は各図の近くの表（「表で見る」）にも必ず出している
+import { fmt } from '../lib/format.ts';
+import { isBlankCell } from '../lib/text.ts';
 import { PLAN_PERIODS, periodLabel, periodName, planIndex, yearLabel as yl } from '../lib/years.ts';
+import type { ActivityYear } from '../lib/data.ts';
 import { showRows, hide, onEsc, type TipRow } from './tip.ts';
 import { moving } from './motion.ts';
 
@@ -35,16 +38,8 @@ export interface SeikaData {
   years: SeikaChartYear[];
   latest: boolean; // 最新の報告にある指標か（無ければ「いまここ」を「最後の報告」にする）
 }
-export interface KatsudouChartYear {
-  y: number; // 報告年度
-  plan: number | null; // 図に置く、かっこの前のその年度の数
-  plan_raw: string;
-  actual: number | null;
-  actual_raw: string;
-  status: string; // 進捗状況
-  ach: string; // 達成割合
-  future: boolean; // 年度別計画にだけある、この先の年度
-}
+// 活動指標の1年分（lib/data.ts の activityRuns の年度。そのまま渡す）
+export type KatsudouChartYear = ActivityYear;
 export interface KatsudouData {
   unit: string;
   years: KatsudouChartYear[];
@@ -62,7 +57,6 @@ function sv<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   if (text != null) e.textContent = window.era?.text(text) ?? text;
   return e;
 }
-const nf = new Intl.NumberFormat('ja-JP');
 const withUnit = (raw: string | null | undefined, unit: string) => (raw && /^[-△]?[\d,.]+$/.test(raw.normalize('NFKC')) && unit ? `${raw}${unit}` : raw || '—');
 function niceTicks(lo: number, hi: number, n = 4) {
   const raw = (hi - lo || 1) / n;
@@ -158,7 +152,7 @@ function yearFrame(wrap: HTMLElement, W: number, H: number, top: number, periods
   };
   // 目盛りの単位は1文字（%・人・件など）のときだけ付ける。長い単位はカードの見出しにある
   const u = (unit || '').normalize('NFKC');
-  const tickText = (t: number) => `${nf.format(t)}${u.length === 1 ? u : ''}`;
+  const tickText = (t: number) => `${fmt(t)}${u.length === 1 ? u : ''}`;
   const m = { l: Math.max(minLeft, Math.ceil(Math.max(...ticks.map((t) => textW(tickText(t), 'tick')))) + 14), r: 8, t: top, b: 30 };
   const slots = periods.flatMap((p) => p.ys);
   const ih = H - m.t - m.b;
@@ -267,8 +261,8 @@ function drawTrend(wrap: HTMLElement, W: number, { points }: TrendData) {
   crosshair(wrap, svg, points.map((_, i) => x(i)), m.t, m.t + ih, (i, cx, cy) => {
     const p = points[i];
     showRows(`${yl(p.y)}（${periodName(p.y)}）`, [
-      [`${p.a.toFixed(1)}%`, `主な取組のうち順調（${nf.format(p.aOk)}/${nf.format(p.aN)}件）`, 'var(--series-1)'],
-      [`${p.b.toFixed(1)}%`, `成果指標のうち計画値に到達（${nf.format(p.bOk)}/${nf.format(p.bN)}）`, 'var(--ink-2)'],
+      [`${p.a.toFixed(1)}%`, `主な取組のうち順調（${fmt(p.aOk)}/${fmt(p.aN)}件）`, 'var(--series-1)'],
+      [`${p.b.toFixed(1)}%`, `成果指標のうち計画値に到達（${fmt(p.bOk)}/${fmt(p.bN)}）`, 'var(--ink-2)'],
     ], cx, cy);
   }, points.length - 1);
 }
@@ -373,7 +367,7 @@ function drawSeika(wrap: HTMLElement, W: number, { unit, years, latest }: SeikaD
     if (r) rows.push([withUnit(r.actual_raw, unit), `実績値${r.ref ? `（${r.ref}）` : ''}`, 'var(--pop)']);
     // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は出さない
     const pr = per.plan_raw?.[planIndex(s)];
-    if (pr && /[^\s\-－―—‐]/.test(pr)) rows.push([withUnit(pr, unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
+    if (pr && !isBlankCell(pr)) rows.push([withUnit(pr, unit), `${yl(s)}の計画値`, 'var(--ink-2)']);
     rows.push([withUnit(per.target_raw, unit), `ゴール（目標値・${per.target_year}）`, 'var(--ink)']);
     rows.push([withUnit(per.base_raw, unit), 'スタート（基準値）', 'var(--none)']);
     showRows(`${yl(s)}${r ? 'の報告' : ''}（${periodName(s)}）`, rows, cx, cy);

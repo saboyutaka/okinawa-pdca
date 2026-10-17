@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
+import { isBlankCell } from './text.ts';
 import { yearLabel, yearLong, yearsLong } from './years.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
@@ -1383,7 +1384,6 @@ export interface ActivityRun {
   cumulative: boolean; // かっこの中に累計や内訳が書いてある値があるか
   planFrom: string; // future の出どころ（無ければ ''）
 }
-const blankCell = (s: string) => !/[^\s\-－―—‐]/.test(s);
 const nfkc = (s: string) => s.normalize('NFKC');
 // 目標・実績のセルの頭の札。「北部15項目」→「北部」、「相談専門員２人」→「相談専門員」、「調査設計100％」→「調査設計」。
 // 丸数字（①３回）は札にしない。数と単位で終わらないセル（「情報収集」）は ''
@@ -1408,7 +1408,7 @@ function stripLabel(raw: string, label: string): string {
 // 「300件・12回（600件・24回）」のように、かっこの中にも同じ数だけ値が並ぶものは「300件（600件）」「12回（24回）」に組む
 function splitCell(raw: string): string[] {
   const s = raw.trim();
-  if (blankCell(s)) return [];
+  if (isBlankCell(s)) return [];
   // 行で分けて書かれたもの（部局票の年度別計画の「①…300人\n②…240人」）は行がそのまま値
   if (s.includes('\n')) return s.split('\n').map((x) => x.trim()).filter(Boolean);
   // 読点で分け、「・」は両側に数があるときだけ区切り（「300件・12回」は分け、「６ヵ国・地域」は分けない）。残りは「数＋単位（かっこ）」の並びで分ける
@@ -1513,7 +1513,7 @@ function splitRows(indicator: string, years0: RunYear[]): { label: string; years
     const u = unitOf(stripLabel(v, own));
     const byUnit = units.map((x, j) => (x === u && u && j !== from ? j : -1)).filter((j) => j >= 0);
     const j = byLabel >= 0 ? byLabel : byUnit.length === 1 ? byUnit[0] : -1;
-    return j >= 0 && blankCell(parts[j].years[k][key]) ? j : -1;
+    return j >= 0 && isBlankCell(parts[j].years[k][key]) ? j : -1;
   };
   years.forEach((r, k) => {
     for (const a of loose.get(r) ?? []) { const j = move(k, 'actual_raw', a, -1); if (j >= 0) parts[j].years[k].actual_raw = stripLabel(a, prefix[j]); }
@@ -1528,8 +1528,8 @@ function splitRows(indicator: string, years0: RunYear[]): { label: string; years
     });
     // 計画の無い行に実績だけがあり、実績の無い行に計画だけがあるのが1つずつなら、実績はその行のもの（R7 の「整備工事100％」の実績「100％」が1行目に印字されているなど）
     if (r.future) return;
-    const onlyA = parts.filter((p) => blankCell(p.years[k].plan_raw) && !blankCell(p.years[k].actual_raw) && !cellLabel(p.years[k].actual_raw));
-    const onlyP = parts.filter((p) => !blankCell(p.years[k].plan_raw) && blankCell(p.years[k].actual_raw));
+    const onlyA = parts.filter((p) => isBlankCell(p.years[k].plan_raw) && !isBlankCell(p.years[k].actual_raw) && !cellLabel(p.years[k].actual_raw));
+    const onlyP = parts.filter((p) => !isBlankCell(p.years[k].plan_raw) && isBlankCell(p.years[k].actual_raw));
     if (onlyA.length === 1 && onlyP.length === 1) {
       const [u, w] = [unitOf(onlyA[0].years[k].actual_raw), unitOf(onlyP[0].years[k].plan_raw)];
       if (!u || !w || u === w) { onlyP[0].years[k].actual_raw = onlyA[0].years[k].actual_raw; onlyA[0].years[k].actual_raw = ''; }
@@ -1585,7 +1585,7 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
       ?? (rec.plan.length === 1 && i >= 0 && nameKey(rec.plan[0].values[i] ?? '') === nameKey(g.latest.target) ? rec.plan[0] : undefined);
     ys.forEach((y, k) => {
       const v = p?.values[k] ?? '';
-      if (y > LATEST && !blankCell(v)) cur.years.push({ y, rows: [{ plan: v, actual: '' }], single: true, status: '', achs: [], ach: '', future: true });
+      if (y > LATEST && !isBlankCell(v)) cur.years.push({ y, rows: [{ plan: v, actual: '' }], single: true, status: '', achs: [], ach: '', future: true });
     });
     if (cur.years.some((r) => r.future)) planFrom = `${yearLong(LATEST)}の部局の検証票の「年度別計画」`;
   }
@@ -1611,7 +1611,7 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
         unit: unitRaw ? activityUnitText(unitRaw) : unit,
         years,
         chart,
-        skipped: chart && years.some((r) => (!blankCell(r.plan_raw) && r.plan == null) || (!blankCell(r.actual_raw) && r.actual == null)),
+        skipped: chart && years.some((r) => (!isBlankCell(r.plan_raw) && r.plan == null) || (!isBlankCell(r.actual_raw) && r.actual == null)),
         cumulative: chart && years.some((r) => /[（(]/.test(r.plan_raw + r.actual_raw)),
         planFrom: k === 0 && years.some((r) => r.future) ? planFrom : '',
       };

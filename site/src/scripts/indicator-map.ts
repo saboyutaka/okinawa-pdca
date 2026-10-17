@@ -12,6 +12,7 @@
 //    ← → で同じ段の左右のマス（箱の端では横に並ぶ隣の箱へ）、↑ ↓ で上下の段のいちばん近いマス（PC は同じ指標の列、スマホは縦に積んだ真上・真下の箱）、
 //    Home・End で最初・最後に移る。絞り込んでいるときは、条件に合うマスだけを移る（薄くしたマスは飛ばす。押せば選べる）。
 //    吹き出しが出ているときは Enter でその指標のページへ移る
+import { fmt } from '../lib/format.ts';
 import { esc } from '../lib/html.ts';
 import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
@@ -37,7 +38,6 @@ interface Tier {
   texts?: string[]; // キーワードで探す文字（searchText でそろえたもの。マスと同じ並び）
 }
 
-const nf = new Intl.NumberFormat('ja-JP');
 // キーワードに当たった字に印を付けた HTML（計画の目次と同じ）
 const marked = (text: string, words: SearchWord[]) => {
   let out = '';
@@ -227,7 +227,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
       t.head.classList.toggle('empty', shown === 0);
       if (t.kind === 'shuyou' && shown === 0) emptyShuyou = true;
       const count = t.head.querySelector<HTMLElement>('[data-map-count]')!;
-      const n = nf.format(filtered ? hit : shown);
+      const n = fmt(filtered ? hit : shown);
       if (count.textContent !== n) {
         count.textContent = n;
         if (ready) bump(count);
@@ -242,7 +242,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (result) {
       const hits = parts.filter((p) => p.hit != null && p.counts.some(([, n]) => n > 0));
       const state = words.length ? { loading: 'キーワードで探す文字を読み込んでいます…', error: 'キーワードで探す文字を読み込めませんでした。', stale: 'サイトが新しくなったため、キーワードで探せません。ページを読み込み直してください。' }[searchState as string] : '';
-      result.textContent = state || (hits.length ? `条件に合う指標: ${hits.map((p) => `${p.term} ${nf.format(p.hit!)}${p.unit}`).join('・')}` : '');
+      result.textContent = state || (hits.length ? `条件に合う指標: ${hits.map((p) => `${p.term} ${fmt(p.hit!)}${p.unit}`).join('・')}` : '');
       result.classList.toggle('sr-only', !state);
     }
     if (sel) {

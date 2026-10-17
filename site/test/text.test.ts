@@ -1,7 +1,7 @@
 // PDF から読んだ文章の整形（lib/text.js）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { oneLine, joinLines, sections, proseBlocks, firstSentence } from '../src/lib/text.ts';
+import { oneLine, isBlankCell, joinLines, sections, proseBlocks, firstSentence } from '../src/lib/text.ts';
 
 // 21字（joinLines は20字以下の行を見出しとみなして改行を残す）
 const LONG = 'あいうえおかきくけこさしすせそたちつてと、';
@@ -11,6 +11,11 @@ test('oneLine: 表の値の改行を空白にする。空なら —', () => {
   assert.equal(oneLine('a \n  b'), 'a b');
   assert.equal(oneLine(''), '—');
   assert.equal(oneLine(null), '—');
+});
+
+test('isBlankCell: 空白と「-」「―」などだけの欄は空', () => {
+  for (const v of ['', ' ', '―', '－', ' - ', '—\n‐']) assert.equal(isBlankCell(v), true, v);
+  for (const v of ['0', '３回', '―件']) assert.equal(isBlankCell(v), false, v);
 });
 
 test('joinLines: 文の途中の折り返しはつなぐ', () => {

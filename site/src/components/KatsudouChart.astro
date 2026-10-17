@@ -4,11 +4,12 @@
 import Term from './Term.astro';
 import { yearLabel, yearLong, type ActivityRun } from '../lib/data.ts';
 import type { KatsudouData } from '../scripts/charts.ts';
+import { scriptJson } from '../lib/html.ts';
 
 // here は最後の実績に添える札（「いまここ」「最後の報告」。前の活動指標の図は ''）
 interface Props { run: ActivityRun; here: string }
 const { run, here } = Astro.props;
-const data = JSON.stringify({ unit: run.unit, years: run.years, here } satisfies KatsudouData).replace(/</g, '\\u003c');
+const data = scriptJson({ unit: run.unit, years: run.years, here } satisfies KatsudouData);
 const yearText = (r: ActivityRun['years'][number]) => (r.future
   ? `${yearLabel(r.y)} 計画 ${r.plan_raw}（年度別計画）`
   : `${yearLabel(r.y)} 計画 ${r.plan_raw || '—'}、実績 ${r.actual_raw || '—'}（${r.status}）`);

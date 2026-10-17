@@ -18,6 +18,7 @@
 //    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。
 //    フォーカスするのは名前のリンク（施策展開は名前）で、▶ の丸（summary）は Tab で止めない（マウスと、読み上げソフトでタップして開け閉めするため）。
 //    指標（PC では名前の横、スマホでは開いた中の行）にも止まらない（マウスで押すリンクにする）
+import { fmt } from '../lib/format.ts';
 import { esc } from '../lib/html.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
@@ -427,7 +428,7 @@ async function init(tree: HTMLElement) {
     }
     for (const li of lis) li.hidden = !keep.has(li) && !li.closest('li[data-hit]');
     for (const d of nodes) d.open = open.has(d);
-    const found = [...n].filter(([, x]) => x > 0).map(([k, x]) => `${k} ${x.toLocaleString('ja-JP')}`).join('・');
+    const found = [...n].filter(([, x]) => x > 0).map(([k, x]) => `${k} ${fmt(x)}`).join('・');
     const text = found ? `${found} が見つかりました` : '見つかりませんでした';
     if (hits.textContent !== text) {
       hits.textContent = text;

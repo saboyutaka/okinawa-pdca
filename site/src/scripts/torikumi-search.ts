@@ -2,6 +2,7 @@
 // どのページでも読み込む（scripts/site.ts）ので、検索のフォーム（#tf）があるページでだけ動かす。
 // 押したボタンが消えるときは、フォーカスを続きの場所へ移す（WCAG 2.4.3）: 「さらに表示」は出した最初の行へ、
 // 絞り込み中の札で条件を外したときは、同じ位置の札（無ければ1つ前の札）へ、札が無くなったら件数の行へ
+import { fmt } from '../lib/format.ts';
 import { iconSvg } from '../lib/icons.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { SearchData as Data, SearchSummary as Summary } from '../lib/search-data.ts';
@@ -173,7 +174,7 @@ function search({ form, list, count, unit, noSummary, active, more, q }: Parts) 
     hits = d.rows.flatMap((r, i) => (ok(r, i) ? [i] : []));
     list.removeAttribute('aria-busy');
     // 件数が変わったら数字を小さくはねさせる（データが届いて初めて出すときと、「読み込み中…」から出すときは動かさない）
-    const n = hits.length.toLocaleString('ja-JP');
+    const n = fmt(hits.length);
     if (count.textContent !== n) {
       const first = unit.hidden;
       count.textContent = n;
