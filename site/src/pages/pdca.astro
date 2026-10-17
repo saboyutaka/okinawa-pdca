@@ -6,6 +6,7 @@ import { fmt } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import { TERMS } from '../lib/terms.ts';
 import ExtLink from '../components/ExtLink.astro';
+import SecHead from '../components/SecHead.astro';
 import PlanMap from '../components/PlanMap.astro';
 
 // 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
@@ -18,13 +19,13 @@ const prefBudget = getFinanceReference().prefecture;
     沖縄県が新・沖縄21世紀ビジョン基本計画を進めるために、毎年度、施策と主な取組を点検している仕組みです。このサイトがどの資料をどう読み、どう数えたかは<a href="/data/">データについて</a>にまとめています。
   </p>
 
-  <h2 id="shikumi">沖縄県PDCAとは</h2>
+  <SecHead id="shikumi">沖縄県PDCAとは</SecHead>
   <p>
     沖縄県は「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン基本計画</ExtLink>を進めるため、<ExtLink href={LINKS.jisshiKeikaku}>実施計画</ExtLink>に並ぶ施策と取組について、計画（Plan）・実施（Do）・検証（Check）・改善（Action）を毎年度まわしています。
     その検証結果が「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>で、毎年度、前の年度の分が公表されます（公表の時期は年度によって違い、令和4年度対象は令和6年3月、令和5年度対象は令和6年11月、令和6年度対象は令和7年8月、令和7年度対象は令和8年8月）。仕組みは県の「<ExtLink href={LINKS.pdcaGaiyou} after="」">沖縄県PDCAの概要</ExtLink>で説明されています。
   </p>
 
-  <h2 id="kaisou">計画の階層と指標のつながり</h2>
+  <SecHead id="kaisou">計画の階層と指標のつながり</SecHead>
   <PlanMap />
   <ul>
     <li id="torikumi">
@@ -38,13 +39,13 @@ const prefBudget = getFinanceReference().prefecture;
     <li>R4〜R6は<ExtLink href={LINKS.zenki}>前期実施計画</ExtLink>（目標年度R6）、R7からは<ExtLink href={LINKS.chuki}>中期実施計画</ExtLink>（R7〜R9、目標年度R9）です。R7で取組の一部と指標の基準値・目標値が見直されています。</li>
   </ul>
 
-  <h2 id="tasseiritsu">達成率の物差し</h2>
+  <SecHead id="tasseiritsu">達成率の物差し</SecHead>
   <ul>
     <li><strong>成果指標の達成率は、その年度の計画値に対する割合です。</strong>R7から目標値・計画値が新しくなったため、R6以前とR7以降の達成率は単純には比べられません。実績値は報告時点の最新値で、統計の都合で前の年度の値のことがあります。</li>
     <li><strong>主要指標の達成率は、R9の目標値に対する割合です。</strong>成果指標の達成率とは物差しが違うので、並べて比べられません。</li>
   </ul>
 
-  <h2 id="yougo">用語</h2>
+  <SecHead id="yougo">用語</SecHead>
   <p class="small secondary">本文の点線の下線が付いた言葉を押しても、同じ説明が出ます。</p>
   <dl class="terms sticker">
     {Object.entries(TERMS).map(([w, d]) => <div><dt>{w}</dt><dd>{d}</dd></div>)}

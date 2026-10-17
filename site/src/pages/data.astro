@@ -6,6 +6,7 @@ import { fmt } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import { getThemes, unthemed } from '../lib/themes.ts';
 import ExtLink from '../components/ExtLink.astro';
+import SecHead from '../components/SecHead.astro';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES } from '../lib/renames.ts';
 
 // 年度ごとの県の公開ページ（総括報告書の掲載ページ）と、そこから読んだ総括報告書のPDFの数（zip の中のものを含む）
@@ -50,7 +51,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     このサイトの数字は、県が公表している報告書のPDFを読み取って数えたものです。読んだ資料・読み取り方・数え方と、県の公表値とのずれなどの注意点をまとめています。PDFからの読み取りには誤りが含まれる可能性があります。数値を引用するときは必ず元の報告書で確認してください。
   </p>
 
-  <h2 id="shutten">出典</h2>
+  <SecHead id="shutten">出典</SecHead>
   <p>沖縄県「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>の総括報告書（将来像1〜5の本文と付属資料）と、予算・財源と取組ごとの活動・検証・改善案については各部局が公開している「主な取組」検証票（<ExtLink href={LINKS.pdca}>沖縄県PDCA</ExtLink>の各部局のページ）です。</p>
   <ul>
     {pages.map((p) => <li>{yearLong(p.year)}: <ExtLink href={p.page_url}>{p.page_title}</ExtLink>のPDF {fmt(p.pdf)}件{p.zip > 0 && `（うち${fmt(p.zip)}件はzipの中）`}</li>)}
@@ -64,7 +65,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     <li>基本施策のページの「県によるふりかえり（R4〜R6）」: 「<ExtLink href={LINKS.hyoka} after="」">新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink>の本文の第2章（基本施策の推進による成果と課題。PDF {fmt(hyokaPdf)}件）。</li>
   </ul>
 
-  <h2 id="tsukurikata">作り方</h2>
+  <SecHead id="tsukurikata">作り方</SecHead>
   <ol>
     <li>県のサイトから報告書のPDF・zipを取得します。どのファイルを・いつ・どのページから取ったかを台帳に残し、各ページの「出典」のリンクはこの台帳から作っています。</li>
     <li>総括報告書のPDFの表を機械的に読み取り、施策・主な取組・成果指標・主要指標の表にします。主要指標の達成率は、概要版の表から読み取ります。各部局の「主な取組」検証票からは、予算事業と金額、取組ごとの活動・検証・改善案を読み取ります。</li>
@@ -75,7 +76,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
   </ol>
   <p>データを作り直すたびに、これらの突き合わせを自動で行っています。</p>
 
-  <h2 id="kazoekata">このサイトでの数え方</h2>
+  <SecHead id="kazoekata">このサイトでの数え方</SecHead>
   <ul>
     <li><strong>「順調」の割合</strong>は、その年度の報告にある主な取組のうち、進捗状況が「順調」のものの割合です（「記載なし」も分母に入れています）。</li>
     <li><strong>成果指標の達成状況</strong>は、計画値に対する達成率で「100%以上」「60%以上100%未満」「0%超60%未満」「0%以下」に分けています。報告書に「達成」とあるものは100%以上、「未達成」は0%以下、「-%」などは「達成率なし」です。</li>
@@ -86,7 +87,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     <li><strong>部局</strong>は、その取組の最新の報告での所管部局で数えています。令和5年度の組織再編より前（R4）の取組も、再編後の部局に寄せています。成果指標の担当部課のR4の旧部局名は、その課の取組がR5で最も多く移った先の課に読み替えています。</li>
   </ul>
 
-  <h2 id="theme">くらしのテーマの分け方</h2>
+  <SecHead id="theme">くらしのテーマの分け方</SecHead>
   <p>
     <a href="/theme/">くらしのテーマ</a>（{themes.length}テーマ）は、<strong>このサイトが独自にまとめた分類</strong>で、県の計画の分類ではありません。
     施策の名前・施策展開の名前・基本施策の名前に決まった言葉（例: 子ども・子育てなら「子ども」「保育」「ひとり親」など）が含まれる施策を、そのテーマに入れています。
@@ -95,7 +96,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     テーマごとの言葉は、各テーマのページの頭の「このサイト独自の分類」を押すと出ます。言葉は当たっても内容が合わない施策は、個別にテーマから外しています（いま{fmt(excluded)}件）。
   </p>
 
-  <h2 id="chuui">注意点</h2>
+  <SecHead id="chuui">注意点</SecHead>
   <ul>
     <li><strong>主な取組の進捗の内訳が、概要版と数件ずれることがあります。</strong>報告書の進捗状況の欄が空欄や「-」の取組（{blanks.map(([y, n]) => `${yearLabel(y)}で${n}件`).join('、')}）は、このサイトでは「記載なし」としています。県の集計ではこれらも「順調」「未着手」などに数えられています。</li>
     <li><strong>施策の推進状況（A〜G）は、施策総括表に印字された判定をそのまま使っています。</strong>印字された判定は、どの施策も概要版の区分表（主な取組のうち「順調」の割合と、成果指標の達成率）のとおりです。ただし区分ごとの件数は概要版とずれます（R5は最大11件、R6・R7は数件）。成果指標が2つ以上ある施策で、施策総括表は各指標の達成率をそのまま平均した値で判定していますが、概要版の件数は各指標の達成率を100%で頭打ちにしてから平均した値で数えているとみられます。そう計算し直すと、R7の件数は県が集計で「その他」に回した3施策の分を除いて概要版と一致します。R4は施策ごとの判定が公表されていないため「未公表」としています。</li>
@@ -108,7 +109,7 @@ const reachedPub = YEARS.map((y) => `${yearLabel(y)} ${fmt(SEIKA_REACHED_PUBLISH
     <li><strong>R5の報告書の成果指標の達成率は、25指標が概要版に書かれた計算式と合いません</strong>（実績値÷目標値で計算したと見られるものなど）。このサイトは報告書の値をそのまま載せています。</li>
   </ul>
 
-  <h2 id="hoka">沖縄県PDCA以外の資料の注意点</h2>
+  <SecHead id="hoka">沖縄県PDCA以外の資料の注意点</SecHead>
   <ul>
     <li><strong>観光ロードマップは沖縄県PDCAとは別の計画です。</strong>施策の番号（1-ア-①）は沖縄県PDCAの施策（1-(1)-ア-①）とは別です。主な取組は、同じ年度に同じ名前の取組（名前がよく似ていて決算見込額が同じものを含む）が沖縄県PDCAにあれば、取組のページへのリンクを付けています。</li>
     <li><strong>観光ロードマップのR4の実施報告書（本編）は読み取れません。</strong>文字に変換できないフォントで作られているためです。R4は概要版の件数だけを載せています。成果指標のR4の実績値は、R5・R6の報告書に載っている値です。</li>

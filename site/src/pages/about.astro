@@ -5,6 +5,7 @@ import { YEARS, LATEST, yearLabel, yearLong } from '../lib/data.ts';
 import { LINKS, PROJECT, SITE } from '../lib/links.ts';
 import { HASHTAG } from '../lib/iken.ts';
 import ExtLink from '../components/ExtLink.astro';
+import SecHead from '../components/SecHead.astro';
 ---
 <Base title="このサイトについて" description="このサイトのなりたち・作り手・使っている技術・表示・アクセシビリティ">
   <h1>このサイトについて</h1>
@@ -13,7 +14,7 @@ import ExtLink from '../components/ExtLink.astro';
   </p>
   <p>沖縄県PDCAの仕組みと用語は<a href="/pdca/">沖縄県PDCAについて</a>、このサイトが読んだ資料・数え方・注意点は<a href="/data/">データについて</a>にまとめています。</p>
 
-  <h2 id="naritachi">このサイトのなりたち</h2>
+  <SecHead id="naritachi">このサイトのなりたち</SecHead>
   <p>
     私たちは2021年に、新・沖縄21世紀ビジョン基本計画の骨子案を読む会として「<ExtLink href={PROJECT.miraiTeian} after="」">沖縄未来提案プロジェクト</ExtLink>を行いました。
     貧困対策・環境・交通・観光・防災など分野ごとの部会に分かれ、それぞれの分野で活動する人たちの知見を持ち寄って、骨子案を読み、パブリックコメントを提出しました。
@@ -27,7 +28,7 @@ import ExtLink from '../components/ExtLink.astro';
     縮めて「{SITE.short}」、SNS のハッシュタグは <strong>#{HASHTAG}</strong> です（<a href="/iken/#sns">SNS で話す</a>）。
   </p>
 
-  <h2 id="gijutsu">使っている技術</h2>
+  <SecHead id="gijutsu">使っている技術</SecHead>
   <p>報告書の取得からサイトの公開まで、次の道具で作っています。</p>
   <dl class="tech sticker">
     <div>
@@ -61,7 +62,7 @@ import ExtLink from '../components/ExtLink.astro';
     <strong>シビックテックや技術に興味のある方は、{PROJECT.org} で一緒に活動しませんか。</strong>参加の連絡は <ExtLink href={PROJECT.orgUrl}>{PROJECT.org} のサイト</ExtLink>のフォームから受け付けています（<a href="/code-for-okinawa/">{PROJECT.org} とは</a>）。
   </p>
 
-  <h2 id="design">サイトデザイン</h2>
+  <SecHead id="design">サイトデザイン</SecHead>
   <ul>
     <li><strong>公平な立場で作っています。</strong>順調なもの・遅れているもののどちらかを選んで目立たせず、全体の内訳を同じ重みで見せています。遅れている取組や判定が下がった施策などは、各一覧の絞り込みで見られます。</li>
     <li>状態（順調・概ね順調・やや遅れ・大幅遅れ など）は、色だけでなく形（● ◆ ▲ ■）と文字でも区別しています。施策の判定の E・F（取組が遅れている）は ▼ と斜線です。</li>
@@ -73,7 +74,7 @@ import ExtLink from '../components/ExtLink.astro';
     <li>SNS で共有したときに出るカードの画像の文字には、<ExtLink href="https://github.com/notofonts/noto-cjk">Noto Sans CJK JP</ExtLink>（<a href="/fonts/NotoSansCJK-OFL.txt">SIL Open Font License 1.1</a>）を使っています。</li>
   </ul>
 
-  <h2 id="accessibility">アクセシビリティ</h2>
+  <SecHead id="accessibility">アクセシビリティ</SecHead>
   <p>目が見えない・見えにくい人、色の見分けがつきにくい人、マウスを使えない人でも使いやすいように配慮しています。読み上げソフトやキーボードだけでも同じ内容に届くようにし、図の値は文字でも、順調・遅れなどの状態は色だけでなく形と文字でも読めます。端末で動きを減らす設定にしていれば、動きを付けずに表示します。</p>
   <p>文字と地の色のコントラストの基準（WCAG など）や、ウェブアクセシビリティの規格（JIS X 8341-3 など）に沿っています。</p>
 </Base>
