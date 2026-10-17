@@ -14,6 +14,7 @@
 | 報告書の取得・フォルダ | `docs/fetch.md` |
 | 公開（Cloudflare） | `docs/deploy.md` |
 | 抽出の規則・年度の差・公表値とのずれ | `docs/data.md`（欠けと誤りの疑いは `docs/issues.md`） |
+| 別の PC で PDF を読み直す | `docs/new-pc.md` |
 
 ## コマンドと確かめ方
 
@@ -22,7 +23,7 @@
 - データを変えたら `make check`・`make cross-read`・`make test`。`cross_read.py` の `KNOWN` には、ページの画像で確かめたものだけを理由と日付つきで足す。
 - サイトを変えたら `make test` と `make build`（`astro check` で型も確かめる）。lib の関数や数え方を変えたらテストも足す・直す。
 - 見た目を変えたら `make build && make shot` の PC 幅とスマホ幅の画像を見る（`PAGES="/shisaku/1-1-a-1/ --top"` などでしぼる）。
-- worktree には PDF（`data/raw`・`data/interim`）が無いので、`make extract` は main で行う。片付ける前に `make down`。
+- worktree には PDF（`data/raw`・`data/interim`）が無いので、`make extract`・`make cross-read`・`make issues` は main で行う。片付ける前に `make down`。
 
 ## データ
 
@@ -36,6 +37,17 @@
 - TypeScript strict。JSON の形は `lib/types.ts`、ページ用の形は `lib/data.ts`・`lib/plans.ts` の型を使い、`any` にしない。
 - 外のサイトへのリンクは `components/ExtLink.astro`。ブラウザにデータ全体は配らない。
 - 公開したページの URL は変えない。一覧（`site/urls.txt`）の URL が無くなると `make test` が落ちる。ページを足したら `make urls`、URL を変えるときは `docs/site.md` の 8章。
+- リファクタは中身のあるもの（重複を除く・数え方を1か所にする・型の穴をふさぐ・使っていないコードを消す）だけにする。書式や CSS のネストのような、出力が同じで書き方の好みだけの書き換えはしない。
+
+## ドキュメントの書き方
+
+README・CLAUDE.md・docs は必要最低限にする。
+
+- コードとそのコメントを読めば分かることは書かない。書くのは、どのファイルを読めばよいかも分からない手順と決まり、その理由だけ。
+- 説明は1か所にする。docs どうしや docs とコメントに同じことを書かず、ほかからはリンクする。
+- 経緯は書かない（前はこうしていた・いつ何を直した・測ったときの値）。経緯はコミットと PR に書く。
+- データや年度が増えると変わる数（件数・枚数・大きさ・かかる時間）は書かない。県の報告書の年度ごとの数（公表値など）は、その年度の事実なので書いてよい。
+- ロゴ・アイコンの絵の説明やデザインの理屈は書かない。
 
 ## デザインの大原則
 

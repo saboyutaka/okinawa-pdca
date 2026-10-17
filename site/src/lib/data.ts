@@ -201,7 +201,7 @@ export const compareShisakuId = (a: string, b: string) => idOrder(a).localeCompa
 // ---------------------------------------------------------------- 将来像・基本施策
 
 // 将来像の名前。県の総括報告書（付属資料）は将来像ごとの章の見出しの形「〜島を目指して」で印字しているが、
-// 基本計画の概念図などでは将来像そのものを「〜島」と呼ぶので、画面では語尾の「を目指して」を外す（データは印字のまま。docs/site.md の1章）
+// 基本計画の概念図などでは将来像そのものを「〜島」と呼ぶので、画面では語尾の「を目指して」を外す（データは印字のまま）
 export const shouraizouName = (printed: string) => printed.replace(/を目指して$/, '');
 
 export const getShouraizou = once(() => load('shouraizou').filter((s) => s.year === LATEST).map((s) => ({ ...s, name: shouraizouName(s.name) })));
@@ -1192,7 +1192,7 @@ export function sourceLink(id: string, page: number): { href: string; label: str
 }
 
 // ---------------------------------------------------------------- 予算・財源（部局別の主な取組検証票）
-// 金額は千円単位。決算額は報告年度の前年度、決算見込額は報告年度、当初予算額は翌年度のもの（docs/data.md 11）
+// 金額は千円単位。決算額は報告年度の前年度、決算見込額は報告年度、当初予算額は翌年度のもの（docs/data.md 9章）
 
 // 財源の区分と説明（/yosan/zaigen/ で使う）。who は事業費を誰が負担するか
 export const FUNDS = [
