@@ -21,6 +21,7 @@ import { matchesAll, searchText, searchWords, splitMatches, type SearchWord } fr
 import type { MapData, MapSearch } from '../lib/map-data.ts';
 import { yearLabel as yl, yearLong } from '../lib/years.ts';
 import { getJsonOr } from './fetch-json.ts';
+import { filterChips } from './filter-chips.ts';
 import { bump, reveal } from './motion.ts';
 import { placePop } from './pop-place.ts';
 
@@ -257,34 +258,14 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (!summary) return;
     const on = activeSelects();
     summary.hidden = !on.length;
-    if (!on.length) return summary.replaceChildren();
-    const head = document.createElement('span');
-    head.className = 'active-l';
-    head.textContent = '絞り込み中:';
-    const chips = on.map((s) => {
-      const label = s.closest<HTMLElement>('[data-label]')?.dataset.label || '';
-      const text = s.selectedOptions[0]?.textContent?.trim() || s.value;
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'active-chip';
-      b.setAttribute('aria-label', `${label} ${text} の条件を外す`);
-      b.textContent = `${label}: ${text}`;
-      const x = document.createElement('span');
-      x.setAttribute('aria-hidden', 'true');
-      x.textContent = '×';
-      b.append(x);
-      b.addEventListener('click', () => { s.value = ''; apply(); });
-      return b;
-    });
-    const all = document.createElement('button');
-    all.type = 'button';
-    all.className = 'more';
-    all.textContent = 'すべて外す';
-    all.addEventListener('click', () => {
-      for (const s of selects) s.value = '';
-      apply();
-    });
-    summary.replaceChildren(head, ...chips, ...(on.length > 1 ? [all] : []));
+    summary.replaceChildren(...filterChips(
+      on.map((s) => ({ label: s.closest<HTMLElement>('[data-label]')?.dataset.label || '', text: s.selectedOptions[0]?.textContent?.trim() || s.value })),
+      (i) => { on[i].value = ''; apply(); },
+      () => {
+        for (const s of selects) s.value = '';
+        apply();
+      },
+    ));
   };
 
   // ---------------------------------------------------------------- 押す・キーボード

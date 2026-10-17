@@ -8,6 +8,7 @@ import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/sea
 import type { SearchData as Data, SearchSummary as Summary } from '../lib/search-data.ts';
 import { yearLabel } from '../lib/years.ts';
 import { getJson, getJsonOr } from './fetch-json.ts';
+import { filterChips, type FilterChip } from './filter-chips.ts';
 import { bump } from './motion.ts';
 
 const form = document.querySelector<HTMLFormElement>('form#tf');
@@ -196,32 +197,29 @@ function search({ form, list, count, unit, noSummary, active, more, q }: Parts) 
 
   // いまの条件を「テーマ: 子ども・子育て ×」のように並べ、1つずつ外せるようにする
   function renderActive() {
-    const chips: HTMLElement[] = [];
+    const chips: FilterChip[] = [];
+    const clears: (() => void)[] = [];
     for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
       const box = input instanceof HTMLInputElement && input.type === 'checkbox' ? input : null;
       if (box ? !box.checked : !input.value) continue;
-      const i = chips.length;
       const label = input.closest<HTMLElement>('[data-label]')?.dataset.label || '';
       const text = input instanceof HTMLSelectElement ? input.selectedOptions[0]?.textContent?.trim() : box ? box.dataset.text : `「${input.value}」`;
       // チェックボックスは、その文字だけで条件が分かるので見出しを付けない
-      const b = el('button', 'active-chip', box ? text : `${label}: ${text}`);
-      b.type = 'button';
-      b.setAttribute('aria-label', `${box ? '' : `${label} `}${text} の条件を外す`);
-      const x = el('span', '', '×');
-      x.setAttribute('aria-hidden', 'true');
-      b.append(x);
-      b.addEventListener('click', () => {
+      chips.push({ label: box ? '' : label, text: text ?? '' });
+      clears.push(() => {
         if (box) box.checked = false;
         else input.value = '';
-        refocus = i;
-        apply();
       });
-      chips.push(b);
     }
     active.hidden = chips.length === 0;
-    active.replaceChildren(...(chips.length ? [el('span', 'active-l', '絞り込み中:'), ...chips] : []));
+    active.replaceChildren(...filterChips(chips, (i) => {
+      clears[i]();
+      refocus = i;
+      apply();
+    }));
     if (refocus >= 0) {
-      (chips[Math.min(refocus, chips.length - 1)] ?? countLine)?.focus();
+      const left = [...active.querySelectorAll<HTMLElement>('.active-chip')];
+      (left[Math.min(refocus, left.length - 1)] ?? countLine)?.focus();
       refocus = -1;
     }
   }
