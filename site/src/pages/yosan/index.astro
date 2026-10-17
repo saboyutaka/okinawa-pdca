@@ -14,17 +14,15 @@ import Toc from '../../components/Toc.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, countBy,
+  YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, amountTotal,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
   currentDeptOf, torikumiPage, type AmountEntry,
 } from '../../lib/data.ts';
-import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds } from '../../lib/plans.ts';
-import { fmt, yen, pct } from '../../lib/format.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
+import { fmt, yen, pct, toOku } from '../../lib/format.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
-const sum = (xs: { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0);
-const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, sum(entries.filter((e) => e.fund === f.key))]));
-const oku = (v: number) => Math.round(v / 1e4) / 10; // 千円 → 億円（小数1桁）
+const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(entries.filter((e) => e.fund === f.key))]));
 
 // 財源別の推移。各年度の報告に載っている金額のうち、確定に近いもの（決算額）を優先して並べる
 const SERIES: { report: number; kind: AmountKind }[] = [
@@ -43,18 +41,17 @@ const trendRows = SERIES.map(({ report, kind }) => {
 const settled = amountEntries(LATEST, 'settled');
 const estimate = amountEntries(LATEST, 'estimate');
 const initial = amountEntries(LATEST, 'initial');
-const fundSum = (es: AmountEntry[], key: string) => sum(es.filter((e) => e.fund === key));
+const fundSum = (es: AmountEntry[], key: string) => amountTotal(es.filter((e) => e.fund === key));
 const soft = fundSum(estimate, '一括交付金（ソフト）');
 const hard = fundSum(estimate, '一括交付金（ハード）');
 
 // 一括交付金（ソフト）の事後評価
 const ikGroups = ikkatsuGroups();
 const ikLatest = ikGroups.filter((g) => g.years[IKKATSU_LATEST]);
-const gradeKeys = GRADES.map((x) => x.key);
-const ikCounts = countBy(ikLatest, (g) => g.years[IKKATSU_LATEST].grade_label || 'なし', gradeKeys);
+const ikCounts = countGrades(ikLatest, (g) => g.years[IKKATSU_LATEST].grade_label);
 const ikYearRows = IKKATSU_YEARS.map((y) => ({
   label: yearLabel(y),
-  counts: countBy(ikGroups.filter((g) => g.years[y]), (g) => g.years[y].grade_label || 'なし', gradeKeys),
+  counts: countGrades(ikGroups.filter((g) => g.years[y]), (g) => g.years[y].grade_label),
 }));
 // 将来像は、事業の最初の施策の将来像
 const szOf = (g: (typeof ikGroups)[number]) => ikkatsuShisakuIds(g).map(getShisaku).find((s) => s)?.shouraizou;
@@ -62,13 +59,13 @@ const ikSzRows = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sub: s.name,
   href: `${IKKATSU_HREF}?s=${s.id}`,
-  counts: countBy(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label || 'なし', gradeKeys),
+  counts: countGrades(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label),
 }));
 
 // 部局別・将来像別（最新の報告での所管部局）
 const toriByKey = new Map(getTorikumi(LATEST).map((t) => [`${t.shisaku_id}|${t.key}`, t]));
 const deptOf = (e: { shisaku_id: string; key: string }) => toriByKey.get(`${e.shisaku_id}|${e.key}`)?.dept || '';
-const deptItems = DEPTS.map((d) => ({ label: d.name, n: oku(sum(estimate.filter((e) => deptOf(e) === d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
+const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(estimate.filter((e) => deptOf(e) === d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
   .filter((i) => i.n > 0)
   .sort((a, b) => b.n - a.n);
 const visionItems = getShouraizou().map((s) => ({
@@ -76,7 +73,7 @@ const visionItems = getShouraizou().map((s) => ({
   sz: s.id,
   note: s.name,
   href: `/future/${s.id}/#yosan`,
-  n: oku(sum(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
+  n: toOku(amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
 }));
 
 // 予算事業ごと（同じ名前をまとめる）。R7の決算見込額の大きい順。財源ごとの順位は、その財源の金額で決める
@@ -120,12 +117,12 @@ const suspects = getSuspects();
   <div class="tiles">
     <div class="sticker tile">
       <div class="tile-label">{yearLabel(LATEST)}の決算見込額</div>
-      <div class="tile-value">{yen(sum(estimate))}</div>
-      <div class="tile-sub">{yearLabel(LATEST - 1)}の決算額 {yen(sum(settled))}、{yearLabel(LATEST + 1)}の当初予算額 {yen(sum(initial))}</div>
+      <div class="tile-value">{yen(amountTotal(estimate))}</div>
+      <div class="tile-sub">{yearLabel(LATEST - 1)}の決算額 {yen(amountTotal(settled))}、{yearLabel(LATEST + 1)}の当初予算額 {yen(amountTotal(initial))}</div>
     </div>
     <div class="sticker tile">
       <div class="tile-label">うち一括交付金（{yearLabel(LATEST)}の決算見込額）</div>
-      <div class="tile-value">{yen(soft + hard)}<small>（{pct(soft + hard, sum(estimate))}）</small></div>
+      <div class="tile-value">{yen(soft + hard)}<small>（{pct(soft + hard, amountTotal(estimate))}）</small></div>
       <div class="tile-sub split"><span class="swatch series-2">ソフト</span> {yen(soft)}　<span class="swatch series-3">ハード</span> {yen(hard)}</div>
     </div>
     <div class="sticker tile">

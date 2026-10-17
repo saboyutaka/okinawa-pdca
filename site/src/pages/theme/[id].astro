@@ -20,7 +20,7 @@ import Toc from '../../components/Toc.astro';
 import Sz from '../../components/Sz.astro';
 import JudgeSection from '../../components/JudgeSection.astro';
 import TrendFigure from '../../components/TrendFigure.astro';
-import { getShisakuList, getShouraizou, getKihonList, trendPoints } from '../../lib/data.ts';
+import { getShouraizou, getKihonList, trendPoints } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
 import { themeDescription } from '../../lib/describe.ts';
 import { themeHead } from '../../lib/heads.ts';
@@ -34,10 +34,9 @@ export const getStaticPaths = ROUTES['theme/[id]'];
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { t } = Astro.props;
-const byId = new Map(getShisakuList().map((s) => [s.id, s]));
-const items = t.ids.map((id) => byId.get(id)!);
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = themeHead(t);
+const items = head.shisaku;
 // 4年間の推移。テーマに入る施策の、年度ごとの主な取組・成果指標
 const pick = (x: { shisaku_id: string }) => t.idSet.has(x.shisaku_id);
 const trend = trendPoints(pick, pick);

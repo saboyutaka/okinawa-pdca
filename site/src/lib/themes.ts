@@ -35,7 +35,6 @@ export function getThemes(): Theme[] {
 // 画面に出す「決め方」の言葉。match を | で分け、先読み・後読み（(?!…)・(?<!…) など）は除く
 export const matchWords = (match: string) => match.replace(/\(\?<?[!=][^)]*\)/g, '').split('|');
 
-export const getTheme = (id: string) => getThemes().find((t) => t.id === id);
 export const themesOf = (shisakuId: string) => getThemes().filter((t) => t.idSet.has(shisakuId));
 export const themeIdsOf = (shisakuId: string) => themesOf(shisakuId).map((t) => t.id);
 export function unthemed() {

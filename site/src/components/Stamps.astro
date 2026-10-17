@@ -1,5 +1,5 @@
 ---
-// 年度ごとのスタンプ（判定・進捗状況）。items は年度の順。size="small" は小さい丸を横の線でつなぐ（報告のない年度にかかる線は点線）。
+// 年度ごとのスタンプ（判定・進捗状況）。items は年度の順。小さい丸を横の線でつなぐ（報告のない年度にかかる線は点線）。
 // 見た目は styles/global.css の .stamps（取組の検索のように、ブラウザのスクリプトで同じ形を描くところがあるため）。
 // pop はページの頭のスタンプだけに付け、読み込んだときに年度の順にポンと押す（値は押し始めるまでの秒。styles/global.css の .m-stamp）。一覧の行のスタンプは動かさない
 import Icon from './Icon.astro';
@@ -7,17 +7,16 @@ import { yearLabel } from '../lib/data.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
 interface Item { year: number; tone?: Tone | null; shape?: Shape; key?: string; text: string; hatch?: boolean }
-interface Props { items: Item[]; label: string; size?: 'normal' | 'small'; pop?: number }
-const { items, label, size = 'normal', pop } = Astro.props;
-const small = size === 'small';
+interface Props { items: Item[]; label: string; pop?: number }
+const { items, label, pop } = Astro.props;
 ---
-<ol class:list={['stamps', small && 'small-stamps']} aria-label={label} style={pop != null ? `--m-start:${pop}s` : undefined}>
+<ol class="stamps small-stamps" aria-label={label} style={pop != null ? `--m-start:${pop}s` : undefined}>
   {items.map((it, i) => (
     <li class:list={['stamp', i > 0 && 'seg', i > 0 && (!it.tone || !items[i - 1].tone) && 'seg-dash']}>
       <span class="y">{yearLabel(it.year)}</span>
       <span class="cw">
         <span class:list={['c', `tone-${it.tone || 'blank'}`, it.hatch && 'hatch', pop != null && 'm-stamp']} aria-hidden="true" style={pop != null ? `--i:${i}` : undefined}>
-          {it.key ? <span class="k"><Icon tone={it.tone || 'blank'} shape={it.shape} size={small ? 9 : 11} />{it.key}</span> : <Icon tone={it.tone || 'blank'} shape={it.tone ? it.shape : 'ring'} size={small ? 12 : 16} />}
+          {it.key ? <span class="k"><Icon tone={it.tone || 'blank'} shape={it.shape} size={9} />{it.key}</span> : <Icon tone={it.tone || 'blank'} shape={it.tone ? it.shape : 'ring'} size={12} />}
         </span>
       </span>
       <span class="t"><span class="sr-only">{yearLabel(it.year)}: </span>{it.text}</span>

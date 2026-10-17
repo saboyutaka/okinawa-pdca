@@ -19,19 +19,19 @@ import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, yearsLong, statusOf, toneOfStatus, budgetOf, fundOf,
-  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, activityShares, activityAchievement, activityAchievements, planPath,
-  isNoBudgetName, budgetKey, type TorikumiGroup, type ActivityRun,
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
+  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
+  isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
 } from '../../../lib/data.ts';
+import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
 import { yen } from '../../../lib/format.ts';
 import { firstSentence } from '../../../lib/text.ts';
-import { torikumiHead } from '../../../lib/describe.ts';
+import { torikumiMeta } from '../../../lib/describe.ts';
 import ExtLink from '../../../components/ExtLink.astro';
 import Says from '../../../components/Says.astro';
 import SecHead from '../../../components/SecHead.astro';
 import { KANKO, kankoOfPdca, kankoShisakuHref } from '../../../lib/plans.ts';
 import type { Tone } from '../../../lib/icons.ts';
-import type { AmountKind } from '../../../lib/types.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['torikumi/[shisaku]/[slug]'];
@@ -69,11 +69,10 @@ const yearsTextLong = (ys: number[]) => yearsLong(ys[0], ys[ys.length - 1]);
 // 観光ロードマップ（個別計画）でも主な取組として評価されているか（同じ年度に同じ名前の取組）
 const rm = kankoOfPdca(s.id, g.key);
 const okUrl = (u: string | null | undefined) => /^https?:\/\/\S+$/.test(u || '');
-const KINDS: AmountKind[] = ['settled', 'estimate', 'initial'];
 // 報告に載っている年度の範囲（「R4〜R6」「R7」）
 const span = (x: TorikumiGroup) => (firstYearOf(x) === x.latest.year ? yearLabel(x.latest.year) : `${yearLabel(firstYearOf(x))}〜${yearLabel(x.latest.year)}`);
 const secHref = sectionHref(t.section);
-const stamps = YEARS.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
+const stamps = statusStamps(g);
 const latestStatus = statusOf(t);
 const latestTone = toneOfStatus(latestStatus);
 
@@ -101,8 +100,6 @@ const runSpanLong = (run: ActivityRun) => {
 const futureText = (run: ActivityRun) => run.years.filter((r) => r.future).map((r) => yearLong(r.y)).join('・');
 // 名前の変わった活動指標を同じ活動指標としてつないだもの（前の名前は出典に書く）
 const actFormers = [...runGroups.values()].map((runs) => runs[0]).filter((run) => run.formers.length > 0);
-// 計画期間（図の帯の見出しと同じ言葉）
-const periodOf = (y: number) => (y <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）');
 // 表の「1件（3件）」を、図に使うかっこの前と、かっこの中（累計や内訳）に分ける。かっこの中は下の行に出す
 const parenSplit = (raw: string) => {
   const i = raw.search(/[（(]/);
@@ -113,25 +110,9 @@ const latestBasis = tr?.basis;
 // 閉じた年度に出す、その年度にやったことの1文目（部局票が無い年度は総括報告書の活動概要）
 const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].summary);
 
-// 予算の推移。各報告に前年度の決算額・その年度の決算見込額・翌年度の当初予算額が載っているので、年度ごとに確定に近い金額（決算 → 決算見込 → 当初予算）を選ぶ。
-// 1つの取組に予算事業が複数あるときは合計する（桁の誤記の疑いがある金額は入れない）
-const byFy = new Map<number, { fy: number; rank: number; kind: AmountKind; amount: number; report: number }>();
-for (const y of present) {
-  const b = recs[y];
-  if (!b?.budgets?.length) continue;
-  for (const kind of KINDS) {
-    const fy = y + AMOUNT_KINDS[kind].offset;
-    const vals = b.budgets.flatMap((blk) => blk.rows).flatMap((r) => {
-      const v = r[kind];
-      return v != null && !r.suspect?.includes(kind) ? [v] : [];
-    });
-    if (!vals.length) continue;
-    const rank = KINDS.indexOf(kind);
-    const cur = byFy.get(fy);
-    if (!cur || rank < cur.rank) byFy.set(fy, { fy, rank, kind, amount: vals.reduce((a, v) => a + v, 0), report: y });
-  }
-}
-const budgetSeries = [...byFy.values()].sort((a, b) => a.fy - b.fy);
+// 予算の推移と「表で見る」の表（lib/data.ts の budgetSeriesOf・budgetTableOf）
+const reportBudgets: ReportBudgets = present.flatMap((y) => { const b = recs[y]?.budgets; return b?.length ? [[y, b]] : []; });
+const budgetSeries = budgetSeriesOf(reportBudgets);
 const budgetMax = Math.max(1, ...budgetSeries.map((x) => x.amount));
 // 部局票に金額が無いときは、総括報告書の最新の報告の決算見込額を書き添える
 const noAmount = `部局の検証票に、この取組の金額の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
@@ -139,35 +120,8 @@ const noAmount = `部局の検証票に、この取組の金額の記載があ�
 const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).map((b) => b.name)).filter((n) => !isNoBudgetName(n)))];
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 
-// 「表で見る」の予算の表。1つの年度の金額は 当初予算額 → 決算見込額 → 決算額 の順に確定していき、それぞれ前の年度・その年度・次の年度の報告に載っている。
-// 予算事業ごとに、お金の年度を列（活動指標の表と同じ向き）、確定していく順を行にして並べ直す。当初予算額は翌年度の予算事業名（name_next）で載っている
-const STAGES: AmountKind[] = ['initial', 'estimate', 'settled'];
-type BudCell = { sum: number; n: number; raws: string[]; suspect: boolean };
-const budMap = new Map<string, { name: string; funds: Set<string>; cells: Map<string, BudCell> }>();
-for (const y of present) {
-  for (const blk of recs[y]?.budgets || []) {
-    for (const kind of STAGES) {
-      const name = kind === 'initial' && !isNoBudgetName(blk.name_next) ? blk.name_next : blk.name;
-      const key = isNoBudgetName(name) ? '' : budgetKey(name);
-      if (!budMap.has(key)) budMap.set(key, { name: key ? name : '', funds: new Set(), cells: new Map() });
-      const grp = budMap.get(key)!;
-      const ck = `${kind}|${y + AMOUNT_KINDS[kind].offset}`;
-      for (const r of blk.rows) {
-        const v = r[kind];
-        const raw = r[`${kind}_raw`];
-        if (v == null && isNoBudgetName(raw)) continue;
-        if (!grp.cells.has(ck)) grp.cells.set(ck, { sum: 0, n: 0, raws: [], suspect: false });
-        const c = grp.cells.get(ck)!;
-        if (v != null) { c.sum += v; c.n++; } else c.raws.push(raw);
-        if (r.suspect?.includes(kind)) c.suspect = true;
-        grp.funds.add(fundOf(kind === 'initial' ? r.source_next || r.source : r.source || r.source_next));
-      }
-    }
-  }
-}
-const budGroups = [...budMap.values()].filter((x) => x.cells.size);
-const budFys = [...new Set(budGroups.flatMap((x) => [...x.cells.keys()].map((k) => Number(k.split('|')[1]))))].sort((a, b) => a - b);
-const budText = (c: BudCell | undefined) => {
+const { groups: budGroups, fys: budFys } = budgetTableOf(reportBudgets);
+const budText = (c: BudgetCell | undefined) => {
   if (!c) return '—';
   const text = [c.n ? yen(c.sum) : '', ...c.raws].filter(Boolean).join('・');
   return c.suspect ? `${text}（桁の誤記の疑い）` : text;
@@ -175,7 +129,7 @@ const budText = (c: BudCell | undefined) => {
 // 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
 const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 ---
-<Base {...torikumiHead(g)} ogType="article">
+<Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
   <header class="sticker lift page-head">
     <HeadKind kind="主な取組" code={`${s.code}-${t.no}`} themes={themeIdsOf(s.id)}>
@@ -205,7 +159,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       </div>
       <div class="hb-years">
         <span class="hb-yl">4年間</span>
-        <Stamps items={stamps} label="4年間の進捗状況" size="small" pop={0.1} />
+        <Stamps items={stamps} label="4年間の進捗状況" pop={0.1} />
       </div>
       <div class="hb-why now-act">
         <div class="act-name"><span class="act-l"><Term word="活動指標" /></span>{t.indicator || tr?.indicator_name || '—'}</div>
@@ -259,8 +213,8 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       // 表は図と同じく、年度を列にして左から右へ。行は 計画 → 実績 → 達成割合 → 進捗状況（進捗状況が決まる順）。
       // 図のある活動指標は列を図の年度にそろえ（.aligned）、図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く
       const cols = run.years;
-      const curPeriod = periodOf(cols.filter((r) => !r.future).at(-1)!.y);
-      const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodOf(cols[k].y) !== periodOf(cols[k - 1].y) && 'sep', periodOf(cols[k].y) !== curPeriod && 'off'];
+      const curPeriod = periodLabel(cols.filter((r) => !r.future).at(-1)!.y);
+      const cell = (k: number, ...more: string[]) => ['num', ...more, k > 0 && periodLabel(cols[k].y) !== periodLabel(cols[k - 1].y) && 'sep', periodLabel(cols[k].y) !== curPeriod && 'off'];
       const unit = run.unit && <span class="secondary small">（{run.unit}）</span>;
       const sh = shareOf.get(run)!;
       return (
@@ -275,7 +229,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
             <div class="table-wrap">
               <table class:list={['year-table', 'progress', run.chart && 'aligned']}>
-                <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodOf(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
+                <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodLabel(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
                 <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
                 <thead>
                   <tr><td></td>{cols.map((r, k) => <th scope="col" class:list={cell(k)}>{yearLabel(r.y)}{r.future && <small class="secondary">年度別計画</small>}</th>)}</tr>
@@ -439,7 +393,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
             {budGroups.map((grp) => (
               <tbody>
                 <tr class="grp"><th scope="rowgroup" colspan={budFys.length + 1}>{grp.name || '予算事業の名前の記載なし'}{grp.funds.size > 0 && <small class="secondary">財源: {[...grp.funds].join('・')}</small>}</th></tr>
-                {STAGES.map((kind) => (
+                {BUDGET_STAGES.map((kind) => (
                   <tr><th scope="row">{AMOUNT_KINDS[kind].label}</th>{budFys.map((fy) => <td class="num">{budText(grp.cells.get(`${kind}|${fy}`))}</td>)}</tr>
                 ))}
               </tbody>

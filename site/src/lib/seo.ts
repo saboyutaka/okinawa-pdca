@@ -48,10 +48,6 @@ export const sitemapXml = (paths: string[]) =>
 // 巡回は止めず、sitemap の場所だけを書く（noindex のページの巡回を止めると noindex が読まれず、URL だけ検索結果に出ることがあるため。docs/deploy.md の4章）
 export const robotsTxt = () => ['User-agent: *', 'Allow: /', '', `Sitemap: ${absUrl('/sitemap.xml')}`, ''].join('\n');
 
-// <script type="application/ld+json"> に入れる文字列。名前に </script> のような文字が入っても閉じないように < を逃がす
-// （データで、動くスクリプトではないので、CSP のハッシュは要らない。docs/site.md の6章）
-export const ldJson = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
-
 // 作っているのは Code for Okinawa で、県ではない。県の資料は isBasedOn（このサイトがもとにしたもの）として、作り手を県にして書く
 const ORG = { '@type': 'Organization', name: PROJECT.org, url: PROJECT.orgUrl };
 const PREF = { '@type': 'GovernmentOrganization', name: '沖縄県' };

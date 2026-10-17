@@ -5,7 +5,7 @@ import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
 import ShareJump from '../../../components/ShareJump.astro';
-import { seikaHead } from '../../../lib/describe.ts';
+import { seikaMeta } from '../../../lib/describe.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['shihyou/[shisaku]/[slug]'];
@@ -13,6 +13,6 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { g } = Astro.props;
 ---
-<Base {...seikaHead(g)} ogType="article" jump={g.href}>
+<Base {...seikaMeta(g)} ogType="article" jump={g.href}>
   <ShareJump kind="成果指標" name={g.name} to={g.href} place={`施策「${g.shisaku.name}」のページ`} />
 </Base>

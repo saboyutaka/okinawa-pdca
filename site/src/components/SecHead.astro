@@ -5,7 +5,7 @@
 // class を渡したページの style が当たるよう、残りの属性（Astro が付ける data-astro-cid-*）も見出しに渡す
 interface Props { id: string; level?: 2 | 3; class?: string; [attr: string]: unknown }
 const { id, level = 2, class: cls, ...rest } = Astro.props;
-const Tag = `h${level}` as 'h2' | 'h3';
+const Tag = level === 3 ? 'h3' : 'h2';
 ---
 <Tag id={id} class:list={['sec-head', cls]} {...rest}><a class="sec-link" href={`#${id}`}><slot /><span class="sec-mark" aria-hidden="true">{'\u2060'}#</span></a><slot name="after" /></Tag>
 

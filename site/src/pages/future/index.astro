@@ -5,38 +5,30 @@ import StatusBar from '../../components/StatusBar.astro';
 import Sz from '../../components/Sz.astro';
 import Term from '../../components/Term.astro';
 import HeadStats from '../../components/HeadStats.astro';
-import {
-  LATEST, STATUSES, statusOf, countBy, getShouraizou, getKihonList, getShisakuList, getTorikumi, getSeika, getShuyouStatus,
-} from '../../lib/data.ts';
+import { STATUSES, getShouraizou, getKihonList, getShisakuList, getShuyouStatus } from '../../lib/data.ts';
 import { fmt } from '../../lib/format.ts';
+import { futureHead, kihonHead, total } from '../../lib/heads.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 
 const kihon = getKihonList();
 const shisaku = getShisakuList();
-const tori = getTorikumi(LATEST);
-const seika = getSeika(LATEST);
 const shuyou = getShuyouStatus();
-const statusKeys = STATUSES.map((s) => s.key);
 // 基本施策ごとに、名前の下に主要指標の名前と達成状況の札（「後退 -6%」。components/ShuyouTags.astro）を報告書の順に1行ずつ置き、
 // 右（スマホは下）に主な取組の進捗状況の内訳の細い棒を控えめに置く（数は出さない。区分と数は棒の区間にマウスを乗せる・タップすると出る）。
 // 札は県の言葉で読めるので、凡例・「達成率」の説明は置かない。何の棒かは、カードの頭に1回だけ書く
 const visions = getShouraizou().map((v) => {
-  const t = tori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  const ss = shisaku.filter((s) => s.shouraizou === v.id);
+  const head = futureHead(v.id);
   return {
     ...v,
-    n: t.length,
-    shisaku: ss.length,
-    seika: seika.filter((x) => x.shisaku_id.startsWith(`${v.id}-`)).length,
-    rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => {
-      const kt = t.filter((x) => x.shisaku_id.startsWith(`${k.id}-`));
-      return {
-        ...k,
-        shuyou: shuyou.filter((r) => r.kihon.id === k.id),
-        tori: countBy(kt, statusOf, statusKeys),
-      };
-    }),
+    n: total(head.tori),
+    shisaku: head.shisaku.length,
+    seika: head.seika,
+    rows: kihon.filter((k) => k.shouraizou === v.id).map((k) => ({
+      ...k,
+      shuyou: shuyou.filter((r) => r.kihon.id === k.id),
+      tori: kihonHead(k.id).tori,
+    })),
   };
 });
 ---

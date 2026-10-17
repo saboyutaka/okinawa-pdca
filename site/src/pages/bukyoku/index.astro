@@ -4,37 +4,33 @@ import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Term from '../../components/Term.astro';
 import SecHead from '../../components/SecHead.astro';
-import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, countBy, rateBin,
-  getTorikumiGroups, getShisakuList, getSeika, seikaDept, shisakuDepts, amountEntries, currentDeptOf,
-} from '../../lib/data.ts';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, amountEntries, currentDeptOf } from '../../lib/data.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
+import { deptHead } from '../../lib/heads.ts';
 
 const groups = getTorikumiGroups();
-const shisaku = getShisakuList();
-const statusKeys = STATUSES.map((s) => s.key);
 const last = YEARS.length - 1;
-const seika = getSeika(LATEST);
 const estimate = amountEntries(LATEST, 'estimate');
 
 const depts = DEPTS.map((d) => {
   const mine = groups.filter((g) => g.dept === d.name);
   const latest = mine.filter((g) => g.statuses[last]);
-  const s = seika.filter((x) => seikaDept(x) === d.name);
+  // 最新の年度の数（部局のページの頭と同じ。lib/heads.ts）
+  const head = deptHead(d.name);
   return {
     ...d,
     latest,
-    ok: latest.filter((g) => g.statuses[last] === '順調').length,
-    counts: countBy(latest, (g) => g.statuses[last]!, statusKeys),
+    ok: head.tori['順調'],
+    counts: head.tori,
     sections: new Set(latest.map((g) => g.section)).size,
     okRates: YEARS.map((_, i) => {
       const inYear = mine.filter((g) => g.statuses[i]);
       return [inYear.filter((g) => g.statuses[i] === '順調').length, inYear.length];
     }),
-    seika: s.length,
-    seikaOk: s.filter((x) => rateBin(x) === '100%以上').length,
+    seika: head.seika,
+    seikaOk: head.reached,
     // かかわる施策（関係部等にある施策と、この部局の取組がある施策。lib/data.ts の shisakuDepts）
-    shisaku: shisaku.filter((x) => shisakuDepts(x).some((r) => r.dept === d.name)).length,
+    shisaku: head.shisaku.length,
     budget: estimate.filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === d.name).reduce((sum, e) => sum + e.amount, 0),
   };
 }).filter((d) => d.latest.length > 0 || d.okRates.some(([, n]) => n > 0));

@@ -11,13 +11,15 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, RATE_BINS, STATUSES, YEARS, judgeOf, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
-  type ActivityRun, type ActivityShare, type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, judgeOf, periodLabel, judgesOf, refText, sameScale, seikaGroupsOf, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
+  type Cell, type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
+import type { ActivityRun, ActivityShare } from './katsudou.ts';
 import { fmt } from './format.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';
 import { PROJECT, SITE } from './links.ts';
+import { once } from './memo.ts';
 import { ROUTES, routePath } from './routes.ts';
 import { oneLine } from './text.ts';
 
@@ -108,7 +110,7 @@ function judgeStamp(key: string | null | undefined, size: number) {
       border: `${size > 80 ? 5 : 3}px solid ${color('line')}`, backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26),
       backgroundImage: ui?.hatch ? hatch() : undefined, boxShadow: size > 80 ? `6px 6px 0 ${color('shadow')}` : undefined, transform: 'rotate(-6deg)',
     },
-    j && icon(j.tone, ui!.shape, size * 0.22),
+    j && icon(j.tone, JUDGE_UI[j.key].shape, size * 0.22),
     txt({ fontSize: size * (j ? 0.5 : 0.4), lineHeight: 1 }, j ? j.key : '—'),
   );
 }
@@ -354,7 +356,7 @@ function judgeStamps(s: Shisaku) {
           width: 48, height: 48, alignItems: 'center', justifyContent: 'center', columnGap: 2, borderRadius: '50%', border: `3px solid ${color('line')}`,
           backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26), backgroundImage: ui?.hatch ? hatch() : undefined,
         },
-        j ? [icon(j.tone, ui!.shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
+        j ? [icon(j.tone, JUDGE_UI[j.key].shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
       ),
       txt({ fontSize: 16, lineHeight: 1.25, textAlign: 'center', width: W }, ui ? ui.short : y === YEARS[0] ? '未公表' : '判定なし'),
     ));
@@ -510,7 +512,7 @@ function yearFrame(periods: { ys: number[]; cur: boolean }[], W: number, H: numb
     labels.push(txt({ position: 'absolute', left: Math.round(px), top: Math.round(py), fontSize: 17, lineHeight: 1, color: color('ink-2'), ...style }, s));
   for (const p of periods) {
     if (!p.cur) svg.push(`<rect x="${left(p)}" y="0" width="${sw * 3}" height="${m.t + ih + 4}" rx="10" fill="${color('bg')}"/>`);
-    label(p.ys[0] <= 2024 ? '前期（R4〜R6）' : '中期（R7〜R9）', left(p) + 10, 10, p.cur ? { color: color('ink') } : {});
+    label(periodLabel(p.ys[0]), left(p) + 10, 10, p.cur ? { color: color('ink') } : {});
   }
   if (periods.length > 1) svg.push(`<line x1="${left(periods[1])}" x2="${left(periods[1])}" y1="0" y2="${m.t + ih + 4}" stroke="${color('hair')}" stroke-width="2"/>`);
   slots.forEach((s) => label(yearLabel(s), x(s) - 13, H - 22));
@@ -539,7 +541,7 @@ const chartBox = (W: number, H: number, svg: string[], labels: El[]) => box(
 function routeChart(row: ChartRow, W: number, H: number): El {
   const years = YEARS.flatMap((y) => (row.years[y] ? [row.years[y]] : []));
   const last = years[years.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const r = years.filter((q) => ys.includes(q.year)).pop();
     return r ? [{ ys, r, cur: ys.includes(last.year) }] : [];
   });
@@ -616,7 +618,7 @@ function katsudouChart(run: ActivityRun, W: number, H: number, here: string): El
   if (!run.chart) return null;
   const done = run.years.filter((r) => !r.future);
   const last = done[done.length - 1];
-  const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+  const periods = PLAN_PERIODS.flatMap((ys) => {
     const rows = run.years.filter((q) => ys.includes(q.y));
     return rows.length ? [{ ys, rows, cur: ys.includes(last.y) }] : [];
   });
@@ -835,9 +837,8 @@ export interface Card {
 export const cardImage = (page: string) => `/og${page.replace(/\/$/, '')}.png`;
 
 const LATEST_TEXT = yearLong(LATEST);
-let cards: Map<string, Card> | undefined;
-export function getCards(): Map<string, Card> {
-  if (cards) return cards;
+// 要素の木（node）は、ページの og:image のハッシュ（cardMeta）と画像を描くときの2回読むので、1度だけ作る
+export const getCards = once((): Map<string, Card> => {
   const list: Omit<Card, 'image'>[] = [
     ...ROUTES['shisaku/[id]']().map(({ params, props: { s } }) => ({
       page: routePath('shisaku/[id]', params),
@@ -881,7 +882,7 @@ export function getCards(): Map<string, Card> {
     })),
     ...ROUTES['torikumi/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
       page: routePath('torikumi/[shisaku]/[slug]', params),
-      alt: `主な取組「${g.latest.name}」の令和${YEARS[0] - 2018}〜${LATEST - 2018}年度の進捗状況`,
+      alt: `主な取組「${g.latest.name}」の${yearsLong(YEARS[0], LATEST)}の進捗状況`,
       node: () => torikumiCard(g),
     })),
     ...ROUTES['shihyou/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
@@ -900,9 +901,8 @@ export function getCards(): Map<string, Card> {
       node: () => katsudouCard(a),
     })),
   ];
-  cards = new Map(list.map((c) => [c.page, { ...c, image: cardImage(c.page) }]));
-  return cards;
-}
+  return new Map(list.map((c) => [c.page, { ...c, node: once(c.node), image: cardImage(c.page) }]));
+});
 
 // ページの og:image（layouts/Base.astro）。カードの無いページは null（サイト共通の画像を使う）。
 // 中身が変わると SNS が古い画像を出し続けないよう、中身のハッシュを ?v= に付ける（Cloudflare の静的ファイルはクエリを見ずに同じ画像を返す）

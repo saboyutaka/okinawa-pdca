@@ -3,7 +3,8 @@
 // 検索エンジンに重複とみなされないよう、題名と説明文はページごとに違うものにする（test/describe.test.ts で確かめ、ビルドでも同じページを数える）。
 // 数はページが表示している数をそのまま受け取る（数え方は lib/data.ts の1か所。ここでは数えない）。
 // 内訳は県の区分の並びのまま、0でない区分を全部同じ重みで並べる（遅れだけを書いたり、遅れを先に書いたりしない。docs/design.md の1章）
-import { YEARS, LATEST, STATUSES, JUDGES, yearLong, yearsLong, judgeOf, withUnit, rateText, sameNameElsewhere, type ActivityShare, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
+import { YEARS, LATEST, STATUSES, JUDGES, yearLong, yearsLong, judgeOf, withUnit, rateText, sameNameElsewhere, type SeikaGroup, type ShuyouGroupOfKihon, type TorikumiGroup } from './data.ts';
+import type { ActivityShare } from './katsudou.ts';
 import type { SeikaRow } from './types.ts';
 import { fmt } from './format.ts';
 import { oneLine } from './text.ts';
@@ -102,15 +103,15 @@ export function seikaDescription(x: SeikaRow, name: string) {
 }
 
 // 取組のページ・成果指標のシェア用のページの題名と説明文（ページと、ほかのページと同じにならないかのテストで同じものを使う）
-export const torikumiHead = (g: TorikumiGroup) => ({
+export const torikumiMeta = (g: TorikumiGroup) => ({
   title: torikumiTitle({ name: g.latest.name, code: g.shisaku.code, reposted: sameNameElsewhere(g) }),
   description: torikumiDescription({ statuses: g.statuses, year: g.latest.year, summary: g.latest.summary, indicator: g.latest.indicator, section: g.section, shisaku: g.shisaku.name }),
 });
-export const seikaHead = (g: SeikaGroup) => ({ title: seikaTitle(g.name), description: seikaDescription(g.latest, g.name) });
+export const seikaMeta = (g: SeikaGroup) => ({ title: seikaTitle(g.name), description: seikaDescription(g.latest, g.name) });
 
 // 主要指標・活動指標のシェア用のページの題名と説明文（SNS のカードに出る。成果指標と同じく、最新の報告の値を先に置く）。
 // 活動指標は同じ名前（「開催回数」など）がいくつもの取組にあるので、題名に取組の名前も入れる
-export function shuyouHead(g: ShuyouGroupOfKihon) {
+export function shuyouMeta(g: ShuyouGroupOfKihon) {
   const x = g.latest;
   const judge = x.judgement ? `県の見通しは「${shortName(oneLine(x.judgement), 30)}」。` : '';
   return {
@@ -118,7 +119,7 @@ export function shuyouHead(g: ShuyouGroupOfKihon) {
     description: `${yearLong(x.year)}の実績値 ${oneLine(x.actual_raw)}、目標値 ${oneLine(x.target_raw)}（${x.year <= 2024 ? '令和6年度' : '令和9年度'}）。${judge}沖縄県PDCAの基本施策「${g.kihon.name}」の主要指標「${x.name}」の基準値からの道のり。`,
   };
 }
-export function katsudouHead(a: ActivityShare) {
+export function katsudouMeta(a: ActivityShare) {
   const last = [...a.run.years].reverse().find((r) => !r.future);
   const now = last ? `${yearLong(last.y)}の計画 ${oneLine(last.plan_raw)} → 実績 ${oneLine(last.actual_raw)}（${last.status}）。` : '';
   return {

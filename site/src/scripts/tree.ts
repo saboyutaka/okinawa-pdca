@@ -18,13 +18,16 @@
 //    （施策展開はページが無いので Enter も開け閉め。下の段の無い行は Space もページを開く）。
 //    フォーカスするのは名前のリンク（施策展開は名前）で、▶ の丸（summary）は Tab で止めない（マウスと、読み上げソフトでタップして開け閉めするため）。
 //    指標（PC では名前の横、スマホでは開いた中の行）にも止まらない（マウスで押すリンクにする）
-import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
+import { fmt } from '../lib/format.ts';
+import { esc } from '../lib/html.ts';
+import { matchesAll, searchText, searchWords, splitMatches, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
+import { getJsonOr } from './fetch-json.ts';
+import { hashId } from './hash.ts';
 import { bump, reveal } from './motion.ts';
 
 // ---------------------------------------------------------------- 描く
 
-const esc = (s: string | number) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 // すぐ下に並ぶものの数（0 のものは出さない）。閉じている行の名前の後ろに出す。ind は指標の数で、指標の種類（出す指標の data-show の値）を入れる
 // （PC では出さないので、区切りの「・」がずれないよう後ろに置く）。
 // ▶ の丸の読み上げの名前には、指標を除いた数を使う（PC では指標は名前の横にあるため）。そこで読むので、画面の数は読ませない（docs/design.md の9章）
@@ -81,12 +84,6 @@ function visionRow(v: TreeVision) {
 }
 
 // ---------------------------------------------------------------- 読み込み
-
-async function load(url: string) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(String(r.status));
-  return r.json() as Promise<TreeData>;
-}
 
 // 離れるときに残す、開き方・出す指標・スクロールの位置（history.state の tree）。src は描いたデータで、データが変わったら（公開し直したら）使わない
 interface Saved { src: string; open: number[]; show: string[]; y: number }
@@ -172,7 +169,7 @@ async function init(tree: HTMLElement) {
   const src = tree.dataset.src!;
   let data: TreeData;
   try {
-    data = await load(src).catch(() => load(tree.dataset.fallback!));
+    data = await getJsonOr<TreeData>(src, tree.dataset.fallback!);
   } catch {
     tree.removeAttribute('aria-busy');
     if (msg) msg.textContent = '目次を読み込めませんでした。時間をおいて、ページを再読み込みしてください。';
@@ -196,9 +193,9 @@ async function init(tree: HTMLElement) {
   interface Row { li: HTMLLIElement; item: HTMLElement; details: HTMLDetailsElement | null; kids: Row[]; parent: Row | null }
   const rowOf = new Map<Element, Row>(); // 名前と li から行へ
   const rows = (ul: Element, parent: Row | null): Row[] =>
-    [...ul.children].filter((li) => !li.classList.contains('leaf-ind')).map((li) => {
+    [...ul.querySelectorAll<HTMLLIElement>(':scope > li')].filter((li) => !li.classList.contains('leaf-ind')).map((li) => {
       const details = li.querySelector<HTMLDetailsElement>(':scope > details');
-      const r: Row = { li: li as HTMLLIElement, item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!, details, kids: [], parent };
+      const r: Row = { li, item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!, details, kids: [], parent };
       rowOf.set(li, r).set(r.item, r);
       if (details) r.kids = rows(details.querySelector(':scope > ul')!, r);
       return r;
@@ -375,22 +372,18 @@ async function init(tree: HTMLElement) {
   const painted = new Set<HTMLElement>();
   const paint = (el: HTMLElement, words: SearchWord[] | null) => {
     const text = original.get(el)!;
-    const ranges = words ? matchRanges(text, words) : [];
-    if (!ranges.length) {
+    const parts = splitMatches(text, words ?? []);
+    if (!parts.some((p) => p.hit)) {
       el.textContent = text;
       painted.delete(el);
       return;
     }
-    const parts: (string | HTMLElement)[] = [];
-    let at = 0;
-    for (const [a, b] of ranges) {
+    el.replaceChildren(...parts.map((p) => {
+      if (!p.hit) return p.text;
       const m = document.createElement('mark');
-      m.textContent = text.slice(a, b);
-      parts.push(text.slice(at, a), m);
-      at = b;
-    }
-    parts.push(text.slice(at));
-    el.replaceChildren(...parts);
+      m.textContent = p.text;
+      return m;
+    }));
     painted.add(el);
   };
 
@@ -432,7 +425,7 @@ async function init(tree: HTMLElement) {
     }
     for (const li of lis) li.hidden = !keep.has(li) && !li.closest('li[data-hit]');
     for (const d of nodes) d.open = open.has(d);
-    const found = [...n].filter(([, x]) => x > 0).map(([k, x]) => `${k} ${x.toLocaleString('ja-JP')}`).join('・');
+    const found = [...n].filter(([, x]) => x > 0).map(([k, x]) => `${k} ${fmt(x)}`).join('・');
     const text = found ? `${found} が見つかりました` : '見つかりませんでした';
     if (hits.textContent !== text) {
       hits.textContent = text;
@@ -459,7 +452,7 @@ async function init(tree: HTMLElement) {
     window.scrollTo(0, saved.y);
   } else {
     // # の行き先（/mokuji/#s-1-1-a-1 など）が目次の中にあれば、親を開いてそこへ動く（scripts/disclosure.ts は目次を描く前に動くので、ここで行う）
-    const id = decodeURIComponent(location.hash.slice(1));
+    const id = hashId();
     const target = id ? document.getElementById(id) : null;
     if (target && tree.contains(target)) {
       for (let d = target.parentElement?.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;

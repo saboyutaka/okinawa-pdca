@@ -5,14 +5,14 @@
 import StatusBar from './StatusBar.astro';
 import Term from './Term.astro';
 import SecHead from './SecHead.astro';
-import { STATUSES, statusOf, countBy, yearLabel } from '../lib/data.ts';
-import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika } from '../lib/plans.ts';
+import { STATUSES, statusOf, yearLabel, countStatuses } from '../lib/data.ts';
+import { KANKO, KANKO_TORIKUMI_HREF, RM_LATEST, RM_JUDGEMENTS, kankoTorikumi, kankoSeika, countRmJudgements } from '../lib/plans.ts';
 import { fmt } from '../lib/format.ts';
 
 const tori = kankoTorikumi(RM_LATEST);
-const toriCounts = countBy(tori, statusOf, STATUSES.map((s) => s.key));
+const toriCounts = countStatuses(tori, statusOf);
 const seika = kankoSeika(RM_LATEST);
-const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
+const judgeCounts = countRmJudgements(seika);
 ---
 <section class="sticker plan-sum" aria-labelledby="keikaku">
   <div><span class="plan-tag">個別計画</span></div>

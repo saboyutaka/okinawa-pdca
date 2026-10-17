@@ -2,14 +2,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, yearsLong, planLabel, planIndex, withUnit, refText, eraRef,
+  yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, withUnit, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
-  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow, activityQty,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText,
+  PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
   type JudgeTrend, type Pattern,
 } from '../src/lib/data.ts';
-import type { SeikaRow } from '../src/lib/types.ts';
+import { activityQty } from '../src/lib/katsudou.ts';
+import type { BudgetAmountRow, BudgetBlock, SeikaRow } from '../src/lib/types.ts';
 
 test('shouraizouName: 将来像の名前は語尾の「を目指して」を外す（途中の「目指して」は残す）', () => {
   assert.equal(shouraizouName('心豊かで、安全・安心に暮らせる島を目指して'), '心豊かで、安全・安心に暮らせる島');
@@ -27,8 +28,8 @@ test('年度の書き方', () => {
   assert.equal(yearLong(2022), '令和4年度');
   assert.equal(yearsLong(2022, 2024), '令和4〜6年度');
   assert.equal(yearsLong(2025), '令和7年度');
-  assert.equal(planLabel(2024), '前期実施計画（R4〜R6）');
-  assert.equal(planLabel(2025), '中期実施計画（R7〜R9）');
+  assert.deepEqual([2024, 2025].map(periodName), ['前期', '中期']);
+  assert.deepEqual([2022, 2027].map(periodLabel), ['前期（R4〜R6）', '中期（R7〜R9）']);
 });
 
 test('judgeByGrid: 県の区分表のマス（A・B は「順調」の割合40%以上の2段、C・D は達成率40%未満の列を80%で分ける）', () => {
@@ -388,4 +389,36 @@ test('shuyouRateText: 主要指標の達成率の札の文字（数はそのま�
   assert.equal(shuyouRateText({ rate: null, rate_raw: '達成' }), '達成');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '後退' }), '後退');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '‐' }), '—');
+});
+
+// 部局票の予算の表の1行（金額は千円。raw は印字の文字）
+const amountRow = (x: Partial<BudgetAmountRow>): BudgetAmountRow => ({
+  source: '県単等', method: '', source_next: '', method_next: '', settled_raw: '', estimate_raw: '', initial_raw: '', settled: null, estimate: null, initial: null, suspect: [], ...x,
+});
+const block = (name: string, rows: BudgetAmountRow[], nameNext = ''): BudgetBlock => ({ name, name_next: nameNext, rows, page: 1 });
+
+test('budgetSeriesOf: お金の年度ごとに、確定に近い金額（決算 → 決算見込 → 当初予算）を選び、予算事業を合計する（桁の誤記の疑いは入れない）', () => {
+  const series = budgetSeriesOf([
+    [2025, [block('A事業', [amountRow({ settled: 100, estimate: 120, initial: 130 })]), block('B事業', [amountRow({ estimate: 5, suspect: ['initial'], initial: 99999 })])]],
+    [2024, [block('A事業', [amountRow({ settled: 90, estimate: 110, initial: 125 })])]],
+  ]);
+  // 2024年度は R6 の報告の決算見込（110）より、R7 の報告の決算（100）を選ぶ
+  assert.deepEqual(series.map((x) => [x.fy, x.kind, x.amount, x.report]), [[2023, 'settled', 90, 2024], [2024, 'settled', 100, 2025], [2025, 'estimate', 125, 2025], [2026, 'initial', 130, 2025]]);
+});
+
+test('budgetTableOf: 予算事業ごとに、お金の年度の列と金額の種類の行に並べ直す（当初予算額は翌年度の予算事業名で）', () => {
+  const { groups, fys } = budgetTableOf([
+    [2025, [block('A事業', [amountRow({ settled: 100, estimate: 120, initial: 130, initial_raw: '130' })], 'A事業（改）'), block('―', [amountRow({ estimate_raw: '―', settled_raw: '一部', settled: null })])]],
+  ]);
+  assert.deepEqual(fys, [2024, 2025, 2026]);
+  // 行は当初予算額 → 決算見込額 → 決算額の順に読むので、当初予算額の名前の予算事業が先に来る
+  assert.deepEqual(groups.map((g) => [g.name, [...g.cells.keys()]]), [['A事業（改）', ['initial|2026']], ['A事業', ['estimate|2025', 'settled|2024']], ['', ['settled|2024']]]);
+  assert.deepEqual(groups[2].cells.get('settled|2024'), { sum: 0, n: 0, raws: ['一部'], suspect: false });
+});
+
+test('countStatuses・countRates: 区分の並びのまま数え、0の区分も残す', () => {
+  const st = countStatuses([{ status: '順調' }, { status: '' }, { status: '順調' }], statusOf);
+  assert.deepEqual(Object.entries(st), [['順調', 2], ['概ね順調', 0], ['やや遅れ', 0], ['大幅遅れ', 0], ['未着手', 0], ['記載なし', 1]]);
+  const rt = countRates([{ rate: 120, rate_raw: '120%' }, { rate: null, rate_raw: '未達成' }, { rate: null, rate_raw: '-' }]);
+  assert.deepEqual(Object.values(rt), [1, 0, 0, 1, 1]);
 });

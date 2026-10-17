@@ -1,14 +1,12 @@
 ---
-// 1系列の横棒（件数・金額の比較）。色は1色で、行のラベルに状態の印か将来像の番号の印（sz）を付けられる。棒ではタブで止めない（値は棒の右に出す）。
+// 1系列の横棒（件数・金額の比較）。色は1色で、行のラベルに将来像の番号の印（sz）を付けられる。棒ではタブで止めない（値は棒の右に出す）。
 // href があれば、ラベルを名前のリンク（.name-link）にする
-import Chip from './Chip.astro';
 import Sz from './Sz.astro';
 import { fmt } from '../lib/format.ts';
-import type { Shape, Tone } from '../lib/icons.ts';
 
-interface Item { label: string; tone?: Tone; shape?: Shape; sz?: number; n: number; href?: string; note?: string }
-interface Props { title: string; caption?: string; items: Item[]; unit?: string }
-const { title, caption, items, unit = '件' } = Astro.props;
+interface Item { label: string; sz?: number; n: number; href?: string; note?: string }
+interface Props { title: string; caption?: string; items: Item[]; unit: string }
+const { title, caption, items, unit } = Astro.props;
 const max = Math.max(1, ...items.map((i) => i.n));
 ---
 <figure class="chart-card sticker">
@@ -22,7 +20,7 @@ const max = Math.max(1, ...items.map((i) => i.n));
         <div class:list={['bar-label', i.sz && 'with-sz']}>
           {i.sz && <Sz id={i.sz} sr={false} />}
           <span class="bar-name">
-            {i.tone ? <Chip tone={i.tone} text={i.label} shape={i.shape} /> : i.href ? <a class="name-link" href={i.href}>{i.label}</a> : i.label}
+            {i.href ? <a class="name-link" href={i.href}>{i.label}</a> : i.label}
             {i.note && <span class="bar-note">{i.note}</span>}
           </span>
         </div>
@@ -40,7 +38,6 @@ const max = Math.max(1, ...items.map((i) => i.n));
   .bars { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 12px; }
   .bars li { display: grid; grid-template-columns: minmax(0, 20em) 1fr; gap: 4px 12px; align-items: center; }
   .bar-label { font-size: 0.9375rem; line-height: 1.4; }
-  .bar-label :global(.chip) { white-space: normal; }
   .bar-label.with-sz { display: flex; align-items: flex-start; gap: 8px; }
   .bar-label.with-sz :global(.badge-sz) { margin-top: 1px; }
   .bar-name { min-width: 0; }

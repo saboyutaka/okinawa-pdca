@@ -6,7 +6,7 @@
 //   ページに埋め込むと、どのページの HTML も gzip で約1.5KB 増える（中央値 11KB の1割強）ので、埋め込まない
 // - 和暦のままの人がボタンを押したときは、scripts/era.ts が読み込んでから切り替える
 // 外のサイトへのリンク（県の資料の名前・PDF のファイル名）は印字のまま。検索エンジン・SNS のカード・ページの説明文は和暦のまま
-import { createHash } from 'node:crypto';
+import { sha8 } from './hashed.ts';
 
 // ERA_JS が window.era に置く。図（scripts/charts.ts）は描く文字を text で西暦にしてから幅を測り、切り替えたら document の 'era' で描き直す。
 // 吹き出し（scripts/tip.ts・terms.ts）は中身を入れたら fix で書き換えてから大きさを測る。読み込んでいないとき（和暦）は window.era が無い
@@ -116,4 +116,4 @@ export const ERA_JS = `(() => {
 })();`;
 
 // 書き出す場所。名前は中身の SHA-256 の先頭8桁で、ずっとキャッシュさせる（public/_headers）
-export const ERA_JS_PATH = `/era-${createHash('sha256').update(ERA_JS).digest('hex').slice(0, 8)}.js`;
+export const ERA_JS_PATH = `/era-${sha8(ERA_JS)}.js`;

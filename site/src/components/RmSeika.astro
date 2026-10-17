@@ -10,8 +10,9 @@ import { yearLabel, yearLong, withUnit, refText, sectionHref } from '../lib/data
 import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts';
 import { joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
+import { scriptJson } from '../lib/html.ts';
 
-interface Props { g: KankoSeikaGroup; id?: string }
+interface Props { g: KankoSeikaGroup; id: string }
 const { g, id } = Astro.props;
 const x = g.latest;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
@@ -54,7 +55,7 @@ const years: SeikaChartYear[] = x.years.map((yy, k) => ({
   plan: x.plan || [], plan_raw: x.plan_raw || [], target: x.target, target_raw: x.target_raw, target_year: 'R6', base: x.base, base_raw: x.base_raw,
 })).filter((r) => r.y <= RM_LATEST);
 const drawable = years.some((r) => r.actual != null) && x.target != null;
-const data = JSON.stringify({ unit: u, years, latest: x.year === RM_LATEST } satisfies SeikaData).replace(/</g, '\\u003c');
+const data = scriptJson({ unit: u, years, latest: x.year === RM_LATEST } satisfies SeikaData);
 const aria = `${x.name}のゴールまでの道のり。基準値 ${withUnit(x.base_raw, u)} から目標値 ${withUnit(x.target_raw, u)}（R6）まで。${years.map((r, k) => `${yearLabel(r.y)} 実績値 ${withUnit(r.actual_raw, u)}${r.ref ? `（${r.ref}）` : ''}、計画値 ${withUnit(x.plan_raw?.[k], u)}`).join('。')}。左右の矢印キーで年度を移れます`;
 ---
 <article class="sticker scard rm-seika anchor" id={id}>

@@ -5,16 +5,15 @@ import Base from '../../layouts/Base.astro';
 import StatusBar from '../../components/StatusBar.astro';
 import Term from '../../components/Term.astro';
 import ExtLink from '../../components/ExtLink.astro';
-import { STATUSES, statusOf, countBy, yearLabel } from '../../lib/data.ts';
-import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList } from '../../lib/plans.ts';
+import { STATUSES, statusOf, yearLabel, countStatuses } from '../../lib/data.ts';
+import { KANKO, RM_LATEST, RM_JUDGEMENTS, KANKO_TORIKUMI_HREF, kankoTorikumi, kankoSeika, kankoTenkaiList, countRmJudgements } from '../../lib/plans.ts';
 import { LINKS } from '../../lib/links.ts';
 import { fmt } from '../../lib/format.ts';
 
-const statusKeys = STATUSES.map((s) => s.key);
 const tori = kankoTorikumi(RM_LATEST);
-const toriCounts = countBy(tori, statusOf, statusKeys);
+const toriCounts = countStatuses(tori, statusOf);
 const seika = kankoSeika(RM_LATEST);
-const judgeCounts = countBy(seika, (s) => s.judgement || 'その他', RM_JUDGEMENTS.map((j) => j.key));
+const judgeCounts = countRmJudgements(seika);
 const overlap = tori.filter((t) => t.pdca.length).length;
 const tenkai = kankoTenkaiList();
 ---

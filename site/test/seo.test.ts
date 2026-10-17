@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { OG_IMAGE, absUrl, sitemapPaths, sitemapXml, robotsTxt, ldJson, websiteLd, breadcrumbLd, duplicateHeads } from '../src/lib/seo.ts';
+import { scriptJson } from '../src/lib/html.ts';
+import { OG_IMAGE, absUrl, sitemapPaths, sitemapXml, robotsTxt, websiteLd, breadcrumbLd, duplicateHeads } from '../src/lib/seo.ts';
 import { SITE, PROJECT } from '../src/lib/links.ts';
 
 test('本番のドメインは https で、末尾にスラッシュがある', () => {
@@ -54,7 +55,7 @@ test('robots.txt は巡回を止めず、sitemap の場所を書く', () => {
 });
 
 test('JSON-LD の中の < は逃がす（</script> で閉じない）', () => {
-  const s = ldJson({ name: '</script><b>' });
+  const s = scriptJson({ name: '</script><b>' });
   assert.ok(!s.includes('<'));
   assert.deepEqual(JSON.parse(s), { name: '</script><b>' });
 });

@@ -2,10 +2,11 @@
 //  - URL の # の行き先が閉じた <details> の中にあるときは開く
 //  - 押して開いたときだけ、中身をすっと出す（styles/global.css の m-opening。# の行き先で開いたときは動かさない）
 // 最新の年度の県のふりかえり・取組の活動と検証は、途中で切らずに全部出す（前の年度だけ details で畳む）
+import { hashId } from './hash.ts';
 import { reveal } from './motion.ts';
 
 function revealHash() {
-  const id = decodeURIComponent(location.hash.slice(1));
+  const id = hashId();
   const t = id && document.getElementById(id);
   if (!t) return;
   let d: HTMLDetailsElement | null | undefined = t.closest('details');

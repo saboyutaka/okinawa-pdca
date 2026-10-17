@@ -17,7 +17,7 @@ import HeadKind from '../../components/HeadKind.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, countBy, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, judgeOf, seikaVerdict, seikaPastSays, seikaAlias, seikaFormerNames, formerText,
   getKihonList, getTorikumiGroups, seikaGroupsOf, sourceLink, deptHref, planParents,
 } from '../../lib/data.ts';
 import { JUDGE_UI } from '../../lib/icons.ts';
@@ -25,12 +25,12 @@ import { themesOf } from '../../lib/themes.ts';
 import { joinLines, firstSentence } from '../../lib/text.ts';
 import { fmt } from '../../lib/format.ts';
 import { shisakuDescription } from '../../lib/describe.ts';
-import { shisakuHead } from '../../lib/heads.ts';
+import { shisakuHead, total } from '../../lib/heads.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
-import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref } from '../../lib/plans.ts';
+import { KANKO, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['shisaku/[id]'];
@@ -46,7 +46,6 @@ const themes = themesOf(s.id);
 
 // 最新の年度の数（ページの説明文・SNS のカードの画像と同じ数。lib/heads.ts）
 const head = shisakuHead(s);
-const toriLatest = s.torikumi.filter((t) => t.year === LATEST);
 const toriCounts = head.tori;
 const seikaLatest = sRows.filter((r) => r.latest.year === LATEST);
 const seikaPast = sRows.filter((r) => r.latest.year !== LATEST);
@@ -92,10 +91,9 @@ const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 // 一括交付金（ソフト）の事業（事後評価の検証シートにこの施策のコードがあるもの）と、観光ロードマップでも評価されている取組の施策
 const ikkatsu = ikkatsuOf(s.id);
-const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
-const ikLatest = ikkatsu.filter((g) => g.latest.year === ikYear);
-const ikPast = ikkatsu.filter((g) => g.latest.year !== ikYear);
-const ikCounts = countBy(ikLatest.map((g) => g.latest), (j) => j.grade_label || 'なし', GRADES.map((x) => x.key));
+const ikLatest = ikkatsu.filter((g) => g.latest.year === IKKATSU_LATEST);
+const ikPast = ikkatsu.filter((g) => g.latest.year !== IKKATSU_LATEST);
+const ikCounts = countGrades(ikLatest.map((g) => g.latest), (j) => j.grade_label);
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
 <Base title={`${s.name}（沖縄県の施策）`} description={shisakuDescription({ name: s.name, ...head })} ogType="article">
@@ -116,7 +114,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       </div>
       <div class="hb-years">
         <span class="hb-yl">4年間</span>
-        <Stamps items={judgeStamps} label="4年間の判定" size="small" pop={0.22} />
+        <Stamps items={judgeStamps} label="4年間の判定" pop={0.22} />
       </div>
       {/* 判定のもと（成果指標の達成率と、主な取組のうち順調の割合）。本文の節と同じ「成果指標 → 主な取組」の順。
           成果指標はほとんどの施策で1〜2つなので、数ではなく指標の名前と達成率の札を1指標1行で出し、名前を押すとその指標のカードへ移る。
@@ -131,7 +129,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
         <div class="why">
           <div class="why-l"><Term word="主な取組" /></div>
           <a class="why-a" href="#torikumi">
-            <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(toriLatest.length)}</b> 件が順調</span>
+            <span class="why-v"><b>{fmt(toriCounts['順調'] || 0)}/{fmt(total(toriCounts))}</b> 件が順調</span>
             <StatusBar categories={STATUSES} counts={toriCounts} context={`${yearLabel(LATEST)}の主な取組 `} cells squares />
           </a>
         </div>
@@ -238,14 +236,14 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       <p class="small secondary lead">主な取組の評価とは別に、この施策に当たる一括交付金（ソフト）の事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />したもの（◎達成・○概ね達成・△一部達成・未達成）です。</p>
       {ikLatest.length > 0 && (
         <div class="ik-sum">
-          <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
+          <span class="small secondary">{yearLabel(IKKATSU_LATEST)}の評価（{fmt(ikLatest.length)}事業）</span>
           {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} readTitle />)}
         </div>
       )}
       <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
       {ikPast.length > 0 && (
         <details class="past">
-          <summary>{yearLong(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
+          <summary>{yearLong(IKKATSU_LATEST)}の事後評価に無い事業（{ikPast.length}）</summary>
           <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
         </details>
       )}

@@ -23,8 +23,8 @@ import { HYOKA, KANKO, hyokaOf, planSourceLink, kankoOfPdcaShisaku } from '../..
 import { kihonDescription } from '../../lib/describe.ts';
 import { kihonHead } from '../../lib/heads.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf, countBy,
-  getShisakuList, getShuyouGroups, getShuyouStatus, sourceLink, planParents, formerText,
+  YEARS, LATEST, yearLabel, yearLong, STATUSES, statusOf,
+  getShisakuList, getShuyouGroups, getShuyouStatus, sourceLink, planParents, formerText, countStatuses,
 } from '../../lib/data.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
@@ -33,7 +33,6 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { k } = Astro.props;
 const shisaku = getShisakuList().filter((s) => s.kihon_id === k.id);
-const statusKeys = STATUSES.map((x) => x.key);
 const src = k.source && sourceLink(k.source, k.page);
 
 // 主要指標（年度をまたいだ指標ごと）。最新の報告で使われなくなった指標は、施策ページの成果指標と同じく畳んで後ろに置く
@@ -52,7 +51,7 @@ const status = getShuyouStatus().filter((r) => r.kihon_id === k.id);
 const tenkai = [...new Map(shisaku.map((s) => [s.tenkai_id, s.tenkai_name])).entries()];
 const progressRows = YEARS.map((y) => ({
   label: yearLabel(y),
-  counts: countBy(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === y)), statusOf, statusKeys),
+  counts: countStatuses(shisaku.flatMap((s) => s.torikumi.filter((t) => t.year === y)), statusOf),
 }));
 // 評価検証報告書（R4〜R6）の基本施策ごとの成果と課題
 const h = hyokaOf(k.id);

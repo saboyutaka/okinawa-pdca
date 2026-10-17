@@ -9,40 +9,36 @@ import JudgeSection from '../components/JudgeSection.astro';
 import TrendFigure from '../components/TrendFigure.astro';
 import Share from '../components/Share.astro';
 import {
-  YEARS, LATEST, STATUSES, RATE_BINS, yearLong, rateBin, statusOf, countBy, countJudges,
-  getTorikumi, getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount,
+  YEARS, LATEST, yearLong, yearsLong, countJudges,
+  getSeika, getShisakuList, getShouraizou, getTorikumiGroups, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount, countStatuses, countRates,
 } from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
+import { futureHead } from '../lib/heads.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 import { BOSHU, HASHTAG, boshuState, dayText } from '../lib/iken.ts';
 
-const latestTori = getTorikumi(LATEST);
 // 年度をまたいでまとめた取組（取組をさがすと同じ数え方）
 const groups = getTorikumiGroups();
 const L = YEARS.length - 1;
 const latestGroups = groups.filter((g) => g.statuses[L]);
 // ヒーローの3つの段（components/Ladder.astro）: 主要指標の達成状況・成果指標の達成率・主な取組の進捗状況の内訳
 const shuyou = getShuyouStatus();
-const seikaCounts = countBy(getSeika(LATEST), rateBin, RATE_BINS.map((b) => b.key));
-const toriCounts = countBy(latestGroups, (g) => g.statuses[L]!, STATUSES.map((s) => s.key));
+const seikaCounts = countRates(getSeika(LATEST));
+const toriCounts = countStatuses(latestGroups, (g) => g.statuses[L]!);
 const shisaku = getShisakuList();
 const judgeCounts = countJudges(shisaku);
 
 
 // 将来像ごと。主要指標の達成状況の内訳のマス目の棒と、主な取組の進捗状況の内訳の棒の2段（components/Tiers.astro。5つの将来像のページの基本施策の行と同じ順）。
 // 割合の数は出さず、2本の棒を長くする（区分ごとの数は棒の区間にマウスを乗せる・タップすると出る）
-const statusKeys = STATUSES.map((s) => s.key);
-const visions = getShouraizou().map((v) => {
-  const t = latestTori.filter((x) => x.shisaku_id.startsWith(`${v.id}-`));
-  return {
-    ...v,
-    shuyou: shuyou.filter((r) => r.kihon.shouraizou === v.id),
-    tori: countBy(t, statusOf, statusKeys),
-  };
-});
+const visions = getShouraizou().map((v) => ({
+  ...v,
+  shuyou: shuyou.filter((r) => r.kihon.shouraizou === v.id),
+  tori: futureHead(v.id).tori,
+}));
 
 
 // 4年間の推移
@@ -57,7 +53,7 @@ const boshu = boshuState();
     <h1 id="hero-h">沖縄県の取組、どこまで進んだ？</h1>
     <p class="lead">
       沖縄県は毎年、「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>に並ぶ<Term word="施策" />と<Term word="主な取組" />がどこまで進んだかを点検し、「<ExtLink href={LINKS.kekka} after="」">沖縄県PDCA実施結果</ExtLink>として公表しています。<br />
-      その結果（令和4〜7年度）を、<a href="/data/#shutten">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
+      その結果（{yearsLong(YEARS[0], LATEST)}）を、<a href="/data/#shutten">PDF <span class="big pdf-n">{fmt(getPdfCount())}</span>件</a>から見やすくまとめました。
     </p>
     <Ladder shuyou={shuyou} seika={seikaCounts} tori={toriCounts} toriDistinct={distinctTorikumiCount(LATEST)} />
   </section>

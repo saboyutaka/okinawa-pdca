@@ -6,7 +6,8 @@
 // 将来像と計画の段（基本施策・施策）は太字、まとまりの名前（施策展開・一覧のページ）は細字にする。将来像は帯にせず同じ形の行にして、番号を将来像の色の丸にする。ページの無い段（施策展開）はリンクにしない。
 // 検索エンジン向けに、ページのある段といまのページ（page）を構造化データ（BreadcrumbList。lib/seo.ts）でも出す
 import Sz from './Sz.astro';
-import { breadcrumbLd, ldJson } from '../lib/seo.ts';
+import { breadcrumbLd } from '../lib/seo.ts';
+import { scriptJson } from '../lib/html.ts';
 import type { PathItem } from '../lib/data.ts';
 
 // page はいまのページの名前（構造化データだけに使う）
@@ -14,7 +15,7 @@ interface Props { items: PathItem[]; page: string }
 const { items, page } = Astro.props;
 ---
 {/* 構造化データは nav の前に置く（nav のすぐ後をページの頭にして、線でつなぐ CSS の + が当たるように） */}
-<script type="application/ld+json" is:inline set:html={ldJson(breadcrumbLd([...items, { label: page }], Astro.url.pathname))} />
+<script type="application/ld+json" is:inline set:html={scriptJson(breadcrumbLd([...items, { label: page }], Astro.url.pathname))} />
 <nav class="hier sticker" aria-label="ページの階層">
   <ol>
     {items.map((it, i) => {

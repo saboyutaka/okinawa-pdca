@@ -1,7 +1,8 @@
 // 目標・実績が2行以上の活動指標を、行ごとの図と表に分ける（lib/data.ts の activityRuns）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { activityRuns, getTorikumiGroups, keySlug, type ActivityRun } from '../src/lib/data.ts';
+import { getTorikumiGroups, keySlug } from '../src/lib/data.ts';
+import { activityRuns, type ActivityRun } from '../src/lib/katsudou.ts';
 
 const groupOf = (shisaku: string, slug: string) => getTorikumiGroups().find((g) => g.shisaku.id === shisaku && keySlug(g.key) === slug)!;
 const parts = (runs: ActivityRun[], group = 0) => runs.filter((r) => r.group === group);

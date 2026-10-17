@@ -6,13 +6,13 @@
 // 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。図を描けない部分は、表を開いて出す
 import Chip from './Chip.astro';
 import ExtLink from './ExtLink.astro';
-import { LATEST, yearLabel, refText, toneOfJudgement, judgesOf, joinCell, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
+import { LATEST, PLAN_PERIODS, yearLabel, refText, toneOfJudgement, judgesOf, joinCell, sourceLink, type ShuyouGroup, type ShuyouPart } from '../lib/data.ts';
 
 interface Props { row: ShuyouGroup; part: ShuyouPart }
 const { row, part: p } = Astro.props;
 const aligned = p.drawable;
 // 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
-const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+const periods = PLAN_PERIODS.flatMap((ys) => {
   const r = ys.map((y) => p.years[y]).filter((x) => x != null).pop();
   return r ? [{ ys, r, cur: ys.includes(p.latest.year) }] : [];
 });

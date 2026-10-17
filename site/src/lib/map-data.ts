@@ -6,12 +6,15 @@
 // 並びは報告書の順（将来像 → 基本施策・施策の番号 → 施策の中の並び）で、良い・悪いで並べ替えない。
 // 活動指標は主な取組ごとに1マス（延べ件数。いくつかの施策に載る取組は施策ごとに1マス）で、色は活動指標の実績から県が決める取組の進捗状況。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
-import { createHash } from 'node:crypto';
 import {
   YEARS, LATEST, STATUSES, RATE_BINS, SHUYOU_BINS, load, yearLabel, planIndex, withUnit, refText, eraRef, halfWidth, sameScale,
   getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
-  getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
+  getTorikumiGroups, statusOf, budgetOf, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
+import { activityAchievement, activityAchievements } from './katsudou.ts';
+import { sha8 } from './hashed.ts';
+import { esc } from './html.ts';
+import { once, onceBy } from './memo.ts';
 import { themeIdsOf } from './themes.ts';
 import type { Tone } from './icons.ts';
 import type { ShuyouGaiyouRow, SeikaRow, TorikumiRow } from './types.ts';
@@ -166,13 +169,11 @@ function buildKatsudou(): Built {
   return { cells, data: { parents: parents.list, items } };
 }
 
-let built: Record<MapKind, Built> | undefined;
-const all = () => (built ??= { shuyou: buildShuyou(), seika: buildSeika(), katsudou: buildKatsudou() });
+const all = once((): Record<MapKind, Built> => ({ shuyou: buildShuyou(), seika: buildSeika(), katsudou: buildKatsudou() }));
 export const mapCells = (kind: MapKind) => all()[kind].cells;
 
 // マスの HTML。約2,000個あるので、Astro が範囲をしぼるための属性を付けず、短く書くため文字列にする（見た目は pages/map.astro の全体の CSS）。
 // 最新の年度の色を付け、最新の報告に無いマスは隠す（スクリプトが動かないときは、最新の年度のまま見える）
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const LATEST_AT = YEARS.indexOf(LATEST);
 export function cellHtml(kind: MapKind, c: MapCell) {
   const k = c.c[LATEST_AT];
@@ -194,14 +195,12 @@ export function mapRows() {
 // 年度ごとのマスの数（YEARS の順）
 export const mapCounts = (kind: MapKind) => YEARS.map((_, i) => mapCells(kind).filter((c) => c.c[i] !== '-').length);
 
-const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
 // マスの並びと区分の目印。公開し直した直後に、キャッシュした前のページ（5分）が新しい控えの JSON を読んだとき、マスの並びが違えば別の指標の中身を出してしまうので、
 // JSON とページのマス目（data-check）の両方に書き、同じときだけ中身を出す
 export const mapCheck = (kind: MapKind) => sha8(JSON.stringify(mapCells(kind)));
 
 // 書き出す JSON（1回のビルドで1度だけ作る）と場所。名前は中身の SHA-256 の先頭8桁（計画の目次のデータ lib/tree-data.ts と同じ）
-const json: Partial<Record<MapKind, string>> = {};
-export const mapDataJson = (kind: MapKind) => (json[kind] ??= JSON.stringify({ check: mapCheck(kind), ...all()[kind].data } satisfies MapData));
+export const mapDataJson = onceBy((kind: MapKind) => JSON.stringify({ check: mapCheck(kind), ...all()[kind].data } satisfies MapData));
 export const mapDataHash = (kind: MapKind) => sha8(mapDataJson(kind));
 export const mapDataPath = (kind: MapKind) => `/map/${kind}-${mapDataHash(kind)}.json`;
 // 名前の変わらない控え。公開し直した直後に、キャッシュした前のページ（5分）から開くと、前のハッシュのファイルはもう無いので、こちらを読む
@@ -222,7 +221,6 @@ function buildSearch(): MapSearch {
   };
   return { shuyou: of('shuyou'), seika: of('seika'), katsudou: of('katsudou') };
 }
-let searchJson: string | undefined;
-export const mapSearchJson = () => (searchJson ??= JSON.stringify(buildSearch()));
+export const mapSearchJson = once(() => JSON.stringify(buildSearch()));
 export const mapSearchPath = () => `/map/search-${sha8(mapSearchJson())}.json`;
 export const MAP_SEARCH_FALLBACK = '/map/search.json';

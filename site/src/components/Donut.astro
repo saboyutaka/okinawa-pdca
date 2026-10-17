@@ -2,8 +2,10 @@
 // ドーナツ（割合ひとつ）。中に数字、読み上げは aria-label
 import type { Tone } from '../lib/icons.ts';
 
-interface Props { frac: number; tone?: Tone; label: string; size?: number }
-const { frac, tone = 'good', label, size = 124 } = Astro.props;
+interface Props { frac: number; label: string }
+const { frac, label } = Astro.props;
+const tone: Tone = 'good';
+const size = 124;
 const r = 48;
 const c = 2 * Math.PI * r;
 const v = Math.max(0, Math.min(1, frac || 0));

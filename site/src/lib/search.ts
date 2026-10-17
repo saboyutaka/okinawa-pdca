@@ -56,3 +56,14 @@ export function matchRanges(text: string, words: SearchWord[]): [number, number]
   }
   return out;
 }
+// text を、当たった所（hit）とそうでない所に順に分ける（当たった字に <mark> を付ける。計画の目次と指標のマップの吹き出し）
+export function splitMatches(text: string, words: SearchWord[]) {
+  const parts: { text: string; hit: boolean }[] = [];
+  let at = 0;
+  for (const [a, b] of words.length ? matchRanges(text, words) : []) {
+    parts.push({ text: text.slice(at, a), hit: false }, { text: text.slice(a, b), hit: true });
+    at = b;
+  }
+  parts.push({ text: text.slice(at), hit: false });
+  return parts;
+}

@@ -11,6 +11,7 @@
 // 初めから選んである select（成果指標の「対象: R7の報告にある指標」）を「すべて」に変えたときも条件として扱う（札・数・URL の「period=」に出す）。
 // 札を押して条件を外すと札を作り直すので、フォーカスは同じ位置の札（無ければ1つ前の札）へ、札が無くなったら件数の行へ移す（WCAG 2.4.3）。
 import { matchesAll, searchText, searchWords } from '../lib/search.ts';
+import { filterChips } from './filter-chips.ts';
 import { bump } from './motion.ts';
 
 // 絞り込みの入力（キーワード・チェックボックス・ラジオ・select）
@@ -19,7 +20,8 @@ type CheckInput = HTMLInputElement & { type: 'checkbox' | 'radio' };
 const isCheck = (el: Element): el is CheckInput => el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio');
 
 for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]')) {
-  const scope = document.querySelector(form.dataset.filter!)!;
+  const scope = form.dataset.filter ? document.querySelector(form.dataset.filter) : null;
+  if (!scope) continue;
   const items = [...scope.querySelectorAll<HTMLElement>('[data-item]')];
   const groups = [...scope.querySelectorAll<HTMLElement>('[data-group]')];
   const count = form.dataset.count ? document.querySelector(form.dataset.count) : null;
@@ -100,33 +102,16 @@ for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]
       return;
     }
     summary.hidden = false;
-    const head = document.createElement('span');
-    head.className = 'active-l';
-    head.textContent = '絞り込み中:';
-    const chips = parts.map(([name, value], i) => {
-      const [label, text, clear] = describe(name, value);
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'active-chip';
-      b.setAttribute('aria-label', `${label ? `${label} ` : ''}${text} の条件を外す`);
-      b.textContent = `${label ? `${label}: ` : ''}${text}`;
-      const x = document.createElement('span');
-      x.setAttribute('aria-hidden', 'true');
-      x.textContent = '×';
-      b.append(x);
-      b.addEventListener('click', () => { clear(); refocus = i; apply(); });
-      return b;
-    });
-    const all = document.createElement('button');
-    all.type = 'button';
-    all.className = 'more';
-    all.textContent = 'すべて外す';
-    all.addEventListener('click', () => {
-      for (const el of form.elements) reset(el);
-      refocus = 0;
-      apply();
-    });
-    summary.replaceChildren(head, ...chips, ...(parts.length > 1 ? [all] : []));
+    const ds = parts.map(([name, value]) => describe(name, value));
+    summary.replaceChildren(...filterChips(
+      ds.map(([label, text]) => ({ label, text })),
+      (i) => { ds[i][2](); refocus = i; apply(); },
+      () => {
+        for (const el of form.elements) reset(el);
+        refocus = 0;
+        apply();
+      },
+    ));
     settleFocus();
   };
 

@@ -6,14 +6,15 @@
 // 図があるときは（open でないとき）、PC の幅で列を図の年度にそろえ（左の列は図の左の余白 --plot-l。scripts/charts.ts の drawSeika が入れる）、
 // 図の帯と同じく最新でない計画期間の列に地の色を敷き、期間の変わり目に縦の線を引く。
 // open は図を描けない指標（目標が「〜との差の縮小」など）で、表を開いて出すとき
-import { LATEST, yearLabel, planIndex, withUnit, refText, type SeikaGroup } from '../lib/data.ts';
+import { isBlankCell } from '../lib/text.ts';
+import { LATEST, PLAN_PERIODS, yearLabel, planIndex, withUnit, refText, type SeikaGroup } from '../lib/data.ts';
 
 interface Props { row: SeikaGroup; open?: boolean }
 const { row, open = false } = Astro.props;
 const aligned = !open;
 const unit = row.latest.unit;
 // 計画期間（図と同じく、報告がある期間だけ）と、その期間の最後の報告
-const periods = [[2022, 2023, 2024], [2025, 2026, 2027]].flatMap((ys) => {
+const periods = PLAN_PERIODS.flatMap((ys) => {
   const r = ys.map((y) => row.years[y]).filter((x) => x != null).pop();
   return r ? [{ ys, r, cur: ys.includes(row.latest.year) }] : [];
 });
@@ -21,7 +22,7 @@ const cols = periods.flatMap((p) => p.ys.map((y, i) => ({ y, p, first: i === 0, 
 const cell = (k: number, ...more: (string | false)[]) => ['num', ...more, k > 0 && cols[k].first && 'sep', !cols[k].p.cur && 'off'];
 const span = (p: (typeof periods)[number], ...more: (string | false)[]) => ['num', ...more, p !== periods[0] && 'sep', !p.cur && 'off'];
 // 計画値の欄が空・「―」の年度（目標値が文の成果指標など）は —
-const planOf = (p: (typeof periods)[number], y: number) => { const v = p.r.plan_raw?.[planIndex(y)]; return v && /[^\s\-－―—‐]/.test(v) ? withUnit(v, unit) : '—'; };
+const planOf = (p: (typeof periods)[number], y: number) => { const v = p.r.plan_raw?.[planIndex(y)]; return v && !isBlankCell(v) ? withUnit(v, unit) : '—'; };
 const rateOf = (r: (typeof cols)[number]['rep']) => (r ? (r.rate != null ? `${r.rate}%` : r.rate_raw || '—') : '—');
 ---
 <details open={open}>

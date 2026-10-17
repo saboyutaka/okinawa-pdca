@@ -3,8 +3,9 @@
 // 戻る・進むで読み直したときに、絞り込む前の目次と空の欄が見えてから描き直していた。名前とリンクだけを JSON で配り、スクリプトが描く（scripts/tree.ts）。
 // ファイルの名前に中身のハッシュを入れ（/mokuji/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
-import { createHash } from 'node:crypto';
 import { LATEST, budgetOf, commonShisakuCount, getPlanTree } from './data.ts';
+import { sha8 } from './hashed.ts';
+import { once } from './memo.ts';
 
 // JSON の形（ブラウザのスクリプト scripts/tree.ts もこの型で読む）。木の並び・中身は lib/data.ts の getPlanTree と同じ
 export type TreeLink = [name: string, href: string];
@@ -47,10 +48,9 @@ function build(): TreeData {
 }
 
 // 書き出す JSON（1回のビルドで1度だけ作る）
-let json: string | undefined;
-export const treeDataJson = () => (json ??= JSON.stringify(build()));
+export const treeDataJson = once(() => JSON.stringify(build()));
 // 書き出す場所。名前は中身の SHA-256 の先頭8桁（取組をさがすのデータ lib/search-data.ts と同じ）
-export const treeDataHash = () => createHash('sha256').update(treeDataJson()).digest('hex').slice(0, 8);
+export const treeDataHash = () => sha8(treeDataJson());
 export const treeDataPath = () => `/mokuji/data-${treeDataHash()}.json`;
 // 名前の変わらない控え。公開し直した直後に、キャッシュした前のページ（5分）から開くと、前のハッシュのファイルはもう無いので、こちらを読む
 export const TREE_DATA_FALLBACK = '/mokuji/data.json';

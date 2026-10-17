@@ -27,7 +27,7 @@ const b = j.budget || {};
       {yearLabel(j.year)}: 成果目標の達成率 {j.rate_raw || '—'}{b.total != null && <>・予算額 {yen(b.total)}{b.rate != null && <>（執行率 {b.rate}%）</>}</>}
     </div>
   </div>
-  <Stamps items={ikkatsuStamps(g)} label="年度ごとの事後評価" size="small" />
+  <Stamps items={ikkatsuStamps(g)} label="年度ごとの事後評価" />
 </li>
 
 <style>
