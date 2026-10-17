@@ -49,12 +49,8 @@ test('転送の書き方の誤りを見つける', () => {
   assert.equal(checkUrls(['about/'], pages, []).problems.length, 1);
 });
 
-test('一覧を書き直すとき、消えた URL は残し、prune のときだけページも転送も無いものを消す', () => {
-  const listed = ['/', '/gone/', '/old/'];
-  const pages = ['/', '/new/'];
-  const redirects = [r('/old/', '/new/')];
-  assert.deepEqual(updateUrlList(listed, pages, redirects), ['/', '/gone/', '/new/', '/old/']);
-  assert.deepEqual(updateUrlList(listed, pages, redirects, true), ['/', '/new/', '/old/']);
+test('一覧を書き直すとき、いまのページの URL を足し、消えた URL は残す', () => {
+  assert.deepEqual(updateUrlList(['/', '/gone/', '/old/'], ['/', '/new/']), ['/', '/gone/', '/new/', '/old/']);
 });
 
 test('ROUTES と src/pages の動的なページが1対1', () => {
@@ -89,7 +85,7 @@ test('公開した URL の一覧（urls.txt）にある URL は、どれもペ�
   assert.deepEqual(
     missing.slice(0, 20),
     [],
-    `一覧にある ${missing.length} 件の URL のページが無くなった。公開した後なら public/_redirects で新しい URL へ転送し、公開前なら make urls PRUNE=1 で一覧から消す（docs/site.md の 8章）`,
+    `一覧にある ${missing.length} 件の URL のページが無くなった。public/_redirects で新しい URL へ転送する（docs/site.md の 8章）`,
   );
   if (unlisted.length) t.diagnostic(`一覧に無いページが ${unlisted.length} 件ある（make urls で足す）`);
 });
