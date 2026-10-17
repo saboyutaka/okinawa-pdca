@@ -21,6 +21,7 @@
 import { esc } from '../lib/html.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { TreeData, TreeKihon, TreeLink, TreeShisaku, TreeTenkai, TreeVision } from '../lib/tree-data.ts';
+import { getJsonOr } from './fetch-json.ts';
 import { bump, reveal } from './motion.ts';
 
 // ---------------------------------------------------------------- 描く
@@ -81,12 +82,6 @@ function visionRow(v: TreeVision) {
 }
 
 // ---------------------------------------------------------------- 読み込み
-
-async function load(url: string) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(String(r.status));
-  return r.json() as Promise<TreeData>;
-}
 
 // 離れるときに残す、開き方・出す指標・スクロールの位置（history.state の tree）。src は描いたデータで、データが変わったら（公開し直したら）使わない
 interface Saved { src: string; open: number[]; show: string[]; y: number }
@@ -172,7 +167,7 @@ async function init(tree: HTMLElement) {
   const src = tree.dataset.src!;
   let data: TreeData;
   try {
-    data = await load(src).catch(() => load(tree.dataset.fallback!));
+    data = await getJsonOr<TreeData>(src, tree.dataset.fallback!);
   } catch {
     tree.removeAttribute('aria-busy');
     if (msg) msg.textContent = '目次を読み込めませんでした。時間をおいて、ページを再読み込みしてください。';

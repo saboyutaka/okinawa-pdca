@@ -17,6 +17,7 @@ import { iconSvg, type Tone } from '../lib/icons.ts';
 import { mapLabel, type TierCount } from '../lib/map-label.ts';
 import { matchRanges, matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { MapData, MapSearch } from '../lib/map-data.ts';
+import { getJsonOr } from './fetch-json.ts';
 import { bump, reveal } from './motion.ts';
 
 type Cat = [key: string, label: string, tone: Tone];
@@ -46,11 +47,6 @@ const marked = (text: string, words: SearchWord[]) => {
     at = b;
   }
   return out + esc(text.slice(at));
-};
-const getJson = async <T>(url: string) => {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(String(r.status));
-  return (await r.json()) as T;
 };
 
 const form = document.querySelector<HTMLFormElement>('form[data-map-form]');
@@ -94,8 +90,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
     if (searchState !== 'idle' && searchState !== 'error') return;
     searchState = 'loading';
     apply();
-    getJson<MapSearch>(form.dataset.search!)
-      .catch(() => getJson<MapSearch>(form.dataset.searchFallback!))
+    getJsonOr<MapSearch>(form.dataset.search!, form.dataset.searchFallback!)
       .then((s) => {
         if (tiers.some((t) => s[t.kind].check !== t.head.dataset.check)) {
           searchState = 'stale';
@@ -112,7 +107,7 @@ function init(form: HTMLFormElement, root: HTMLElement) {
 
   // 指標の中身の JSON。名前にハッシュの付いたファイルが無ければ（公開し直した直後に前のページから開いたとき）控えを読む。読めなければ次に押したときにまた読む
   const load = (t: Tier) => {
-    t.data ??= getJson<MapData>(t.head.dataset.src!).catch(() => getJson<MapData>(t.head.dataset.fallback!));
+    t.data ??= getJsonOr<MapData>(t.head.dataset.src!, t.head.dataset.fallback!);
     t.data.catch(() => { t.data = undefined; });
     return t.data;
   };

@@ -5,6 +5,7 @@
 import { iconSvg } from '../lib/icons.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { SearchData as Data, SearchSummary as Summary } from '../lib/search-data.ts';
+import { getJson, getJsonOr } from './fetch-json.ts';
 import { bump } from './motion.ts';
 
 const form = document.getElementById('tf') as HTMLFormElement | null;
@@ -233,22 +234,8 @@ function search(form: HTMLFormElement) {
     showMore();
     list.children[first]?.querySelector<HTMLElement>('a')?.focus();
   });
-  async function load<T>(url: string) {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(String(r.status));
-    return r.json() as Promise<T>;
-  }
-  // 名前にハッシュの付いたファイル（ずっとキャッシュされる）を読む。公開し直した直後に、キャッシュした前のページから開くと
-  // 前のハッシュのファイルはもう無いので、名前の変わらない控えを読む
-  async function loadOr<T>(src: string, fallback: string) {
-    try {
-      return await load<T>(src);
-    } catch {
-      return load<T>(fallback);
-    }
-  }
   const { src, fallback, summarySrc, summaryFallback } = list.dataset as Record<string, string>;
-  const dataLoad = loadOr<Data>(src, fallback);
+  const dataLoad = getJsonOr<Data>(src, fallback);
   dataLoad
     .then((d) => {
       data = d;
@@ -262,7 +249,7 @@ function search(form: HTMLFormElement) {
   // やったことは、キーワードで探すときにしか使わないので、キーワードの欄に入ったときに読む（最初の一覧はこれを待たない）
   let summaryLoad: Promise<void> | undefined;
   function loadSummary() {
-    summaryLoad ??= Promise.all([dataLoad, loadOr<Summary>(summarySrc, summaryFallback)])
+    summaryLoad ??= Promise.all([dataLoad, getJsonOr<Summary>(summarySrc, summaryFallback)])
       .then(async ([d, s]) => {
         if (s.hash === d.summary) {
           summary = s.rows;
@@ -270,7 +257,7 @@ function search(form: HTMLFormElement) {
         }
         // 片方だけ控えを読むと、データとやったことの版が違うことがある（公開し直した直後で、片方が前の版のままブラウザにキャッシュされているとき）。
         // そのときは両方を控えから読み直す（行の並びで対応させているので、合わないと別の取組のやったことで当たってしまう）
-        [d, s] = await Promise.all([load<Data>(fallback), load<Summary>(summaryFallback)]);
+        [d, s] = await Promise.all([getJson<Data>(fallback), getJson<Summary>(summaryFallback)]);
         if (s.hash !== d.summary) throw new Error('版が合わない');
         data = d;
         summary = s.rows;

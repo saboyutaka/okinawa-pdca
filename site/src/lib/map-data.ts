@@ -6,12 +6,12 @@
 // 並びは報告書の順（将来像 → 基本施策・施策の番号 → 施策の中の並び）で、良い・悪いで並べ替えない。
 // 活動指標は主な取組ごとに1マス（延べ件数。いくつかの施策に載る取組は施策ごとに1マス）で、色は活動指標の実績から県が決める取組の進捗状況。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
-import { createHash } from 'node:crypto';
 import {
   YEARS, LATEST, STATUSES, RATE_BINS, SHUYOU_BINS, load, yearLabel, planIndex, withUnit, refText, eraRef, halfWidth, sameScale,
   getShuyouStatus, getKihonList, shuyouBin, shuyouRateText, sameShuyouCard, shuyouCardHref, getSeikaGroups, seikaName, seikaDept, rateBin, rateText,
   getTorikumiGroups, statusOf, budgetOf, activityAchievement, activityAchievements, shuyouBinOf, type TorikumiGroup, type ShuyouStatus, type CellItem,
 } from './data.ts';
+import { sha8 } from './hashed.ts';
 import { esc } from './html.ts';
 import { themeIdsOf } from './themes.ts';
 import type { Tone } from './icons.ts';
@@ -194,7 +194,6 @@ export function mapRows() {
 // 年度ごとのマスの数（YEARS の順）
 export const mapCounts = (kind: MapKind) => YEARS.map((_, i) => mapCells(kind).filter((c) => c.c[i] !== '-').length);
 
-const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
 // マスの並びと区分の目印。公開し直した直後に、キャッシュした前のページ（5分）が新しい控えの JSON を読んだとき、マスの並びが違えば別の指標の中身を出してしまうので、
 // JSON とページのマス目（data-check）の両方に書き、同じときだけ中身を出す
 export const mapCheck = (kind: MapKind) => sha8(JSON.stringify(mapCells(kind)));

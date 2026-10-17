@@ -4,11 +4,11 @@
 // 行は配列で持ってファイルを小さくする（並びは fields のとおり。summary の rows も data の rows と同じ並び）。
 // ファイルの名前に中身のハッシュを入れ（/torikumi/data-<ハッシュ>.json）、ブラウザにずっとキャッシュさせる（public/_headers）。中身が変われば名前も変わる。
 // ビルドの中でだけ使う（Node の機能を使う。ブラウザのスクリプトは型だけを読む）
-import { createHash } from 'node:crypto';
 import { YEARS, STATUSES, DEPTS, getShisakuList, getTorikumiGroups, commonShisakuCount } from './data.ts';
 import { getThemes, themeIdsOf } from './themes.ts';
 import { kankoOfPdca } from './plans.ts';
 import type { Tone } from './icons.ts';
+import { sha8 } from './hashed.ts';
 
 // JSON の形（ブラウザのスクリプト pages/torikumi/index.astro もこの型で読む）
 export interface SearchData {
@@ -32,8 +32,6 @@ export interface SearchSummary {
   hash: string;
   rows: string[];
 }
-
-const sha8 = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 8);
 
 function buildSummary(): SearchSummary {
   // キーワードで探すだけで、一覧の行には、ここにだけ当たったときに出す
@@ -93,4 +91,3 @@ export const searchSummaryPath = () => `/torikumi/summary-${searchSummaryHash()}
 export const SEARCH_DATA_FALLBACK = '/torikumi/data.json';
 export const SEARCH_SUMMARY_FALLBACK = '/torikumi/summary.json';
 
-export const jsonResponse = (body: string) => new Response(body, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
