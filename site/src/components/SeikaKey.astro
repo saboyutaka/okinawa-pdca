@@ -1,27 +1,14 @@
 ---
 // 成果指標のゴールまでの道のりの図の凡例。施策ページの図（SeikaChart）の節の頭と、一覧の行の小さな図（SeikaSpark）の上に、1回だけ出す。
 // 一覧（mini）では、横が報告年度 R4〜R9 で地の色が前期だと添える。図は読み上げない（数字は文と「表で見る」にある）ので、凡例も読み上げない
-// plan={false} は、計画の道すじとゴールのある図がないページ（目標値が文の成果指標だけの施策）。
-// goal は、計画の道すじを引かずゴールの丸だけを置く図（主要指標）。plan={false} と合わせて使う。図の全体に地を敷き前期の地を濃くするので、
-// 前期の印もその色にし、道すじの頭でないと分かりにくいスタートの点も凡例に出す
 // rm は観光ロードマップの一覧の図（RmSeikaSpark）。横は R4〜R6 で、計画期間が1つなので地の色は無い
-// rate は、行の右の数が何かを、行ごとに書かずにここで1回だけ書く（shuyou は主要指標の達成率）。行の読み上げ用の文に達成率があるので
-// 読み上げは図の凡例と同じく外し、用語の説明のボタンだけを押せるように残す
-import Term from './Term.astro';
 
-interface Props { mini?: boolean; plan?: boolean; goal?: boolean; rm?: boolean; rate?: 'shuyou' }
-const { mini = false, plan = true, goal = false, rm = false, rate } = Astro.props;
+interface Props { mini?: boolean; rm?: boolean }
+const { mini = false, rm = false } = Astro.props;
 ---
-<ul class="chart-key seika-key" aria-hidden={rate ? undefined : 'true'}>
-  {mini && <li aria-hidden={rate && 'true'}>図（{rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
-  {mini && !rm && <li aria-hidden={rate && 'true'}><span class:list={['k-band', goal && 'on-frame']}></span>前期（R4〜R6）</li>}
-  {plan && <li aria-hidden={rate && 'true'}><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴール）</li>}
-  {goal && <li aria-hidden={rate && 'true'}><span class="k-start"></span>スタート</li>}
-  {goal && <li aria-hidden={rate && 'true'}><span class="k-ring"></span>ゴール</li>}
-  <li aria-hidden={rate && 'true'}><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
-  {rate === 'shuyou' && <li class="k-rate">右の数: <Term word="主要指標の達成率" label="達成率" /></li>}
+<ul class="chart-key seika-key" aria-hidden="true">
+  {mini && <li>図（{rm ? 'R4〜R6' : 'R4〜R9'}）:</li>}
+  {mini && !rm && <li><span class="k-band"></span>前期（R4〜R6）</li>}
+  <li><span class="k-path"></span><span class="k-ring"></span>計画値（最後がゴール）</li>
+  <li><span class="k-dot" style="--k:var(--pop)"></span>実績値</li>
 </ul>
-
-<style>
-  .k-rate { margin-left: 4px; }
-</style>

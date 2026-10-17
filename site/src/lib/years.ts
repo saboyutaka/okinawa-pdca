@@ -11,6 +11,5 @@ const former = (y: number) => y <= 2024;
 export const periodName = (y: number) => (former(y) ? '前期' : '中期');
 // 図の帯の見出しと表の列の分け方（「前期（R4〜R6）」）
 export const periodLabel = (y: number) => `${periodName(y)}（${former(y) ? 'R4〜R6' : 'R7〜R9'}）`;
-export const planLabel = (y: number) => `${periodName(y)}実施計画（${former(y) ? 'R4〜R6' : 'R7〜R9'}）`;
 // 成果指標の計画値の欄は計画期間の3年分が並ぶ。その年度の計画値が何番目か（scripts/check_extracted.py の plan_index と同じ）
 export const planIndex = (y: number) => (former(y) ? y - 2022 : y - 2025);

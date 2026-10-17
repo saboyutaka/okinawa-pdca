@@ -11,7 +11,7 @@ import { RM_LATEST, rmJudgementOf, type KankoSeikaGroup } from '../lib/plans.ts'
 import { joinLines } from '../lib/text.ts';
 import type { SeikaChartYear, SeikaData } from '../scripts/charts.ts';
 
-interface Props { g: KankoSeikaGroup; id?: string }
+interface Props { g: KankoSeikaGroup; id: string }
 const { g, id } = Astro.props;
 const x = g.latest;
 const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;

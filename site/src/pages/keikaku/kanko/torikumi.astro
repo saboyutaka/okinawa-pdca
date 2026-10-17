@@ -98,7 +98,7 @@ const stOf = (g: KankoTorikumiGroup) => {
                       ? <div class="small secondary">沖縄県PDCAの主な取組: {g.pdca.map((p, i) => <>{i > 0 && '、'}<a class="sub-link" href={p.href}>{p.name ?? t.name}</a></>)}</div>
                       : <div class="small secondary">観光ロードマップにしか無い取組</div>}
                   </div>
-                  <Stamps items={stamps} label={`${years.map(yearLabel).join('・')}の進捗状況`} size="small" />
+                  <Stamps items={stamps} label={`${years.map(yearLabel).join('・')}の進捗状況`} />
                 </li>
               );
             })}

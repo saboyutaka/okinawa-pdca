@@ -139,7 +139,6 @@ export function kankoTenkaiList() {
   }
   return [...m.values()];
 }
-export const kankoTenkai = (id: string) => kankoTenkaiList().find((t) => t.id === id);
 
 // 観光ロードマップの成果指標の行き先（施策展開のページの指標の札）
 export const kankoSeikaAnchor = (shisakuId: string, key: string) => `rms-${shisakuId}-${keySlug(key)}`;

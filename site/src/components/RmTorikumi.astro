@@ -5,7 +5,7 @@ import { yearLabel, yearLong, statusOf, toneOfStatus, sectionHref } from '../lib
 import { RM_LATEST, type KankoTorikumiGroup } from '../lib/plans.ts';
 import { yen } from '../lib/format.ts';
 
-interface Props { g: KankoTorikumiGroup; years: number[]; id?: string }
+interface Props { g: KankoTorikumiGroup; years: number[]; id: string }
 const { g, years, id } = Astro.props;
 const t = g.latest;
 const stamps = years.map((y) => (g.years[y] ? { year: y, tone: toneOfStatus(statusOf(g.years[y])), text: statusOf(g.years[y]) } : { year: y, tone: null, text: '報告なし' }));
@@ -23,7 +23,7 @@ const span = years.length > 1 ? `${yearLabel(years[0])}・${yearLabel(years[year
     <div class="sec">{sectionHref(t.section) ? <a class="sub-link" href={sectionHref(t.section)}>{t.section}</a> : t.section}</div>
     {t.name_note && <div class="sec">{t.name_note}</div>}
   </div>
-  <Stamps items={stamps} label={`${span}の進捗状況`} size="small" />
+  <Stamps items={stamps} label={`${span}の進捗状況`} />
   {t.indicator ? (
     <div class="inset act">
       <div class="act-l">活動指標（{yearLabel(t.year)}）</div>

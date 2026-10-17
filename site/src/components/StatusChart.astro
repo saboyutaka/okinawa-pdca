@@ -7,8 +7,8 @@ import Chip from './Chip.astro';
 import { fmt, pct } from '../lib/format.ts';
 import type { Shape, Tone } from '../lib/icons.ts';
 
-// id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。code は報告書の番号で、名前の後ろに小さく薄く置く。行の右には件数を出す
-interface Row { label: string; sub?: string; code?: string; href?: string; id?: string; counts: Record<string, number> }
+// id は行の名前に付ける（ほかのページからその行へ飛べるように。部局のページの課の行）。行の右には件数を出す
+interface Row { label: string; sub?: string; href?: string; id?: string; counts: Record<string, number> }
 interface Props {
   title: string;
   caption?: string;
@@ -37,7 +37,6 @@ const short = rows.every((r) => r.label.length <= 4 && (r.sub ?? '').length <= 3
       <div class="row">
         <div class:list={['row-label', r.id && 'anchor']} id={r.id}>
           {r.href ? <a class="name-link" href={r.href}>{r.label}</a> : r.label}
-          {r.code && <> <span class="code-no">{r.code}</span></>}
           {r.sub && <span class="row-sub">{r.sub}</span>}
         </div>
         <StatusBar categories={used} counts={r.counts} unit={unit} context={`${r.label} `} />

@@ -28,7 +28,7 @@ const sheet = j.sheet_source ? planSourceLink('ikkatsu', j.sheet_source, j.sheet
     <h3>{j.name}</h3>
     <div class="small secondary">{j.dept || '担当部課の記載なし'}　計画期間 {j.period || '—'}</div>
   </div>
-  <Stamps items={stamps} label="年度ごとの事後評価" size="small" />
+  <Stamps items={stamps} label="年度ごとの事後評価" />
   <div class="now">
     {gr ? <Chip tone={gr.tone} shape={gr.shape} text={`${yearLabel(j.year)}の評価 ${gr.mark} ${gr.key}`} title={gr.note} /> : <Chip text={`${yearLabel(j.year)}の評価なし`} />}
     <span class="small">成果目標の達成率 {j.rate_raw || '—'}</span>
