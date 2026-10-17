@@ -301,6 +301,30 @@ th, td { text-align: left; padding: 8px 10px; border-bottom: 1.5px solid var(--g
 th { font-weight: 700; color: var(--ink-2); white-space: nowrap; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 caption { text-align: left; font-size: 0.875rem; color: var(--ink-2); padding: 4px 0; }
+/* 年度を列にした表（成果指標・主要指標のカード、取組のページの活動指標）。計画期間の変わり目（.sep）に縦の線を引き、最新でない計画期間の列（.off）に図の帯と同じ地の色を敷く。
+   数の値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。文の欄（.text）と基準値・目標値（.start・.goal）は折り返す。
+   かっこの中（累計・内訳・何年度の値か）は下の行に小さく出す */
+.year-table thead th { vertical-align: bottom; }
+.year-table thead small { display: block; font-family: var(--font); font-size: 0.6875rem; font-weight: 400; }
+.year-table .sep { border-left: 1.5px solid var(--line); }
+.year-table .off { background: var(--bg); }
+.year-table td { white-space: nowrap; overflow-wrap: normal; min-width: 4.5em; }
+.year-table td:is(.text, .start, .goal) { white-space: normal; }
+.year-table td.start { text-align: left; }
+.year-table td.goal { text-align: right; }
+.year-table .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
+/* 図があるとき（.aligned）は、列を図の年度にそろえる。左の列（col.lab）は図の左の余白（--plot-l。scripts/charts.ts が入れる）、右の 8px は図の右の余白。
+   値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
+@media (min-width: 641px) {
+  .year-table.aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
+  .year-table.aligned col.lab { width: var(--plot-l, 60px); }
+  .year-table.aligned :is(th, td) { min-width: 0; padding: 6px 4px; text-align: center; }
+  .year-table.aligned td.start { text-align: left; padding-left: 8px; }
+  .year-table.aligned td.goal { text-align: right; padding-right: 8px; }
+  .year-table.aligned th[scope="row"] { text-align: left; padding-left: 0; }
+  .year-table.aligned thead th { font-family: var(--font-num); font-size: 12px; }
+  .year-table.aligned .paren { font-size: 0.75rem; }
+}
 
 details > summary { cursor: pointer; color: var(--link); font-weight: 700; font-size: 0.9375rem; padding: 4px 0; }
 details[open] > summary { margin-bottom: 8px; }

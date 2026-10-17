@@ -274,7 +274,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
           <details open={!run.chart}>
             <summary>{run.chart ? '表で見る' : '年度ごとの計画と実績'}</summary>
             <div class="table-wrap">
-              <table class:list={['progress', run.chart && 'aligned']}>
+              <table class:list={['year-table', 'progress', run.chart && 'aligned']}>
                 <caption class="sr-only">{run.indicator}{run.part && `の${run.part}`}の年度ごとの計画と実績{new Set(cols.map((r) => periodOf(r.y))).size > 1 && '（R6までは前期、R7からは中期の実施計画）'}</caption>
                 <colgroup><col class="lab" /><col span={cols.length} /></colgroup>
                 <thead>
@@ -567,31 +567,13 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); }
   .k-initial { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pop) 45%, var(--paper)) 0 2px, var(--paper) 2px 6px); }
   section details { margin-top: 10px; }
-  /* 年度が列の活動指標の表。期間の変わり目に縦の線を引き、最新でない計画期間の列に図の帯と同じ地の色を敷く */
-  .progress thead th { vertical-align: bottom; }
-  .progress thead small { display: block; font-weight: 400; }
-  .progress .sep { border-left: 1.5px solid var(--line); }
-  .progress .off { background: var(--bg); }
-  /* 値は折り返さない（ページ全体の overflow-wrap: anywhere で「1,80」「0kW」のように割れるため）。入りきらなければ表を横にすべらせる。
-     目標・実績が行ごとに分かれた取組は改行を残し、かっこの中（累計や内訳）は下の行に小さく出す */
-  .progress td { white-space: nowrap; overflow-wrap: normal; }
+  /* 活動指標の表（形は styles/global.css の .year-table）。目標・実績が行ごとに分かれた取組は改行を残す */
   .progress td.lines { white-space: pre; }
-  .progress .paren { display: block; font-size: 0.8125rem; color: var(--ink-2); font-weight: 400; }
   .progress :global(.chip) { white-space: nowrap; }
-  /* 図のある活動指標は、列を図の年度にそろえる。左の列は図の左の余白（--plot-l。scripts/charts.ts の drawKatsudou が入れる）、右の 8px は図の右の余白。
-     値は図の点の真下に置き、文字は図の目盛りに近い大きさにする。スマホの幅では年度の列が狭すぎるので、そろえずに横にすべらせる */
-  @media (min-width: 641px) {
-    .aligned { table-layout: fixed; width: calc(100% - 8px); font-size: 0.8125rem; }
-    .aligned col.lab { width: var(--plot-l, 60px); }
-    .aligned th, .aligned td { min-width: 0; padding: 6px 4px; text-align: center; }
-    .aligned th[scope="row"] { text-align: left; padding-left: 0; }
-    .aligned thead th { font-family: var(--font-num); font-size: 12px; }
-  }
-  td.num { white-space: normal; min-width: 5em; }
   /* 予算事業ごとの表。予算事業の名前の行の下に 当初予算額 → 決算見込額 → 決算額 の行。金額は折り返さず、入りきらなければ表を横にすべらせる */
   .budget tr.grp th { padding-top: 14px; color: var(--ink); white-space: normal; }
   .budget tr.grp small { margin-left: 12px; font-weight: 400; }
-  .budget td.num { white-space: nowrap; overflow-wrap: normal; }
+  .budget td.num { white-space: nowrap; overflow-wrap: normal; min-width: 5em; }
   .cad { margin-top: 14px; }
   .cad-h { font-family: var(--font-display); font-weight: 700; color: var(--ink); font-size: 1.02rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
   .cad-h :global(.chip) { font-weight: 400; }
@@ -622,6 +604,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .typed li { display: grid; gap: 2px; }
   .typed .type { font-size: 0.8125rem; color: var(--ink-2); font-weight: 700; }
   @media (max-width: 640px) {
+    /* スマホでは年度の列を詰める（年度別計画の先の年度まで列が多いため） */
     .progress td.num, .progress th.num { min-width: 0; padding-left: 6px; padding-right: 6px; }
     .bud li { grid-template-columns: 5.5em minmax(0, 1fr); }
     .flow > li { grid-template-columns: 32px minmax(0, 1fr); gap: 10px; }
