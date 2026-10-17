@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import FilterMore from '../components/FilterMore.astro';
+import ThemeFilter from '../components/ThemeFilter.astro';
 import Term from '../components/Term.astro';
 import Chip from '../components/Chip.astro';
 import Sz from '../components/Sz.astro';
 import ExtLink from '../components/ExtLink.astro';
 import { YEARS, LATEST, yearLabel, yearLong, DEPTS } from '../lib/data.ts';
-import { getThemes } from '../lib/themes.ts';
 import { MAP_KINDS, MAP_SEARCH_FALLBACK, mapCells, mapCheck, mapCounts, mapDataFallback, mapDataPath, mapRows, mapSearchPath } from '../lib/map-data.ts';
 import { mapLabel } from '../lib/map-label.ts';
 import { LINKS } from '../lib/links.ts';
@@ -21,7 +21,6 @@ import { fmt } from '../lib/format.ts';
 // マス目は1つの画像として読み、Tab で1回だけ止まって矢印キーでマスを移る。マスを押す・移ると、マスの下（入らなければ上）の吹き出しに中身を出す。
 // 頭で年度（新しい年度が上）を選び、キーワード（計画の目次と同じ探し方）・くらしのテーマ・部局・指標ごとの区分で絞り込むと、条件に合わないマスを薄くする
 // （隠さずに、全体の中のどこにあるかを見せる）。条件は URL のクエリに残す
-const themes = getThemes();
 const used = new Set(MAP_KINDS.flatMap((k) => mapCells(k.kind).map((c) => c.dept)));
 const depts = DEPTS.filter((d) => used.has(d.name));
 const at = YEARS.indexOf(LATEST);
@@ -56,12 +55,7 @@ const KIND = {
       </select>
     </label>
     <FilterMore id="map-more">
-      <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-        <select name="theme">
-          <option value="">すべて</option>
-          {themes.map((t) => <option value={t.id}>{t.label}</option>)}
-        </select>
-      </label>
+      <ThemeFilter />
       <label data-label="部局">担当部局
         <select name="dept">
           <option value="">すべて</option>

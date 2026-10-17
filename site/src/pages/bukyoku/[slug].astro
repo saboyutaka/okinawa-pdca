@@ -18,11 +18,12 @@ import Term from '../../components/Term.astro';
 import ShisakuItem from '../../components/ShisakuItem.astro';
 import JudgeLegend from '../../components/JudgeLegend.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import ExtLink from '../../components/ExtLink.astro';
 import SecHead from '../../components/SecHead.astro';
-import { getThemes, themeIdsOf } from '../../lib/themes.ts';
+import { themeIdsOf } from '../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
@@ -255,12 +256,7 @@ const sources = deptSourcePages(dept.name);
         <input type="search" name="q" placeholder="例: 離島、子ども" />
       </label>
       <FilterMore id="dept-more">
-        <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-          <select name="theme">
-            <option value="">すべて</option>
-            {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-          </select>
-        </label>
+        <ThemeFilter />
       </FilterMore>
     </form>
     <div class="active-filters" id="active" hidden></div>

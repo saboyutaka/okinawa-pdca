@@ -4,8 +4,9 @@ import SeikaRow from '../../components/SeikaRow.astro';
 import SeikaKey from '../../components/SeikaKey.astro';
 import Term from '../../components/Term.astro';
 import FilterMore from '../../components/FilterMore.astro';
+import ThemeFilter from '../../components/ThemeFilter.astro';
 import Sz from '../../components/Sz.astro';
-import { getThemes, themeIdsOf } from '../../lib/themes.ts';
+import { themeIdsOf } from '../../lib/themes.ts';
 import {
   LATEST, yearLabel, yearLong, RATE_BINS, JUDGEMENTS, DEPTS, rateBin, seikaDept,
   getSeikaGroups, getKihonList, getShouraizou, seikaHref,
@@ -31,12 +32,7 @@ const depts = DEPTS.filter((d) => rows.some((r) => seikaDept(r.latest) === d.nam
       <input type="search" name="q" placeholder="例: 観光、離島、子ども、二酸化炭素" />
     </label>
     <FilterMore id="seika-more">
-    <label data-label="テーマ"><span class="lbl">くらしのテーマ <span class="own">独自の分類</span></span>
-      <select name="theme">
-        <option value="">すべて</option>
-        {getThemes().map((t) => <option value={t.id}>{t.label}</option>)}
-      </select>
-    </label>
+    <ThemeFilter />
     <label data-label="将来像">将来像
       <select name="s">
         <option value="">すべて</option>
