@@ -2,6 +2,7 @@
 // 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
 import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, compareShisakuId, countBy, type Shisaku, type YearGroup } from './data.ts';
 import { once, onceBy } from './memo.ts';
+import { isBlankCell } from './text.ts';
 import type { Shape, Tone } from './icons.ts';
 import type { IkkatsuJigyoRow, KankoSeikaRow, KankoShisakuRow, KankoTorikumiRow, PlanSourceRow } from './types.ts';
 
@@ -122,7 +123,8 @@ export const kankoTenkaiList = (): KankoTenkai[] =>
 
 // 観光ロードマップの成果指標の行き先（施策展開のページの指標の札）
 export const kankoSeikaAnchor = (shisakuId: string, key: string) => `rms-${shisakuId}-${keySlug(key)}`;
-const NO_VALUE = new Set(['', '―', '-', '－', 'ー']);
+// 最新の実績値の位置。実績値の欄（R4・R5・R6）のうち最後に値があるもの。無ければ -1
+export const rmLatestIndex = (x: KankoSeikaRow) => x.actual_raw.findLastIndex((v) => !isBlankCell(v));
 // 最新の報告（R6）の成果指標を1行ずつにする。最新の実績値（実績値の欄の最後の値と、その参照年）を付ける。
 // 並びは報告書の順（施策の順）。良い・悪いで並べ替えない（前進・横ばい・後退はそれぞれの行の印と、ページの頭の棒で見る）
 // 施策のページの成果指標のカードごとに読む（kankoOfSeika）ので、1度だけ作る
@@ -130,10 +132,10 @@ export const kankoSeikaList = once(() =>
   kankoShisakuList().flatMap((s) =>
     s.seika.filter((g) => g.years[RM_LATEST]).map((g) => {
       const x = g.years[RM_LATEST];
-      const i = x.actual_raw.map((v, j) => (NO_VALUE.has(v) ? -1 : j)).filter((j) => j >= 0).pop();
+      const i = rmLatestIndex(x);
       return {
         ...g, x, rm: s, judgement: x.judgement || 'その他',
-        latestRaw: i != null ? x.actual_raw[i] : '', latestRef: i != null ? x.ref_years[i] || x.years[i] : '',
+        latestRaw: i >= 0 ? x.actual_raw[i] : '', latestRef: i >= 0 ? x.ref_years[i] || x.years[i] : '',
         href: `${kankoTenkaiHref(s.tenkai_id)}#${kankoSeikaAnchor(s.id, g.key)}`,
       };
     }),

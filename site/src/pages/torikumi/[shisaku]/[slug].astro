@@ -25,7 +25,7 @@ import {
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
 import { yen } from '../../../lib/format.ts';
-import { firstSentence } from '../../../lib/text.ts';
+import { firstSentence, isBlankCell } from '../../../lib/text.ts';
 import { torikumiMeta } from '../../../lib/describe.ts';
 import ExtLink from '../../../components/ExtLink.astro';
 import Says from '../../../components/Says.astro';
@@ -279,7 +279,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
       const r = g.years[y];
       const b = recs[y];
       const st = statusOf(r);
-      const plansDone = (b?.improvements || []).filter((x) => (x.plan && !/^[―\-ー－]$/.test(x.plan.trim())) || x.result);
+      const plansDone = (b?.improvements || []).filter((x) => !isBlankCell(x.plan) || x.result);
       // 最新の報告の判定の根拠は、活動指標の図の後に出している
       const basis = y === t.year ? '' : b?.basis;
       const body = !b ? (
@@ -297,7 +297,7 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
                 <ul class="impr">
                   {plansDone.map((x) => (
                     <li class="inset">
-                      {x.plan && !/^[―\-ー－]$/.test(x.plan.trim()) && <div class="impr-plan"><span class="tagline">改善案</span><span class="prose">{x.plan}</span></div>}
+                      {!isBlankCell(x.plan) && <div class="impr-plan"><span class="tagline">改善案</span><span class="prose">{x.plan}</span></div>}
                       <div class="impr-res"><span class="tagline">反映</span><span class="prose">{x.result || '—'}</span></div>
                     </li>
                   ))}

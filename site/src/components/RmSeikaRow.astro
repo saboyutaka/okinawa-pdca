@@ -7,11 +7,12 @@ import Chip from './Chip.astro';
 import RmSeikaSpark from './RmSeikaSpark.astro';
 import { withUnit, refText } from '../lib/data.ts';
 import { rmJudgementOf, type KankoSeikaListRow } from '../lib/plans.ts';
+import { isBlankCell } from '../lib/text.ts';
 
 interface Props { r: KankoSeikaListRow }
 const { r } = Astro.props;
 const x = r.x;
-const u = ['―', '-', '－'].includes(x.unit) ? '' : x.unit;
+const u = isBlankCell(x.unit) ? '' : x.unit;
 const j = rmJudgementOf(r.judgement);
 const ref = refText(r.latestRef);
 const srText = `基準値と比べた判定 ${r.judgement}。基準値 ${withUnit(x.base_raw, u)}、実績値 ${withUnit(r.latestRaw, u)}${ref ? `（${ref}）` : ''}、目標値 ${withUnit(x.target_raw, u)}（R6）`;

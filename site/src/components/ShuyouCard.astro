@@ -13,7 +13,7 @@ import ShuyouSays from './ShuyouSays.astro';
 import ShareMenu from './ShareMenu.astro';
 import ShuyouStatusTag from './ShuyouStatusTag.astro';
 import RouteVals from './RouteVals.astro';
-import { LATEST, yearLabel, refText, withUnit, sameScale, shuyouStatusOfCard, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
+import { LATEST, yearLabel, refText, shuyouUnit, shuyouSteps, shuyouStatusOfCard, type ShuyouGroupOfKihon, type ShuyouPart } from '../lib/data.ts';
 
 // カードの id（g.anchor）は、将来像のページ・指標のマップ・計画の目次・シェア用のページから飛ぶ先。says はこの指標についての評価検証報告書の県の説明
 interface Props { g: ShuyouGroupOfKihon; says?: string }
@@ -22,14 +22,12 @@ const x = g.latest;
 const yl = yearLabel(x.year);
 const split = g.parts.length > 1;
 const tags = shuyouStatusOfCard(g);
-// 図の位が1でない指標（万t-CO₂ など）は、位の書かれていない数に単位を添えない（どの位の数か分からないため）
-const unitOf = (p: ShuyouPart) => (p.scale === 1 ? p.unit : '');
 // 欄の後ろのかっこ（基準年・「速報値」など）は、外側のかっこを外して値の後ろに小さく出す
 const unparen = (s: string) => s.replace(/^\s*[（(]/, '').replace(/[）)]\s*$/, '');
-// スタート → いま → ゴールの値。位は1つの指標の中でそろえる（印字は「3兆2,885億円 → 34,516億円」のようにまちまち。lib/data.ts の sameScale）
+// スタート → いま → ゴールの値（lib/data.ts の shuyouSteps）
 const valsOf = (p: ShuyouPart) => {
   const now = p.latest;
-  const [b, a, t] = sameScale([now.b.text, now.a.text, now.t.text]).map((v) => withUnit(v, unitOf(p)));
+  const [b, a, t] = shuyouSteps(p).map((s) => `${s.text}${s.unit}`);
   return [
     { label: 'スタート', v: b, y: unparen(now.b.note) },
     { label: now.year === LATEST ? 'いま' : `${yl}の報告`, v: a, y: refText(now.a.note), now: true },
@@ -52,7 +50,7 @@ const valsOf = (p: ShuyouPart) => {
       <div class="part">
         {split && <div class="part-head"><h4>{p.label}{p.unit && <span class="secondary small">（{p.unit}）</span>}</h4>{tags.parts[i].map((r) => <ShuyouStatusTag r={r} />)}</div>}
         <RouteVals vals={valsOf(p)} />
-        <SeikaChart row={p} unit={unitOf(p)} drawable={p.drawable} />
+        <SeikaChart row={p} unit={shuyouUnit(p)} drawable={p.drawable} />
         <ShuyouTable g={g} part={p} />
       </div>
   ))}

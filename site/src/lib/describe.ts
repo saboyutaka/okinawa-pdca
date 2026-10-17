@@ -7,7 +7,7 @@ import { YEARS, LATEST, STATUSES, JUDGES, yearLong, yearsLong, judgeOf, withUnit
 import type { ActivityShare } from './katsudou.ts';
 import type { SeikaRow } from './types.ts';
 import { fmt } from './format.ts';
-import { oneLine } from './text.ts';
+import { isBlankCell, oneLine } from './text.ts';
 import { shortName } from './iken.ts';
 
 type Counts = Record<string, number>;
@@ -86,7 +86,7 @@ export function shorten(s: string, max = SUMMARY_MAX): string {
 export function torikumiDescription(o: { statuses: (string | null)[]; year: number; summary: string; indicator: string; section: string; shisaku: string }) {
   const ended = o.statuses.at(-1) ? '' : `（${yearLong(LATEST)}の報告には無い）`;
   // 「-」だけの欄は書かない
-  const text = (v: string) => oneLine(v).trim().replace(/^[-―ー－—]+$/, '');
+  const text = (v: string) => (isBlankCell(v) ? '' : oneLine(v).trim());
   const did = shorten(text(o.summary));
   const didText = did ? `${yearLong(o.year)}にやったこと: ${did}${did.endsWith('。') ? '' : '。'}` : '';
   const indicator = text(o.indicator);

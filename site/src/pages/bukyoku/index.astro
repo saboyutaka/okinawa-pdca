@@ -4,13 +4,12 @@ import Base from '../../layouts/Base.astro';
 import StatusChart from '../../components/StatusChart.astro';
 import Term from '../../components/Term.astro';
 import SecHead from '../../components/SecHead.astro';
-import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, amountEntries, currentDeptOf } from '../../lib/data.ts';
+import { YEARS, LATEST, yearLabel, yearLong, STATUSES, DEPTS, getTorikumiGroups, amountTotal, deptAmountEntries } from '../../lib/data.ts';
 import { fmt, pct, yen } from '../../lib/format.ts';
 import { deptHead } from '../../lib/heads.ts';
 
 const groups = getTorikumiGroups();
 const last = YEARS.length - 1;
-const estimate = amountEntries(LATEST, 'estimate');
 
 const depts = DEPTS.map((d) => {
   const mine = groups.filter((g) => g.dept === d.name);
@@ -31,7 +30,7 @@ const depts = DEPTS.map((d) => {
     seikaOk: head.reached,
     // かかわる施策（関係部等にある施策と、この部局の取組がある施策。lib/data.ts の shisakuDepts）
     shisaku: head.shisaku.length,
-    budget: estimate.filter((e) => currentDeptOf(LATEST, e.shisaku_id, e.key) === d.name).reduce((sum, e) => sum + e.amount, 0),
+    budget: amountTotal(deptAmountEntries(LATEST, 'estimate', d.name)),
   };
 }).filter((d) => d.latest.length > 0 || d.okRates.some(([, n]) => n > 0));
 

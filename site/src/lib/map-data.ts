@@ -78,10 +78,9 @@ interface Built { cells: MapCell[]; data: Omit<MapData, 'check'> }
 
 // 主要指標。マスは最新の報告の概要版の表の行で、ほかの年度は表の順（no）で結ぶ（どの年度も基本施策ごとの行の数は同じ）。R5 は概要版の表が画像で読めない（docs/data.md）。
 // R7で入れ替わった指標は、R6までのマスを別に作る（buildShuyou）
-const half = (raw: string) => halfWidth(raw).replace(/％/g, '%');
 const withRef = (v: string, ref: string | null) => (v && eraRef(ref) ? `${v}（${eraRef(ref)}）` : v || '—');
 function shuyouValues(x: ShuyouGaiyouRow): MapYear['v'] {
-  const [b, a, t] = sameScale([half(x.base_raw), half(x.actual_raw), half(x.target_raw)]);
+  const [b, a, t] = sameScale([halfWidth(x.base_raw), halfWidth(x.actual_raw), halfWidth(x.target_raw)]);
   return [['基準値', withRef(b, x.base_ref)], ['実績値', withRef(a, x.actual_ref)], ['目標値', withRef(t, x.target_ref)], ['達成率', shuyouRateText(x)]];
 }
 // 主要指標を1指標1つの四角にしたときの中身（将来像のページの頭。components/Ladder.astro）。値はマップの吹き出しと同じ最新の報告の値で、名前の下に基本施策を書く

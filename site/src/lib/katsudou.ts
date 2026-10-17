@@ -1,7 +1,7 @@
 // 主な取組の活動指標（取組のページの図と表、活動指標のシェア用のページ）。総括報告書の目標・実績の欄と、部局票の達成割合・年度別計画を、
 // 年度をまたいだ同じ活動指標ごとの run にする（分け方の規則は docs/data.md の 4.1・8章）。ビルドの中でだけ使う（ブラウザの図は ActivityYear の型だけを読む）
 import {
-  LATEST, YEARS, assertUnique, budgetOf, getTorikumiGroups, indicatorOf, katsudouNameKey, keySlug, nameKey, sameKey, statusOf, yearLong, type TorikumiGroup,
+  LATEST, YEARS, assertUnique, budgetOf, formersOf, getTorikumiGroups, indicatorOf, katsudouNameKey, keySlug, nameKey, sameKey, statusOf, yearLong, type TorikumiGroup,
 } from './data.ts';
 import { once, onceBy } from './memo.ts';
 import { KATSUDOU_RENAMES } from './renames.ts';
@@ -51,7 +51,7 @@ export interface ActivityYear {
 }
 export interface ActivityRun {
   indicator: string; // いちばん新しい年度の名前
-  formers: { name: string; years: number[] }[]; // 名前の変わった活動指標をつないだときの、前の年度の名前とその名前で載っていた年度（katsudouKey）
+  formers: { name: string; years: number[] }[]; // 名前の変わった活動指標をつないだときの、前の年度の名前とその名前で載っていた年度（katsudouKey でつなぎ、lib/data.ts の formersOf で選ぶ）
   part: string; // 目標・実績が2行以上の活動指標を行ごとに分けたときの、その行の札（「開催数」「北部」「人」など。分けていなければ ''）
   group: number; // 同じ活動指標のまとまりの番号（0 がいちばん新しい活動指標。行ごとに分けた run は同じ番号）
   unit: string;
@@ -262,10 +262,7 @@ export function activityRuns(g: TorikumiGroup): ActivityRun[] {
     if (cur.years.some((r) => r.future)) planFrom = `${yearLong(LATEST)}の部局の検証票の「年度別計画」`;
   }
   return runs.reverse().flatMap((run, k) => {
-    // 前の年度の名前（書き方の違い（sameKey）だけのものは出さない。成果指標の seikaFormerNames と同じ）
-    const fm = new Map<string, number[]>();
-    for (const { name, y } of run.names) if (sameKey(nameKey(name)) !== sameKey(nameKey(run.indicator))) fm.set(name, [...(fm.get(name) ?? []), y]);
-    const formers = [...fm].map(([name, years]) => ({ name, years }));
+    const formers = formersOf(run.names, run.indicator);
     return splitRows(run.indicator, run.years).map(({ label, years: rows }) => {
       // 単位は、数で読めた値でいちばん多いもの。単位の無い数（「18」「234」）は、そのまとまりの単位とみなす
       const count = new Map<string, number>();
