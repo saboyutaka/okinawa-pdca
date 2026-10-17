@@ -3,7 +3,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Tone } from './icons.ts';
+import type { JudgeKey, Tone } from './icons.ts';
 import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
 import { yearLabel, yearLong, yearsLong } from './years.ts';
@@ -72,7 +72,7 @@ export const statusOf = (t: { status: string }) => t.status || '記載なし';
 export const toneOfStatus = (s: string) => (STATUSES.find((x) => x.key === s) || STATUSES[5]).tone;
 
 // 施策の推進状況（県の判定区分）。R5から施策ごとに公表されている
-export const JUDGES: (Category & { label: string })[] = [
+export const JUDGES: (Category & { key: JudgeKey; label: string })[] = [
   { key: 'A', label: '順調', tone: 'good' },
   { key: 'B', label: '概ね順調', tone: 'warning' },
   { key: 'C', label: '取組は順調だが、成果は遅れている', tone: 'serious' },
@@ -154,7 +154,7 @@ export function seikaVerdict(x: GoalRow) {
     '0%超60%未満': `${yl}の計画値にまだ届いていません`,
     '0%以下': progress != null && progress < 0 ? 'スタートの基準値より悪くなっています' : x.rate_raw === '未達成' ? `${yl}の計画値に届いていません` : 'スタートの基準値から進んでいません',
     '達成率なし': '県の報告書に達成率がありません',
-  }[bin]!;
+  }[bin];
   return { tone: RATE_BINS.find((b) => b.key === bin)?.tone, chip, text, down: nums && target < base };
 }
 

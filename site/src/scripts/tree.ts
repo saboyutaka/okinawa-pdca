@@ -191,9 +191,9 @@ async function init(tree: HTMLElement) {
   interface Row { li: HTMLLIElement; item: HTMLElement; details: HTMLDetailsElement | null; kids: Row[]; parent: Row | null }
   const rowOf = new Map<Element, Row>(); // 名前と li から行へ
   const rows = (ul: Element, parent: Row | null): Row[] =>
-    [...ul.children].filter((li) => !li.classList.contains('leaf-ind')).map((li) => {
+    [...ul.querySelectorAll<HTMLLIElement>(':scope > li')].filter((li) => !li.classList.contains('leaf-ind')).map((li) => {
       const details = li.querySelector<HTMLDetailsElement>(':scope > details');
-      const r: Row = { li: li as HTMLLIElement, item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!, details, kids: [], parent };
+      const r: Row = { li, item: li.querySelector<HTMLElement>(':scope > .tb [role="treeitem"]')!, details, kids: [], parent };
       rowOf.set(li, r).set(r.item, r);
       if (details) r.kids = rows(details.querySelector(':scope > ul')!, r);
       return r;

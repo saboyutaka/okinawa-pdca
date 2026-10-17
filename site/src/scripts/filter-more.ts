@@ -20,6 +20,6 @@ for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-filter-tog
     sr.textContent = `（入っている条件 ${n}）`;
     badge.replaceChildren(num, sr);
   };
-  btn.form?.addEventListener('filters:change', (e) => show((e as CustomEvent<{ n: number }>).detail.n));
+  btn.form?.addEventListener('filters:change', (e) => show(e.detail.n));
   if (btn.form?.dataset.filterN) show(Number(btn.form.dataset.filterN));
 }

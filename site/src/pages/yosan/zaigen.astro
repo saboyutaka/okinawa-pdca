@@ -25,11 +25,12 @@ const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
 const ikCount = ikkatsuRows(ikYear).length;
 const funds = FUNDS.map((f) => {
   const es = estimate.filter((e) => e.fund === f.key);
-  const byName = new Map();
+  const byName = new Map<string, { name: string; amount: number }>();
   for (const e of es) {
     const k = bkey(e.budgetName);
-    if (!byName.has(k)) byName.set(k, { name: e.budgetName, amount: 0 });
-    byName.get(k).amount += e.amount;
+    const g = byName.get(k) ?? { name: e.budgetName, amount: 0 };
+    g.amount += e.amount;
+    byName.set(k, g);
   }
   const top = [...byName.entries()].sort((a, b) => b[1].amount - a[1].amount).slice(0, 3).map(([k, g]) => {
     const l = lines.find((x) => bkey(x.name) === k);

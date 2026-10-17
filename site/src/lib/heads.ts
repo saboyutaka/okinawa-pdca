@@ -64,12 +64,11 @@ export function kihonHead(id: string): AreaHead {
 
 // くらしのテーマ: テーマに入る施策の主な取組・成果指標（lib/themes.ts）
 export function themeHead(t: Theme): AreaHead {
-  const byId = new Map(getShisakuList().map((s) => [s.id, s]));
-  const tori = getTorikumiGroups().filter((g) => g.statuses.at(-1) && t.idSet.has(g.shisaku.id));
+  const tori = getTorikumiGroups().filter((g) => g.latest.year === LATEST && t.idSet.has(g.shisaku.id));
   const seika = getSeikaGroups().filter((r) => r.latest.year === LATEST && t.idSet.has(r.shisaku.id));
   return area(
-    t.ids.map((id) => byId.get(id)!),
-    countBy(tori, (g) => g.statuses.at(-1)!, statusKeys),
+    getShisakuList().filter((s) => t.idSet.has(s.id)),
+    countBy(tori, (g) => statusOf(g.latest), statusKeys),
     seika.map((r) => r.latest),
   );
 }
@@ -77,10 +76,10 @@ export function themeHead(t: Theme): AreaHead {
 // 部局: 主な取組は最新の所管部局で数え（docs/data.md 7.2）、成果指標は担当部課の部局（seikaDept）。
 // かかわる施策は、関係部等に名前がある施策と、関係部等には無いがこの部局の取組がある施策（shisakuDepts）
 export function deptHead(name: string): AreaHead {
-  const tori = getTorikumiGroups().filter((g) => g.dept === name && g.statuses.at(-1));
+  const tori = getTorikumiGroups().filter((g) => g.dept === name && g.latest.year === LATEST);
   return area(
     getShisakuList().filter((s) => shisakuDepts(s).some((d) => d.dept === name)),
-    countBy(tori, (g) => g.statuses.at(-1)!, statusKeys),
+    countBy(tori, (g) => statusOf(g.latest), statusKeys),
     getSeika(LATEST).filter((x) => seikaDept(x) === name),
   );
 }

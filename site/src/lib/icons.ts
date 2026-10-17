@@ -24,7 +24,8 @@ export function iconSvg(tone?: Tone | null, shape?: Shape | null, size = 12) {
 }
 
 // 施策の判定（A〜G）の形と短い言い方。C・D は成果の遅れ（▲）、E・F は取組の遅れ（▼・斜線）
-export const JUDGE_UI: Record<string, { shape: Shape; short: string; hatch?: boolean }> = {
+export type JudgeKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+export const JUDGE_UI: Record<JudgeKey, { shape: Shape; short: string; hatch?: boolean }> = {
   A: { shape: 'circle', short: '順調' },
   B: { shape: 'diamond', short: '概ね順調' },
   C: { shape: 'up', short: '成果が遅れている' },

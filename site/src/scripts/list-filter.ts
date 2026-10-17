@@ -19,7 +19,8 @@ type CheckInput = HTMLInputElement & { type: 'checkbox' | 'radio' };
 const isCheck = (el: Element): el is CheckInput => el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio');
 
 for (const form of document.querySelectorAll<HTMLFormElement>('form[data-filter]')) {
-  const scope = document.querySelector(form.dataset.filter!)!;
+  const scope = form.dataset.filter ? document.querySelector(form.dataset.filter) : null;
+  if (!scope) continue;
   const items = [...scope.querySelectorAll<HTMLElement>('[data-item]')];
   const groups = [...scope.querySelectorAll<HTMLElement>('[data-group]')];
   const count = form.dataset.count ? document.querySelector(form.dataset.count) : null;

@@ -109,7 +109,7 @@ function judgeStamp(key: string | null | undefined, size: number) {
       border: `${size > 80 ? 5 : 3}px solid ${color('line')}`, backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26),
       backgroundImage: ui?.hatch ? hatch() : undefined, boxShadow: size > 80 ? `6px 6px 0 ${color('shadow')}` : undefined, transform: 'rotate(-6deg)',
     },
-    j && icon(j.tone, ui!.shape, size * 0.22),
+    j && icon(j.tone, JUDGE_UI[j.key].shape, size * 0.22),
     txt({ fontSize: size * (j ? 0.5 : 0.4), lineHeight: 1 }, j ? j.key : '—'),
   );
 }
@@ -355,7 +355,7 @@ function judgeStamps(s: Shisaku) {
           width: 48, height: 48, alignItems: 'center', justifyContent: 'center', columnGap: 2, borderRadius: '50%', border: `3px solid ${color('line')}`,
           backgroundColor: mix(color(j ? j.tone : 'blank'), color('paper'), 0.26), backgroundImage: ui?.hatch ? hatch() : undefined,
         },
-        j ? [icon(j.tone, ui!.shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
+        j ? [icon(j.tone, JUDGE_UI[j.key].shape, 12), txt({ fontSize: 22, lineHeight: 1 }, j.key)] : icon(null, null, 22),
       ),
       txt({ fontSize: 16, lineHeight: 1.25, textAlign: 'center', width: W }, ui ? ui.short : y === YEARS[0] ? '未公表' : '判定なし'),
     ));
