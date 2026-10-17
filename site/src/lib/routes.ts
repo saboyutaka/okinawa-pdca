@@ -70,11 +70,8 @@ const URL_LIST_HEAD = [
 ];
 export const urlListText = (urls: string[]) => [...URL_LIST_HEAD, ...urls, ''].join('\n');
 
-// 一覧を書き直す（make urls）。いまのページの URL を足し、消えた URL は残す。prune のときだけ、ページも転送も無い URL を消す（公開前だけ使う）
-export function updateUrlList(listed: string[], pages: string[], redirects: Redirect[], prune = false) {
-  const keep = new Set([...pages, ...redirects.map((r) => r.from)]);
-  return [...new Set([...listed.filter((u) => !prune || keep.has(u)), ...pages])].sort();
-}
+// 一覧を書き直す（make urls）。いまのページの URL を足し、消えた URL は残す（公開した URL を守るため）
+export const updateUrlList = (listed: string[], pages: string[]) => [...new Set([...listed, ...pages])].sort();
 
 // Cloudflare の _redirects の1行（古い URL・新しい URL・状態コード）。line はファイルの行番号
 export interface Redirect {

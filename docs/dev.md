@@ -4,7 +4,7 @@
 
 ## 1. コンテナ
 
-ホストに node や Python のライブラリは入れず、`compose.yaml` のコンテナで動かす（`tools` = Python 3.13 + pdfplumber / PyMuPDF / openpyxl、`site` = node:24-alpine、`shot` = Playwright と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントし、Docker の既定の bridge に載せるので compose はネットワークを作らない）。開発サーバーは http://localhost:4321/（`SITE_PORT=4400 make dev` で変えられる）。
+ホストに node や Python のライブラリは入れず、`compose.yaml` のコンテナで動かす（`tools` = Python と pdfplumber・PyMuPDF・openpyxl、`site` = Node、`shot` = Playwright と Chromium・日本語フォント Noto Sans CJK。どれもリポジトリを `/work` にマウントし、Docker の既定の bridge に載せるので compose はネットワークを作らない）。開発サーバーは http://localhost:4321/（`SITE_PORT=4400 make dev` で変えられる）。
 
 依存パッケージのインストール時のスクリプト（postinstall など）は動かさない（`site/.npmrc`・`scripts/shot/.npmrc` の `ignore-scripts=true`）。コンテナはリポジトリ全体（main では `.git` も）を書き込める形でマウントしているので、悪意のあるパッケージが入っても `.git/hooks` などを書き換えさせないため。いまの依存はスクリプトが無くても動く。スクリプトが要るパッケージを足すときは、要る理由を確かめてから `npm rebuild <名前> --ignore-scripts=false` でそのパッケージだけ動かす。
 
@@ -41,4 +41,4 @@ make shot PAGES="/shisaku/1-1-a-1/ --click .like-btn --top"   # 押してから�
 
 ## 4. git worktree での開発
 
-`.claude/worktrees/<名前>` の中では、Makefile が `compose.worktree.yaml` を重ねて、コンテナと node_modules のボリュームを worktree ごとに分け（`okinawa-pdca-<名前>`）、開発サーバーのポートを名前から決める（4322〜4921。番号は `make help`）。node_modules は初めて動かすときに自動で入る。PDF（`data/raw`・`data/interim`）は worktree には無いので、`make extract` は main で行う。消す前に `make down`。
+`.claude/worktrees/<名前>` の中では、Makefile が `compose.worktree.yaml` を重ねて、コンテナと node_modules のボリュームを worktree ごとに分け（`okinawa-pdca-<名前>`）、開発サーバーのポートを名前から決める（4322〜4921。番号は `make help`）。node_modules は初めて動かすときに自動で入る。PDF（`data/raw`・`data/interim`）は worktree には無いので、PDF を読む `make extract`・`make cross-read`・`make issues` は main で行う。消す前に `make down`。

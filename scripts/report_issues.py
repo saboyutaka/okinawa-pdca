@@ -6,7 +6,7 @@
 
 data/extracted を読んで毎回作り直すので、docs/issues.md は手で編集しない。
 原因を人が調べたものは、下の NOTES・KNOWN_GAPS・BUDGET_NOTES に確認日つきで書く（一覧の各行に表示される）。
-data/raw が無い環境では「取得できなかったファイル」の節を省く。標準ライブラリのみで動作。
+data/raw に県のファイルが無い環境（台帳だけがある worktree や、PDF を移していない PC）では「取得できなかったファイル」の節を省く。標準ライブラリのみで動作。
 """
 from __future__ import annotations
 
@@ -193,20 +193,21 @@ class Report:
             return
         manifest = [json.loads(line) for line in manifest_path.read_text(encoding="utf-8").splitlines() if line.strip()]
         recent = [r for r in manifest if (r.get("fiscal_year") or 0) >= 2022]
-
-        self.h(3, "A3. 取得できなかったファイル")
-        self.p("取得台帳（data/raw/manifest.jsonl）に載っているのに、手元にファイルが無いもの。")
-        # 県サイトは .jp と .lg.jp の両方で同じファイルを配っていて、台帳に別名ホストの記録が残っていることがある。
-        # 同じファイルを取得済みなら欠けではない
-        canon = lambda u: u.replace("://pref.okinawa", "://www.pref.okinawa").replace("pref.okinawa.lg.jp", "pref.okinawa.jp")
-        have = {canon(r["file_url"]) for r in recent if (self.raw / r["local_path"]).exists()}
-        missing = [r for r in recent if not (self.raw / r["local_path"]).exists() and canon(r["file_url"]) not in have]
-        self.count("A3", "取得できなかったファイル", Counter(r["fiscal_year"] for r in missing), "—")
-        self.table(["報告", "取得元", "リンク文言", "理由"],
-                   [[rlabel(r["fiscal_year"]), r["source"], r["referrers"][0]["link_text"],
-                     FILE_REASONS.get((r["source"], r["fiscal_year"])) or FILE_REASONS.get((r["source"], None), "未調査")]
-                    for r in missing])
-        self.p("このほか、県警本部の R6 の検証票と、病院事業局の R5 の検証票は公開ページ自体が見当たらない（台帳に載っていない）。")
+        # 台帳は git に入っているので、ファイルが1つも無ければ、取れていないのではなく PDF の無い環境とみなして A3 を省く
+        if any((self.raw / r["local_path"]).exists() for r in recent):
+            self.h(3, "A3. 取得できなかったファイル")
+            self.p("取得台帳（data/raw/manifest.jsonl）に載っているのに、手元にファイルが無いもの。")
+            # 県サイトは .jp と .lg.jp の両方で同じファイルを配っていて、台帳に別名ホストの記録が残っていることがある。
+            # 同じファイルを取得済みなら欠けではない
+            canon = lambda u: u.replace("://pref.okinawa", "://www.pref.okinawa").replace("pref.okinawa.lg.jp", "pref.okinawa.jp")
+            have = {canon(r["file_url"]) for r in recent if (self.raw / r["local_path"]).exists()}
+            missing = [r for r in recent if not (self.raw / r["local_path"]).exists() and canon(r["file_url"]) not in have]
+            self.count("A3", "取得できなかったファイル", Counter(r["fiscal_year"] for r in missing), "—")
+            self.table(["報告", "取得元", "リンク文言", "理由"],
+                       [[rlabel(r["fiscal_year"]), r["source"], r["referrers"][0]["link_text"],
+                         FILE_REASONS.get((r["source"], r["fiscal_year"])) or FILE_REASONS.get((r["source"], None), "未調査")]
+                        for r in missing])
+            self.p("このほか、県警本部の R6 の検証票と、病院事業局の R5 の検証票は公開ページ自体が見当たらない（台帳に載っていない）。")
 
         self.h(3, "A4. 同じファイルが別の名前でリンクされている")
         self.p("県のページで、リンク文言が違うのに中身（SHA-256）が同じファイル。どちらかが掲載ミスで、本来のファイルが手に入らない。")

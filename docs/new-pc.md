@@ -8,7 +8,7 @@
 | 場所 | 中身 | 新しい PC へ |
 |---|---|---|
 | `data/extracted`・`data/reference`・`data/raw/manifest.jsonl`・`data/raw/pages.jsonl` | 抽出結果・参照データ・取得台帳 | git で移る（clone・pull） |
-| `data/raw/<取得元>/` | 県から取った PDF・zip・巡回したページの HTML（約 2.4GB・約 4,100 ファイル。2026年10月時点） | **zip で移す**（この手順） |
+| `data/raw/<取得元>/` | 県から取った PDF・zip・巡回したページの HTML | **zip で移す**（この手順） |
 | `data/interim` | `data/raw` の zip を展開したもの | 移さない（`make extract` が作り直す） |
 | `site/node_modules`・`site/dist` | サイトの依存・書き出したサイト | 移さない（`make site-install`・`make build`） |
 
@@ -30,7 +30,6 @@
    zip -r -X ~/Desktop/okinawa-pdca-raw.zip data/raw -x 'data/raw/manifest.jsonl' 'data/raw/pages.jsonl' '*.DS_Store'
    ```
 
-   - 2026年10月時点で約 2.0GB、1分ほどかかる。
    - Finder の「圧縮」では作らない（台帳を外せず、`__MACOSX` などが混ざる）。
 
 3. AirDrop・外付けディスク・クラウドストレージなどで新しい PC へ送る。
@@ -65,7 +64,7 @@
    - 「無い」「中身が違う」が出たら、元の PC とコミットが違う（台帳が合っていない）か、zip に入っていない。
    - 「取得していない記録」は、robots.txt で取れない県企業局の古い年度など、元の PC にも無いもの。件数が元の PC と同じならよい。
 
-4. 抽出し直して確かめる（任意。7〜8分）。
+4. 抽出し直して確かめる（任意）。
 
    ```sh
    make extract   # data/interim を作り直して抽出し、公表値と突き合わせる

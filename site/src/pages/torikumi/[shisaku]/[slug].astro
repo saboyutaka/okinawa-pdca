@@ -47,7 +47,7 @@ const first = firstYearOf(g);
 const recs = Object.fromEntries(present.map((y) => [y, budgetOf(y, s.id, g.key)]));
 const latestRec = present.map((y) => recs[y]).find(Boolean);
 const tr = recs[t.year];
-// 部局票の「対応する成果指標」は出さない（docs/site.md の 1章の seikaNameMatches・torikumiOfSeika）
+// 部局票の「対応する成果指標」は出さない（docs/site.md の 1章）
 // 前回までの取組・後続の取組は頭のタイトルの下に並べる。複数の施策に載っている同じ取組（再掲）は、頭の番号の後ろに「2施策に共通」と相手の番号を出し、相手の施策は出典に書く
 const related = relatedOf(g);
 const candidates = [...related.before, ...related.after];

@@ -11,7 +11,7 @@
 | [site/wrangler.jsonc](../site/wrangler.jsonc) | Worker の設定（名前・workers.dev の URL・プレビュー・`/api/` を Worker に通す） |
 | [site/public/_headers](../site/public/_headers) | 配るときのヘッダー（キャッシュ・守りのヘッダー） |
 | [site/public/_redirects](../site/public/_redirects) | 公開した後に変えた URL の転送（[site.md](site.md) の 8章） |
-| [site/worker/api.ts](../site/worker/api.ts) | `/api/` を受ける Worker（いまは、いいねだけ）。`npx wrangler deploy` が `dist` と一緒に上げる |
+| [site/worker/api.ts](../site/worker/api.ts) | `/api/` を受ける Worker。`npx wrangler deploy` が `dist` と一緒に上げる |
 
 ## 2. Workers Builds の設定
 
@@ -29,7 +29,7 @@
 
 - ビルドは `../data/extracted` と `../data/reference` を読むので、リポジトリ全体がチェックアウトされている必要がある（Workers Builds はリポジトリ全体を取得する）。
 - 依存パッケージを入れるときのスクリプトは `site/.npmrc` の `ignore-scripts=true` で動かさない。Cloudflare のビルドで依存を入れるときと `npx wrangler deploy` にも効く。
-- ビルドでは SNS のカードの画像（約2,600枚。[site.md](site.md) の6章）も描き、前のビルドと同じ画像は描き直さない（`site/src/lib/card-cache.ts`）。描いた画像は `node_modules/.astro` に置き、[ビルドキャッシュ](https://developers.cloudflare.com/workers/ci-cd/builds/build-caching/)が次のビルドに残す。効いているかはビルドのログの `[card-cache]` の行（「前のビルドの画像を N 枚使い、M 枚を描いた」）で分かる。キャッシュは最後に読まれてから7日で消え、その次のビルドは全部を描く（手元で約1分半。2回目からは約25秒）。
+- ビルドでは SNS のカードの画像（[site.md](site.md) の6章）も描き、前のビルドと同じ画像は描き直さない（`site/src/lib/card-cache.ts`）。描いた画像は `node_modules/.astro` に置き、[ビルドキャッシュ](https://developers.cloudflare.com/workers/ci-cd/builds/build-caching/)が次のビルドに残す。効いているかはビルドのログの `[card-cache]` の行で分かる。キャッシュは最後に読まれてから7日で消え、その次のビルドは全部を描く。
 
 ## 3. 本番とプレビュー
 
@@ -40,7 +40,7 @@
 
 ## 4. 検索エンジンに載せる
 
-沖縄県への確認が取れたので、2026-10-14 にヘッダーの上のベータ版の帯を外し、2026-10-15 に noindex（全ページの `<meta name="robots">` と、配信時の `X-Robots-Tag`）を外して検索エンジンに載せた。これより後に URL を変えるときは、古い URL から転送する（[site.md](site.md) の 8章）。
+本番のページは検索エンジンに載せている（noindex を出さない。出すのは指標のシェア用のページだけ）。URL を変えるときは、古い URL から転送する（[site.md](site.md) の 8章）。
 
 `robots.txt`（`site/src/pages/robots.txt.ts`）では巡回を止めない。止めると、またページを検索から外したくなったときに noindex が読まれず、URL だけ検索結果に出ることがある。
 

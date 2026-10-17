@@ -66,7 +66,7 @@ export default defineConfig({
   site: SITE.url,
   output: 'static',
   trailingSlash: 'always',
-  // concurrency: ページを並べて書き出す数。SNS のカードの画像（pages/og/[...card].png.ts。約2,600枚）は1枚50ms ほどかかるが、
+  // concurrency: ページを並べて書き出す数。SNS のカードの画像（pages/og/[...card].png.ts）は1枚50ms ほどかかるが、
   // 描くのはメインのスレッドの外（lib/card-render.ts の renderAsync。Node のスレッドは4つ）なので、並べると速くなる。
   // inlineStylesheets: CSS をページの <style> に埋め込まず、/_astro/ のファイルにする（ずっとキャッシュされ、ページを移るたびに送り直さない）。
   // 埋め込むと、Astro はビルド全体の <style> のハッシュ（約40個）をどのページの CSP にも入れる（下の vite.build.cssCodeSplit と docs/site.md の 7章）

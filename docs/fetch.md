@@ -1,6 +1,6 @@
 # 県の報告書の取り方とフォルダ
 
-県サイトから報告書（PDF・zip）を取り、`data/` に置くまでの説明。PDF から何をどう読むかは [data.md](data.md)、別の PC への移し方は [new-pc.md](new-pc.md)。
+県サイトから報告書（PDF・zip）を取り、`data/` に置くまでの説明。PDF から何をどう読むか（抽出）は [data.md](data.md)、別の PC への移し方は [new-pc.md](new-pc.md)。
 
 ## 1. 取得
 
@@ -56,21 +56,4 @@ data/
 ## 4. 方針
 
 - `raw/` は不変。抽出結果は必ず `manifest.jsonl` の `file_url`（＋PDFページ番号）を出典として持つ。
-- PDF・zip・HTMLはリポジトリに含めない（`.gitignore`）。`manifest.jsonl`・`pages.jsonl` はコミットする。
-- 別の PC へは `data/raw` を zip にして移す（[new-pc.md](new-pc.md)）。台帳とそろったかは `python3 scripts/check_raw.py` で確かめる。
-
-## 5. 抽出
-
-ホストに Python のPDFライブラリは入れず、解析用コンテナ（`docker/tools`。[pdfplumber](https://github.com/jsvine/pdfplumber) と [PyMuPDF](https://pymupdf.readthedocs.io/)）で動かす。
-
-```sh
-make extract     # zip展開 → 抽出 → 別の読み方での読み直し → 公表値との突き合わせ → docs/issues.md の作り直し
-make cross-read  # 総括報告書を別の実装（PyMuPDF）で読み直して欄ごとに突き合わせる。食い違いがあれば NG
-make check       # 公表値との突き合わせと紛らわしい文字の検査だけ（ホストの python3）
-```
-
-- 一部だけ読み直す: `docker compose run --rm tools python scripts/extract_soukatsu.py --year 2025`（読み直しの突き合わせも `scripts/cross_read.py --year 2025` で絞れる）、部局票は `scripts/extract_bukyoku.py --source kigyo --year 2025` のように絞る（出力の他の年度・取得元の行は残る）。
-- 入力は総括報告書（soukatsu）の「将来像1〜5」と「付属資料」。どのファイルかは manifest のリンク文言で判定する。
-- 出力は `data/extracted/soukatsu/` の JSON（将来像・基本施策・施策・主な取組・成果指標・主要指標・主要指標の達成状況（概要版）・出典）。サイトはこれを読んでビルドするのでコミットする。
-- 部局別の「主な取組」検証票（様式1）からは、予算事業と金額、取組ごとの Plan・Do・Check・Action の記載を `data/extracted/bukyoku/torikumi.json` に取り出す（`scripts/extract_bukyoku.py`。[data.md](data.md) の 11章）。
-- 施策・主な取組・成果指標・基本施策の件数は、4年度とも概要版の公表値と一致することを `scripts/check_extracted.py` で確認している。進捗の内訳の数件の差は、報告書の欄が空欄・「-」のものによる。施策の判定（A〜G）の数件の差は、概要版が成果指標の達成率を100%で頭打ちにしてから数えているためとみられる（[data.md](data.md) の 6.3）。
+- PDF・zip・HTMLはリポジトリに含めない（`.gitignore`）。`manifest.jsonl`・`pages.jsonl` はコミットする。台帳とファイルがそろっているかは `python3 scripts/check_raw.py` で確かめる。

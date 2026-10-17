@@ -117,7 +117,7 @@ const moves: MoveGroup[] = [
   ] },
 ];
 
-// 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 11.4）
+// 予算（最新の報告。予算事業は最初に出てくる取組の部局に寄せる。docs/data.md 9.3）
 const mineEntries = (kind: AmountKind) => deptAmountEntries(LATEST, kind, dept.name);
 const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
   label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
