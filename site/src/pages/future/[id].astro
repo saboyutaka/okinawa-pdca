@@ -19,7 +19,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import SecHead from '../../components/SecHead.astro';
-import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, trendPoints } from '../../lib/data.ts';
+import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, amountTotal, trendPoints } from '../../lib/data.ts';
 import { pct, yen } from '../../lib/format.ts';
 import { futureDescription } from '../../lib/describe.ts';
 import { futureHead, kihonHead, total } from '../../lib/heads.ts';
@@ -58,8 +58,8 @@ const toriUsed = statusKeys.filter((key) => kihonRows.some((k) => (k.tori.counts
 
 // 予算（R7の決算見込額。同じ予算事業の重複を除いたもの）
 const estimate = amountEntries(LATEST, 'estimate');
-const budget = estimate.filter((e) => e.shisaku_id.startsWith(pre)).reduce((s, e) => s + e.amount, 0);
-const budgetAll = estimate.reduce((s, e) => s + e.amount, 0);
+const budget = amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(pre)));
+const budgetAll = amountTotal(estimate);
 ---
 <Base title={`将来像${v.id} ${v.name}`} description={futureDescription(v.id, v.name, head)} ogType="article">
   <header class:list={['sticker', 'lift', 'badge-head', 'v-hero', `sz-${v.id}`]}>

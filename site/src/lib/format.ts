@@ -10,13 +10,15 @@ export function band(vals: number[]) {
   return lo === hi ? `${lo}割台` : `${lo}〜${hi}割台`;
 }
 
-const oku = new Intl.NumberFormat('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const okuFmt = new Intl.NumberFormat('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 // 決算見込額は千円単位で載っている
 export function yen(senYen: number | null | undefined) {
   if (senYen == null) return '—';
   const v = senYen * 1000;
-  if (v >= 1e8) return `${oku.format(v / 1e8)}億円`;
+  if (v >= 1e8) return `${okuFmt.format(v / 1e8)}億円`;
   if (v >= 1e4) return `${nf.format(Math.round(v / 1e4))}万円`;
   return `${nf.format(v)}円`;
 }
+// 千円単位の金額を億円の数（小数1桁）にする（予算の横棒の長さと、文の中の「約N億円」）
+export const toOku = (senYen: number) => Math.round(senYen / 1e4) / 10;

@@ -1,7 +1,7 @@
 ---
 // 沖縄県PDCA（県が施策と主な取組を毎年度点検する仕組み）の説明。about・data との分け方は docs/design.md の5章
 import Base from '../layouts/Base.astro';
-import { LATEST, yearLong, amountEntries, getFinanceReference } from '../lib/data.ts';
+import { LATEST, yearLong, amountEntries, amountTotal, getFinanceReference } from '../lib/data.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import { TERMS } from '../lib/terms.ts';
@@ -10,7 +10,7 @@ import SecHead from '../components/SecHead.astro';
 import PlanMap from '../components/PlanMap.astro';
 
 // 主な取組の予算事業（最新の報告の決算見込額、重複を除く）と、県の一般会計の規模の比較（目安）
-const torikumiBudget = Math.round(amountEntries(LATEST, 'estimate').reduce((s, e) => s + e.amount, 0) / 1e5);
+const torikumiBudget = Math.round(amountTotal(amountEntries(LATEST, 'estimate')) / 1e5);
 const prefBudget = getFinanceReference().prefecture;
 ---
 <Base title="沖縄県PDCAについて" description="沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策と主な取組の毎年度の点検）の仕組み・計画の階層と指標のつながり・達成率の物差し・用語">

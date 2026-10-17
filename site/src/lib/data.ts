@@ -1405,6 +1405,8 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
   return out;
 }));
 export const amountEntries = (report: number, kind: AmountKind) => amountEntriesOf(report)(kind);
+// 金額の合計（千円）
+export const amountTotal = (es: readonly { amount: number }[]) => es.reduce((s, e) => s + e.amount, 0);
 
 // 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
 // funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）

@@ -27,7 +27,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getTorikumi, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountEntries, currentDeptOf, budgetKey, countStatuses, countRates,
+  FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, currentDeptOf, budgetKey, countStatuses, countRates,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -120,7 +120,7 @@ const mineEntries = (kind: AmountKind) => amountEntries(LATEST, kind).filter((e)
 const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
   label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
   sub: AMOUNT_KINDS[kind].label,
-  amounts: Object.fromEntries(FUNDS.map((f) => [f.key, mineEntries(kind).filter((e) => e.fund === f.key).reduce((s, e) => s + e.amount, 0)])),
+  amounts: Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(mineEntries(kind).filter((e) => e.fund === f.key))])),
 }));
 const topBudgets = [...mineEntries('estimate').reduce((m, e) => {
   const k = budgetKey(e.budgetName);

@@ -30,7 +30,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
-import { KANKO, IKKATSU_YEARS, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
+import { KANKO, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['shisaku/[id]'];
@@ -91,9 +91,8 @@ const toriActive = tRows.filter((r) => r.years[LATEST]);
 const toriEnded = tRows.filter((r) => !r.years[LATEST]);
 // 一括交付金（ソフト）の事業（事後評価の検証シートにこの施策のコードがあるもの）と、観光ロードマップでも評価されている取組の施策
 const ikkatsu = ikkatsuOf(s.id);
-const ikYear = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
-const ikLatest = ikkatsu.filter((g) => g.latest.year === ikYear);
-const ikPast = ikkatsu.filter((g) => g.latest.year !== ikYear);
+const ikLatest = ikkatsu.filter((g) => g.latest.year === IKKATSU_LATEST);
+const ikPast = ikkatsu.filter((g) => g.latest.year !== IKKATSU_LATEST);
 const ikCounts = countGrades(ikLatest.map((g) => g.latest), (j) => j.grade_label);
 const rmShisaku = kankoOfPdcaShisaku(s);
 ---
@@ -237,14 +236,14 @@ const rmShisaku = kankoOfPdcaShisaku(s);
       <p class="small secondary lead">主な取組の評価とは別に、この施策に当たる一括交付金（ソフト）の事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />したもの（◎達成・○概ね達成・△一部達成・未達成）です。</p>
       {ikLatest.length > 0 && (
         <div class="ik-sum">
-          <span class="small secondary">{yearLabel(ikYear)}の評価（{fmt(ikLatest.length)}事業）</span>
+          <span class="small secondary">{yearLabel(IKKATSU_LATEST)}の評価（{fmt(ikLatest.length)}事業）</span>
           {GRADES.filter((x) => ikCounts[x.key]).map((x) => <Chip tone={x.tone} shape={x.shape} text={`${x.mark} ${x.key} ${fmt(ikCounts[x.key])}`} title={x.note} readTitle />)}
         </div>
       )}
       <div class="ikcards">{ikLatest.map((g) => <IkkatsuCard g={g} />)}</div>
       {ikPast.length > 0 && (
         <details class="past">
-          <summary>{yearLong(ikYear)}の事後評価に無い事業（{ikPast.length}）</summary>
+          <summary>{yearLong(IKKATSU_LATEST)}の事後評価に無い事業（{ikPast.length}）</summary>
           <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
         </details>
       )}
