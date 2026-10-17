@@ -175,7 +175,7 @@ const rmCount = new Set(shisaku.flatMap((s) => kankoOfPdcaShisaku(s).map((r) => 
     <p class="small">県の報告書での番号は<strong class="report-no">基本施策 {k.code}</strong>です。</p>
     {src && <p class="small">{yearLong(LATEST)}: <ExtLink href={src.href}>総括報告書（{src.label}）</ExtLink>。主要指標の出典は、主要指標の「表で見る」の表にあります。</p>}
     {hSrc && <p class="small">県によるふりかえり（R4〜R6）: <ExtLink href={hSrc.href}>{hSrc.label.replace(/ \d+ページ$/, '')} {h.page}〜{h.page_end}ページ</ExtLink></p>}
-    {renamed.length > 0 && <p class="small">{renamed.map((x) => `主要指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/about/#kazoekata">年度をつないでいます</a>。</p>}
+    {renamed.length > 0 && <p class="small">{renamed.map((x) => `主要指標「${x.name}」は、${formerText(x.fs)}という名前で載っています。`).join('')}同じ指標として<a href="/data/#kazoekata">年度をつないでいます</a>。</p>}
   </section>
 </Base>
 

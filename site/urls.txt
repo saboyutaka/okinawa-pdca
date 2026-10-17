@@ -19,6 +19,7 @@
 /bukyoku/shoko/
 /bukyoku/somu/
 /code-for-okinawa/
+/data/
 /future/
 /future/1/
 /future/2/
@@ -1924,6 +1925,7 @@
 /kihon/5-5/
 /map/
 /mokuji/
+/pdca/
 /shihyou/
 /shihyou/1-1-a-1/9396c87b/
 /shihyou/1-1-a-2/6062542f/

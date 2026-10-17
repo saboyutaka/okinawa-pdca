@@ -23,7 +23,7 @@ function build() {
   const note = document.createElement('p');
   note.className = 'termpop-note';
   const link = document.createElement('a');
-  link.href = '/about/#yougo';
+  link.href = '/pdca/#yougo';
   link.textContent = '用語の一覧';
   const close = document.createElement('button');
   close.type = 'button';

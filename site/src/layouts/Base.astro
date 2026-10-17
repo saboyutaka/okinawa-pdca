@@ -37,6 +37,7 @@ const ogImage = card
 // その後ろに部局・予算、3つの段をまとめて見る計画の目次と指標のマップを置く。
 // まとまりのあいだには区切りの線を置く。基本施策と主要指標は5つの将来像のページに、活動指標は取組のページの中にあるので、項目を置かない。
 // 個別計画（観光ロードマップ）は計画が1つのうちはナビに置かず、くらしのテーマ・施策・取組のページとフッターから入る。
+// 最後に、県の仕組み（沖縄県PDCAについて）とこのサイトの説明を置く。データについて（出典・数え方・注意点）は、このサイトについての中のページとして扱う。
 // also のページ（基本施策）にいるときも、その項目をいまの場所にする
 const NAV: { href: string; label: string; also?: string[] }[][] = [
   [{ href: '/theme/', label: 'テーマ' }],
@@ -45,7 +46,7 @@ const NAV: { href: string; label: string; also?: string[] }[][] = [
   [{ href: '/torikumi/', label: '取組' }],
   [{ href: '/bukyoku/', label: '部局' }, { href: '/yosan/', label: '予算' }],
   [{ href: '/mokuji/', label: '目次' }, { href: '/map/', label: '指標マップ' }],
-  [{ href: '/about/', label: 'このサイトについて' }],
+  [{ href: '/pdca/', label: '沖縄県PDCAについて' }, { href: '/about/', label: 'このサイトについて', also: ['/data/'] }],
 ];
 const inItem = (n: (typeof NAV)[number][number]) => [n.href, ...(n.also || [])].some((h) => path.startsWith(h));
 // ヘッダーの版の木の板。いつの報告書までのデータかを、最新の対象年度で示す（「令和7年度版」。公表の年と取り違えないよう年度で書く）
@@ -193,6 +194,7 @@ for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES, ...(
           <ul class="foot-links">
             <li><a href="/iken/">意見を伝えたい人へ</a></li>
             <li><a href="/keikaku/">個別計画</a></li>
+            <li><a href="/data/">データについて</a></li>
           </ul>
           <div class="foot-toggles">
             {/* 年の書き方の切り替え（scripts/era.ts。data-src は書き換えのスクリプト）。文字は、いまの書き方でないほうを styles/global.css が選ぶ */}
