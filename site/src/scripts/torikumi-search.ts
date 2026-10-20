@@ -24,7 +24,7 @@ if (form && list && count && unit && noSummary && active && more && q) search({ 
 // 一覧（list）・件数（count と単位 unit）・やったことを読めなかったときの注記（noSummary）・絞り込み中の札（active）・さらに表示（more）・キーワード（q）
 interface Parts { form: HTMLFormElement; list: HTMLElement; count: HTMLElement; unit: HTMLElement; noSummary: HTMLElement; active: HTMLElement; more: HTMLButtonElement; q: HTMLInputElement }
 function search({ form, list, count, unit, noSummary, active, more, q }: Parts) {
-  const PAGE = 50;
+  const PAGE = 200;
   const DELAY = new Set([2, 3, 4]); // やや遅れ・大幅遅れ・未着手
   let data: Data | undefined;
   // やったこと（data.rows と同じ並び）。キーワードで探すときに読む。読めなかったときは summaryFailed
