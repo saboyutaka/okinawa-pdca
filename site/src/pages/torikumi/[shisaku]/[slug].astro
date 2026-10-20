@@ -21,7 +21,7 @@ import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf,
-  sectionHref, sourceLink, relatedOf, budgetCardsOf, commonShisakuCount, firstYearOf, formerNames, formerText, planPath,
+  sectionHref, sourceLink, relatedOf, budgetCardsOf, pastBudgetProjectsOf, yearRuns, commonShisakuCount, firstYearOf, formerNames, formerText, planPath,
   type TorikumiGroup,
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
@@ -114,6 +114,8 @@ const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].
 // 予算の節。最後の報告の予算事業ごとの箱（lib/data.ts の budgetCardsOf）に、決算見込額と同じ予算事業の取組を出す。ほかの年度の金額は予算事業のページに任せる。
 // ほかの取組にも同じ額が書かれている金額（予算事業全体の金額）には「共通」の札（押すと説明と、同じ額が書かれている取組の数。lib/terms.ts の OWN_TERMS）を付ける
 const cards = budgetCardsOf(g);
+// 最後の報告に予算事業が無いときは、前の報告の予算事業のページへつなぐ
+const pastProjects = cards.length ? [] : pastBudgetProjectsOf(g);
 // 部局票に金額が無いときは、総括報告書の最新の報告の決算見込額を書き添える
 const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の予算の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
 ---
@@ -360,6 +362,9 @@ const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の�
         )}
       </div>
     )) : <p class="secondary">{noAmount}</p>}
+    {pastProjects.length > 0 && (
+      <p class="small">前の報告の予算事業: {pastProjects.map((x, i) => <>{i > 0 && '、'}<a class="name-link" href={x.project.href}>{x.name}</a>（{yearRuns(x.years)}）</>)}</p>
+    )}
     {tr?.matchedByName && <p class="small secondary">この取組は、部局の検証票では別の施策に載っているため、名前で結び付けて表示しています。</p>}
   </section>
 

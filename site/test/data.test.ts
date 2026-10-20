@@ -201,7 +201,7 @@ test('budgetKey: 予算事業名の空白と全角の違いを無くす', () => 
 });
 
 test('isNoBudgetName: 予算事業の欄の「―」「なし」などは名前の無いものとし、長音を含む名前は名前とする', () => {
-  for (const s of ['―', '－', '-', 'ー', 'ｰ', '‐', '—', ' ― ', '', null, 'なし', '県事業なし', '予算事業なし', '予算措置なし']) assert.equal(isNoBudgetName(s), true, String(s));
+  for (const s of ['―', '－', '-', 'ー', 'ｰ', '‐', '—', ' ― ', '', null, 'なし', '事業なし', '県事業なし', '予算事業なし', '予算措置なし']) assert.equal(isNoBudgetName(s), true, String(s));
   for (const s of ['エネルギー対策事業', 'ー事業']) assert.equal(isNoBudgetName(s), false, s);
 });
 

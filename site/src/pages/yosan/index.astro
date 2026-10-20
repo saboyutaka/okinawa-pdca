@@ -197,7 +197,7 @@ const budgetCount = getBudgetProjects().length;
       <details class="fund-top anchor" id={`fund-${f.series}`}>
         <summary><span class={`swatch series-${f.series}`}>{f.key}</span>の上位{fmt(f.rows.length)}件</summary>
         <ul class="row-list">{f.rows.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
-        <p class="small"><a href={jigyoSearchHref({ fund: f.key, latest: true })}>{f.key}の予算事業をすべて見る</a></p>
+        <p class="small"><a href={jigyoSearchHref({ fund: f.key, latest: true })}>{f.key}の予算事業を見る</a></p>
       </details>
     ))}
     <p class="small secondary">取組の進捗状況は{yearLong(LATEST)}の報告の判定です。</p>

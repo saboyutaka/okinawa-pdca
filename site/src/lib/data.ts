@@ -8,7 +8,7 @@ import { once, onceBy } from './memo.ts';
 import { foldVariants } from './search.ts';
 import { yearLabel, yearsLong } from './years.ts';
 import { isNumOnly } from './text.ts';
-import { SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
+import { BUDGET_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from './renames.ts';
 import type {
   AmountKind, BudgetBlock, BukyokuFileRow, BukyokuTorikumiRow, ExtractedFiles, FinanceReference, KihonRow, ShisakuRow, ShouraizouRow, ShuyouGaiyouRow, ShuyouRow, SeikaRow, TorikumiRow,
 } from './types.ts';
@@ -913,7 +913,7 @@ export const sameNameElsewhere = (g: TorikumiGroup) => sameNameGroups(g).some((x
 // 同じ施策で、部局票に同じ予算事業名があるもの、または名前が似ているもの（文字の2つ組の一致率 0.5 以上）。年度をまたぐ照合は名前だけなので、その補い。
 // 別の施策のもの（施策の移動。R6まで 3-9-a-3、R7から 3-9-b-3 に載っている「スポーツイベント開催支援」→「スポーツイベント開催の支援」など）は、
 // 同じ予算事業名があり、境目の年度の活動指標も同じもの（katsudouNameKey）。この取組の施策にも同じ名前で載っている取組（再掲）は、同じ施策のほうを出すので除く
-const NO_BUDGET = /^([ー―\-－‐—]|なし|県事業なし|予算事業なし|予算措置なし|)$/;
+const NO_BUDGET = /^([ー―\-－‐—]|なし|事業なし|県事業なし|予算事業なし|予算措置なし|)$/;
 // 予算事業の欄が「―」「なし」など、名前の無いもの（部局票の空欄の書き方）
 export const isNoBudgetName = (s: string | null | undefined) => NO_BUDGET.test(budgetKey(s));
 const budgetNamesOf = onceBy((g: TorikumiGroup) => {
@@ -1339,6 +1339,7 @@ export const getBudgetLines = once((): BudgetLine[] =>
 );
 
 // 報告年度・金額の種類ごとに、同じ予算事業（名前・財源・金額が同じもの）を1回だけ数えた金額の一覧。
+// 財源が「―」の票は、同じ名前・金額で財源の書かれた票があればそちらと同じものとする（data.md の 9.3）。
 // 1つの予算事業が複数の取組に載っているときは、最初に出てくる取組（施策コード順）に寄せる
 export interface AmountEntry extends BudgetLine {
   budgetName: string;
@@ -1349,14 +1350,16 @@ export interface AmountEntry extends BudgetLine {
 }
 // 部局のページなどから同じ組で何度も呼ばれる（部局のページ1つで19回）ので、報告年度・金額の種類ごとに1度だけ作る
 const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => {
+  const lines = getBudgetLines().flatMap((l) => {
+    const v = l[kind];
+    if (l.report !== report || v == null || v === 0 || l.suspect.includes(kind)) return [];
+    return [{ l, v, name: kind === 'initial' ? l.name_next : l.name, source: kind === 'initial' ? l.source_next : l.source }];
+  });
+  const written = new Set(lines.filter((x) => !isNoBudgetName(x.source)).map((x) => `${budgetKey(x.name)}|${x.v}`));
   const seen = new Set<string>();
   const out: AmountEntry[] = [];
-  for (const l of getBudgetLines()) {
-    if (l.report !== report) continue;
-    const v = l[kind];
-    if (v == null || v === 0 || l.suspect.includes(kind)) continue;
-    const name = kind === 'initial' ? l.name_next : l.name;
-    const source = kind === 'initial' ? l.source_next : l.source;
+  for (const { l, v, name, source } of lines) {
+    if (isNoBudgetName(source) && written.has(`${budgetKey(name)}|${v}`)) continue;
     const k = `${budgetKey(name)}|${budgetKey(source)}|${v}`;
     if (seen.has(k)) continue;
     seen.add(k);
@@ -1413,16 +1416,23 @@ export function getSuspects() {
 
 // 予算事業の欄に、県の予算事業の名前ではなく、国や市町村の事業であることだけが書かれたもの（「国直轄」「市町村事業」）。同じ書き方でも同じ予算事業ではない
 const NOT_PREF_BUDGET = /^(国直轄|市町村)(事業)?$/;
-// 予算事業の名前の key。書き方の違い（子供・こども）をそろえる。名前の無いもの・県の予算事業でないものは ''
-const projectKeyOf = (s: string | null | undefined) => (isNoBudgetName(s) || NOT_PREF_BUDGET.test(budgetKey(s)) ? '' : sameKey(budgetKey(s)));
+// 同じ名前が続けて2回以上入った予算事業名（「犯罪抑止対策強化事業犯罪抑止対策強化事業」。部局票の読み取りのくり返し）を1回にしたもの
+const projectName = (s: string) => s.replace(/^(.{4,}?)\1+$/su, '$1');
+// 予算事業の名前の key。書き方の違い（子供・こども）とくり返しをそろえる。名前の無いもの・県の予算事業でないものは ''
+const projectKeyOf = (s: string | null | undefined) => {
+  const k = budgetKey(projectName(s ?? ''));
+  return isNoBudgetName(k) || NOT_PREF_BUDGET.test(k) ? '' : sameKey(k);
+};
+// 名前の似ていない予算事業名の変更のうち、確かめたもの（lib/renames.ts の BUDGET_RENAMES）
+const budgetRenamed = once(() => new Set(BUDGET_RENAMES.map((r) => `${projectKeyOf(r.from)}|${projectKeyOf(r.to)}`)));
 // その報告年度に、どれかの票で決算見込額がある予算事業の名前の key
 const fundedKeys = onceBy((y: number) => new Set(getBudgetRecords().filter((r) => r.year === y).flatMap((r) => r.budgets.filter((b) => b.rows.some((x) => x.estimate)).map((b) => projectKeyOf(b.name)))));
 
 // slug は URL（/yosan/jigyo/<slug>/）で、最初の報告年度の名前の key のハッシュ（あとで名前が変わっても変わらない）。name はいちばん新しい報告での名前、names は報告年度ごとの名前
 export interface BudgetProject { slug: string; href: string; name: string; names: { name: string; y: number }[] }
 // 予算事業。部局票の予算事業の名前（key）ごとにまとめ、名前の変更をつなぐ。つなぐのは、ある取組の票の予算事業 A の翌年度の予算事業名が B で、翌年度のその取組の票に B があり、
-// A は翌年度にどの票でも決算見込額が無く（終わった）、B は前の年度にどの票でも決算見込額が無い（始まった）もの。
-// 取組が、前からある別の予算事業に乗り換えただけのもの（翌年度の予算事業名が続いている予算事業）はつながない
+// A は翌年度にどの票でも決算見込額が無く（終わった）、B は前の年度にどの票でも決算見込額が無い（始まった）もので、A と B の名前が似ているか（文字の2つ組の一致率 0.5 以上）、
+// 確かめた名前の変更（BUDGET_RENAMES）のもの。取組が、前からある別の予算事業に乗り換えただけのもの（翌年度の予算事業名が続いている予算事業）はつながない
 const budgetProjectIndex = once(() => {
   const parent = new Map<string, string>();
   const find = (k: string): string => {
@@ -1439,7 +1449,8 @@ const budgetProjectIndex = once(() => {
       const next = new Set(b.budgets.map((x) => projectKeyOf(x.name)));
       for (const blk of a.budgets) {
         const [from, to] = [projectKeyOf(blk.name), projectKeyOf(blk.name_next)];
-        if (from && to && from !== to && next.has(to) && !fundedKeys(y + 1).has(from) && !fundedKeys(y).has(to)) parent.set(find(to), find(from));
+        if (!from || !to || from === to || !next.has(to) || fundedKeys(y + 1).has(from) || fundedKeys(y).has(to)) continue;
+        if (similarity(projectName(blk.name), projectName(blk.name_next)) >= 0.5 || budgetRenamed().has(`${from}|${to}`)) parent.set(find(to), find(from));
       }
     }
   }
@@ -1450,7 +1461,7 @@ const budgetProjectIndex = once(() => {
       if (!k) continue;
       const m = names.get(k) ?? new Map<number, string>();
       names.set(k, m);
-      if (!m.has(r.year)) m.set(r.year, b.name);
+      if (!m.has(r.year)) m.set(r.year, projectName(b.name));
     }
   }
   const keysOf = new Map<string, string[]>();
@@ -1544,7 +1555,7 @@ export function budgetProjectShared(p: BudgetProject, y: number) {
 // 取組のページの予算の節の、予算事業ごとの箱。この取組の最後の報告（g.latest.year）の部局票の予算の表を予算事業ごとにまとめる
 // （県の予算事業でない表は名前ごと。名前が無く金額も無いか0の表は出さない）。ほかの年度の金額は予算事業のページに任せる。
 // name は票の名前、amount はその年度の決算見込額、sharedWith は同じ予算事業の同じ決算見込額が書かれているほかの取組の数（共通の金額。rootsWithEstimate）、
-// funds は財源、others は同じ年度の票に同じ予算事業が書かれているほかの取組（再掲は1件にし、この取組の再掲は除く）
+// funds は財源（「―」は数えない）、others は同じ年度の票に同じ予算事業が書かれているほかの取組（再掲は1件にし、この取組の再掲は除く）
 export interface BudgetCard { project: BudgetProject | undefined; name: string; amount: number | null; sharedWith: number; funds: string[]; others: SameBudget[] }
 export function budgetCardsOf(g: TorikumiGroup): BudgetCard[] {
   const y = g.latest.year;
@@ -1558,13 +1569,30 @@ export function budgetCardsOf(g: TorikumiGroup): BudgetCard[] {
     const others = project ? usesOfProject(project).filter((u) => u.y === y && repostRoot(u.group) !== self) : [];
     return {
       project,
-      name: isNoBudgetName(bs[0].name) ? '' : bs[0].name,
+      name: isNoBudgetName(bs[0].name) ? '' : projectName(bs[0].name),
       amount,
       sharedWith: project ? Math.max(0, ...bs.map((b) => [...rootsWithEstimate(project, y, blockSum(b, 'estimate'))].filter((r) => r !== self).length)) : 0,
-      funds: [...new Set(bs.flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next))))],
+      funds: [...new Set(bs.flatMap((b) => b.rows.flatMap((r) => { const src = [r.source, r.source_next].find((x) => !isNoBudgetName(x)); return src ? [fundOf(src)] : []; })))],
       others: rowsOf(others),
     };
   }).filter((c) => c.name || c.amount);
+}
+
+// 取組の、最後の報告より前の報告に書かれた予算事業（最後の報告に予算事業の無い取組のページから、予算事業のページへつなぐ）。
+// name はこの取組の票に書かれた名前（最後に書かれた年度のもの）、years は書かれていた報告年度
+export function pastBudgetProjectsOf(g: TorikumiGroup) {
+  const m = new Map<BudgetProject, { project: BudgetProject; name: string; years: number[] }>();
+  for (const y of YEARS.filter((y) => y < g.latest.year && g.years[y])) {
+    for (const b of budgetOf(y, g.shisaku.id, g.key)?.budgets ?? []) {
+      const project = budgetProjectOf(b.name);
+      if (!project) continue;
+      const x = m.get(project) ?? { project, name: '', years: [] };
+      m.set(project, x);
+      x.name = projectName(b.name);
+      if (!x.years.includes(y)) x.years.push(y);
+    }
+  }
+  return [...m.values()];
 }
 
 // 予算事業の金額（予算と財源と同じく、同じ予算事業・財源・金額は1回だけ数えた amountEntries）

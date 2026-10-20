@@ -5,11 +5,11 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
-  amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, budgetCardsOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
+  amountEntries, budgetGroups, budgetKey, isNoBudgetName, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
+  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, budgetCardsOf, pastBudgetProjectsOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
-import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
+import { BUDGET_RENAMES, KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
 import { getThemes, unthemed } from '../src/lib/themes.ts';
 import { allHead, futureHead, themeHead, total } from '../src/lib/heads.ts';
 import { themeIconSvg } from '../src/lib/icons.ts';
@@ -372,17 +372,41 @@ test('再掲は、同じ年度に同じ名前で載っている別の施策の�
   assert.equal(distinctTorikumiCount(2025), 1335);
 });
 
+test('財源が「―」の金額は、同じ報告・同じ予算事業名・同じ金額で財源の書かれたものがあれば数えない', () => {
+  for (const report of YEARS) {
+    for (const kind of ['settled', 'estimate', 'initial'] as const) {
+      const es = amountEntries(report, kind);
+      const src = (e: (typeof es)[number]) => (kind === 'initial' ? e.source_next : e.source);
+      const written = new Set(es.filter((e) => !isNoBudgetName(src(e))).map((e) => `${budgetKey(e.budgetName)}|${e.amount}`));
+      for (const e of es) if (isNoBudgetName(src(e))) assert.ok(!written.has(`${budgetKey(e.budgetName)}|${e.amount}`), `${report} ${kind} ${e.budgetName}`);
+    }
+  }
+  // 家畜伝染病予防事業の R7 の決算見込額 1.5億円は、取組によって財源が「各省計上」と「―」
+  assert.equal(amountTotal(budgetProjectEntries(budgetProjectOf('家畜伝染病予防事業')!).filter((e) => e.report === 2025 && e.kind === 'estimate')), 149955);
+});
+
 test('予算事業は、名前の変更を翌年度の予算事業名でつなぎ、取組が続いている別の予算事業に乗り換えたものはつながない', () => {
-  // R4〜R5 の「国立劇場おきなわ鑑賞層拡大事業」「琉球歴史文化の日周知啓発推進事業」→ R6「琉球歴史文化芸術興隆事業」→ R7「伝統文化活性化事業」
+  // R6「琉球歴史文化芸術興隆事業」→ R7「伝統文化活性化事業」（名前は似ていないが、同じ取組の予算事業の名前の変更。lib/renames.ts の BUDGET_RENAMES）
   const dento = budgetProjectOf('伝統文化活性化事業');
   assert.ok(dento);
-  for (const n of ['琉球歴史文化芸術興隆事業', '国立劇場おきなわ鑑賞層拡大事業', '琉球歴史文化の日周知啓発推進事業']) assert.equal(budgetProjectOf(n), dento, n);
+  assert.equal(budgetProjectOf('琉球歴史文化芸術興隆事業'), dento);
+  // R6 の「琉球歴史文化芸術興隆事業」に1つになった前の予算事業はつながない（2つ以上が1つになったもの）
+  for (const n of ['国立劇場おきなわ鑑賞層拡大事業', '琉球歴史文化の日周知啓発推進事業']) assert.notEqual(budgetProjectOf(n), dento, n);
+  // 名前の似ていない、題材の変わった予算事業（ヘチマ → クルマエビの研究）・広い予算から個別の事業へ移ったものはつながない
+  assert.notEqual(budgetProjectOf('PAV耐性クルマエビ導入事業'), budgetProjectOf('ネクストブレイク島野菜！ナーベーラー特産化事業'));
+  assert.notEqual(budgetProjectOf('プラスチック問題対策普及啓発事業'), budgetProjectOf('万国津梁会議費'));
+  // 名前の似ている変更はつなぐ
+  assert.equal(budgetProjectOf('新たな公共交通システム導入促進事業'), budgetProjectOf('鉄軌道を含む新たな公共交通システム導入促進事業'));
   // 「文化資源を活用した沖縄観光の魅力アップ支援事業」は、R6 にも別の取組で続いているので、この取組が乗り換えただけ
   assert.notEqual(budgetProjectOf('文化資源を活用した沖縄観光の魅力アップ支援事業'), dento);
   assert.notEqual(budgetProjectOf('与那原マリーナ管理運営費'), budgetProjectOf('港湾調査費'));
-  // 書き方の違い（子供・こども）は同じ予算事業。予算事業の欄の「国直轄」「市町村事業」「予算措置なし」は県の予算事業の名前ではない
+  // 書き方の違い（子供・こども）と、同じ名前のくり返しは同じ予算事業。予算事業の欄の「国直轄」「市町村事業」「事業なし」「予算措置なし」は県の予算事業の名前ではない
   assert.equal(budgetProjectOf('沖縄子供の貧困緊急対策事業'), budgetProjectOf('沖縄こどもの貧困緊急対策事業'));
-  for (const n of ['国直轄', '市町村事業', '予算措置なし', '予算事業なし', '―']) assert.equal(budgetProjectOf(n), undefined, n);
+  assert.equal(budgetProjectOf('犯罪抑止対策強化事業犯罪抑止対策強化事業'), budgetProjectOf('犯罪抑止対策強化事業'));
+  assert.equal(budgetProjectOf('犯罪抑止対策強化事業')!.name, '犯罪抑止対策強化事業');
+  for (const n of ['国直轄', '市町村事業', '市町村事業市町村事業', '事業なし', '予算措置なし', '予算事業なし', '―']) assert.equal(budgetProjectOf(n), undefined, n);
+  // 確かめた名前の変更（BUDGET_RENAMES）は、どれも予算事業の名前で、つながっている
+  for (const r of BUDGET_RENAMES) assert.ok(budgetProjectOf(r.from) && budgetProjectOf(r.from) === budgetProjectOf(r.to), `${r.from} → ${r.to}`);
   // 予算事業ごとの金額（重複を除いたもの）は、予算と財源の合計の一部（名前の無い予算事業の分だけ少ない）
   const projects = getBudgetProjects();
   for (const report of YEARS) {
@@ -397,6 +421,10 @@ test('取組の予算は、最後の報告の予算事業ごとの決算見込�
   assert.deepEqual(mg.map((c) => [c.name, c.amount, c.sharedWith, c.others.length]), [['クリーンエネルギーアイランド推進事業', 20813, 4, 4]]);
   // 取組ごとに違う額が書かれている予算事業（街路）は、くり返しではない
   assert.deepEqual(budgetCardsOf(groupOf('1-1-c-4', '街路整備事業（県管理道路）')).map((c) => [c.amount, c.sharedWith, c.others.length]), [[1314857, 0, 1]]);
+  // 最後の報告（R6）の部局票が無い取組は、前の報告の予算事業のページへつなぐ
+  const umi = groupOf('2-4-c-6', '安全対策優良海域レジャー提供業者の普及、取得促進');
+  assert.equal(budgetCardsOf(umi).length, 0);
+  assert.deepEqual(pastBudgetProjectsOf(umi).map((x) => x.years), [[2022, 2023]]);
   // 3つの施策に載っている「伝統芸能の海外公演」は1件（報告書の順で最初の施策）
   const dento = budgetCardsOf(groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演'));
   assert.deepEqual(dento[0].others.filter((x) => x.group.latest.name === '伝統芸能の海外公演').map((x) => x.group.shisaku.id), ['1-4-a-2']);
