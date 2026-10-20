@@ -1298,26 +1298,8 @@ export function budgetOf(year: number, shisakuId: string, key: string): (Bukyoku
 
 // 主な取組1つの予算（取組のページ）。reports は報告年度と、その年度の部局票の予算の表（新しい報告から。部局票の無い報告は入れない）
 export type ReportBudgets = [report: number, blocks: BudgetBlock[]][];
-// 予算の推移。各報告に前年度の決算額・その年度の決算見込額・翌年度の当初予算額が載っているので、年度ごとに確定に近い金額（決算 → 決算見込 → 当初予算）を選ぶ。
-// 1つの取組に予算事業が複数あるときは合計する（桁の誤記の疑いがある金額は入れない）
+// 金額の種類の、確定に近い順（決算額 → 決算見込額 → 当初予算額。予算事業の金額の推移で、お金の年度ごとに選ぶ順）
 const SERIES_KINDS: AmountKind[] = ['settled', 'estimate', 'initial'];
-export function budgetSeriesOf(reports: ReportBudgets) {
-  const byFy = new Map<number, { fy: number; rank: number; kind: AmountKind; amount: number; report: number }>();
-  for (const [y, blocks] of reports) {
-    for (const kind of SERIES_KINDS) {
-      const fy = y + AMOUNT_KINDS[kind].offset;
-      const vals = blocks.flatMap((blk) => blk.rows).flatMap((r) => {
-        const v = r[kind];
-        return v != null && !r.suspect?.includes(kind) ? [v] : [];
-      });
-      if (!vals.length) continue;
-      const rank = SERIES_KINDS.indexOf(kind);
-      const cur = byFy.get(fy);
-      if (!cur || rank < cur.rank) byFy.set(fy, { fy, rank, kind, amount: vals.reduce((a, v) => a + v, 0), report: y });
-    }
-  }
-  return [...byFy.values()].sort((a, b) => a.fy - b.fy);
-}
 // 「表で見る」の予算の表。1つの年度の金額は 当初予算額 → 決算見込額 → 決算額 の順に確定していき、それぞれ前の年度・その年度・次の年度の報告に載っている。
 // 予算事業ごとに、お金の年度を列（活動指標の表と同じ向き）、確定していく順（BUDGET_STAGES）を行にして並べ直す。当初予算額は翌年度の予算事業名（name_next）で載っている。
 // cells のキーは「金額の種類|お金の年度」。fys は列にするお金の年度。isShared を渡すと、ほかの取組にも同じ額が書かれている金額（budgetSharesOf）の升に shared を付ける
@@ -1584,7 +1566,7 @@ export const budgetProjectRows = (p: BudgetProject) => rowsOf(usesOfProject(p));
 
 // 同じ予算事業の取組（取組のページの予算の節）。この取組の予算事業ごとに、同じ年度の報告の部局票に同じ予算事業が書かれている別の取組（再掲はページの頭に出すので除く）。
 // 前後の年度の取組とは結び付けない（relatedOf）。formers はこの取組の票での前の名前、years はほかの取組と同じだった報告年度、
-// partial はこの取組に予算事業がある年度の一部だけのもの。予算事業の並びも、同じだった最後の年度の新しい順。count はほかの取組の数（予算事業をまたいで重ねない）
+// partial はこの取組に予算事業がある年度の一部だけのもの。予算事業の並びも、同じだった最後の年度の新しい順
 export interface SameBudgetGroup { project: BudgetProject; formers: { name: string; years: number[] }[]; years: number[]; partial: boolean; rows: SameBudget[] }
 export function sameBudgetOf(g: TorikumiGroup) {
   // 再掲の取組の票（別の施策の部局票）も同じ取組のものとして見る（行の側でも再掲を1件にしているので、どちらの取組のページからも互いに出る）
@@ -1599,13 +1581,12 @@ export function sameBudgetOf(g: TorikumiGroup) {
     const names = [...new Map(mine.filter((u) => u.project === project).map((u) => [`${u.y}|${u.block.name}`, { name: u.block.name, y: u.y }])).values()].sort((a, b) => a.y - b.y);
     return [{ project, formers: formersOf(names, project.name), years, partial: years.length < own.size, rows }];
   });
-  return { budgets: budgets.sort(newestFirst), count: new Set(budgets.flatMap((b) => b.rows.map((x) => x.group))).size };
+  return budgets.sort(newestFirst);
 }
 
 // 取組の部局票の金額を、この取組だけのものと、ほかの取組（再掲は除く）の同じ予算事業にも同じ額が書かれているもの（予算事業全体の金額をくり返し書いたもの）に分ける。
 // 報告年度・予算の表・金額の種類ごとに、表の金額の合計で比べる。0 と桁の誤記の疑いのある金額は比べない。
-// isShared はその表のその種類の金額がくり返しか、own は くり返しの金額を除いた予算の表（budgetSeriesOf に渡す）、
-// shared は予算事業ごとの、くり返しだった報告年度・ほかの取組・最後の報告のくり返しの金額（決算見込額 → 決算額 → 当初予算額の順に1つ）
+// isShared はその表のその種類の金額がくり返しか、shared は予算事業ごとの、くり返しだった報告年度・ほかの取組・最後の報告のくり返しの金額（決算見込額 → 決算額 → 当初予算額の順に1つ）
 export interface SharedBudget { project: BudgetProject; reports: number[]; others: TorikumiGroup[]; last: { report: number; kind: AmountKind; amount: number } }
 const blockSum = (b: BudgetBlock, kind: AmountKind) => {
   const vs = b.rows.flatMap((r) => (r[kind] != null && !r.suspect?.includes(kind) ? [r[kind]] : []));
@@ -1635,10 +1616,52 @@ export function budgetSharesOf(g: TorikumiGroup) {
     }
   }
   const isShared = (b: BudgetBlock, kind: AmountKind) => kinds.get(b)?.has(kind) ?? false;
-  const own = (reports: ReportBudgets): ReportBudgets =>
-    reports.map(([y, blocks]) => [y, blocks.map((b) => (kinds.has(b) ? { ...b, rows: b.rows.map((r) => ({ ...r, settled: isShared(b, 'settled') ? null : r.settled, estimate: isShared(b, 'estimate') ? null : r.estimate, initial: isShared(b, 'initial') ? null : r.initial })) } : b))]);
   const shared: SharedBudget[] = [...byProject].map(([project, x]) => ({ project, reports: [...x.reports].sort((a, b) => a - b), others: distinctGroups(x.others), last: x.last! }));
-  return { isShared, own, shared: shared.sort((a, b) => b.last.report - a.last.report) };
+  return { isShared, shared: shared.sort((a, b) => b.last.report - a.last.report) };
+}
+
+// 取組のページの予算の節の、予算事業ごとの箱。この取組の部局票の予算の表を予算事業ごとにまとめ（県の予算事業でない表は名前ごと。名前が無く金額も無いか0の表は出さない）、
+// 再掲の取組の票にだけある予算事業も足す（sameBudgetOf）。name は予算事業のいまの名前（予算事業でない表は票の名前。名前の無い表は ''）、formers はこの取組の票での前の名前、
+// last はこの取組の票で金額が書かれた最後の報告の金額（前年度決算額・決算見込額・翌年度当初予算額。shared はほかの取組にも同じ額が書かれているもの）、funds はその報告の財源、
+// same は同じ予算事業の取組、shared は同じ額が書かれていた報告年度とほかの取組。並びは最後の報告の新しい順
+export interface BudgetCard {
+  project: BudgetProject | undefined;
+  name: string;
+  formers: { name: string; years: number[] }[];
+  last: { report: number; amounts: { kind: AmountKind; amount: number | null; shared: boolean }[] } | null;
+  funds: string[];
+  same: SameBudgetGroup | undefined;
+  shared: SharedBudget | undefined;
+}
+export function budgetCardsOf(g: TorikumiGroup): BudgetCard[] {
+  const { isShared, shared } = budgetSharesOf(g);
+  const same = sameBudgetOf(g);
+  const blocks = YEARS.flatMap((y) => (g.years[y] ? budgetOf(y, g.shisaku.id, g.key)?.budgets ?? [] : []).map((b) => ({ y, b, project: budgetProjectOf(b.name) })));
+  const groups = Map.groupBy(blocks, (x) => x.project ?? (isNoBudgetName(x.b.name) ? '' : budgetKey(x.b.name)));
+  const cards = [...groups.values()].map((xs): BudgetCard => {
+    const project = xs[0].project;
+    // 金額が書かれた最後の報告（どの報告にも金額が無ければ最後の報告）
+    const withAmount = xs.filter((x) => SERIES_KINDS.some((k) => blockSum(x.b, k) != null));
+    const report = Math.max(...(withAmount.length ? withAmount : xs).map((x) => x.y));
+    const last = xs.filter((x) => x.y === report).map((x) => x.b);
+    const amounts = SERIES_KINDS.map((kind) => {
+      const vs = last.map((b) => blockSum(b, kind)).filter((v) => v != null);
+      return { kind, amount: vs.length ? vs.reduce((a, v) => a + v, 0) : null, shared: last.some((b) => isShared(b, kind)) };
+    });
+    const names = [...new Map(xs.map((x) => [`${x.y}|${x.b.name}`, { name: x.b.name, y: x.y }])).values()];
+    return {
+      project,
+      name: project?.name ?? (isNoBudgetName(xs[0].b.name) ? '' : xs.at(-1)!.b.name),
+      formers: project ? formersOf(names, project.name) : [],
+      last: { report, amounts },
+      funds: [...new Set(last.flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next))))],
+      same: project && same.find((x) => x.project === project),
+      shared: project && shared.find((x) => x.project === project),
+    };
+  }).filter((c) => c.name || c.last?.amounts.some((a) => a.amount));
+  for (const x of same) if (!cards.some((c) => c.project === x.project)) cards.push({ project: x.project, name: x.project.name, formers: x.formers, last: null, funds: [], same: x, shared: undefined });
+  const lastYear = (c: BudgetCard) => c.last?.report ?? c.same!.years.at(-1)!;
+  return cards.sort((a, b) => lastYear(b) - lastYear(a));
 }
 
 // 予算事業の金額（予算と財源と同じく、同じ予算事業・財源・金額は1回だけ数えた amountEntries）

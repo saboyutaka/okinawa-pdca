@@ -6,7 +6,7 @@ import {
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, shuyouPartCount, childRange, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
-  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, shuyouSteps, formerText, budgetSeriesOf, budgetTableOf, countStatuses, countRates,
+  shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, shuyouSteps, formerText, budgetTableOf, countStatuses, countRates,
   type JudgeTrend, type Pattern, type ShuyouPart,
 } from '../src/lib/data.ts';
 import { activityQty } from '../src/lib/katsudou.ts';
@@ -413,15 +413,6 @@ const amountRow = (x: Partial<BudgetAmountRow>): BudgetAmountRow => ({
   source: '県単等', method: '', source_next: '', method_next: '', settled_raw: '', estimate_raw: '', initial_raw: '', settled: null, estimate: null, initial: null, suspect: [], ...x,
 });
 const block = (name: string, rows: BudgetAmountRow[], nameNext = ''): BudgetBlock => ({ name, name_next: nameNext, rows, page: 1 });
-
-test('budgetSeriesOf: お金の年度ごとに、確定に近い金額（決算 → 決算見込 → 当初予算）を選び、予算事業を合計する（桁の誤記の疑いは入れない）', () => {
-  const series = budgetSeriesOf([
-    [2025, [block('A事業', [amountRow({ settled: 100, estimate: 120, initial: 130 })]), block('B事業', [amountRow({ estimate: 5, suspect: ['initial'], initial: 99999 })])]],
-    [2024, [block('A事業', [amountRow({ settled: 90, estimate: 110, initial: 125 })])]],
-  ]);
-  // 2024年度は R6 の報告の決算見込（110）より、R7 の報告の決算（100）を選ぶ
-  assert.deepEqual(series.map((x) => [x.fy, x.kind, x.amount, x.report]), [[2023, 'settled', 90, 2024], [2024, 'settled', 100, 2025], [2025, 'estimate', 125, 2025], [2026, 'initial', 130, 2025]]);
-});
 
 test('budgetTableOf: 予算事業ごとに、お金の年度の列と金額の種類の行に並べ直す（当初予算額は翌年度の予算事業名で）', () => {
   const { groups, fys } = budgetTableOf([

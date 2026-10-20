@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, sameBudgetOf, budgetSharesOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
+  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, sameBudgetOf, budgetSharesOf, budgetCardsOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
@@ -393,21 +393,20 @@ test('予算事業は、名前の変更を翌年度の予算事業名でつな�
 
 test('同じ予算事業の取組は、この取組の予算事業ごとに、同じ年度の部局票に同じ予算事業がある別の取組で、互いに出る（再掲は1件にし、この取組の再掲は除く）', () => {
   const g = groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演');
-  const { budgets, count } = sameBudgetOf(g);
+  const budgets = sameBudgetOf(g);
   assert.deepEqual(budgets.map((b) => [b.project.name, b.formers, b.years, b.partial]), [
     ['伝統文化活性化事業', [{ name: '琉球歴史文化芸術興隆事業', years: [2024] }], [2024, 2025], true],
     ['文化資源を活用した沖縄観光の魅力アップ支援事業', [], [2022, 2023], true],
   ]);
-  assert.equal(count, budgets.reduce((n, b) => n + b.rows.length, 0));
   // 3つの施策に載っている「伝統芸能の海外公演」は1件（報告書の順で最初の施策）
   assert.deepEqual(budgets[0].rows.filter((x) => x.group.latest.name === '伝統芸能の海外公演').map((x) => [x.group.shisaku.id, x.years]), [['1-4-a-2', [2024, 2025]]]);
   // 同じ年度に予算事業が2つある取組は、予算事業ごとに分ける（R4 だけのものは年度を添える）
-  const eco = sameBudgetOf(groupOf('1-1-a-2', '産業部門における省エネルギー対策の推進')).budgets;
+  const eco = sameBudgetOf(groupOf('1-1-a-2', '産業部門における省エネルギー対策の推進'));
   assert.deepEqual(eco.map((b) => [b.project.name, b.partial]), [['環境月間街頭キャンペーン等', false], ['県民環境フェア開催運営委託業務', true]]);
-  const yearsWith = (g: TorikumiGroup, o: TorikumiGroup) => [...new Set(sameBudgetOf(g).budgets.flatMap((b) => b.rows.find((x) => x.group === o)?.years ?? []))].sort().join();
+  const yearsWith = (g: TorikumiGroup, o: TorikumiGroup) => [...new Set(sameBudgetOf(g).flatMap((b) => b.rows.find((x) => x.group === o)?.years ?? []))].sort().join();
   for (const g of getTorikumiGroups()) {
     const reposts = repostsOf(g).map((r) => r.group);
-    for (const b of sameBudgetOf(g).budgets) {
+    for (const b of sameBudgetOf(g)) {
       // 同じ予算事業だった最後の年度の新しい順
       assert.ok(b.rows.every((x, i) => i === 0 || b.rows[i - 1].years.at(-1)! >= x.years.at(-1)!), g.href);
       for (const x of b.rows) {
@@ -420,16 +419,24 @@ test('同じ予算事業の取組は、この取組の予算事業ごとに、�
   }
 });
 
-test('取組の金額は、ほかの取組の同じ予算事業にも同じ額が書かれているもの（予算事業全体の金額）を除いて、この取組だけの金額にする', () => {
-  // クリーンエネルギーアイランド推進事業の R7 の決算見込額 2,081万円は5つの取組に同じ額で書かれている
+test('取組の予算は予算事業ごとの箱にし、ほかの取組の同じ予算事業にも同じ額が書かれている金額（予算事業全体の金額）に印を付ける', () => {
+  // クリーンエネルギーアイランド推進事業の R7 の決算見込額 2,081万円・R8 の当初予算額は5つの取組に同じ額で書かれている
   const mg = groupOf('1-1-a-1', '地域マイクログリッドの導入促進');
-  const { shared, isShared, own } = budgetSharesOf(mg);
+  const { shared, isShared } = budgetSharesOf(mg);
   assert.deepEqual(shared.map((x) => [x.project.name, x.reports, x.others.length, x.last]), [['クリーンエネルギーアイランド推進事業', [2025], 4, { report: 2025, kind: 'estimate', amount: 20813 }]]);
-  const blocks = budgetOf(2025, mg.shisaku.id, mg.key)!.budgets;
-  assert.ok(isShared(blocks[0], 'estimate'));
-  assert.equal(own([[2025, blocks]])[0][1][0].rows.every((r) => r.estimate == null), true);
-  // 取組ごとに違う額が書かれている予算事業（街路）は、この取組の金額のまま
-  assert.deepEqual(budgetSharesOf(groupOf('1-1-c-4', '街路整備事業（県管理道路）')).shared, []);
+  assert.ok(isShared(budgetOf(2025, mg.shisaku.id, mg.key)!.budgets[0], 'estimate'));
+  const [card] = budgetCardsOf(mg);
+  assert.deepEqual([card.name, card.last, card.same?.rows.length, card.shared?.others.length], [
+    'クリーンエネルギーアイランド推進事業',
+    { report: 2025, amounts: [{ kind: 'settled', amount: null, shared: false }, { kind: 'estimate', amount: 20813, shared: true }, { kind: 'initial', amount: 24551, shared: true }] },
+    4, 4,
+  ]);
+  // 取組ごとに違う額が書かれている予算事業（街路）は、この取組の金額（印を付けない）
+  const gairo = groupOf('1-1-c-4', '街路整備事業（県管理道路）');
+  assert.deepEqual(budgetSharesOf(gairo).shared, []);
+  assert.ok(budgetCardsOf(gairo)[0].last?.amounts.every((a) => !a.shared));
+  // 最後の報告に金額が無い予算事業は、金額が書かれた最後の報告の額を出す
+  assert.ok(budgetCardsOf(groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演')).every((c) => c.last?.amounts.some((a) => a.amount != null)));
   for (const g of getTorikumiGroups()) {
     const reposts = repostsOf(g).map((r) => r.group);
     for (const x of budgetSharesOf(g).shared) assert.ok(x.others.length > 0 && x.others.every((o) => o !== g && !reposts.includes(o)), g.href);
