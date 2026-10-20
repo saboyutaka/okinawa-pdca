@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
-  amountEntries, budgetGroups, budgetKey, isNoBudgetName, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
+  amountEntries, budgetGroups, budgetKey, isNoBudgetName, sameAmount, budgetProjectSeries, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
   countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, budgetCardsOf, pastBudgetProjectsOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
@@ -383,6 +383,27 @@ test('財源が「―」の金額は、同じ報告・同じ予算事業名・�
   }
   // 家畜伝染病予防事業の R7 の決算見込額 1.5億円は、取組によって財源が「各省計上」と「―」
   assert.equal(amountTotal(budgetProjectEntries(budgetProjectOf('家畜伝染病予防事業')!).filter((e) => e.report === 2025 && e.kind === 'estimate')), 149955);
+});
+
+test('同じ報告・同じ予算事業名・同じ財源で、違いが1%以下の金額は1回だけ数える（最初に出てくる取組の金額）', () => {
+  for (const report of YEARS) {
+    for (const kind of ['settled', 'estimate', 'initial'] as const) {
+      const es = amountEntries(report, kind);
+      const src = (e: (typeof es)[number]) => (kind === 'initial' ? e.source_next : e.source);
+      for (const [, xs] of Map.groupBy(es, (e) => `${budgetKey(e.budgetName)}|${budgetKey(src(e))}`)) {
+        for (const [i, a] of xs.entries()) for (const b of xs.slice(i + 1)) assert.ok(!sameAmount(a.amount, b.amount), `${report} ${kind} ${a.budgetName} ${a.amount} ${b.amount}`);
+      }
+    }
+  }
+  // マングース対策事業の R7 の決算見込額は、取組によって 100,119千円と 100,118千円
+  const mongoose = budgetProjectOf('マングース対策事業')!;
+  assert.equal(amountTotal(budgetProjectEntries(mongoose).filter((e) => e.report === 2025 && e.kind === 'estimate')), 100119);
+});
+
+test('予算事業の金額の推移は、決算額を書いている取組が決算見込額を書いている取組より少ない年度は、決算見込額にする', () => {
+  // 農業集落排水事業の R6 は、R6 の報告の決算見込額が2取組（再掲は1件）、R7 の報告の決算額が1取組（2-8-b-2 の取組の R7 の票に金額が無い）
+  const s = budgetProjectSeries(budgetProjectOf('農業集落排水事業')!);
+  assert.deepEqual(s.filter((x) => x.fy === 2023 || x.fy === 2024).map((x) => [x.fy, x.kind]), [[2023, 'settled'], [2024, 'estimate']]);
 });
 
 test('予算事業は、名前の変更を翌年度の予算事業名でつなぎ、取組が続いている別の予算事業に乗り換えたものはつながない', () => {

@@ -1338,7 +1338,9 @@ export const getBudgetLines = once((): BudgetLine[] =>
   ),
 );
 
-// 報告年度・金額の種類ごとに、同じ予算事業（名前・財源・金額が同じもの）を1回だけ数えた金額の一覧。
+// 同じ予算事業の同じ金額とみなす差（大きいほうの1%以下。取組ごとの転記の誤りの疑い。data.md の 9.3、issues.md の B2）
+export const sameAmount = (a: number, b: number) => Math.abs(a - b) <= Math.max(a, b) * 0.01;
+// 報告年度・金額の種類ごとに、同じ予算事業（名前・財源が同じで、金額が同じかわずかに違うもの）を1回だけ数えた金額の一覧。
 // 財源が「―」の票は、同じ名前・金額で財源の書かれた票があればそちらと同じものとする（data.md の 9.3）。
 // 1つの予算事業が複数の取組に載っているときは、最初に出てくる取組（施策コード順）に寄せる
 export interface AmountEntry extends BudgetLine {
@@ -1355,14 +1357,17 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
     if (l.report !== report || v == null || v === 0 || l.suspect.includes(kind)) return [];
     return [{ l, v, name: kind === 'initial' ? l.name_next : l.name, source: kind === 'initial' ? l.source_next : l.source }];
   });
-  const written = new Set(lines.filter((x) => !isNoBudgetName(x.source)).map((x) => `${budgetKey(x.name)}|${x.v}`));
-  const seen = new Set<string>();
+  // 財源の書かれた金額（予算事業名ごと）と、数えた金額（予算事業名・財源ごと）
+  const written = Map.groupBy(lines.filter((x) => !isNoBudgetName(x.source)), (x) => budgetKey(x.name));
+  const seen = new Map<string, number[]>();
   const out: AmountEntry[] = [];
   for (const { l, v, name, source } of lines) {
-    if (isNoBudgetName(source) && written.has(`${budgetKey(name)}|${v}`)) continue;
-    const k = `${budgetKey(name)}|${budgetKey(source)}|${v}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
+    if (isNoBudgetName(source) && written.get(budgetKey(name))?.some((x) => sameAmount(x.v, v))) continue;
+    const k = `${budgetKey(name)}|${budgetKey(source)}`;
+    const vs = seen.get(k) ?? [];
+    seen.set(k, vs);
+    if (vs.some((w) => sameAmount(w, v))) continue;
+    vs.push(v);
     out.push({ ...l, budgetName: name, fund: fundOf(source), amount: v, year: report + AMOUNT_KINDS[kind].offset, kind });
   }
   return out;
@@ -1540,11 +1545,11 @@ const blockSum = (b: BudgetBlock, kind: AmountKind) => {
   const vs = b.rows.flatMap((r) => (r[kind] != null && !r.suspect?.includes(kind) ? [r[kind]] : []));
   return vs.length ? vs.reduce((s, v) => s + v, 0) : null;
 };
-// 共通の金額（lib/terms.ts の「共通の金額」）: 同じ年度に、同じ予算事業の予算の表の同じ決算見込額（0 と記載なしは比べない）が、2つ以上の取組（再掲は1件）に書かれているもの。
+// 共通の金額（lib/terms.ts の「共通の金額」）: 同じ年度に、同じ予算事業の予算の表の同じ決算見込額（差が1%以下を含む。sameAmount。0 と記載なしは比べない）が、2つ以上の取組（再掲は1件）に書かれているもの。
 // 予算事業全体の金額をそれぞれの取組にくり返し書いたもの。1つの取組に同じ予算事業の表が2つあることがある（つないだ前の名前と新しい名前など）ので、表1つずつの額で比べる。
 // 取組のページの予算の箱（budgetCardsOf）と予算事業をさがす（budgetProjectShared）で、この rootsWithEstimate を使う
 const rootsWithEstimate = (p: BudgetProject, y: number, v: number | null) =>
-  new Set(v ? usesOfProject(p).filter((u) => u.y === y && blockSum(u.block, 'estimate') === v).map((u) => repostRoot(u.group)) : []);
+  new Set(v ? usesOfProject(p).filter((u) => { const w = blockSum(u.block, 'estimate'); return u.y === y && w != null && sameAmount(w, v); }).map((u) => repostRoot(u.group)) : []);
 // 予算事業のその年度の共通の金額と、それが書かれている取組の数（いちばん多くの取組に書かれている額。無ければ null）
 export function budgetProjectShared(p: BudgetProject, y: number) {
   const vs = [...new Set(usesOfProject(p).filter((u) => u.y === y).map((u) => blockSum(u.block, 'estimate')))];
@@ -1609,12 +1614,16 @@ const projectEntries = once(() => {
   return m;
 });
 export const budgetProjectEntries = (p: BudgetProject) => projectEntries().get(p) ?? [];
-// 予算事業の金額の推移。お金の年度ごとに、いちばん確定に近い金額（決算額 → 決算見込額 → 当初予算額）の、財源ごとの額
+// 予算事業の金額の推移。お金の年度ごとに、いちばん確定に近い金額（決算額 → 決算見込額 → 当初予算額）の、財源ごとの額。
+// 決算額は次の年度の報告の、続いている取組の票にしか載らないので、決算額を書いている取組が決算見込額を書いている取組より少ない年度は、決算見込額にする
 export function budgetProjectSeries(p: BudgetProject) {
   const es = budgetProjectEntries(p);
   const fys = [...new Set(es.map((e) => e.year))].sort((a, b) => a - b);
+  // その報告で、その種類の金額（0 でないもの）を書いている取組の数（再掲は1件）
+  const writers = (report: number, kind: AmountKind) => new Set(usesOfProject(p).filter((u) => u.y === report && blockSum(u.block, kind)).map((u) => repostRoot(u.group))).size;
   return fys.flatMap((fy) => {
-    const kind = SERIES_KINDS.find((k) => es.some((e) => e.year === fy && e.kind === k));
+    const kinds = SERIES_KINDS.filter((k) => es.some((e) => e.year === fy && e.kind === k));
+    const kind = kinds[0] === 'settled' && kinds[1] === 'estimate' && writers(fy + 1, 'settled') < writers(fy, 'estimate') ? 'estimate' : kinds[0];
     if (!kind) return [];
     const xs = es.filter((e) => e.year === fy && e.kind === kind);
     return [{ fy, kind, report: fy - AMOUNT_KINDS[kind].offset, amount: amountTotal(xs), funds: Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(xs.filter((e) => e.fund === f.key))])) }];
