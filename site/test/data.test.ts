@@ -430,7 +430,11 @@ test('budgetTableOf: 予算事業ごとに、お金の年度の列と金額の�
   assert.deepEqual(fys, [2024, 2025, 2026]);
   // 行は当初予算額 → 決算見込額 → 決算額の順に読むので、当初予算額の名前の予算事業が先に来る
   assert.deepEqual(groups.map((g) => [g.name, [...g.cells.keys()]]), [['A事業（改）', ['initial|2026']], ['A事業', ['estimate|2025', 'settled|2024']], ['', ['settled|2024']]]);
-  assert.deepEqual(groups[2].cells.get('settled|2024'), { sum: 0, n: 0, raws: ['一部'], suspect: false });
+  assert.deepEqual(groups[2].cells.get('settled|2024'), { sum: 0, n: 0, raws: ['一部'], suspect: false, shared: false });
+  // ほかの取組にも同じ額が書かれている金額（isShared）の升には shared を付ける
+  const a = block('A事業', [amountRow({ settled: 100, estimate: 120 })]);
+  const shared = budgetTableOf([[2025, [a]]], (b, kind) => b === a && kind === 'estimate').groups[0];
+  assert.deepEqual([shared.cells.get('estimate|2025')?.shared, shared.cells.get('settled|2024')?.shared], [true, false]);
 });
 
 test('countStatuses・countRates: 区分の並びのまま数え、0の区分も残す', () => {

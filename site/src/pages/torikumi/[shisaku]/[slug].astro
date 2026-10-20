@@ -1,7 +1,7 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
 // 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①いまの状態（進捗状況と、それを決める活動指標の計画と実績。施策のページの頭と同じく、状態の理由まで頭で答える）
-// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算の推移（予算事業と財源、同じ予算事業の取組も）。表と原文は畳む
+// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算の推移（この取組だけの金額。予算事業と財源、同じ予算事業の取組も）。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
@@ -15,12 +15,13 @@ import HeadKind from '../../../components/HeadKind.astro';
 import YearTag from '../../../components/YearTag.astro';
 import ShareBox from '../../../components/ShareBox.astro';
 import KatsudouChart from '../../../components/KatsudouChart.astro';
+import ToriRef from '../../../components/ToriRef.astro';
 import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, yearsLong, yearRuns, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
-  sectionHref, sourceLink, relatedOf, sameBudgetOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
+  sectionHref, sourceLink, relatedOf, sameBudgetOf, budgetSharesOf, budgetProjectOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
   isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
@@ -110,28 +111,32 @@ const latestBasis = tr?.basis;
 // 閉じた年度に出す、その年度にやったことの1文目（部局票が無い年度は総括報告書の活動概要）
 const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].summary);
 
-// 予算の推移と「表で見る」の表（lib/data.ts の budgetSeriesOf・budgetTableOf）
+// 予算の推移と「表で見る」の表（lib/data.ts の budgetSeriesOf・budgetTableOf）。推移はこの取組だけの金額で描き、ほかの取組にも同じ額が書かれている
+// 予算事業全体の金額（lib/data.ts の budgetSharesOf）は推移に入れず、予算事業ごとに1行で書いて予算事業のページへつなぐ。表には書かれた金額をすべて出し、くり返しの升に印を付ける
 const reportBudgets: ReportBudgets = present.flatMap((y) => { const b = recs[y]?.budgets; return b?.length ? [[y, b]] : []; });
-const budgetSeries = budgetSeriesOf(reportBudgets);
+const budShares = budgetSharesOf(g);
+const ownBudgets = budShares.own(reportBudgets);
+const budgetSeries = budgetSeriesOf(ownBudgets);
 const budgetMax = Math.max(1, ...budgetSeries.map((x) => x.amount));
 // 部局票に金額が無いときは、総括報告書の最新の報告の決算見込額を書き添える
 const noAmount = `部局の検証票に、この取組の金額の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
 // 予算事業の名前と財源は、予算の推移の箱の頭に出す（予算事業の欄の「―」などは名前に数えない）
 const budgetNames = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).map((b) => b.name)).filter((n) => !isNoBudgetName(n)))];
+// 推移の金額に入っている予算事業の数（2つ以上なら合計と書く）
+const ownNames = new Set(ownBudgets.flatMap(([, bs]) => bs.filter((b) => b.rows.some((r) => r.settled != null || r.estimate != null || r.initial != null)).map((b) => b.name)));
 const funds = [...new Set(present.flatMap((y) => (recs[y]?.budgets || []).flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next)))))];
 
-const { groups: budGroups, fys: budFys } = budgetTableOf(reportBudgets);
+const { groups: budGroups, fys: budFys } = budgetTableOf(reportBudgets, budShares.isShared);
 const budText = (c: BudgetCell | undefined) => {
   if (!c) return '—';
   const text = [c.n ? yen(c.sum) : '', ...c.raws].filter(Boolean).join('・');
-  return c.suspect ? `${text}（桁の誤記の疑い）` : text;
+  return `${text}${c.suspect ? '（桁の誤記の疑い）' : ''}${c.shared ? '（共通）' : ''}`;
 };
 // 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
 const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 // 同じ予算事業の取組（lib/data.ts の sameBudgetOf）。予算事業ごとに箱を分け、箱の頭に予算事業の名前（この取組に予算事業の名前がある年度の一部だけのものは年度を添える）と前の名前を出す。
-// 行は札・取組の名前・施策だけ。札は ToriRow と同じく、最新の年度の報告に無い取組は最後の年度の進捗状況を年度つきで出す
+// 行は札・取組の名前・施策だけ（components/ToriRef.astro）
 const sameBudget = sameBudgetOf(g);
-const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.latest) : `${yearLabel(o.latest.year)} ${statusOf(o.latest)}`);
 ---
 <Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
@@ -365,7 +370,7 @@ const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.la
       <div class="sticker">
         {(budgetNames.length > 0 || funds.length > 0) && (
           <dl class="bud-meta">
-            {budgetNames.length > 0 && <div><dt>予算事業</dt><dd>{budgetNames.join('、')}</dd></div>}
+            {budgetNames.length > 0 && <div><dt>予算事業</dt><dd>{budgetNames.map((n, i) => { const pj = budgetProjectOf(n); return <>{i > 0 && '、'}{pj ? <a class="sub-link" href={pj.href}>{n}</a> : n}</>; })}</dd></div>}
             {funds.length > 0 && <div><dt>財源</dt><dd>{funds.join('・')}</dd></div>}
           </dl>
         )}
@@ -379,12 +384,19 @@ const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.la
                 </li>
               ))}
             </ul>
-            <p class="small secondary bud-key"><span><span class="k k-initial"></span>当初予算額</span><span><span class="k k-estimate"></span>決算見込額</span><span><span class="k k-settled"></span>決算額</span>{budgetNames.length > 1 && <span>／　{budgetNames.length}つの予算事業の合計</span>}</p>
+            <p class="small secondary bud-key"><span><span class="k k-initial"></span>当初予算額</span><span><span class="k k-estimate"></span>決算見込額</span><span><span class="k k-settled"></span>決算額</span>{ownNames.size > 1 && <span>／　{ownNames.size}つの予算事業の合計</span>}</p>
           </>
-        ) : <p class="secondary">{noAmount}</p>}
+        ) : <p class="secondary">{budShares.shared.length ? 'この取組だけの金額は、部局の検証票に書かれていません。' : noAmount}</p>}
+        {budShares.shared.length > 0 && (
+          <ul class="bud-shared small">
+            {budShares.shared.map((x) => (
+              <li>予算事業「<a href={x.project.href}>{x.project.name}</a>」の{yearRuns(x.reports)}の報告の金額（{yearLabel(x.last.report + AMOUNT_KINDS[x.last.kind].offset)}の{AMOUNT_KINDS[x.last.kind].label} {yen(x.last.amount)}など）は、ほかの{x.others.length}件の取組にも同じ額が書かれています。</li>
+            ))}
+          </ul>
+        )}
       </div>
     ) : <p class="secondary">{noAmount}</p>}
-    <p class="small secondary">1つの予算事業が複数の取組に重ねて書かれていることがあり、その場合は取組だけに使われた金額ではありません（<a href="/yosan/">予算と財源</a>では重複を除いて集計しています）。</p>
+    {budShares.shared.length > 0 && <p class="small secondary">ほかの取組にも同じ額が書かれている金額は、予算事業全体の金額をくり返し書いたものなので、この取組の金額（上の推移）に入れていません。予算事業全体の金額は予算事業のページで見られます。取組ごとに違う額が書かれているものは、この取組の金額としています。</p>}
     <details>
       <summary>予算事業ごとの金額を表で見る</summary>
       {budGroups.length > 0 && (
@@ -405,7 +417,7 @@ const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.la
           </table>
         </div>
       )}
-      <p class="small secondary">当初予算額は前の年度の報告、決算見込額はその年度の報告、決算額は次の年度の報告の部局の検証票に載っている額です。</p>
+      <p class="small secondary">当初予算額は前の年度の報告、決算見込額はその年度の報告、決算額は次の年度の報告の部局の検証票に載っている額です。{budGroups.some((x) => [...x.cells.values()].some((c) => c.shared)) && '（共通）は、ほかの取組にも同じ額が書かれている予算事業全体の金額です。'}</p>
       {noRecYears.map((y) => (
         <p class="small secondary">{yearLong(y)}の報告は部局の検証票が手に入っていません（総括報告書の{yearLong(y)}の決算見込額: {yen(g.years[y].budget)}{g.years[y].budget == null && g.years[y].budget_raw ? `（${g.years[y].budget_raw}）` : ''}）。</p>
       ))}
@@ -420,16 +432,11 @@ const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.la
         {sameBudget.budgets.map((b) => (
           <div class="sticker list-box sb-box">
             <div class="sb-head">
-              <h4>予算: {b.name}{b.partial && <span class="sb-years">（{yearRuns(b.years)}）</span>}</h4>
+              <h4>予算: <a href={b.project.href}>{b.project.name}</a>{b.partial && <span class="sb-years">（{yearRuns(b.years)}）</span>}</h4>
               {b.formers.length > 0 && <p class="small secondary">{formerText(b.formers)}という名前です。</p>}
             </div>
             <ul class="row-list">
-              {b.rows.map(({ group: o }) => (
-                <li>
-                  <div><Chip tone={toneOfStatus(statusOf(o.latest))} text={sameChip(o)} /> <a class="name-link" href={o.href}>{o.latest.name}</a></div>
-                  <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${o.shisaku.id}/`}>{o.shisaku.name}</a> <span class="code-no">{o.shisaku.code}</span></div>
-                </li>
-              ))}
+              {b.rows.map((x) => <ToriRef g={x.group} />)}
             </ul>
           </div>
         ))}
@@ -542,6 +549,7 @@ const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.la
   /* 色の見本と文字が別の行に分かれないよう、項目ごとに折り返さない */
   .bud-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 12px 0 0; }
   .bud-key > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .bud-shared { margin: 12px 0 0; padding: 10px 0 0 1.2em; border-top: 1.5px solid var(--grid); display: grid; gap: 4px; }
   .k { display: inline-block; width: 16px; height: 12px; border: 1.5px solid var(--line); border-radius: 3px; }
   .k-settled { background: var(--pop); }
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); }

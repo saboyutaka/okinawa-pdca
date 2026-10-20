@@ -1,13 +1,14 @@
 ---
-// 予算と財源の、予算事業の一覧の1行。左に予算事業の名前・財源・書かれている取組（2件目からは畳む）、右に決算見込額と前後の年度の金額。
+// 予算と財源の、予算事業の一覧の1行。左に予算事業の名前（予算事業のページへのリンク）・財源・書かれている取組（2件目からは畳む）、右に決算見込額と前後の年度の金額。
 // 一括交付金（ソフト）の事後評価の事業とは結び付けない（同じ名前でも複数の取組・施策にまたがり、評価の物差しも違うため）
 import Chip from './Chip.astro';
-import { yearLabel, FUNDS, getTorikumi, getShisaku, statusOf, toneOfStatus, torikumiPage, type BudgetGroup } from '../lib/data.ts';
+import { yearLabel, FUNDS, getTorikumi, getShisaku, statusOf, toneOfStatus, torikumiPage, budgetProjectOf, type BudgetGroup } from '../lib/data.ts';
 import { yen } from '../lib/format.ts';
 
 interface Props { g: BudgetGroup; report: number }
 const { g, report } = Astro.props;
 const funds = FUNDS.filter((f) => g.funds.has(f.key));
+const project = budgetProjectOf(g.name);
 const tori = g.related.map((l) => ({
   l,
   t: getTorikumi(report).find((x) => x.shisaku_id === l.shisaku_id && x.key === l.key),
@@ -19,7 +20,7 @@ const rest = tori.slice(1);
 ---
 <li class="b-row">
   <div class="b-main">
-    <strong class="b-name">{g.name}</strong>
+    <div class="b-name">{project ? <a class="name-link" href={project.href}>{g.name}</a> : g.name}</div>
     <div class="small secondary b-sub">
       {funds.map((f) => <span class={`swatch series-${f.series}`}>{f.key}</span>)}
     </div>

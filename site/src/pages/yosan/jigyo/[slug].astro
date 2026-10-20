@@ -1,0 +1,133 @@
+---
+// 予算事業1つのページ。部局の検証票の予算事業を、名前の変更をつないで年度をまたいでまとめる（lib/data.ts の getBudgetProjects。docs/data.md の 9.6）。
+// 頭（いちばん新しい報告の決算見込額と、書かれている取組の数）→ 金額の推移（財源別。予算と財源と同じく、同じ金額のくり返しは1回だけ数える）→ 書かれている取組 → 出典（前の名前も）。
+// 主な取組の評価の段ではないので、ページの階層（Hierarchy）は置かない。一括交付金（ソフト）の事後評価の事業とは、名前が同じでも結び付けない（docs/design.md の5章）
+import type { InferGetStaticPropsType } from 'astro';
+import { ROUTES } from '../../../lib/routes.ts';
+import Base from '../../../layouts/Base.astro';
+import HeadKind from '../../../components/HeadKind.astro';
+import HeadStats from '../../../components/HeadStats.astro';
+import AmountChart from '../../../components/AmountChart.astro';
+import ToriRef from '../../../components/ToriRef.astro';
+import Term from '../../../components/Term.astro';
+import Toc from '../../../components/Toc.astro';
+import SecHead from '../../../components/SecHead.astro';
+import ShareBox from '../../../components/ShareBox.astro';
+import ExtLink from '../../../components/ExtLink.astro';
+import {
+  YEARS, yearLabel, yearLong, yearRuns, AMOUNT_KINDS, FUNDS, amountTotal, sectionHref, sourceLink, formersOf, formerText,
+  budgetProjectEntries, budgetProjectSeries, budgetProjectRows, usesOfProject,
+} from '../../../lib/data.ts';
+import { yen } from '../../../lib/format.ts';
+import { budgetMeta } from '../../../lib/describe.ts';
+import type { AmountKind } from '../../../lib/types.ts';
+
+// URL は lib/routes.ts で決める（docs/site.md の 8章）
+export const getStaticPaths = ROUTES['yosan/jigyo/[slug]'];
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { p } = Astro.props;
+const entries = budgetProjectEntries(p);
+const series = budgetProjectSeries(p);
+const rows = budgetProjectRows(p);
+// いちばん新しい報告（この予算事業の名前が載っている最後の報告）の金額と取組
+const last = p.names.at(-1)!.y;
+const total = (kind: AmountKind) => {
+  const es = entries.filter((e) => e.report === last && e.kind === kind);
+  return es.length ? amountTotal(es) : null;
+};
+const lastRows = rows.filter((r) => r.years.includes(last));
+const estimate = total('estimate');
+const sections = [...new Set(lastRows.map((r) => r.group.latest.section).filter(Boolean))];
+const funds = FUNDS.filter((f) => entries.some((e) => e.report === last && e.fund === f.key));
+const projectYears = YEARS.filter((y) => p.names.some((n) => n.y === y));
+// 前の年度の報告での名前（出典に書く）
+const formers = formersOf(p.names, p.name);
+// 出典: 報告年度ごとの、この予算事業の表がある部局票のページ
+const sources = projectYears.map((y) => ({
+  y,
+  links: [...new Map(usesOfProject(p).filter((u) => u.y === y).map((u) => [`${u.file}|${u.page}`, sourceLink(u.file, u.page)])).values()].filter((x) => x != null),
+}));
+---
+<Base {...budgetMeta(p.name, { year: last, estimate: estimate == null ? null : yen(estimate), torikumi: lastRows.length })} ogType="article">
+  <header class="sticker lift page-head">
+    <HeadKind kind="予算事業" term={false} />
+    <h1>{p.name}</h1>
+    <div class="head-meta">
+      {sections.length > 0 && <span>所管: {sections.map((sec, i) => { const href = sectionHref(sec); return <>{i > 0 && '、'}{href ? <a class="sub-link" href={href}>{sec}</a> : sec}</>; })}</span>}
+      {funds.length > 0 && <span>財源: {funds.map((f) => f.key).join('・')}</span>}
+    </div>
+    <div class="head-box inset">
+      <div class="hb-now amt-now">
+        <b class="big">{yen(estimate)}</b>
+        <span class="amt-l">{yearLong(last)}の<Term word="決算見込額" /></span>
+      </div>
+      <div class="hb-why small secondary">{yearLabel(last - 1)}の決算額 {yen(total('settled'))}　{yearLabel(last + 1)}の当初予算額 {yen(total('initial'))}</div>
+    </div>
+    <HeadStats items={[{ label: '書かれている取組', n: lastRows.length, href: '#list', note: `${yearLabel(last)}の報告` }]} />
+  </header>
+
+  <Toc links={[{ href: '#yosan', label: '金額の推移' }, { href: '#list', label: '取組' }, { href: '#source', label: '出典' }]} head={{ kind: '予算事業', title: p.name }} />
+
+  <section aria-labelledby="yosan">
+    <SecHead id="yosan" class="anchor">金額の推移</SecHead>
+    <p class="small secondary lead">部局の検証票に書かれたこの予算事業の金額を、年度ごとに確定に近いもの（決算額 → 決算見込額 → 当初予算額の順）で、財源ごとに並べています。</p>
+    {series.length > 0 ? (
+      <AmountChart
+        title="この予算事業の金額（財源別）"
+        categories={FUNDS}
+        rows={series.map((s) => ({ label: yearLabel(s.fy), sub: `${AMOUNT_KINDS[s.kind].label}（${yearLabel(s.report)}報告）`, amounts: s.funds }))}
+      />
+    ) : <p class="secondary">部局の検証票に、この予算事業の金額の記載がありません。</p>}
+    <p class="small secondary">複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。部局の検証票が手に入っていない取組の分は入りません（<a href="/yosan/#coverage">部局票がある範囲</a>）。</p>
+  </section>
+
+  <section aria-labelledby="list">
+    <SecHead id="list" class="anchor">書かれている取組（{rows.length}件）</SecHead>
+    <p class="small secondary lead">部局の検証票で、この予算事業が書かれている<Term word="主な取組" />です。複数の施策に載っている同じ取組は1件にしています。</p>
+    <ul class="row-list">
+      {rows.map((r) => <ToriRef g={r.group}>{yearRuns(r.years)}の報告</ToriRef>)}
+    </ul>
+    <details>
+      <summary>取組ごとに書かれた決算見込額を表で見る</summary>
+      <div class="table-wrap">
+        <table class="written">
+          <caption class="sr-only">取組ごとの、報告年度ごとに書かれたこの予算事業の決算見込額</caption>
+          <thead><tr><td></td>{projectYears.map((y) => <th scope="col" class="num">{yearLabel(y)}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <th scope="row">{r.group.latest.name}<small class="code-no">{r.group.shisaku.code}</small></th>
+                {projectYears.map((y) => <td class="num">{r.estimates.has(y) ? yen(r.estimates.get(y)) : '—'}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="small secondary">同じ年度に同じ金額が書かれている取組は、予算事業全体の金額をそれぞれの取組に書いています（取組のページの予算の推移には入れていません）。</p>
+    </details>
+  </section>
+
+  <ShareBox kind="予算事業" name={p.name} />
+
+  <section aria-labelledby="source">
+    <SecHead id="source" class="anchor">出典</SecHead>
+    <ul class="small">
+      {sources.map((x) => (
+        <li>{yearLong(x.y)}: {x.links.length ? x.links.map((l, i) => <>{i > 0 && '、'}<ExtLink href={l.href}>{l.label}</ExtLink></>) : '—'}</li>
+      ))}
+    </ul>
+    {formers.length > 0 && <p class="small">この予算事業は、{formerText(formers)}という名前で載っています。</p>}
+    <p class="small">名前が変わった予算事業は、部局の検証票の「翌年度の予算事業名」で前の名前とつないでいます（取組が別の予算事業に乗り換えたものはつなぎません。<a href="/data/#kazoekata">このサイトでの数え方</a>）。</p>
+  </section>
+</Base>
+
+<style>
+  .amt-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .amt-now b { font-size: 1.6rem; }
+  .amt-l { font-size: 0.875rem; color: var(--ink-2); }
+  .page-head :global(.head-stats) { margin-top: 12px; }
+  .written th small { margin-left: 8px; }
+  .written td.num { white-space: nowrap; }
+  section details { margin-top: 10px; }
+</style>

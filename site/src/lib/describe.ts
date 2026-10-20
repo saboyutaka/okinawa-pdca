@@ -158,3 +158,8 @@ export const kihonMeta = (name: string, c: AreaCounts) => ({ title: `${name}（�
 export const futureMeta = (id: number, name: string, c: AreaCounts) => ({ title: `将来像${id} ${name}`, description: futureDescription(id, name, c) });
 export const deptMeta = (name: string, c: AreaCounts) => ({ title: `沖縄県${name}の取組`, description: deptDescription(name, c) });
 export const themeMeta = (label: string, c: AreaCounts) => ({ title: `${label}（くらしのテーマ）`, description: themeDescription(label, c) });
+// 予算事業のページ。数はページの頭と同じ（いちばん新しい報告の決算見込額と、その報告で書かれている取組の数）
+export const budgetMeta = (name: string, o: { year: number; estimate: string | null; torikumi: number }) => ({
+  title: `${name}（沖縄県の予算事業）`,
+  description: `沖縄県の予算事業「${name}」の決算額・予算額の推移と財源、この予算事業が書かれている主な取組です。${yearLong(o.year)}の報告では主な取組${fmt(o.torikumi)}件に書かれています。${o.estimate ? `決算見込額は${o.estimate}。` : ''}`,
+});
