@@ -1,7 +1,7 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
 // 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①いまの状態（進捗状況と、それを決める活動指標の計画と実績。施策のページの頭と同じく、状態の理由まで頭で答える）
-// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算（予算事業ごとの金額と、同じ予算事業の取組。金額の推移は予算事業のページ）。表と原文は畳む
+// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算（最後の報告の予算事業ごとの決算見込額と、同じ予算事業の取組。ほかの年度の金額は予算事業のページ）。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
@@ -20,9 +20,9 @@ import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, yearsLong, yearRuns, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf,
-  sectionHref, sourceLink, relatedOf, budgetSharesOf, budgetCardsOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
-  budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf,
+  sectionHref, sourceLink, relatedOf, budgetCardsOf, commonShisakuCount, firstYearOf, formerNames, formerText, planPath,
+  type TorikumiGroup,
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
 import { yen } from '../../../lib/format.ts';
@@ -111,21 +111,11 @@ const latestBasis = tr?.basis;
 // 閉じた年度に出す、その年度にやったことの1文目（部局票が無い年度は総括報告書の活動概要）
 const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].summary);
 
-// 予算の節。予算事業ごとの箱（lib/data.ts の budgetCardsOf）に、この取組の最後の報告に書かれた金額と同じ予算事業の取組を出す。金額の推移は予算事業のページに任せる。
-// ほかの取組にも同じ額が書かれている金額（予算事業全体の金額。budgetSharesOf）には「（共通）」を付ける。4年分の金額は「表で見る」に畳む（budgetTableOf）
-const reportBudgets: ReportBudgets = present.flatMap((y) => { const b = recs[y]?.budgets; return b?.length ? [[y, b]] : []; });
-const budShares = budgetSharesOf(g);
+// 予算の節。最後の報告の予算事業ごとの箱（lib/data.ts の budgetCardsOf）に、決算見込額と同じ予算事業の取組を出す。ほかの年度の金額は予算事業のページに任せる。
+// ほかの取組にも同じ額が書かれている金額（予算事業全体の金額）には「（共通）」を付ける
 const cards = budgetCardsOf(g);
 // 部局票に金額が無いときは、総括報告書の最新の報告の決算見込額を書き添える
-const noAmount = `部局の検証票に、この取組の金額の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
-const { groups: budGroups, fys: budFys } = budgetTableOf(reportBudgets, budShares.isShared);
-const budText = (c: BudgetCell | undefined) => {
-  if (!c) return '—';
-  const text = [c.n ? yen(c.sum) : '', ...c.raws].filter(Boolean).join('・');
-  return `${text}${c.suspect ? '（桁の誤記の疑い）' : ''}${c.shared ? '（共通）' : ''}`;
-};
-// 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
-const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
+const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の予算の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
 ---
 <Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
@@ -354,60 +344,24 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 
   <section aria-labelledby="yosan">
     <SecHead id="yosan" class="anchor">予算</SecHead>
-    <p class="small secondary lead">部局の検証票に書かれた、この取組の予算事業と金額です。1つの予算事業が複数の取組に書かれていることがあり、金額の推移は予算事業のページで見られます。</p>
+    <p class="small secondary lead">部局の検証票に書かれた、この取組の{yearLong(t.year)}の予算事業と<Term word="決算見込額" />です。ほかの年度の金額は、予算事業の名前から予算事業のページで見られます。</p>
     {cards.length > 0 ? cards.map((c) => (
       <div class="sticker list-box bcard">
         <div class="bc-body">
-          <h3 class="bc-h">予算: {c.project ? <a class="name-link" href={c.project.href}>{c.name}</a> : c.name || '予算事業の名前の記載なし'}</h3>
-          {(c.funds.length > 0 || c.formers.length > 0) && <p class="small secondary bc-sub">{c.funds.length > 0 && `財源: ${c.funds.join('・')}`}{c.funds.length > 0 && c.formers.length > 0 && '　'}{c.formers.length > 0 && `${formerText(c.formers)}という名前です。`}</p>}
-          {c.last && (
-            <dl class="bc-amt">
-              {c.last.amounts.map((a) => (
-                <div>
-                  <dt>{yearLabel(c.last!.report + AMOUNT_KINDS[a.kind].offset)}の{AMOUNT_KINDS[a.kind].label}</dt>
-                  <dd><b>{yen(a.amount)}</b>{a.shared && a.amount != null && <small>（共通）</small>}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {c.last && <p class="small secondary bc-note">{yearLong(c.last.report)}の報告の額です。{c.shared && c.last.amounts.some((a) => a.shared) && `（共通）は、ほかの${c.shared.others.length}件の取組にも同じ額が書かれている予算事業全体の金額で、この取組だけの金額ではありません。`}</p>}
+          <h3 class="bc-h">予算: {c.project ? <a class="name-link" href={c.project.href}>{c.name || c.project.name}</a> : c.name || '予算事業の名前の記載なし'}</h3>
+          {c.funds.length > 0 && <p class="small secondary bc-sub">財源: {c.funds.join('・')}</p>}
+          <p class="bc-amt"><span class="bc-l">{yearLabel(t.year)}の決算見込額</span><b>{yen(c.amount)}</b>{c.sharedWith > 0 && <small>（共通）</small>}</p>
+          {c.sharedWith > 0 && <p class="small secondary bc-note">（共通）は、ほかの{c.sharedWith}件の取組にも同じ額が書かれている予算事業全体の金額で、この取組だけの金額ではありません。</p>}
         </div>
-        {c.same && (
+        {c.others.length > 0 && (
           <>
-            <p class="bc-same">同じ予算事業の取組（{c.same.rows.length}件）{c.same.partial && <span class="secondary">　{yearRuns(c.same.years)}の報告</span>}</p>
-            <ul class="row-list">{c.same.rows.map((x) => <ToriRef g={x.group} />)}</ul>
+            <p class="bc-same">同じ予算事業の取組（{c.others.length}件）</p>
+            <ul class="row-list">{c.others.map((x) => <ToriRef g={x.group} />)}</ul>
           </>
         )}
       </div>
     )) : <p class="secondary">{noAmount}</p>}
-    <details>
-      <summary>予算事業ごとの金額を表で見る</summary>
-      {budGroups.length > 0 && (
-        <div class="table-wrap">
-          <table class="budget">
-            <caption class="sr-only">予算事業ごとの、年度ごとの当初予算額・決算見込額・決算額</caption>
-            <thead>
-              <tr><td></td>{budFys.map((fy) => <th scope="col" class="num">{yearLabel(fy)}</th>)}</tr>
-            </thead>
-            {budGroups.map((grp) => (
-              <tbody>
-                <tr class="grp"><th scope="rowgroup" colspan={budFys.length + 1}>{grp.name || '予算事業の名前の記載なし'}{grp.funds.size > 0 && <small class="secondary">財源: {[...grp.funds].join('・')}</small>}</th></tr>
-                {BUDGET_STAGES.map((kind) => (
-                  <tr><th scope="row">{AMOUNT_KINDS[kind].label}</th>{budFys.map((fy) => <td class="num">{budText(grp.cells.get(`${kind}|${fy}`))}</td>)}</tr>
-                ))}
-              </tbody>
-            ))}
-          </table>
-        </div>
-      )}
-      <p class="small secondary">当初予算額は前の年度の報告、決算見込額はその年度の報告、決算額は次の年度の報告の部局の検証票に載っている額です。{budGroups.some((x) => [...x.cells.values()].some((c) => c.shared)) && '（共通）は、ほかの取組にも同じ額が書かれている予算事業全体の金額です。'}</p>
-      {noRecYears.map((y) => (
-        <p class="small secondary">{yearLong(y)}の報告は部局の検証票が手に入っていません（総括報告書の{yearLong(y)}の決算見込額: {yen(g.years[y].budget)}{g.years[y].budget == null && g.years[y].budget_raw ? `（${g.years[y].budget_raw}）` : ''}）。</p>
-      ))}
-      {present.some((y) => recs[y]?.matchedByName) && (
-        <p class="small secondary">この取組は、部局の検証票では別の施策に載っているため、名前で結び付けて表示しています。</p>
-      )}
-    </details>
+    {tr?.matchedByName && <p class="small secondary">この取組は、部局の検証票では別の施策に載っているため、名前で結び付けて表示しています。</p>}
   </section>
 
   {rm.length > 0 && (
@@ -500,25 +454,20 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .k-part { margin: 0; font-size: 1rem; }
   .note { margin: 6px 0 0; }
   section details { margin-top: 10px; }
-  /* 予算事業ごとの箱。頭に予算事業の名前・財源、金額の3つ（前年度決算・決算見込・翌年度当初）を横に並べ、細い線の下に同じ予算事業の取組の行 */
+  /* 予算事業ごとの箱。頭に予算事業の名前・財源・決算見込額、細い線の下に同じ予算事業の取組の行 */
   .bcard { margin-top: 12px; }
   .bc-body { padding: 12px 16px; }
   .bc-h { margin: 0; font-size: 1rem; }
   .bc-sub { margin: 2px 0 0; }
-  .bc-amt { display: flex; flex-wrap: wrap; gap: 6px 32px; margin: 10px 0 0; }
-  .bc-amt dt { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
-  .bc-amt dd { margin: 0; }
+  .bc-amt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin: 8px 0 0; }
+  .bc-l { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .bc-amt b { font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; }
-  .bc-amt small { margin-left: 4px; font-size: 0.8125rem; color: var(--ink-2); }
+  .bc-amt small { font-size: 0.8125rem; color: var(--ink-2); }
   .bc-note { margin: 6px 0 0; }
   .bc-same { margin: 0; padding: 8px 16px 6px; border-top: 1.5px solid var(--grid); font-size: 0.875rem; font-weight: 700; }
   /* 活動指標の表（形は styles/global.css の .year-table）。目標・実績が行ごとに分かれた取組は改行を残す */
   .progress td.lines { white-space: pre; }
   .progress :global(.chip) { white-space: nowrap; }
-  /* 予算事業ごとの表。予算事業の名前の行の下に 当初予算額 → 決算見込額 → 決算額 の行。金額は折り返さず、入りきらなければ表を横にすべらせる */
-  .budget tr.grp th { padding-top: 14px; color: var(--ink); white-space: normal; }
-  .budget tr.grp small { margin-left: 12px; font-weight: 400; }
-  .budget td.num { white-space: nowrap; overflow-wrap: normal; min-width: 5em; }
   .cad { margin-top: 14px; }
   .cad-h { font-family: var(--font-display); font-weight: 700; color: var(--ink); font-size: 1.02rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
   .cad-h :global(.chip) { font-weight: 400; }
