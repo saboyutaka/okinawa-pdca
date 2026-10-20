@@ -108,16 +108,19 @@ function search({ form, list, count, unit, active, more }: Parts) {
     }
     const f = new FormData(form);
     words = searchWords(String(f.get('q') || ''));
+    // 財源と部局は名前で選ぶ（URL に名前が出るように）。データの中では番号
     const fund = String(f.get('fund') || '');
     const dept = String(f.get('dept') || '');
+    const fi = d.funds.findIndex(([k]) => k === fund);
+    const di = d.depts.indexOf(dept);
     const s = String(f.get('s') || '');
     const yr = String(f.get('yr') || '');
     const shared = String(f.get('shared') || '');
     const sort = SORTS[String(f.get('sort') || '')] ?? SORTS[''];
     if (words.length && !texts.length) texts = d.rows.map((r) => [searchText(`${r[1]} ${r[5]}`), searchText(r[11])]);
     const ok = (r: Row, i: number) => {
-      if (fund && !r[4].includes(Number(fund))) return false;
-      if (dept && !r[6].includes(Number(dept))) return false;
+      if (fund && !r[4].includes(fi)) return false;
+      if (dept && !r[6].includes(di)) return false;
       if (s && !r[7].includes(Number(s))) return false;
       if (yr === 'latest' ? r[2] !== d.latest : yr === 'old' ? r[2] === d.latest : false) return false;
       if (shared && !r[9]) return false;

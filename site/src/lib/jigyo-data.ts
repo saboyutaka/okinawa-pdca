@@ -58,3 +58,14 @@ export const jigyoDataHash = () => sha8(jigyoDataJson());
 export const jigyoDataPath = () => `/yosan/jigyo/data-${jigyoDataHash()}.json`;
 // 名前の変わらない控え。公開し直した直後に、キャッシュした前のページから開くと、前のハッシュのファイルはもう無いので、こちらを読む
 export const JIGYO_DATA_FALLBACK = '/yosan/jigyo/data.json';
+
+// 絞り込んだ予算事業をさがすの URL（予算と財源の部局別・将来像別の棒、部局・将来像のページの予算の節から）。値はページの選択肢と同じ
+// （部局は部局名、財源は財源の区分、将来像は番号）。latest は最新の報告にある予算事業だけ（最新の年度の金額から入るとき）
+export function jigyoSearchHref(q: { dept?: string; s?: number; fund?: string; latest?: boolean }) {
+  const p = new URLSearchParams();
+  if (q.dept) p.set('dept', q.dept);
+  if (q.s) p.set('s', String(q.s));
+  if (q.fund) p.set('fund', q.fund);
+  if (q.latest) p.set('yr', 'latest');
+  return `/yosan/jigyo/?${p}`;
+}

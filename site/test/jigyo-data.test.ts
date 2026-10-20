@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { jigyoDataJson, jigyoDataHash, jigyoDataPath, JIGYO_DATA_FALLBACK, type JigyoData } from '../src/lib/jigyo-data.ts';
+import { jigyoDataJson, jigyoDataHash, jigyoDataPath, jigyoSearchHref, JIGYO_DATA_FALLBACK, type JigyoData } from '../src/lib/jigyo-data.ts';
 import { getBudgetProjects, getTorikumiGroups, budgetCardsOf, budgetProjectOf } from '../src/lib/data.ts';
 
 const data = () => JSON.parse(jigyoDataJson()) as JigyoData;
@@ -41,4 +41,13 @@ test('キーワードで当たる文字には、前の名前と書かれてい�
   const r = d.rows.find((x) => x[0] === budgetProjectOf('伝統文化活性化事業')!.slug)!;
   assert.ok(r[11].includes('琉球歴史文化芸術興隆事業'));
   assert.ok(r[11].includes('国立劇場おきなわの伝統芸能県外公演'));
+});
+
+test('絞り込んだ予算事業をさがすの URL は、部局名・財源の区分・将来像の番号と、最新の報告にあるものだけ', () => {
+  assert.equal(jigyoSearchHref({ dept: '保健医療介護部', latest: true }), `/yosan/jigyo/?dept=${encodeURIComponent('保健医療介護部')}&yr=latest`);
+  assert.equal(jigyoSearchHref({ s: 3 }), '/yosan/jigyo/?s=3');
+  assert.equal(new URLSearchParams(jigyoSearchHref({ fund: '一括交付金（ソフト）' }).split('?')[1]).get('fund'), '一括交付金（ソフト）');
+  // データの中の部局・財源の名前は、URL に書く名前と同じ（ブラウザで名前から番号を引く）
+  const d = data();
+  assert.ok(d.depts.includes('保健医療介護部') && d.funds.some(([k]) => k === '一括交付金（ソフト）'));
 });

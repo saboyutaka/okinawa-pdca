@@ -6,7 +6,7 @@ import Base from '../../../layouts/Base.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import FilterMore from '../../../components/FilterMore.astro';
 import Term from '../../../components/Term.astro';
-import { LATEST, yearLabel, yearLong, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
+import { LATEST, yearLabel, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
 import { fmt } from '../../../lib/format.ts';
 import { JIGYO_DATA_FALLBACK, jigyoDataPath } from '../../../lib/jigyo-data.ts';
 
@@ -17,10 +17,11 @@ const dataPath = jigyoDataPath();
   <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="予算事業をさがす" />
   <h1>予算事業をさがす</h1>
-  <p class="secondary lead">部局の検証票で<Term word="主な取組" />に書かれている予算事業 {fmt(n)}件を、{yearLong(LATEST)}の<Term word="決算見込額" />・財源・部局でさがせます。</p>
+  <p class="secondary lead"><Term word="主な取組" />に書かれた予算事業 {fmt(n)}件を、金額・財源・部局でさがせます。</p>
+  <p class="kinds"><span class="tag" aria-current="page">予算事業</span><a class="tag" href="/yosan/ikkatsu/">一括交付金の事業（事後評価）</a></p>
 
   <form class="filters sticker" id="jf" role="search" aria-label="予算事業の絞り込み">
-    <label class="q" data-label="キーワード">キーワード（予算事業の名前・前の名前・所管課・書かれている取組の名前）
+    <label class="q" data-label="キーワード">キーワード（名前・所管課・取組の名前など）
       <input type="search" name="q" placeholder="例: 観光、子ども、MICE、所管課の名前" />
     </label>
     <label class="sort">並び
@@ -34,13 +35,13 @@ const dataPath = jigyoDataPath();
     <label data-label="財源">財源
       <select name="fund">
         <option value="">すべて</option>
-        {FUNDS.map((f, i) => <option value={i}>{f.key}</option>)}
+        {FUNDS.map((f) => <option value={f.key}>{f.key}</option>)}
       </select>
     </label>
     <label data-label="部局">担当部局
       <select name="dept">
         <option value="">すべて</option>
-        {DEPTS.map((d, i) => <option value={i}>{d.name}</option>)}
+        {DEPTS.map((d) => <option value={d.name}>{d.name}</option>)}
       </select>
     </label>
     <label data-label="将来像">将来像
@@ -53,7 +54,7 @@ const dataPath = jigyoDataPath();
       <select name="yr">
         <option value="">すべて</option>
         <option value="latest">{yearLabel(LATEST)}の報告にある</option>
-        <option value="old">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
+        <option value="old">{yearLabel(LATEST)}の報告に無い</option>
       </select>
     </label>
     <fieldset class="fgroup" data-label="共通">
@@ -69,12 +70,7 @@ const dataPath = jigyoDataPath();
 
   <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={JIGYO_DATA_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
-  <p class="small secondary">
-    金額は、予算事業ごとに最後に載った報告の決算見込額で、複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。
-    {yearLabel(LATEST)}の報告に無い予算事業は、金額の順では{yearLabel(LATEST)}の予算事業のあとに、年度の新しい順に並べています。
-    名前が変わった予算事業は、部局の検証票の「翌年度の予算事業名」でつないで1件にしています（<a href="/data/#kazoekata">このサイトでの数え方</a>）。
-    部局は、書かれている取組の最新の報告での所管部局です。一括交付金（ソフト）の事後評価の事業は<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>で見られます。
-  </p>
+  <p class="small secondary">金額は最後に載った報告の決算見込額で、同じ額のくり返しは1回だけ数えています。名前が変わった予算事業は1件にまとめています（<a href="/data/#kazoekata">数え方</a>）。</p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/yosan/#jigyo">予算と財源</a>で金額の大きい予算事業を見ることもできます。</p></noscript>
 </Base>
 

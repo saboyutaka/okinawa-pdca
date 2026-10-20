@@ -20,6 +20,7 @@ import {
 } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
+import { jigyoSearchHref } from '../../lib/jigyo-data.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
 const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(entries.filter((e) => e.fund === f.key))]));
@@ -62,15 +63,15 @@ const ikSzRows = getShouraizou().map((s) => ({
   counts: countGrades(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label),
 }));
 
-// 部局別・将来像別（最新の報告での所管部局）
-const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(deptAmountEntries(LATEST, 'estimate', d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
+// 部局別・将来像別（最新の報告での所管部局）。押すと、その部局・将来像で絞り込んだ予算事業をさがすへ
+const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(deptAmountEntries(LATEST, 'estimate', d.name))), href: jigyoSearchHref({ dept: d.name, latest: true }) }))
   .filter((i) => i.n > 0)
   .sort((a, b) => b.n - a.n);
 const visionItems = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sz: s.id,
   note: s.name,
-  href: `/future/${s.id}/#yosan`,
+  href: jigyoSearchHref({ s: s.id, latest: true }),
   n: toOku(amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
 }));
 
@@ -180,7 +181,7 @@ const budgetCount = getBudgetProjects().length;
 
   <section aria-labelledby="bunya">
     <SecHead id="bunya" class="anchor">部局別・将来像別（{yearLong(LATEST)}の決算見込額）</SecHead>
-    <p class="small secondary lead">件数ではなく金額（億円）です。名前を押すと、部局・将来像のページの予算を見られます。</p>
+    <p class="small secondary lead">件数ではなく金額（億円）です。名前を押すと、その部局・将来像の予算事業を一覧で見られます。</p>
     <BarList title="部局別" caption="最新の報告での所管部局。" items={deptItems} unit="億円" />
     <BarList title="将来像別" items={visionItems} unit="億円" />
   </section>
@@ -196,6 +197,7 @@ const budgetCount = getBudgetProjects().length;
       <details class="fund-top anchor" id={`fund-${f.series}`}>
         <summary><span class={`swatch series-${f.series}`}>{f.key}</span>の上位{fmt(f.rows.length)}件</summary>
         <ul class="row-list">{f.rows.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
+        <p class="small"><a href={jigyoSearchHref({ fund: f.key, latest: true })}>{f.key}の予算事業をすべて見る</a></p>
       </details>
     ))}
     <p class="small secondary">取組の進捗状況は{yearLong(LATEST)}の報告の判定です。</p>
