@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
+  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, sameBudgetOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
@@ -370,6 +370,37 @@ test('再掲は、同じ年度に同じ名前で載っている別の施策の�
   // 重なりを除いた取組の数（トップに添える）は、どの年度も延べ件数より少ない。R7 は 1,534件 → 1,335件（2026-10-17 に数えた）
   for (const y of YEARS) assert.ok(distinctTorikumiCount(y) < getTorikumiGroups().filter((g) => g.years[y]).length, String(y));
   assert.equal(distinctTorikumiCount(2025), 1335);
+});
+
+test('同じ予算事業の取組は、この取組の予算事業ごとに、同じ年度の部局票に同じ名前の予算事業がある別の取組で、互いに出る（再掲は除く）', () => {
+  // 予算事業の名前が R4〜R5「文化資源を…」→ R6「琉球歴史文化芸術興隆事業」→ R7「伝統文化活性化事業」と変わった取組は、翌年度の予算事業名でつないで1つにまとめる
+  const g = groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演');
+  const { budgets, count } = sameBudgetOf(g);
+  assert.deepEqual(budgets.map((b) => [b.name, b.formers, b.partial]), [
+    ['伝統文化活性化事業', [{ name: '文化資源を活用した沖縄観光の魅力アップ支援事業', years: [2022, 2023] }, { name: '琉球歴史文化芸術興隆事業', years: [2024] }], false],
+  ]);
+  assert.equal(budgets[0].rows.length, count);
+  assert.deepEqual(budgets[0].rows.find((x) => x.group === groupOf('1-4-a-2', '伝統芸能の海外公演'))?.years, [2024, 2025]);
+  // 同じ年度に予算事業が2つある取組は、予算事業ごとに分ける（R4 だけのものは年度を添える）
+  const eco = sameBudgetOf(groupOf('1-1-a-2', '産業部門における省エネルギー対策の推進')).budgets;
+  assert.deepEqual(eco.map((b) => [b.name, b.partial]), [['環境月間街頭キャンペーン等', false], ['県民環境フェア開催運営委託業務', true]]);
+  // 書き方の違い（子供・こども）は同じ予算事業
+  assert.equal(sameBudgetOf(groupOf('2-1-b-1', '沖縄こどもの貧困緊急対策事業（食支援連携体制の整備）')).budgets.length, 1);
+  const yearsWith = (g: TorikumiGroup, o: TorikumiGroup) => [...new Set(sameBudgetOf(g).budgets.flatMap((b) => b.rows.find((x) => x.group === o)?.years ?? []))].sort().join();
+  for (const g of getTorikumiGroups()) {
+    const reposts = repostsOf(g).map((r) => r.group);
+    const { budgets } = sameBudgetOf(g);
+    // 予算事業の欄の「国直轄」「市町村事業」「予算措置なし」などは、県の予算事業の名前ではないので結び付けない
+    assert.ok(budgets.every((b) => !/^(国直轄|市町村事業|予算措置なし|予算事業なし)$/.test(b.name)), g.href);
+    for (const b of budgets) {
+      // 同じ予算事業だった最後の年度の新しい順
+      assert.ok(b.rows.every((x, i) => i === 0 || b.rows[i - 1].years.at(-1)! >= x.years.at(-1)!), g.href);
+      for (const x of b.rows) {
+        assert.ok(x.group !== g && !reposts.includes(x.group), `${g.href} → ${x.group.href}`);
+        assert.equal(yearsWith(x.group, g), yearsWith(g, x.group), `${g.href} → ${x.group.href}`);
+      }
+    }
+  }
 });
 
 test('主要指標は、基準値の年が同じで基準値が違えば、名前が変わった年度を別の指標にする', () => {

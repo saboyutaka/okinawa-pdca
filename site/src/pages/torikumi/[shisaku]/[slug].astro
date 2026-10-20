@@ -1,7 +1,7 @@
 ---
 // 主な取組1件のページ。年度をまたいで同じ名前の取組をまとめ、総括報告書（進捗）と部局の検証票（予算・活動・検証・改善案）を並べる。
 // 頭はページの階層（入っている施策まで。components/Hierarchy.astro）の線の先につなぐ。①いまの状態（進捗状況と、それを決める活動指標の計画と実績。施策のページの頭と同じく、状態の理由まで頭で答える）
-// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算の推移（予算事業と財源も）。表と原文は畳む
+// ②活動指標の計画と実績（図と県の判定の根拠。年度別計画のこの先の年度も置き、前の活動指標は畳む） ③年度ごとの PDCA ④予算の推移（予算事業と財源、同じ予算事業の取組も）。表と原文は畳む
 import type { InferGetStaticPropsType } from 'astro';
 import { ROUTES } from '../../../lib/routes.ts';
 import Base from '../../../layouts/Base.astro';
@@ -19,8 +19,8 @@ import ShareMenu from '../../../components/ShareMenu.astro';
 import Toc from '../../../components/Toc.astro';
 import { themeIdsOf } from '../../../lib/themes.ts';
 import {
-  YEARS, LATEST, yearLabel, yearLong, yearsLong, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
-  sectionHref, sourceLink, relatedOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, yearRuns, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
+  sectionHref, sourceLink, relatedOf, sameBudgetOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
   isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
@@ -128,6 +128,10 @@ const budText = (c: BudgetCell | undefined) => {
 };
 // 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
 const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
+// 同じ予算事業の取組（lib/data.ts の sameBudgetOf）。予算事業ごとに箱を分け、箱の頭に予算事業の名前（この取組に予算事業の名前がある年度の一部だけのものは年度を添える）と前の名前を出す。
+// 行は札・取組の名前・施策だけ。札は ToriRow と同じく、最新の年度の報告に無い取組は最後の年度の進捗状況を年度つきで出す
+const sameBudget = sameBudgetOf(g);
+const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.latest) : `${yearLabel(o.latest.year)} ${statusOf(o.latest)}`);
 ---
 <Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
@@ -409,6 +413,28 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
         <p class="small secondary">この取組は、部局の検証票では別の施策に載っているため、名前で結び付けて表示しています。</p>
       )}
     </details>
+    {sameBudget.count > 0 && (
+      <>
+        <h3>同じ予算事業の取組（{sameBudget.count}件）</h3>
+        <p class="small secondary lead">部局の検証票で、この取組と同じ年度の報告に同じ予算事業が書かれている取組です。</p>
+        {sameBudget.budgets.map((b) => (
+          <div class="sticker list-box sb-box">
+            <div class="sb-head">
+              <h4>予算: {b.name}{b.partial && <span class="sb-years">（{yearRuns(b.years)}）</span>}</h4>
+              {b.formers.length > 0 && <p class="small secondary">{formerText(b.formers)}という名前です。</p>}
+            </div>
+            <ul class="row-list">
+              {b.rows.map(({ group: o }) => (
+                <li>
+                  <div><Chip tone={toneOfStatus(statusOf(o.latest))} text={sameChip(o)} /> <a class="name-link" href={o.href}>{o.latest.name}</a></div>
+                  <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${o.shisaku.id}/`}>{o.shisaku.name}</a> <span class="code-no">{o.shisaku.code}</span></div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </>
+    )}
   </section>
 
   {rm.length > 0 && (
@@ -521,6 +547,12 @@ const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); }
   .k-initial { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pop) 45%, var(--paper)) 0 2px, var(--paper) 2px 6px); }
   section details { margin-top: 10px; }
+  /* 同じ予算事業の取組。予算事業ごとの箱の頭に名前（ToriList の頭と同じ形）、細い線の下に取組の行 */
+  .sb-box { margin-top: 12px; }
+  .sb-head { padding: 10px 16px 8px; }
+  .sb-head h4 { margin: 0; font-size: 0.9375rem; }
+  .sb-head p { margin: 2px 0 0; }
+  .sb-years { font-weight: 400; color: var(--ink-2); }
   /* 活動指標の表（形は styles/global.css の .year-table）。目標・実績が行ごとに分かれた取組は改行を残す */
   .progress td.lines { white-space: pre; }
   .progress :global(.chip) { white-space: nowrap; }
