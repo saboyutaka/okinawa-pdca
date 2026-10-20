@@ -4,6 +4,16 @@ export const yearLabel = (y: number) => `R${y - 2018}`;
 export const yearLong = (y: number) => `令和${y - 2018}年度`;
 // 年度の範囲の文章での書き方（「令和4〜6年度」。1年なら「令和7年度」）。表・図・札は yearLabel で「R4〜R6」
 export const yearsLong = (from: number, to = from) => (from === to ? yearLong(from) : `令和${from - 2018}〜${to - 2018}年度`);
+// とびとびのことがある年度の並び（昇順）を、続く年度は「〜」でまとめて書く（「R4・R6〜R7」）
+export function yearRuns(ys: number[]) {
+  const runs: number[][] = [];
+  for (const y of ys) {
+    const last = runs.at(-1);
+    if (last && last.at(-1) === y - 1) last.push(y);
+    else runs.push([y]);
+  }
+  return runs.map((r) => (r.length > 1 ? `${yearLabel(r[0])}〜${yearLabel(r.at(-1)!)}` : yearLabel(r[0]))).join('・');
+}
 
 // R4〜R6 は前期実施計画（目標年度R6）、R7からは中期実施計画（目標年度R9）。基準値・目標値が切り替わる
 export const PLAN_PERIODS = [[2022, 2023, 2024], [2025, 2026, 2027]];

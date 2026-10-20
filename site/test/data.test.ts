@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  yearLabel, yearLong, yearsLong, periodName, periodLabel, planIndex, refText, eraRef,
+  yearLabel, yearLong, yearsLong, yearRuns, periodName, periodLabel, planIndex, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, shuyouPartCount, childRange, halfWidth, nameKey,
   splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
@@ -30,6 +30,10 @@ test('年度の書き方', () => {
   assert.equal(yearsLong(2025), '令和7年度');
   assert.deepEqual([2024, 2025].map(periodName), ['前期', '中期']);
   assert.deepEqual([2022, 2027].map(periodLabel), ['前期（R4〜R6）', '中期（R7〜R9）']);
+  assert.equal(yearRuns([2025]), 'R7');
+  assert.equal(yearRuns([2022, 2023, 2024]), 'R4〜R6');
+  assert.equal(yearRuns([2022, 2024, 2025]), 'R4・R6〜R7');
+  assert.equal(yearRuns([2022, 2025]), 'R4・R7');
 });
 
 test('judgeByGrid: 県の区分表のマス（A・B は「順調」の割合40%以上の2段、C・D は達成率40%未満の列を80%で分ける）', () => {

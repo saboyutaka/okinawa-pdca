@@ -6,7 +6,7 @@ import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
   amountEntries, budgetGroups, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
-  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
+  countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, sameBudgetOf, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
 import { KATSUDOU_RENAMES, SEIKA_RENAMES, TORIKUMI_RENAMES, TORIKUMI_REPOSTS } from '../src/lib/renames.ts';
@@ -370,6 +370,26 @@ test('再掲は、同じ年度に同じ名前で載っている別の施策の�
   // 重なりを除いた取組の数（トップに添える）は、どの年度も延べ件数より少ない。R7 は 1,534件 → 1,335件（2026-10-17 に数えた）
   for (const y of YEARS) assert.ok(distinctTorikumiCount(y) < getTorikumiGroups().filter((g) => g.years[y]).length, String(y));
   assert.equal(distinctTorikumiCount(2025), 1335);
+});
+
+test('同じ予算事業の取組は、同じ年度の部局票に同じ名前の予算事業がある別の取組で、互いに出る（再掲は除く）', () => {
+  // 予算事業の名前が R4〜R5「文化資源を活用した沖縄観光の魅力アップ支援事業」→ R6「琉球歴史文化芸術興隆事業」→ R7「伝統文化活性化事業」と変わった取組
+  const g = groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演');
+  const xs = sameBudgetOf(g);
+  const kaigai = xs.find((x) => x.group === groupOf('1-4-a-2', '伝統芸能の海外公演'));
+  assert.ok(kaigai);
+  assert.deepEqual([kaigai.years, kaigai.names, kaigai.partial], [[2024, 2025], ['琉球歴史文化芸術興隆事業', '伝統文化活性化事業'], true]);
+  assert.ok(xs.some((x) => x.years.join() === '2022,2023' && x.names.join() === '文化資源を活用した沖縄観光の魅力アップ支援事業'));
+  for (const g of getTorikumiGroups()) {
+    const reposts = repostsOf(g).map((r) => r.group);
+    const xs = sameBudgetOf(g);
+    // 同じ予算事業だった最後の年度の新しい順
+    assert.ok(xs.every((x, i) => i === 0 || xs[i - 1].years.at(-1)! >= x.years.at(-1)!), g.href);
+    for (const x of xs) {
+      assert.ok(x.group !== g && !reposts.includes(x.group), `${g.href} → ${x.group.href}`);
+      assert.ok(sameBudgetOf(x.group).some((o) => o.group === g && o.years.join() === x.years.join()), `${g.href} → ${x.group.href}`);
+    }
+  }
 });
 
 test('主要指標は、基準値の年が同じで基準値が違えば、名前が変わった年度を別の指標にする', () => {

@@ -43,7 +43,7 @@ export interface YearGroup<T> {
 
 export const YEARS = [2022, 2023, 2024, 2025];
 export const LATEST = YEARS[YEARS.length - 1];
-export { yearLabel, yearLong, yearsLong, PLAN_PERIODS, periodName, periodLabel, planIndex } from './years.ts';
+export { yearLabel, yearLong, yearsLong, yearRuns, PLAN_PERIODS, periodName, periodLabel, planIndex } from './years.ts';
 export { withUnit } from './text.ts';
 // 成果指標の実績値が何年度の値か（actual_ref_year）。報告書の書き方はまちまち（「（R4年度）」「R5」「速報値」「R7.5月未確定値」など）なので、
 // 外側の括弧を外し、年度で終わるものにだけ「の値」を付ける。空なら ''
@@ -969,6 +969,38 @@ export function renameCandidates(g: TorikumiGroup) {
 export function relatedOf(g: TorikumiGroup) {
   const cs = renameCandidates(g);
   return { before: cs.filter((c) => !c.after), after: cs.filter((c) => c.after), repost: repostsOf(g) };
+}
+// その年度の部局票の予算事業の名前（「―」などは除く）
+const budgetNamesIn = (g: TorikumiGroup, y: number) =>
+  g.years[y] ? (budgetOf(y, g.shisaku.id, g.key)?.budgets || []).map((b) => b.name).filter((n) => !isNoBudgetName(n)) : [];
+const groupsByBudget = once(() => {
+  const m = new Map<string, TorikumiGroup[]>();
+  for (const g of getTorikumiGroups()) {
+    for (const y of YEARS) for (const k of new Set(budgetNamesIn(g, y).map(budgetKey))) m.set(`${y}|${k}`, [...(m.get(`${y}|${k}`) ?? []), g]);
+  }
+  return m;
+});
+// 同じ予算事業の取組（取組のページの予算の節）。同じ年度の報告の部局票に、同じ名前の予算事業が書かれている別の取組。年度をまたいだ照合はしない（前後の年度の取組は relatedOf）。
+// 複数の施策に載っている同じ取組（再掲）はページの頭に出すので除く。years は同じ予算事業が書かれていた報告年度、names はこの取組の側の予算事業の名前、
+// partial はこの取組に予算事業の名前がある年度の一部だけのもの。並びは同じ予算事業だった最後の年度の新しい順、同じなら報告書の順
+export interface SameBudget { group: TorikumiGroup; years: number[]; names: string[]; partial: boolean }
+export function sameBudgetOf(g: TorikumiGroup): SameBudget[] {
+  const reposts = new Set(repostsOf(g).map((r) => r.group));
+  const own = YEARS.filter((y) => budgetNamesIn(g, y).length);
+  const m = new Map<TorikumiGroup, SameBudget>();
+  for (const y of own) {
+    for (const name of budgetNamesIn(g, y)) {
+      for (const o of groupsByBudget().get(`${y}|${budgetKey(name)}`) ?? []) {
+        if (o === g || reposts.has(o)) continue;
+        const x = m.get(o) ?? { group: o, years: [], names: [], partial: false };
+        m.set(o, x);
+        if (!x.years.includes(y)) x.years.push(y);
+        if (!x.names.some((n) => budgetKey(n) === budgetKey(name))) x.names.push(name);
+      }
+    }
+  }
+  for (const x of m.values()) x.partial = x.years.length < own.length;
+  return getTorikumiGroups().flatMap((o) => m.get(o) ?? []).sort((a, b) => b.years.at(-1)! - a.years.at(-1)!);
 }
 // この取組が載っている施策の数（「2施策に共通」。複数の施策に載っている取組＝再掲だけで、ほかは 0）。year を渡すと、その年度に再掲だったものだけ（目次は最新の年度）
 export function commonShisakuCount(g: TorikumiGroup, year?: number) {
