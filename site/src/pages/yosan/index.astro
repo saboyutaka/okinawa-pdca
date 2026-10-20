@@ -1,6 +1,6 @@
 ---
 // 予算と財源。部局の検証票に書かれた主な取組の予算事業の金額（重複を除く）を、財源・部局・将来像・予算事業ごとにまとめる。
-// 一括交付金（ソフト）は事業ごとの事後評価があるので節を分け、予算事業をさがす（/yosan/jigyo/?kind=ikkatsu）へつなぐ。
+// 一括交付金（ソフト）は事業ごとの事後評価があるので節を分け、事業をさがすページ（/yosan/ikkatsu/）へつなぐ。
 // 合計の数え方・合計から除いた金額・部局票がある範囲は、最後の「データの注意」に畳む（#suspect・#coverage は他のページからの行き先）
 import Base from '../../layouts/Base.astro';
 import AmountChart from '../../components/AmountChart.astro';
@@ -18,7 +18,7 @@ import {
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
   currentDeptOf, deptAmountEntries, torikumiPage, getBudgetProjects, type AmountEntry,
 } from '../../lib/data.ts';
-import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, GRADES, ikkatsuGroups, ikkatsuShisakuIds, ikkatsuSearchHref, countGrades } from '../../lib/plans.ts';
+import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
@@ -58,7 +58,7 @@ const szOf = (g: (typeof ikGroups)[number]) => ikkatsuShisakuIds(g).map(getShisa
 const ikSzRows = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sub: s.name,
-  href: ikkatsuSearchHref(s.id),
+  href: `${IKKATSU_HREF}?s=${s.id}`,
   counts: countGrades(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label),
 }));
 
@@ -132,7 +132,7 @@ const budgetCount = getBudgetProjects().length;
       <div class="tile-value">{fmt(ikCounts['達成'] || 0)}/{fmt(ikLatest.length)}<small>事業</small></div>
       <StatusBar categories={GRADES} counts={ikCounts} unit="事業" label={`${yearLabel(IKKATSU_LATEST)}の事後評価`} size="mini" />
       <div class="tile-sub">一括交付金（ソフト）の事業ごとの、主な取組とは別の<Term word="一括交付金の事後評価" label="評価" />です。</div>
-      <a class="small" href={ikkatsuSearchHref()}>一括交付金の事業をさがす</a>
+      <a class="small" href={IKKATSU_HREF}>一括交付金の事業をさがす</a>
     </div>
   </div>
 
@@ -174,7 +174,7 @@ const budgetCount = getBudgetProjects().length;
     <p class="small secondary lead">主な取組の評価とは別に、一括交付金（ソフト）を使った事業ごとに、県が成果目標の達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています。</p>
     <StatusChart title="事後評価の結果" caption="成果目標の達成率による県の評価。" categories={GRADES} rows={ikYearRows} unit="事業" />
     <StatusChart title={`将来像ごとの事業（${yearLabel(IKKATSU_LATEST)}）`} caption="事業の施策で分けています。押すと、その将来像の事業をさがせます。" categories={GRADES} rows={ikSzRows} unit="事業" legend={false} />
-    <p class="more-link"><a class="button" href={ikkatsuSearchHref()}>一括交付金の事業をさがす（{fmt(ikGroups.length)}件）</a></p>
+    <p class="more-link"><a class="button" href={IKKATSU_HREF}>一括交付金の事業をさがす（{fmt(ikGroups.length)}件）</a></p>
     <p class="small secondary">一括交付金の事業をさがすの事業の金額は事後評価の予算額（前の年度からの繰越を含む事業費）で、下の予算事業の決算見込額とは年度と数え方が違います。</p>
   </section>
 

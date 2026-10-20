@@ -1,0 +1,35 @@
+---
+// 一括交付金（ソフト）の事業の一覧の1行（一括交付金の事業をさがす・予算と財源）。形は取組の一覧の行（.t-row）と同じで、
+// 左に名前（施策のページの事業のカードへ）・担当課と施策・最新の年度の達成率と予算、右に年度ごとの評価のスタンプ。
+// 主な取組の行と取り違えないよう、頭に一括交付金の事後評価の札（.ik-tag）を付ける
+import Stamps from './Stamps.astro';
+import { yearLabel, getShisaku, type YearGroup } from '../lib/data.ts';
+import { IKKATSU, ikkatsuStamps, ikkatsuHref, ikkatsuShisakuIds } from '../lib/plans.ts';
+import { yen } from '../lib/format.ts';
+import type { IkkatsuJigyoRow } from '../lib/types.ts';
+
+interface Props { g: YearGroup<IkkatsuJigyoRow>; attrs?: Record<string, string> }
+const { g, attrs = {} } = Astro.props;
+const j = g.latest;
+const href = ikkatsuHref(g);
+const shisaku = ikkatsuShisakuIds(g).flatMap((id) => getShisaku(id) ?? []);
+const s = shisaku[0];
+const b = j.budget || {};
+---
+<li class="t-row" {...attrs}>
+  <div class="t-main">
+    <span class="ik-tag">{IKKATSU.short}</span>
+    {href ? <a class="name-link" href={href}>{j.name}</a> : <span class="name">{j.name}</span>}
+    <div class="small secondary">
+      {j.dept || '担当部課の記載なし'}{s && <>・施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span>{shisaku.length > 1 && <>　ほか{shisaku.length - 1}施策</>}</>}
+    </div>
+    <div class="small secondary">
+      {yearLabel(j.year)}: 成果目標の達成率 {j.rate_raw || '—'}{b.total != null && <>・予算額 {yen(b.total)}{b.rate != null && <>（執行率 {b.rate}%）</>}</>}
+    </div>
+  </div>
+  <Stamps items={ikkatsuStamps(g)} label="年度ごとの事後評価" />
+</li>
+
+<style>
+  .name { font-weight: 700; }
+</style>

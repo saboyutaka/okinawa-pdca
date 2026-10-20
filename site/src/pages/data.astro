@@ -5,7 +5,6 @@ import { YEARS, yearLong, load, getPdfCount } from '../lib/data.ts';
 import { fmt } from '../lib/format.ts';
 import { LINKS } from '../lib/links.ts';
 import { getThemes } from '../lib/themes.ts';
-import { ikkatsuSearchHref } from '../lib/plans.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
 
@@ -32,7 +31,7 @@ const themes = getThemes();
   <p id="others">沖縄県PDCAのほかに、次の県の資料も読んでいます。</p>
   <ul>
     <li><a href="/keikaku/kanko/">観光ロードマップ</a>: 「<ExtLink href={LINKS.kankoRm} after="」">沖縄観光推進ロードマップ</ExtLink>のPDCA実施報告書（令和4〜6年度）</li>
-    <li><a href={ikkatsuSearchHref()}>一括交付金の事業</a>: 「<ExtLink href={LINKS.ikkatsu} after="」">沖縄振興特別推進交付金の事後評価</ExtLink>（令和4〜6年度）</li>
+    <li><a href="/yosan/ikkatsu/">一括交付金の事業</a>: 「<ExtLink href={LINKS.ikkatsu} after="」">沖縄振興特別推進交付金の事後評価</ExtLink>（令和4〜6年度）</li>
     <li>基本施策のページの「県によるふりかえり」: 「<ExtLink href={LINKS.hyoka} after="」">新・沖縄21世紀ビジョン基本計画 評価検証報告書</ExtLink></li>
   </ul>
 

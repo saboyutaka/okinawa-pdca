@@ -89,8 +89,6 @@ export const parseRedirects = (text: string): Redirect[] =>
   });
 
 const PAGE_URL = /^\/([^\s*:#?]+\/)?$/;
-// 転送の行き先。ページの URL に、絞り込みのクエリを付けてよい（/yosan/ikkatsu/ → /yosan/jigyo/?kind=ikkatsu）
-const pathOf = (u: string) => u.replace(/\?[^\s#]+$/, '');
 
 // 一覧の URL が、どれもページか転送で開けるか。
 // missing: ページも転送も無い URL。unlisted: 一覧に無いページ（make urls で足す。増えるのはよい）。problems: 一覧と転送の書き方の誤り
@@ -103,14 +101,14 @@ export function checkUrls(listed: string[], pages: string[], redirects: Redirect
   for (const r of redirects) {
     const at = `_redirects の ${r.line} 行目（${r.from}）`;
     // Cloudflare は * や :name の転送もできるが、このテストで確かめられるよう、完全なパスを1行に1つ書く
-    if (!PAGE_URL.test(r.from) || !PAGE_URL.test(pathOf(r.to))) problems.push(`${at}: 古い URL と新しい URL を、/ で始まり / で終わる完全なパスで書く（新しい URL にはクエリを付けてよい）`);
+    if (!PAGE_URL.test(r.from) || !PAGE_URL.test(r.to)) problems.push(`${at}: 古い URL と新しい URL を、/ で始まり / で終わる完全なパスで書く`);
     // 状態コードを書かないと 302（一時的な転送）になり、検索エンジンが新しい URL に評価を移さない
     if (r.status !== 301) problems.push(`${at}: 状態コードを 301 にする`);
     if (froms.has(r.from)) problems.push(`${at}: 同じ古い URL の転送が2つある（上の行だけが使われる）`);
     froms.add(r.from);
     // 転送はページより先に効く（Cloudflare）ので、ページのある URL を転送するとそのページが見えなくなる
     if (pageSet.has(r.from)) problems.push(`${at}: 古い URL にページがある`);
-    if (!pageSet.has(pathOf(r.to))) problems.push(`${at}: 新しい URL（${r.to}）のページが無い`);
+    if (!pageSet.has(r.to)) problems.push(`${at}: 新しい URL（${r.to}）のページが無い`);
   }
   return {
     missing: listed.filter((u) => !pageSet.has(u) && !froms.has(u)),

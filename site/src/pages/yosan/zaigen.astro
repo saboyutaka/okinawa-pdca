@@ -6,7 +6,7 @@ import Term from '../../components/Term.astro';
 import Says from '../../components/Says.astro';
 import { LATEST, yearLabel, yearLong, FUNDS, amountEntries, amountTotal, getBudgetLines, getShisakuList, getFinanceReference, budgetKey as bkey } from '../../lib/data.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
-import { IKKATSU_LATEST, ikkatsuSearchHref, ikkatsuRows } from '../../lib/plans.ts';
+import { IKKATSU_LATEST, IKKATSU_HREF, ikkatsuRows } from '../../lib/plans.ts';
 import { LINKS } from '../../lib/links.ts';
 import ExtLink from '../../components/ExtLink.astro';
 import SecHead from '../../components/SecHead.astro';
@@ -90,7 +90,7 @@ const sources = [...shinko.sources, ...ref.ikkatsu.sources, ...pref.sources];
           {f.key === '一括交付金（ソフト）' && (
             <p class="small ik-note">
               県はこの交付金を使った事業ごとに成果目標を立て、毎年その達成状況を<Term word="一括交付金の事後評価" label="事後評価" />しています（<ExtLink href={LINKS.ikkatsu}>県の公表ページ</ExtLink>。{yearLong(IKKATSU_LATEST)}は{fmt(ikCount)}事業）。
-              事業ごとの評価（◎○△未）は<a href={ikkatsuSearchHref()}>一括交付金の事業をさがす</a>で一覧でき、成果目標・予算の執行・今後の方針は各施策のページの「一括交付金（ソフト）の事業」で見られます。
+              事業ごとの評価（◎○△未）は<a href={IKKATSU_HREF}>一括交付金の事業をさがす</a>で一覧でき、成果目標・予算の執行・今後の方針は各施策のページの「一括交付金（ソフト）の事業」で見られます。
             </p>
           )}
           {f.top.length > 0 && (

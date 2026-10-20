@@ -1,43 +1,26 @@
 ---
-// 予算事業をさがす。部局の検証票の予算事業（予算事業のページ /yosan/jigyo/<slug>/ があるもの）と、一括交付金（ソフト）の事後評価の事業を同じ一覧で、
-// キーワード・種類・財源・部局・将来像・くらしのテーマ・年度・共通の金額・事後評価の評価と移り変わりで絞り込み、金額・名前・施策の順に並べ替える。
-// 一括交付金の事業は予算の一覧として並べ、札と種類の絞り込みで見分ける（予算事業とは結び付けない。docs/design.md の5章）。
-// 行は検索用のデータ（lib/jigyo-data.ts）を読んでブラウザで描く（scripts/jigyo-search.ts。docs/site.md の7章）
+// 予算事業をさがす。部局の検証票の予算事業（予算事業のページ /yosan/jigyo/<slug>/ があるもの）を、キーワード・財源・部局・将来像・年度・共通の金額で絞り込み、
+// 金額・名前・施策の順に並べ替える。行は検索用のデータ（lib/jigyo-data.ts）を読んでブラウザで描く（scripts/jigyo-search.ts。docs/site.md の7章）。
+// 一括交付金（ソフト）の事後評価の事業とは混ぜない（docs/design.md の5章）
 import Base from '../../../layouts/Base.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import FilterMore from '../../../components/FilterMore.astro';
-import ThemeFilter from '../../../components/ThemeFilter.astro';
 import Term from '../../../components/Term.astro';
-import Icon from '../../../components/Icon.astro';
-import Says from '../../../components/Says.astro';
-import ExtLink from '../../../components/ExtLink.astro';
-import { LATEST, yearLabel, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
-import { IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_TRENDS, GRADES, ikkatsuGroups, ikkatsuRows, planSourceLink } from '../../../lib/plans.ts';
-import { LINKS } from '../../../lib/links.ts';
+import { LATEST, yearLabel, yearLong, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
 import { fmt } from '../../../lib/format.ts';
 import { JIGYO_DATA_FALLBACK, jigyoDataPath } from '../../../lib/jigyo-data.ts';
 
 const n = getBudgetProjects().length;
-const nIk = ikkatsuGroups().length;
 const dataPath = jigyoDataPath();
-// 一括交付金の事後評価の年度ごとの総括表（事業の行の出典）
-const ikSources = IKKATSU_YEARS.flatMap((y) => {
-  const id = ikkatsuRows(y)[0]?.source;
-  const link = id && planSourceLink('ikkatsu', id);
-  return link ? [{ href: link.href, year: y }] : [];
-});
 ---
-<Base title="予算事業をさがす" description={`沖縄県PDCAの主な取組に書かれた予算事業（${fmt(n)}件）と、一括交付金（ソフト）の事後評価の事業（${fmt(nIk)}件）を、金額・財源・部局・評価でさがせます。`}>
+<Base title="予算事業をさがす" description={`沖縄県PDCAの主な取組に書かれた予算事業（${fmt(n)}件）を、決算見込額・財源・部局でさがせます。`}>
   <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="予算事業をさがす" />
   <h1>予算事業をさがす</h1>
-  <p class="secondary lead"><Term word="主な取組" />に書かれた予算事業 {fmt(n)}件と、一括交付金（ソフト）の事業 {fmt(nIk)}件を、金額・財源・部局でさがせます。</p>
-  <Says who="!">
-    <p><strong>一括交付金の事業は、沖縄県PDCAとは別の評価です。</strong>金額も<Term word="一括交付金の事後評価" label="事後評価" />の予算額で、決算見込額とは数え方が違います。</p>
-  </Says>
+  <p class="secondary lead">部局の検証票で<Term word="主な取組" />に書かれている予算事業 {fmt(n)}件を、{yearLong(LATEST)}の<Term word="決算見込額" />・財源・部局でさがせます。</p>
 
   <form class="filters sticker" id="jf" role="search" aria-label="予算事業の絞り込み">
-    <label class="q" data-label="キーワード">キーワード（名前・所管課・取組の名前など）
+    <label class="q" data-label="キーワード">キーワード（予算事業の名前・前の名前・所管課・書かれている取組の名前）
       <input type="search" name="q" placeholder="例: 観光、子ども、MICE、所管課の名前" />
     </label>
     <label class="sort">並び
@@ -48,13 +31,6 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
       </select>
     </label>
     <FilterMore id="jigyo-more">
-    <label data-label="種類">種類
-      <select name="kind">
-        <option value="">すべて</option>
-        <option value="budget">予算事業（主な取組の検証票）</option>
-        <option value="ikkatsu">一括交付金の事業（事後評価）</option>
-      </select>
-    </label>
     <label data-label="財源">財源
       <select name="fund">
         <option value="">すべて</option>
@@ -73,38 +49,19 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
         {getShouraizou().map((s) => <option value={s.id}>将来像{s.id}</option>)}
       </select>
     </label>
-    <ThemeFilter />
     <label data-label="年度">年度
       <select name="yr">
         <option value="">すべて</option>
-        <option value="latest">最新の年度にある</option>
-        <option value="old">最新の年度に無い</option>
+        <option value="latest">{yearLabel(LATEST)}の報告にある</option>
+        <option value="old">{yearLabel(LATEST)}の報告に無い（終了・名称変更）</option>
       </select>
     </label>
     <fieldset class="fgroup" data-label="共通">
-      <legend class="fgroup-label">共通の金額（予算事業）</legend>
+      <legend class="fgroup-label">共通の金額</legend>
       <div class="fchips">
         <label class="fchip"><input type="checkbox" name="shared" value="1" data-text="共通の金額がある予算事業だけ" /><span>共通の金額がある予算事業だけ</span></label>
       </div>
     </fieldset>
-    <fieldset class="fgroup" data-label="評価">
-      <legend class="fgroup-label">一括交付金の事業の{yearLabel(IKKATSU_LATEST)}の評価・いくつでも選べます</legend>
-      <div class="fchips">
-        {GRADES.map((x) => (
-          <label class="fchip" title={x.note}>
-            <input type="checkbox" name="gr" value={x.key} data-text={`${yearLabel(IKKATSU_LATEST)}の評価 ${x.mark} ${x.key}`} />
-            <span><Icon tone={x.tone} shape={x.shape} />{x.mark} {x.key}<span class="sr-only">（{x.note}）</span></span>
-          </label>
-        ))}
-        <label class="fchip"><input type="checkbox" name="gr" value="none" data-text={`${yearLabel(IKKATSU_LATEST)}の評価なし`} /><span><Icon tone="blank" shape="ring" />{yearLabel(IKKATSU_LATEST)}の評価なし</span></label>
-      </div>
-    </fieldset>
-    <label data-label="評価の移り変わり">一括交付金の事業の評価の移り変わり
-      <select name="tr">
-        <option value="">すべて</option>
-        {IKKATSU_TRENDS.map((t) => <option value={t.key}>{t.label}</option>)}
-      </select>
-    </label>
     </FilterMore>
   </form>
   <div class="active-filters" id="active" hidden></div>
@@ -113,19 +70,20 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
   <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={JIGYO_DATA_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
   <p class="small secondary">
-    金額は、予算事業は最後に載った報告の決算見込額（{yearLabel(LATEST)}。同じ額のくり返しは1回だけ数える）、一括交付金の事業は最後の事後評価の予算額（{yearLabel(IKKATSU_LATEST)}。繰越を含む）です。名前が変わった予算事業は1件にまとめています（<a href="/data/#kazoekata">数え方</a>）。
-    出典: 各部局の「主な取組」検証票、<ExtLink href={LINKS.ikkatsu}>一括交付金の事後評価</ExtLink>の総括表（{ikSources.map((x, i) => <>{i > 0 && '・'}<ExtLink href={x.href}>{yearLabel(x.year)}</ExtLink></>)}）。
+    金額は、予算事業ごとに最後に載った報告の決算見込額で、複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。
+    {yearLabel(LATEST)}の報告に無い予算事業は、金額の順では{yearLabel(LATEST)}の予算事業のあとに、年度の新しい順に並べています。
+    名前が変わった予算事業は、部局の検証票の「翌年度の予算事業名」でつないで1件にしています（<a href="/data/#kazoekata">このサイトでの数え方</a>）。
+    部局は、書かれている取組の最新の報告での所管部局です。一括交付金（ソフト）の事後評価の事業は<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>で見られます。
   </p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/yosan/#jigyo">予算と財源</a>で金額の大きい予算事業を見ることもできます。</p></noscript>
 </Base>
 
 <style>
   .sort { flex: 0 1 12em; }
-  /* 結果の行（scripts/jigyo-search.ts が描く）。左に名前と所管・取組の数（一括交付金の事業は評価）・財源、右に金額と共通の札 */
+  /* 結果の行（scripts/jigyo-search.ts が描く）。左に名前と所管・取組の数・財源、右に決算見込額と共通の札 */
   #results :global(.j-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: start; }
   #results :global(.j-main) { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
   #results :global(.j-funds) { display: flex; flex-wrap: wrap; gap: 2px 12px; }
-  #results :global(.j-grade .chip) { font-size: 0.8125rem; }
   #results :global(.j-amt) { display: grid; justify-items: end; gap: 2px; text-align: right; white-space: nowrap; }
   #results :global(.j-amt .big) { font-size: 1.15rem; }
   #results :global(.j-amt-v) { display: inline-flex; align-items: center; gap: 8px; }

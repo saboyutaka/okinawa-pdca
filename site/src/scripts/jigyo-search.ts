@@ -1,9 +1,7 @@
 // 予算事業をさがす（pages/yosan/jigyo/index.astro）の検索と一覧。検索用のデータ（lib/jigyo-data.ts）を読んで、一覧をここで描く。
-// 行は2種類: 部局票の予算事業と、一括交付金（ソフト）の事後評価の事業（頭に一括交付金の事後評価の札 .ik-tag を付けて見分ける）。
 // どのページでも読み込む（scripts/site.ts）ので、検索のフォーム（#jf）があるページでだけ動かす。
 // 絞り込み中の札・URL のクエリ・さらに表示・フォーカスの移し方は、取組をさがす（scripts/torikumi-search.ts）と同じ。並び（sort）は条件ではないので札にしない
 import { fmt, yen } from '../lib/format.ts';
-import { iconSvg } from '../lib/icons.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { JigyoData as Data } from '../lib/jigyo-data.ts';
 import { yearLabel } from '../lib/years.ts';
@@ -21,7 +19,6 @@ if (form && list && count && unit && active && more) search({ form, list, count,
 
 interface Parts { form: HTMLFormElement; list: HTMLElement; count: HTMLElement; unit: HTMLElement; active: HTMLElement; more: HTMLButtonElement }
 type Row = Data['rows'][number];
-const KINDS = { budget: 0, ikkatsu: 1 } as const;
 function search({ form, list, count, unit, active, more }: Parts) {
   const PAGE = 50;
   let data: Data | undefined;
@@ -31,7 +28,7 @@ function search({ form, list, count, unit, active, more }: Parts) {
   let hits: number[] = [];
   let shown = 0;
   let words: SearchWord[] = [];
-  // 行ごとの検索される文字（行に見える名前・所管課と、見えない前の名前・取組の名前・事業の内容）。初めて探すときに作って使い回す
+  // 行ごとの検索される文字（行に見える名前・所管課と、見えない前の名前・取組の名前）。初めて探すときに作って使い回す
   let texts: [shown: string, hidden: string][] = [];
 
   function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string) {
@@ -41,60 +38,36 @@ function search({ form, list, count, unit, active, more }: Parts) {
     return e;
   }
 
-  // 一括交付金の事業の評価の札（components/Chip.astro と同じ形）
-  function chip(d: Data, g: number) {
-    const c = el('span', 'chip');
-    const x = g >= 0 ? d.grades[g] : null;
-    c.insertAdjacentHTML('beforeend', x ? iconSvg(x[2], x[3]) : iconSvg('blank', 'ring'));
-    c.append(el('span', '', x ? `${x[1]} ${x[0]}` : '評価なし'));
-    return c;
-  }
-
   function render(d: Data, row: Row, i: number) {
-    const [kind, name, href, year, amount, funds, section, , , , torikumi, shared, grades, rate, exec, , , text] = row;
+    const [slug, name, year, estimate, funds, section, , , torikumi, shared, , text] = row;
     const yl = yearLabel(year);
-    const old = year < d.latest[kind];
     const li = el('li', 'j-row');
     const main = el('div', 'j-main');
     const head = el('div');
-    // 一括交付金の事業は、予算事業と取り違えないよう頭に札を付ける（components/IkkatsuRow.astro と同じ。事業には自分のページが無いので、施策のページの事業のカードへ）
-    if (kind === KINDS.ikkatsu) head.append(el('span', 'ik-tag', '一括交付金の事後評価'), ' ');
     const a = el('a', 'name-link', name);
-    a.href = href;
+    a.href = `/yosan/jigyo/${slug}/`;
     head.append(a);
-    // 最新の年度に無いものの札（components/YearTag.astro の「R6まで」と同じ形）
-    if (old) {
+    // 最新の報告に無い予算事業の札（components/YearTag.astro の「R6まで」と同じ形）
+    if (year < d.latest) {
       const tag = el('span', 'year-tag ended', `${yl}まで`);
-      tag.title = kind === KINDS.ikkatsu ? `${yl}の事後評価まで載っていた事業` : `${yl}の報告まで載っていた予算事業`;
-      tag.append(el('span', 'sr-only', '載っていた'));
+      tag.title = `${yl}の報告まで載っていた予算事業`;
+      tag.append(el('span', 'sr-only', '載っていた予算事業'));
       head.append(' ', tag);
     }
-    main.append(head);
-    if (kind === KINDS.budget) {
-      main.append(el('div', 'small secondary', `${section ? `${section}・` : ''}${old ? `${yl}の報告で` : ''}取組 ${fmt(torikumi)}件`));
-    } else {
-      main.append(el('div', 'small secondary', section || '担当部課の記載なし'));
-      const g = el('div', 'small secondary j-grade');
-      const last = d.ikkatsuYears.indexOf(year);
-      g.append(`${yl}の事後評価 `, chip(d, grades[last]), `　成果目標の達成率 ${rate || '—'}`);
-      // 前の年度の評価も年度つきで並べる（一括交付金の事業をさがすのスタンプの代わり）
-      const past = d.ikkatsuYears.flatMap((y, k) => (k < last && grades[k] !== -1 ? [`${yearLabel(y)} ${grades[k] >= 0 ? d.grades[grades[k]][1] : 'なし'}`] : []));
-      if (past.length) g.append(`（${past.join('・')}）`);
-      main.append(g);
-    }
+    main.append(head, el('div', 'small secondary', `${section ? `${section}・` : ''}${year < d.latest ? `${yl}の報告で` : ''}取組 ${fmt(torikumi)}件`));
     if (funds.length) {
       const f = el('div', 'small secondary j-funds');
       for (const k of funds) f.append(el('span', `swatch series-${d.funds[k][1]}`, d.funds[k][0]));
       main.append(f);
     }
-    // キーワードが行に見える文字に無く、見えない文字にだけあるときは、当たったところを出す（なぜ出たかが分かるように）
+    // キーワードが行に見える文字に無く、前の名前や取組の名前にだけあるときは、当たった名前を出す（なぜ出たかが分かるように）
     if (words.length && !matchesAll(texts[i][0], words)) {
-      const lines = text.split('\n').filter((t) => words.some(([w, f]) => searchText(t).includes(w) || searchText(t).includes(f)));
-      if (lines.length) main.append(el('div', 'small secondary', kind === KINDS.budget ? `当たった名前（前の名前・取組）: ${lines.slice(0, 3).join('、')}${lines.length > 3 ? ' ほか' : ''}` : `当たった内容: ${lines[0]}`));
+      const names = text.split('\n').filter((t) => words.some(([w, f]) => searchText(t).includes(w) || searchText(t).includes(f)));
+      if (names.length) main.append(el('div', 'small secondary', `当たった名前（前の名前・取組）: ${names.slice(0, 3).join('、')}${names.length > 3 ? ' ほか' : ''}`));
     }
     const amt = el('div', 'j-amt');
     const v = el('span', 'j-amt-v');
-    v.append(el('span', 'big num', yen(amount)));
+    v.append(el('span', 'big num', yen(estimate)));
     // 共通の金額の札（取組のページの予算の箱と同じ。押すと lib/terms.ts の「共通の金額」の説明。scripts/terms.ts が押されたのを受ける）
     if (shared) {
       const b = el('button', 'term common-tag', '共通');
@@ -106,7 +79,7 @@ function search({ form, list, count, unit, active, more }: Parts) {
       b.tabIndex = -1;
       v.append(b);
     }
-    amt.append(v, el('span', 'small secondary', kind === KINDS.budget ? `${yl}の決算見込額` : `${yl}の予算額${exec != null ? `（執行率 ${exec}%）` : ''}`));
+    amt.append(v, el('span', 'small secondary', `${yl}の決算見込額`));
     li.append(main, amt);
     return li;
   }
@@ -120,14 +93,12 @@ function search({ form, list, count, unit, active, more }: Parts) {
     more.textContent = `さらに表示（残り ${hits.length - shown}件）`;
   }
 
-  // 並び。金額の順は、種類ごとの最新の年度のもの（予算事業は最新の報告、一括交付金の事業は最新の事後評価）を先に金額の大きい順、
-  // そのあとに年度の新しい順・金額の大きい順。名前は五十音順、施策の順は報告書の順
-  function sorter(d: Data, key: string) {
-    const isNow = (r: Row) => (r[3] === d.latest[r[0]] ? 1 : 0);
-    if (key === 'name') return (a: Row, b: Row) => a[1].localeCompare(b[1], 'ja');
-    if (key === 'order') return (a: Row, b: Row) => a[16] - b[16];
-    return (a: Row, b: Row) => isNow(b) - isNow(a) || b[3] - a[3] || (b[4] ?? -1) - (a[4] ?? -1);
-  }
+  // 並び。金額の順は、最新の報告の予算事業を先に（金額の大きい順）、そのあとに年度の新しい順・金額の大きい順。名前は五十音順、施策の順は報告書の順
+  const SORTS: Record<string, (a: Row, b: Row) => number> = {
+    '': (a, b) => b[2] - a[2] || (b[3] ?? -1) - (a[3] ?? -1),
+    name: (a, b) => a[1].localeCompare(b[1], 'ja'),
+    order: (a, b) => a[10] - b[10],
+  };
 
   function apply() {
     const d = data;
@@ -137,34 +108,19 @@ function search({ form, list, count, unit, active, more }: Parts) {
     }
     const f = new FormData(form);
     words = searchWords(String(f.get('q') || ''));
-    const kind = String(f.get('kind') || '');
     const fund = String(f.get('fund') || '');
     const dept = String(f.get('dept') || '');
     const s = String(f.get('s') || '');
-    const theme = String(f.get('theme') || '');
     const yr = String(f.get('yr') || '');
     const shared = String(f.get('shared') || '');
-    const gr = f.getAll('gr').map(String);
-    const tr = String(f.get('tr') || '');
-    const ti = theme ? d.themes.findIndex(([id]) => id === theme) : -1;
-    const sort = sorter(d, String(f.get('sort') || ''));
-    if (words.length && !texts.length) texts = d.rows.map((r) => [searchText(`${r[1]} ${r[6]}`), searchText(r[17])]);
+    const sort = SORTS[String(f.get('sort') || '')] ?? SORTS[''];
+    if (words.length && !texts.length) texts = d.rows.map((r) => [searchText(`${r[1]} ${r[5]}`), searchText(r[11])]);
     const ok = (r: Row, i: number) => {
-      if (kind && r[0] !== KINDS[kind as keyof typeof KINDS]) return false;
-      if (fund && !r[5].includes(Number(fund))) return false;
-      if (dept && !r[7].includes(Number(dept))) return false;
-      if (s && !r[8].includes(Number(s))) return false;
-      if (ti >= 0 && !r[9].includes(ti)) return false;
-      const now = r[3] === d.latest[r[0]];
-      if (yr === 'latest' ? !now : yr === 'old' ? now : false) return false;
-      if (shared && !r[11]) return false;
-      // 事後評価の評価と移り変わりは、一括交付金の事業だけにある（選ぶと一括交付金の事業だけになる）
-      if (gr.length) {
-        if (r[0] !== KINDS.ikkatsu) return false;
-        const g = now ? r[12][d.ikkatsuYears.indexOf(r[3])] : -1;
-        if (!gr.includes(g >= 0 ? d.grades[g][0] : 'none')) return false;
-      }
-      if (tr && !r[15].includes(tr)) return false;
+      if (fund && !r[4].includes(Number(fund))) return false;
+      if (dept && !r[6].includes(Number(dept))) return false;
+      if (s && !r[7].includes(Number(s))) return false;
+      if (yr === 'latest' ? r[2] !== d.latest : yr === 'old' ? r[2] === d.latest : false) return false;
+      if (shared && !r[9]) return false;
       if (words.length && !matchesAll(`${texts[i][0]}\n${texts[i][1]}`, words)) return false;
       return true;
     };
@@ -219,13 +175,10 @@ function search({ form, list, count, unit, active, more }: Parts) {
     }
   }
 
-  // チェックボックスは、URL にその値があるときだけ入れる（評価は ?gr=達成&gr=未達成 のように いくつでも）
-  const query = new URLSearchParams(location.search);
-  for (const input of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]')) {
-    const vs = query.getAll(input.name);
-    if (!vs.length) continue;
-    if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = vs.includes(input.value);
-    else input.value = vs[0];
+  for (const [k, v] of new URLSearchParams(location.search)) {
+    const input = form.elements.namedItem(k);
+    if (input instanceof HTMLInputElement && input.type === 'checkbox') input.checked = input.value === v;
+    else if (input && 'value' in input) input.value = v;
   }
   renderActive();
   form.addEventListener('input', apply);
