@@ -6,7 +6,7 @@ import Base from '../../../layouts/Base.astro';
 import Hierarchy from '../../../components/Hierarchy.astro';
 import FilterMore from '../../../components/FilterMore.astro';
 import Term from '../../../components/Term.astro';
-import { LATEST, yearLabel, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
+import { LATEST, yearLabel, yearLong, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
 import { fmt } from '../../../lib/format.ts';
 import { JIGYO_DATA_FALLBACK, jigyoDataPath } from '../../../lib/jigyo-data.ts';
 
@@ -17,8 +17,7 @@ const dataPath = jigyoDataPath();
   <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="予算事業をさがす" />
   <h1>予算事業をさがす</h1>
-  <p class="secondary lead"><Term word="主な取組" />に書かれた予算事業 {fmt(n)}件を、金額・財源・部局でさがせます。</p>
-  <p class="kinds"><span class="tag" aria-current="page">予算事業</span><a class="tag" href="/yosan/ikkatsu/">一括交付金の事業（事後評価）</a></p>
+  <p class="secondary lead"><Term word="主な取組" />に書かれた予算事業 {fmt(n)}件を、金額（{yearLong(LATEST)}の決算見込額）・財源・部局でさがせます。</p>
 
   <form class="filters sticker" id="jf" role="search" aria-label="予算事業の絞り込み">
     <label class="q" data-label="キーワード">キーワード（名前・所管課・取組の名前など）
@@ -70,7 +69,8 @@ const dataPath = jigyoDataPath();
 
   <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={JIGYO_DATA_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
-  <p class="small secondary">金額は最後に載った報告の決算見込額で、同じ額のくり返しは1回だけ数えています。名前が変わった予算事業は1件にまとめています（<a href="/data/#kazoekata">数え方</a>）。</p>
+  <p class="small secondary">{yearLong(LATEST)}の報告に無い予算事業（「{yearLabel(LATEST - 1)}まで」などの札）は、最後に載った年度の決算見込額と取組の数です。同じ額のくり返しは1回だけ数え、名前が変わった予算事業は1件にまとめています（<a href="/data/#kazoekata">数え方</a>）。</p>
+  <p class="small secondary">一括交付金（ソフト）の事業ごとの事後評価は、<a href="/yosan/ikkatsu/">一括交付金の事業をさがす</a>で見られます。</p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/yosan/#jigyo">予算と財源</a>で金額の大きい予算事業を見ることもできます。</p></noscript>
 </Base>
 

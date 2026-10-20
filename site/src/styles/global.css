@@ -286,9 +286,6 @@ figure { margin: 0; }
   background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 1px 12px; text-decoration: none; line-height: 1.6;
 }
 a.tag:hover { background: var(--sky); }
-/* 予算事業をさがすと一括交付金の事業をさがすの行き来（いまのページの札は押せない） */
-.kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
-.kinds [aria-current] { background: var(--sky); }
 /* 「このサイト独自の分類」の印 */
 .own {
   display: inline-flex; align-items: center; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; color: var(--ink); background: var(--pink);

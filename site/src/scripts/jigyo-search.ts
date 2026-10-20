@@ -4,7 +4,7 @@
 import { fmt, yen } from '../lib/format.ts';
 import { matchesAll, searchText, searchWords, type SearchWord } from '../lib/search.ts';
 import type { JigyoData as Data } from '../lib/jigyo-data.ts';
-import { yearLabel } from '../lib/years.ts';
+import { yearLabel, yearLong } from '../lib/years.ts';
 import { getJsonOr } from './fetch-json.ts';
 import { filterChips, type FilterChip } from './filter-chips.ts';
 import { bump } from './motion.ts';
@@ -47,14 +47,14 @@ function search({ form, list, count, unit, active, more }: Parts) {
     const a = el('a', 'name-link', name);
     a.href = `/yosan/jigyo/${slug}/`;
     head.append(a);
-    // 最新の報告に無い予算事業の札（components/YearTag.astro の「R6まで」と同じ形）
+    // 最新の報告に無い予算事業の札（components/YearTag.astro の「R6まで」と同じ形）。金額と取組の数はこの年度のもの（ページの下の注記）
     if (year < d.latest) {
       const tag = el('span', 'year-tag ended', `${yl}まで`);
       tag.title = `${yl}の報告まで載っていた予算事業`;
       tag.append(el('span', 'sr-only', '載っていた予算事業'));
       head.append(' ', tag);
     }
-    main.append(head, el('div', 'small secondary', `${section ? `${section}・` : ''}${year < d.latest ? `${yl}の報告で` : ''}取組 ${fmt(torikumi)}件`));
+    main.append(head, el('div', 'small secondary', `${section ? `${section}・` : ''}取組 ${fmt(torikumi)}件`));
     if (funds.length) {
       const f = el('div', 'small secondary j-funds');
       for (const k of funds) f.append(el('span', `swatch series-${d.funds[k][1]}`, d.funds[k][0]));
@@ -73,13 +73,13 @@ function search({ form, list, count, unit, active, more }: Parts) {
       const b = el('button', 'term common-tag', '共通');
       b.type = 'button';
       b.dataset.term = '共通の金額';
-      b.dataset.termNote = `この予算事業の${yl}の決算見込額のうち${yen(shared[0])}は、${shared[1]}つの取組に同じ額で書かれています。`;
+      b.dataset.termNote = `この予算事業の${yearLong(year)}の決算見込額のうち${yen(shared[0])}は、${shared[1]}つの取組に同じ額で書かれています。`;
       b.setAttribute('aria-expanded', 'false');
       b.setAttribute('aria-controls', 'termpop');
       b.tabIndex = -1;
       v.append(b);
     }
-    amt.append(v, el('span', 'small secondary', `${yl}の決算見込額`));
+    amt.append(v);
     li.append(main, amt);
     return li;
   }

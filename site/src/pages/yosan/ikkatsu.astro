@@ -78,7 +78,6 @@ const sources = IKKATSU_YEARS.flatMap((y) => {
 <Base title="一括交付金の事業をさがす" description={`一括交付金（ソフト）を使った沖縄県の事業を、${IKKATSU.short}（${yearsLong(IKKATSU_YEARS[0], IKKATSU_LATEST)}）の評価・将来像・部局でさがせます。`}>
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="一括交付金の事業をさがす" />
   <h1>一括交付金の事業をさがす</h1>
-  <p class="kinds"><a class="tag" href="/yosan/jigyo/">予算事業</a><span class="tag" aria-current="page">一括交付金の事業（事後評価）</span></p>
   <p class="secondary lead">
     一括交付金（ソフト）を使った県の事業 {fmt(rows.length)}件を、{IKKATSU_YEARS.map(yearLabel).join('・')}の<Term word="一括交付金の事後評価" label="事後評価" />つきでさがせます。
     名前を押すと、施策のページで成果目標・予算の執行・今後の方針を見られます。
