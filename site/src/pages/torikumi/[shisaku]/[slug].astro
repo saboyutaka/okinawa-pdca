@@ -112,7 +112,7 @@ const latestBasis = tr?.basis;
 const didOf = (y: number) => firstSentence(recs[y]?.activity_done || g.years[y].summary);
 
 // 予算の節。最後の報告の予算事業ごとの箱（lib/data.ts の budgetCardsOf）に、決算見込額と同じ予算事業の取組を出す。ほかの年度の金額は予算事業のページに任せる。
-// ほかの取組にも同じ額が書かれている金額（予算事業全体の金額）には「Nつの取組で共通」の札（押すと説明。lib/terms.ts の OWN_TERMS）を付ける
+// ほかの取組にも同じ額が書かれている金額（予算事業全体の金額）には「共通」の札（押すと説明と、同じ額が書かれている取組の数。lib/terms.ts の OWN_TERMS）を付ける
 const cards = budgetCardsOf(g);
 // 部局票に金額が無いときは、総括報告書の最新の報告の決算見込額を書き添える
 const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の予算の記載がありません。${t.budget != null ? `総括報告書の${yearLong(t.year)}の決算見込額は${yen(t.budget)}です。` : ''}`;
@@ -350,7 +350,7 @@ const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の�
         <div class="bc-body">
           <h3 class="bc-h">予算: {c.project ? <a class="name-link" href={c.project.href}>{c.name || c.project.name}</a> : c.name || '予算事業の名前の記載なし'}</h3>
           {c.funds.length > 0 && <p class="small secondary bc-sub">財源: {c.funds.join('・')}</p>}
-          <p class="bc-amt"><span class="bc-l">{yearLabel(t.year)}の決算見込額</span><b>{yen(c.amount)}</b>{c.sharedWith > 0 && <Term word="共通の金額" label={`${c.sharedWith + 1}つの取組で共通`} class="common-tag" />}</p>
+          <p class="bc-amt"><span class="bc-l">{yearLabel(t.year)}の決算見込額</span><b>{yen(c.amount)}</b>{c.sharedWith > 0 && <Term word="共通の金額" label="共通" class="common-tag" note={`この予算事業のこの額は、${c.sharedWith + 1}つの取組に書かれています。`} />}</p>
         </div>
         {c.others.length > 0 && (
           <>
