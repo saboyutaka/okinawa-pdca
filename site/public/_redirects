@@ -77,13 +77,3 @@
 /torikumi/3-2-d-4/b59884e5/ /torikumi/3-2-d-4/bdc27619/ 301
 /torikumi/3-9-a-1/a8c7ecda/ /torikumi/3-9-a-1/fa2a8b61/ 301
 /torikumi/3-9-b-1/8ea0feb5/ /torikumi/3-9-b-1/b552d9c8/ 301
-# 予算事業名のくり返し（「犯罪抑止対策強化事業犯罪抑止対策強化事業」）と「事業なし」を予算事業の名前にしないようにしたため（2026-10-20、site/src/lib/data.ts の projectKeyOf）。
-# 「市町村事業市町村事業」は県の予算事業ではないので、予算事業をさがすへ
-/yosan/jigyo/06a254ed/ /yosan/jigyo/768b975b/ 301
-/yosan/jigyo/70919ecb/ /yosan/jigyo/bfc9527a/ 301
-/yosan/jigyo/9c737319/ /yosan/jigyo/cb17013c/ 301
-/yosan/jigyo/b946ca7b/ /yosan/jigyo/3e16be0a/ 301
-/yosan/jigyo/c3594934/ /yosan/jigyo/97faac86/ 301
-/yosan/jigyo/c9ddf73b/ /yosan/jigyo/5b5996a0/ 301
-/yosan/jigyo/df7d0a07/ /yosan/jigyo/c3f1b501/ 301
-/yosan/jigyo/07c83ef9/ /yosan/jigyo/ 301
