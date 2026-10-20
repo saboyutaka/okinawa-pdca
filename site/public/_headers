@@ -11,6 +11,9 @@
 # 計画の目次のデータも、名前に中身のハッシュが付く（lib/tree-data.ts）。控えの /mokuji/data.json は既定のまま
 /mokuji/data-*.json
   Cache-Control: public, max-age=31536000, immutable
+# 予算事業をさがすのデータも、名前に中身のハッシュが付く（lib/jigyo-data.ts）。控えの /yosan/jigyo/data.json は既定のまま
+/yosan/jigyo/data-*.json
+  Cache-Control: public, max-age=31536000, immutable
 
 # 年を西暦で表示するときに読むスクリプトも、名前に中身のハッシュが付く（lib/era.ts）
 /era-*.js

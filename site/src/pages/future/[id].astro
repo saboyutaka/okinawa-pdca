@@ -20,6 +20,7 @@ import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import SecHead from '../../components/SecHead.astro';
 import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, amountTotal, trendPoints } from '../../lib/data.ts';
+import { jigyoSearchHref } from '../../lib/jigyo-data.ts';
 import { pct, yen } from '../../lib/format.ts';
 import { futureMeta } from '../../lib/describe.ts';
 import { futureHead, kihonHead, total } from '../../lib/heads.ts';
@@ -107,7 +108,7 @@ const budgetAll = amountTotal(estimate);
       <div class="tile-value">{yen(budget)}</div>
       <Chunk frac={budgetAll ? budget / budgetAll : 0} tone="none" label={`主な取組の予算事業全体の${pct(budget, budgetAll)}`} thin />
       <div class="tile-sub">主な取組の予算事業全体（{yen(budgetAll)}）の{pct(budget, budgetAll)}です。同じ予算事業の重複を除いています。</div>
-      <a class="b-more" href="/yosan/">予算と財源を見る<span aria-hidden="true"> →</span></a>
+      <a class="b-more" href={jigyoSearchHref({ s: v.id, latest: true })}>将来像{v.id}の予算事業を見る<span aria-hidden="true"> →</span></a>
     </div>
   </section>
 

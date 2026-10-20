@@ -292,7 +292,7 @@ class Report:
 
         self.h(3, "B2. 同じ予算事業・財源なのに、取組ごとに金額がわずかに違う")
         self.p("同じ報告・同じ予算事業名・同じ財源で、取組によって金額が1%未満だけ違うもの（例: 7,978 と 7,987）。転記の誤りの疑いがある。"
-               "合計では別々の金額として足しているので、その分だけ多くなる。")
+               "サイトの合計では、同じ金額とみなして1回だけ数えている（docs/data.md の 9.3）。")
         groups = defaultdict(lambda: defaultdict(set))
         where = defaultdict(list)
         for b in self.budget:
@@ -314,7 +314,7 @@ class Report:
                         refs = where[(year, name, source, k, a)][:1] + where[(year, name, source, k, c)][:1]
                         rows.append([rlabel(year), name, source, AMOUNT_LABEL[k], f"{a:,.0f} / {c:,.0f}千円",
                                      " ／ ".join(self.link(x["source"], x["page"]) for x in refs)])
-        self.count("B2", "同じ予算事業で金額がわずかに違う", Counter(int(r[0][1:]) + 2018 for r in rows), "別々に足している")
+        self.count("B2", "同じ予算事業で金額がわずかに違う", Counter(int(r[0][1:]) + 2018 for r in rows), "1回だけ数える")
         self.table(["報告", "予算事業", "財源", "種類", "金額", "出典"], rows)
         self.budget_notes("B2", "このほか、同じ予算事業・同じ金額なのに財源の書き方が違うもの（データは印字どおりで、合計では別々に足している）:")
 

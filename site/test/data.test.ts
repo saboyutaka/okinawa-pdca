@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   yearLabel, yearLong, yearsLong, yearRuns, periodName, periodLabel, planIndex, refText, eraRef,
   statusOf, toneOfStatus, rateBin, rateText, rateTone, judgesOf, shuyouPartCount, childRange, halfWidth, nameKey,
-  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName,
+  splitDepts, deptOf, deptHref, sectionName, sectionAnchor, deptRoles, fundOf, budgetKey, isNoBudgetName, sameAmount,
   PATTERNS, JUDGE_TRENDS, JUDGE_CELLS, judgeByGrid, keySlug, torikumiHref, seikaHref, seikaShareHref, seikaNameMatches, textGoalChartRow,
   shuyouBin, shuyouBinOf, shuyouRateText, shuyouCounts, SHUYOU_CATS, shouraizouName, sameScale, shuyouSteps, formerText, countStatuses, countRates,
   type JudgeTrend, type Pattern, type ShuyouPart,
@@ -201,7 +201,7 @@ test('budgetKey: 予算事業名の空白と全角の違いを無くす', () => 
 });
 
 test('isNoBudgetName: 予算事業の欄の「―」「なし」などは名前の無いものとし、長音を含む名前は名前とする', () => {
-  for (const s of ['―', '－', '-', 'ー', 'ｰ', '‐', '—', ' ― ', '', null, 'なし', '県事業なし', '予算事業なし', '予算措置なし']) assert.equal(isNoBudgetName(s), true, String(s));
+  for (const s of ['―', '－', '-', 'ー', 'ｰ', '‐', '—', ' ― ', '', null, 'なし', '事業なし', '県事業なし', '予算事業なし', '予算措置なし']) assert.equal(isNoBudgetName(s), true, String(s));
   for (const s of ['エネルギー対策事業', 'ー事業']) assert.equal(isNoBudgetName(s), false, s);
 });
 
@@ -406,6 +406,14 @@ test('shuyouRateText: 主要指標の達成率の札の文字（数はそのま�
   assert.equal(shuyouRateText({ rate: null, rate_raw: '達成' }), '達成');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '後退' }), '後退');
   assert.equal(shuyouRateText({ rate: null, rate_raw: '‐' }), '—');
+});
+
+test('sameAmount: 同じ予算事業の金額で、違いが大きいほうの1%以下なら同じ金額とみなす（issues.md の B2 と同じ）', () => {
+  assert.equal(sameAmount(7978, 7987), true);
+  assert.equal(sameAmount(100119, 100118), true);
+  assert.equal(sameAmount(5491033, 5440949), true);
+  assert.equal(sameAmount(100, 102), false);
+  assert.equal(sameAmount(4460817, 4633969), false);
 });
 
 test('countStatuses・countRates: 区分の並びのまま数え、0の区分も残す', () => {

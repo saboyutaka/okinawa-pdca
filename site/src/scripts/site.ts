@@ -7,6 +7,7 @@ import './filter-more.ts';
 import './list-filter.ts';
 import './shisaku-trend.ts';
 import './torikumi-search.ts';
+import './jigyo-search.ts';
 import './show-more.ts';
 import './tree.ts';
 import './indicator-map.ts';

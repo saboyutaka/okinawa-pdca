@@ -16,10 +16,11 @@ import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, amountTotal,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
-  currentDeptOf, deptAmountEntries, torikumiPage, type AmountEntry,
+  currentDeptOf, deptAmountEntries, torikumiPage, getBudgetProjects, type AmountEntry,
 } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
+import { jigyoSearchHref } from '../../lib/jigyo-data.ts';
 import type { AmountKind } from '../../lib/types.ts';
 
 const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(entries.filter((e) => e.fund === f.key))]));
@@ -62,15 +63,15 @@ const ikSzRows = getShouraizou().map((s) => ({
   counts: countGrades(ikLatest.filter((g) => szOf(g) === s.id), (g) => g.years[IKKATSU_LATEST].grade_label),
 }));
 
-// 部局別・将来像別（最新の報告での所管部局）
-const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(deptAmountEntries(LATEST, 'estimate', d.name))), href: `/bukyoku/${d.slug}/#yosan` }))
+// 部局別・将来像別（最新の報告での所管部局）。押すと、その部局・将来像で絞り込んだ予算事業をさがすへ
+const deptItems = DEPTS.map((d) => ({ label: d.name, n: toOku(amountTotal(deptAmountEntries(LATEST, 'estimate', d.name))), href: jigyoSearchHref({ dept: d.name, latest: true }) }))
   .filter((i) => i.n > 0)
   .sort((a, b) => b.n - a.n);
 const visionItems = getShouraizou().map((s) => ({
   label: `将来像${s.id}`,
   sz: s.id,
   note: s.name,
-  href: `/future/${s.id}/#yosan`,
+  href: jigyoSearchHref({ s: s.id, latest: true }),
   n: toOku(amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
 }));
 
@@ -98,6 +99,7 @@ const coverageAll = YEARS.map((y) => {
 const coverageLatest = coverageAll[coverageAll.length - 1];
 
 const suspects = getSuspects();
+const budgetCount = getBudgetProjects().length;
 ---
 <Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移と、一括交付金（ソフト）の事業の事後評価です。">
 
@@ -107,6 +109,8 @@ const suspects = getSuspects();
       各部局の検証票に書かれた、<Term word="主な取組" />の予算事業の金額と財源をまとめました。
       財源の意味や沖縄振興予算との違いは<a href="/yosan/zaigen/">予算の財源のしくみ</a>で説明しています。
     </p>
+    {/* 予算事業のページへの入口。頭に置いて、開いてすぐ分かるようにする（下の「金額の大きい予算事業」の後ろにも置く） */}
+    <p class="head-search"><a class="button" href="/yosan/jigyo/">予算事業をさがす（{fmt(budgetCount)}件）</a></p>
     <Says who="!">
       <p><strong>合計は目安です。</strong>県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています。<a href="#note">数え方</a>）。</p>
     </Says>
@@ -177,7 +181,7 @@ const suspects = getSuspects();
 
   <section aria-labelledby="bunya">
     <SecHead id="bunya" class="anchor">部局別・将来像別（{yearLong(LATEST)}の決算見込額）</SecHead>
-    <p class="small secondary lead">件数ではなく金額（億円）です。名前を押すと、部局・将来像のページの予算を見られます。</p>
+    <p class="small secondary lead">件数ではなく金額（億円）です。名前を押すと、その部局・将来像の予算事業を一覧で見られます。</p>
     <BarList title="部局別" caption="最新の報告での所管部局。" items={deptItems} unit="億円" />
     <BarList title="将来像別" items={visionItems} unit="億円" />
   </section>
@@ -186,12 +190,14 @@ const suspects = getSuspects();
     <SecHead id="jigyo" class="anchor">金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</SecHead>
     <p class="small secondary lead">同じ名前の予算事業をまとめた上位{fmt(top.length)}件です。1つの予算事業が複数の取組を支えていることがあります。</p>
     <ul class="row-list">{top.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
+    <p class="more-link"><a class="button" href="/yosan/jigyo/">すべての予算事業をさがす（{fmt(budgetCount)}件）</a></p>
     <h3>財源ごとに見る</h3>
     <p class="small secondary">財源ごとに、その財源の金額が大きい上位{TOP_BY_FUND}件です。</p>
     {byFundTop.map((f) => (
       <details class="fund-top anchor" id={`fund-${f.series}`}>
         <summary><span class={`swatch series-${f.series}`}>{f.key}</span>の上位{fmt(f.rows.length)}件</summary>
         <ul class="row-list">{f.rows.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
+        <p class="small"><a href={jigyoSearchHref({ fund: f.key, latest: true })}>{f.key}の予算事業を見る</a></p>
       </details>
     ))}
     <p class="small secondary">取組の進捗状況は{yearLong(LATEST)}の報告の判定です。</p>
@@ -262,6 +268,7 @@ const suspects = getSuspects();
 </Base>
 
 <style>
+  .head-search { margin: 4px 0 14px; }
   .tile .split { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
   .funds { margin-top: 16px; padding: 12px 20px; }
   .funds summary { margin: 0; }

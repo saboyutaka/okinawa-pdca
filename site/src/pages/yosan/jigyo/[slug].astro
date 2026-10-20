@@ -79,7 +79,7 @@ const sources = projectYears.map((y) => ({
         rows={series.map((s) => ({ label: yearLabel(s.fy), sub: `${AMOUNT_KINDS[s.kind].label}（${yearLabel(s.report)}報告）`, amounts: s.funds }))}
       />
     ) : <p class="secondary">部局の検証票に、この予算事業の金額の記載がありません。</p>}
-    <p class="small secondary">複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。部局の検証票が手に入っていない取組の分は入りません（<a href="/yosan/#coverage">部局票がある範囲</a>）。</p>
+    <p class="small secondary">複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。決算額が一部の取組の分しか載っていない年度は、決算見込額です。部局の検証票が手に入っていない取組の分は入りません（<a href="/yosan/#coverage">部局票がある範囲</a>）。</p>
   </section>
 
   <section aria-labelledby="list">
