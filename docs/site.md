@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルドで静的な HTML に書き出す。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（沖縄県PDCA 以外の評価は `lib/plans.ts`）。
-- 数え方は lib に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。主なものは `lib/data.ts` の `PATTERNS`・`JUDGE_TRENDS`・`JUDGE_CELLS`・`shisakuDepts`・`SHUYOU_BINS`・`relatedOf`、活動指標は `lib/katsudou.ts` の `activityRuns`。ページの頭の数は `lib/heads.ts` で、ページの説明文と SNS のカードの画像（6章）も同じ数を使う。
+- 数え方は lib に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。主なものは `lib/data.ts` の `PATTERNS`・`JUDGE_TRENDS`・`JUDGE_CELLS`・`shisakuDepts`・`SHUYOU_BINS`・`relatedOf`、予算事業は `getBudgetProjects`・`budgetCardsOf`、活動指標は `lib/katsudou.ts` の `activityRuns`。ページの頭の数は `lib/heads.ts` で、ページの説明文と SNS のカードの画像（6章）も同じ数を使う。
 - 年度をまたいで同じ取組・成果指標・活動指標かは名前の key（`torikumiKey`・`seikaKey`・`katsudouKey`）で比べ、県が名前を変えたものは `lib/renames.ts` で読み替える。規則は [data.md](data.md) の8章。
 - 主な取組と成果指標を名前で結び付けて出さない。部局票の「対応する成果指標」には、どの取組にもその施策の成果指標すべてが書かれていて（`test/integrity.test.ts` で確かめている）、取組ごとには分かれていないため。成果指標は施策のページで、施策の取組と並べて見せる（`seikaNameMatches`）。
 - ブラウザにデータ全体は配らない。ブラウザが読む JSON は `lib/hashed.ts` に並べたものだけ（読み方は `scripts/fetch-json.ts`）。
@@ -33,6 +33,7 @@
   - 題名・説明文・SNS のカードの画像は指標のもので、`og:url` と `canonical` はシェア用のページ自身。開いた人はスクリプトでカードの場所へ移す（`layouts/Base.astro` の `jump`）。サーバーの転送（`_redirects`）にすると SNS も転送の先を読み、入っているページの画像になるので使わない。
   - 検索には載せず（noindex）、sitemap.xml にも入れない。公開した URL の一覧（`urls.txt`）には入れる。
 - 取組のページとシェア用のページの URL は名前の key のハッシュなので、名前が変わると URL も変わる（8章）。
+- 予算事業のページの URL は、最初の報告年度の予算事業名の key のハッシュ。あとの年度に名前が変わっても変わらない（つなぎ方は [data.md](data.md) の 9.6）。
 
 ## 5. くらしのテーマの定義
 
@@ -69,7 +70,7 @@
 
 ## 8. URL を変えない
 
-SNS で共有されたリンクや検索エンジンの評価が切れないように、公開したページの URL は変えない。取組のページと指標のシェア用のページの URL は名前の key のハッシュ（4章）なので、抽出を直して名前が変わったときや、新しい年度の報告で名前の書き方が変わったときにも変わる。施策・基本施策・将来像・部局・くらしのテーマのページも、ID や slug が変わると URL が変わる。
+SNS で共有されたリンクや検索エンジンの評価が切れないように、公開したページの URL は変えない。取組のページと指標のシェア用のページの URL は名前の key のハッシュ（4章）なので、抽出を直して名前が変わったときや、新しい年度の報告で名前の書き方が変わったときにも変わる。施策・基本施策・将来像・部局・くらしのテーマのページも、ID や slug が変わると URL が変わる。予算事業のページは、データを入れ直して前の年度の名前が新しくつながったときに変わる。
 
 - 動的なページ（`src/pages` の `[..]` の付いたファイル）の `getStaticPaths` は、`lib/routes.ts` の `ROUTES` に1か所で書く（ページは `export const getStaticPaths = ROUTES['shisaku/[id]']`）。動的なページを足したら `ROUTES` にも足す（合わないと `make test` が落ちる）。
 - 公開した URL の一覧は `site/urls.txt`（1行に1つ）。一覧のどれかの URL のページが無くなり、`site/public/_redirects` の転送も無いと、`make test`（`test/routes.test.ts`）が落ちる。

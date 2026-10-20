@@ -28,7 +28,7 @@ import {
   YEARS, LATEST, yearLabel, yearLong, periodName, STATUSES, RATE_BINS, REORGANIZED, rateBin,
   getTorikumiGroups, getShisakuList, getSeika, seikaDept, seikaHref, seikaGroupOf, shisakuDepts,
   sectionName, sectionAnchor, deptHref, deptSourcePages, torikumiPage,
-  FUNDS, AMOUNT_KINDS, amountTotal, deptAmountEntries, budgetKey, countStatuses, countRates, type MoveGroup,
+  FUNDS, AMOUNT_KINDS, amountTotal, deptAmountEntries, budgetKey, budgetProjectOf, countStatuses, countRates, type MoveGroup,
 } from '../../lib/data.ts';
 import type { AmountKind, SeikaRow as SeikaRowT } from '../../lib/types.ts';
 import { LINKS } from '../../lib/links.ts';
@@ -229,10 +229,11 @@ const sources = deptSourcePages(dept.name);
           {topBudgets.map((g) => {
             const s = shisakuById.get(g.shisaku_id);
             const tHref = torikumiPage(g.shisaku_id, g.key);
+            const project = budgetProjectOf(g.name);
             return (
               <li class="b-row">
                 <div class="b-main">
-                  <strong>{g.name}</strong>
+                  <div class="b-name">{project ? <a class="name-link" href={project.href}>{g.name}</a> : g.name}</div>
                   <div class="small secondary">取組 {tHref ? <a class="sub-link" href={tHref}>{g.torikumi}</a> : g.torikumi}</div>
                   {s && <div class="small secondary"><Sz id={s.shouraizou} /> 施策 <a class="sub-link" href={`/shisaku/${s.id}/`}>{s.name}</a> <span class="code-no">{s.code}</span></div>}
                 </div>
@@ -341,6 +342,7 @@ const sources = deptSourcePages(dept.name);
   .breakdown { margin-top: 16px; }
   .b-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: center; }
   .b-main { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
+  .b-name { font-weight: 700; }
   .b-amt { display: grid; justify-items: end; text-align: right; }
   .b-amt .big { font-size: 1.2rem; white-space: nowrap; }
   @media (max-width: 560px) { .b-row { grid-template-columns: 1fr; } .b-amt { justify-items: start; text-align: left; } }

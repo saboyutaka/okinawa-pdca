@@ -3,7 +3,7 @@
 // （test/routes.test.ts）・一覧を書き直すスクリプト（scripts/urls.ts）・ビルドの確かめ（astro.config.ts）も、同じものから全ページの URL を作る
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEPTS, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getShuyouGroups, getTorikumiGroups, keySlug } from './data.ts';
+import { DEPTS, getBudgetProjects, getKihonList, getSeikaGroups, getShisakuList, getShouraizou, getShuyouGroups, getTorikumiGroups, keySlug } from './data.ts';
 import { getActivityShares } from './katsudou.ts';
 import { kankoTenkaiList } from './plans.ts';
 import { getThemes } from './themes.ts';
@@ -20,6 +20,7 @@ export const ROUTES = {
   'shuyou/[kihon]/[slug]': () => getShuyouGroups().map((g) => ({ params: { kihon: g.kihon.id, slug: keySlug(g.key) }, props: { g } })),
   'theme/[id]': () => getThemes().map((t) => ({ params: { id: t.id }, props: { t } })),
   'torikumi/[shisaku]/[slug]': () => getTorikumiGroups().map((g) => ({ params: { shisaku: g.shisaku.id, slug: keySlug(g.key) }, props: { g } })),
+  'yosan/jigyo/[slug]': () => getBudgetProjects().map((p) => ({ params: { slug: p.slug }, props: { p } })),
 } satisfies Record<string, () => { params: Record<string, string> }[]>;
 
 // シェア用のページ（指標ごとの SNS のカードを持ち、開いた人をその指標を見せるページの場所へ移す。docs/site.md の 4章）。

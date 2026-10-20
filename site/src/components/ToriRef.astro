@@ -1,0 +1,16 @@
+---
+// 主な取組を指す一覧の1行（予算事業のページの取組の一覧・取組のページの同じ予算事業の取組）。親は ul.row-list。
+// 札・取組の名前・施策の2行。札は ToriRow と同じく、最新の年度の報告に無い取組は最後の年度の進捗状況を年度つきで出す。子は3行目（書かれていた年度など）
+import Chip from './Chip.astro';
+import { LATEST, yearLabel, statusOf, toneOfStatus, type TorikumiGroup } from '../lib/data.ts';
+
+interface Props { g: TorikumiGroup }
+const { g } = Astro.props;
+const t = g.latest;
+const status = statusOf(t);
+---
+<li>
+  <div><Chip tone={toneOfStatus(status)} text={t.year === LATEST ? status : `${yearLabel(t.year)} ${status}`} /> <a class="name-link" href={g.href}>{t.name}</a></div>
+  <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${g.shisaku.id}/`}>{g.shisaku.name}</a> <span class="code-no">{g.shisaku.code}</span></div>
+  {Astro.slots.has('default') && <div class="small secondary"><slot /></div>}
+</li>
