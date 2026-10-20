@@ -390,7 +390,7 @@ const sameBudget = sameBudgetOf(g);
         {budShares.shared.length > 0 && (
           <ul class="bud-shared small">
             {budShares.shared.map((x) => (
-              <li>予算事業「<a href={x.project.href}>{x.project.name}</a>」の{yearRuns(x.reports)}の報告の金額（{yearLabel(x.last.report + AMOUNT_KINDS[x.last.kind].offset)}の{AMOUNT_KINDS[x.last.kind].label} {yen(x.last.amount)}など）は、ほかの{x.others.length}件の取組にも同じ額が書かれています。</li>
+              <li>予算事業「<a class="sub-link" href={x.project.href}>{x.project.name}</a>」の{yearRuns(x.reports)}の報告の金額（{yearLabel(x.last.report + AMOUNT_KINDS[x.last.kind].offset)}の{AMOUNT_KINDS[x.last.kind].label} {yen(x.last.amount)}など）は、ほかの{x.others.length}件の取組にも同じ額が書かれています。</li>
             ))}
           </ul>
         )}
@@ -432,7 +432,7 @@ const sameBudget = sameBudgetOf(g);
         {sameBudget.budgets.map((b) => (
           <div class="sticker list-box sb-box">
             <div class="sb-head">
-              <h4>予算: <a href={b.project.href}>{b.project.name}</a>{b.partial && <span class="sb-years">（{yearRuns(b.years)}）</span>}</h4>
+              <h4>予算: <a class="name-link" href={b.project.href}>{b.project.name}</a>{b.partial && <span class="sb-years">（{yearRuns(b.years)}）</span>}</h4>
               {b.formers.length > 0 && <p class="small secondary">{formerText(b.formers)}という名前です。</p>}
             </div>
             <ul class="row-list">
