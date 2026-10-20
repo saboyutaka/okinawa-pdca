@@ -11,7 +11,7 @@ import Term from '../../../components/Term.astro';
 import Icon from '../../../components/Icon.astro';
 import Says from '../../../components/Says.astro';
 import ExtLink from '../../../components/ExtLink.astro';
-import { LATEST, yearLabel, yearLong, yearsLong, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
+import { LATEST, yearLabel, FUNDS, DEPTS, getShouraizou, getBudgetProjects } from '../../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_TRENDS, GRADES, ikkatsuGroups, ikkatsuRows, planSourceLink } from '../../../lib/plans.ts';
 import { LINKS } from '../../../lib/links.ts';
 import { fmt } from '../../../lib/format.ts';
@@ -31,15 +31,13 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
   <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <Hierarchy items={[{ href: '/yosan/', label: '予算と財源' }]} page="予算事業をさがす" />
   <h1>予算事業をさがす</h1>
-  <p class="secondary lead">
-    部局の検証票で<Term word="主な取組" />に書かれている予算事業 {fmt(n)}件と、一括交付金（ソフト）を使った県の事業 {fmt(nIk)}件（{yearsLong(IKKATSU_YEARS[0], IKKATSU_LATEST)}の<Term word="一括交付金の事後評価" label="事後評価" />つき）を、金額・財源・部局でさがせます。
-  </p>
+  <p class="secondary lead"><Term word="主な取組" />に書かれた予算事業 {fmt(n)}件と、一括交付金（ソフト）の事業 {fmt(nIk)}件を、金額・財源・部局でさがせます。</p>
   <Says who="!">
-    <p><strong>一括交付金の事業は、沖縄県PDCA（施策・主な取組の評価）とは別の評価の事業です。</strong>「{IKKATSU.short}」の札で見分けられます。金額は事後評価の予算額（前の年度からの繰越を含む事業費）で、予算事業の決算見込額とは数え方と年度が違います。</p>
+    <p><strong>一括交付金の事業は、沖縄県PDCAとは別の評価です。</strong>金額も<Term word="一括交付金の事後評価" label="事後評価" />の予算額で、決算見込額とは数え方が違います。</p>
   </Says>
 
   <form class="filters sticker" id="jf" role="search" aria-label="予算事業の絞り込み">
-    <label class="q" data-label="キーワード">キーワード（名前・前の名前・所管課・書かれている取組の名前・事業の内容）
+    <label class="q" data-label="キーワード">キーワード（名前・所管課・取組の名前など）
       <input type="search" name="q" placeholder="例: 観光、子ども、MICE、所管課の名前" />
     </label>
     <label class="sort">並び
@@ -79,8 +77,8 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
     <label data-label="年度">年度
       <select name="yr">
         <option value="">すべて</option>
-        <option value="latest">最新の年度にある（予算事業は{yearLabel(LATEST)}、一括交付金の事業は{yearLabel(IKKATSU_LATEST)}）</option>
-        <option value="old">最新の年度に無い（終了・名称変更）</option>
+        <option value="latest">最新の年度にある</option>
+        <option value="old">最新の年度に無い</option>
       </select>
     </label>
     <fieldset class="fgroup" data-label="共通">
@@ -114,29 +112,15 @@ const ikSources = IKKATSU_YEARS.flatMap((y) => {
 
   <ul class="row-list" id="results" aria-busy="true" data-src={dataPath} data-fallback={JIGYO_DATA_FALLBACK}></ul>
   <p><button type="button" class="button" id="more" hidden>さらに表示</button></p>
-  <div class="small secondary note">
-    <p>
-      予算事業の金額は、予算事業ごとに最後に載った報告の決算見込額で、複数の取組に同じ金額が書かれているときは1回だけ数えています（<a href="/yosan/">予算と財源</a>と同じ数え方）。
-      名前が変わった予算事業は、部局の検証票の「翌年度の予算事業名」でつないで1件にしています（<a href="/data/#kazoekata">このサイトでの数え方</a>）。部局は、書かれている取組の最新の報告での所管部局です。
-    </p>
-    <p>
-      一括交付金の事業の金額は、最後の年度の事後評価の予算額（前の年度からの繰越を含む事業費。国が8割・県が2割を負担）です。名前を押すと、施策のページで成果目標・予算の執行・今後の方針を見られます。
-      評価は、事業ごとの成果目標の達成率で決まります（◎達成は100%、○概ね達成は70%以上、△一部達成は70%未満で一部の目標を達成、未達成は70%未満でどの目標も未達成）。
-      主な取組や予算事業と同じ事業のこともありますが、名前や単位が違うことがあり、結び付けていません。
-    </p>
-    <p>
-      金額の順では、最新の年度のもの（予算事業は{yearLong(LATEST)}の報告、一括交付金の事業は{yearLong(IKKATSU_LATEST)}の事後評価）を先に、そのあとに年度の新しい順に並べています。数え方の違う金額が並ぶので、比べるときは種類で絞り込んでください。
-    </p>
-    <p>
-      出典: 予算事業は各部局の「主な取組」検証票（予算事業のページの出典）。一括交付金の事業は「<ExtLink href={LINKS.ikkatsu}>{IKKATSU.name}</ExtLink>」の総括表（{ikSources.map((x, i) => <>{i > 0 && '・'}<ExtLink href={x.href}>{yearLabel(x.year)}</ExtLink></>)}）。
-    </p>
-  </div>
+  <p class="small secondary">
+    金額は、予算事業は最後に載った報告の決算見込額（{yearLabel(LATEST)}。同じ額のくり返しは1回だけ数える）、一括交付金の事業は最後の事後評価の予算額（{yearLabel(IKKATSU_LATEST)}。繰越を含む）です。名前が変わった予算事業は1件にまとめています（<a href="/data/#kazoekata">数え方</a>）。
+    出典: 各部局の「主な取組」検証票、<ExtLink href={LINKS.ikkatsu}>一括交付金の事後評価</ExtLink>の総括表（{ikSources.map((x, i) => <>{i > 0 && '・'}<ExtLink href={x.href}>{yearLabel(x.year)}</ExtLink></>)}）。
+  </p>
   <noscript><p>この検索には JavaScript が必要です。<a href="/yosan/#jigyo">予算と財源</a>で金額の大きい予算事業を見ることもできます。</p></noscript>
 </Base>
 
 <style>
   .sort { flex: 0 1 12em; }
-  .note p { margin: 0 0 8px; }
   /* 結果の行（scripts/jigyo-search.ts が描く）。左に名前と所管・取組の数（一括交付金の事業は評価）・財源、右に金額と共通の札 */
   #results :global(.j-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 20px; align-items: start; }
   #results :global(.j-main) { display: grid; gap: 2px; min-width: 0; line-height: 1.6; }
