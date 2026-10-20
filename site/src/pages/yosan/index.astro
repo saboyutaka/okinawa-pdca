@@ -98,6 +98,7 @@ const coverageAll = YEARS.map((y) => {
 const coverageLatest = coverageAll[coverageAll.length - 1];
 
 const suspects = getSuspects();
+const budgetCount = getBudgetProjects().length;
 ---
 <Base title="予算と財源" description="沖縄県PDCAの主な取組に書かれた予算事業の決算額・当初予算額と財源（県単・一括交付金など）の推移と、一括交付金（ソフト）の事業の事後評価です。">
 
@@ -107,6 +108,8 @@ const suspects = getSuspects();
       各部局の検証票に書かれた、<Term word="主な取組" />の予算事業の金額と財源をまとめました。
       財源の意味や沖縄振興予算との違いは<a href="/yosan/zaigen/">予算の財源のしくみ</a>で説明しています。
     </p>
+    {/* 予算事業のページへの入口。頭に置いて、開いてすぐ分かるようにする（下の「金額の大きい予算事業」の後ろにも置く） */}
+    <p class="head-search"><a class="button" href="/yosan/jigyo/">予算事業をさがす（{fmt(budgetCount)}件）</a></p>
     <Says who="!">
       <p><strong>合計は目安です。</strong>県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています。<a href="#note">数え方</a>）。</p>
     </Says>
@@ -186,7 +189,7 @@ const suspects = getSuspects();
     <SecHead id="jigyo" class="anchor">金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</SecHead>
     <p class="small secondary lead">同じ名前の予算事業をまとめた上位{fmt(top.length)}件です。1つの予算事業が複数の取組を支えていることがあります。</p>
     <ul class="row-list">{top.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
-    <p class="more-link"><a class="button" href="/yosan/jigyo/">すべての予算事業をさがす（{fmt(getBudgetProjects().length)}件）</a></p>
+    <p class="more-link"><a class="button" href="/yosan/jigyo/">すべての予算事業をさがす（{fmt(budgetCount)}件）</a></p>
     <h3>財源ごとに見る</h3>
     <p class="small secondary">財源ごとに、その財源の金額が大きい上位{TOP_BY_FUND}件です。</p>
     {byFundTop.map((f) => (
@@ -263,6 +266,7 @@ const suspects = getSuspects();
 </Base>
 
 <style>
+  .head-search { margin: 4px 0 14px; }
   .tile .split { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
   .funds { margin-top: 16px; padding: 12px 20px; }
   .funds summary { margin: 0; }
