@@ -20,7 +20,7 @@ if (form && list && count && unit && active && more) search({ form, list, count,
 interface Parts { form: HTMLFormElement; list: HTMLElement; count: HTMLElement; unit: HTMLElement; active: HTMLElement; more: HTMLButtonElement }
 type Row = Data['rows'][number];
 function search({ form, list, count, unit, active, more }: Parts) {
-  const PAGE = 50;
+  const PAGE = 200;
   let data: Data | undefined;
   const countLine = count.closest<HTMLElement>('.result-count');
   if (countLine) countLine.tabIndex = -1;
