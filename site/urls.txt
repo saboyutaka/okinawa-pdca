@@ -4426,6 +4426,7 @@
 /torikumi/5-5-b-4/e1640f19/
 /yosan/
 /yosan/ikkatsu/
+/yosan/jigyo/
 /yosan/jigyo/002915e1/
 /yosan/jigyo/0034ab9a/
 /yosan/jigyo/00a02480/

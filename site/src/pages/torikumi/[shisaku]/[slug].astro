@@ -461,8 +461,7 @@ const noAmount = `部局の検証票に、この取組の${yearLong(t.year)}の�
   .bc-amt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin: 8px 0 0; }
   .bc-l { font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); }
   .bc-amt b { font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; }
-  /* 共通の金額の札。.tag と同じ丸い枠に、押せることを示す点線の下線（.term.own と同じ考え） */
-  .bc-amt :global(.term.common-tag) { align-self: center; font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; line-height: 1.6; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 0 9px; text-underline-offset: 0.2em; }
+  .bc-amt :global(.term.common-tag) { align-self: center; }
   .bc-same { margin: 0; padding: 8px 16px 6px; border-top: 1.5px solid var(--grid); font-size: 0.875rem; font-weight: 700; }
   /* 活動指標の表（形は styles/global.css の .year-table）。目標・実績が行ごとに分かれた取組は改行を残す */
   .progress td.lines { white-space: pre; }

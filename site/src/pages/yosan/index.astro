@@ -16,7 +16,7 @@ import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, amountTotal,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
-  currentDeptOf, deptAmountEntries, torikumiPage, type AmountEntry,
+  currentDeptOf, deptAmountEntries, torikumiPage, getBudgetProjects, type AmountEntry,
 } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
@@ -186,6 +186,7 @@ const suspects = getSuspects();
     <SecHead id="jigyo" class="anchor">金額の大きい予算事業（{yearLong(LATEST)}の決算見込額）</SecHead>
     <p class="small secondary lead">同じ名前の予算事業をまとめた上位{fmt(top.length)}件です。1つの予算事業が複数の取組を支えていることがあります。</p>
     <ul class="row-list">{top.map((g) => <BudgetItem g={g} report={LATEST} />)}</ul>
+    <p class="more-link"><a class="button" href="/yosan/jigyo/">すべての予算事業をさがす（{fmt(getBudgetProjects().length)}件）</a></p>
     <h3>財源ごとに見る</h3>
     <p class="small secondary">財源ごとに、その財源の金額が大きい上位{TOP_BY_FUND}件です。</p>
     {byFundTop.map((f) => (

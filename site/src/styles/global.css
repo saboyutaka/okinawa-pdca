@@ -484,6 +484,9 @@ div.says-label + * { margin-top: 4px; }
 /* 「このサイト独自の分類」の印（.own）を用語のボタンにしたもの（押すと「くらしのテーマ」の説明）。印の見た目のまま、字に点線の下線を付けて押せることを示す */
 .term.own { font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; line-height: 1.6; color: var(--ink); background: var(--pink); border: 2px solid var(--line); padding: 0 9px; text-decoration-color: var(--ink-2); text-underline-offset: 0.2em; }
 .term.own:hover { color: var(--ink); text-decoration-color: var(--ink); }
+/* 共通の金額の札（取組のページの予算の箱・予算事業をさがすの行）。.tag と同じ丸い枠に、押せることを示す点線の下線（.term.own と同じ考え） */
+.term.common-tag { font-family: var(--font-display); font-size: 0.8125rem; font-weight: 700; line-height: 1.6; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; padding: 0 9px; text-underline-offset: 0.2em; }
+.term.common-tag:hover { color: var(--ink); text-decoration-color: var(--ink); }
 .termpop {
   position: absolute; z-index: 45; width: max-content; max-width: min(340px, calc(100vw - 32px)); background: var(--paper); color: var(--ink);
   border: 2.5px solid var(--line); border-radius: 16px; box-shadow: 4px 4px 0 var(--shadow); padding: 12px 42px 12px 16px; font-size: 0.9375rem; line-height: 1.7;

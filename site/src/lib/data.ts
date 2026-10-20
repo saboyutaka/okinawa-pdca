@@ -1529,10 +1529,21 @@ const blockSum = (b: BudgetBlock, kind: AmountKind) => {
   const vs = b.rows.flatMap((r) => (r[kind] != null && !r.suspect?.includes(kind) ? [r[kind]] : []));
   return vs.length ? vs.reduce((s, v) => s + v, 0) : null;
 };
+// 共通の金額（lib/terms.ts の「共通の金額」）: 同じ年度に、同じ予算事業の予算の表の同じ決算見込額（0 と記載なしは比べない）が、2つ以上の取組（再掲は1件）に書かれているもの。
+// 予算事業全体の金額をそれぞれの取組にくり返し書いたもの。1つの取組に同じ予算事業の表が2つあることがある（つないだ前の名前と新しい名前など）ので、表1つずつの額で比べる。
+// 取組のページの予算の箱（budgetCardsOf）と予算事業をさがす（budgetProjectShared）で、この rootsWithEstimate を使う
+const rootsWithEstimate = (p: BudgetProject, y: number, v: number | null) =>
+  new Set(v ? usesOfProject(p).filter((u) => u.y === y && blockSum(u.block, 'estimate') === v).map((u) => repostRoot(u.group)) : []);
+// 予算事業のその年度の共通の金額と、それが書かれている取組の数（いちばん多くの取組に書かれている額。無ければ null）
+export function budgetProjectShared(p: BudgetProject, y: number) {
+  const vs = [...new Set(usesOfProject(p).filter((u) => u.y === y).map((u) => blockSum(u.block, 'estimate')))];
+  const best = vs.map((v) => ({ amount: v!, count: rootsWithEstimate(p, y, v).size })).sort((a, b) => b.count - a.count)[0];
+  return best && best.count >= 2 ? best : null;
+}
 
 // 取組のページの予算の節の、予算事業ごとの箱。この取組の最後の報告（g.latest.year）の部局票の予算の表を予算事業ごとにまとめる
 // （県の予算事業でない表は名前ごと。名前が無く金額も無いか0の表は出さない）。ほかの年度の金額は予算事業のページに任せる。
-// name は票の名前、amount はその年度の決算見込額、sharedWith は同じ予算事業に同じ決算見込額が書かれているほかの取組の数（再掲は除く。予算事業全体の金額をくり返し書いたもの。0 と桁の誤記の疑いは比べない）、
+// name は票の名前、amount はその年度の決算見込額、sharedWith は同じ予算事業の同じ決算見込額が書かれているほかの取組の数（共通の金額。rootsWithEstimate）、
 // funds は財源、others は同じ年度の票に同じ予算事業が書かれているほかの取組（再掲は1件にし、この取組の再掲は除く）
 export interface BudgetCard { project: BudgetProject | undefined; name: string; amount: number | null; sharedWith: number; funds: string[]; others: SameBudget[] }
 export function budgetCardsOf(g: TorikumiGroup): BudgetCard[] {
@@ -1545,12 +1556,11 @@ export function budgetCardsOf(g: TorikumiGroup): BudgetCard[] {
     const vs = bs.map((b) => blockSum(b, 'estimate')).filter((v) => v != null);
     const amount = vs.length ? vs.reduce((a, v) => a + v, 0) : null;
     const others = project ? usesOfProject(project).filter((u) => u.y === y && repostRoot(u.group) !== self) : [];
-    const same = amount ? others.filter((u) => blockSum(u.block, 'estimate') === amount) : [];
     return {
       project,
       name: isNoBudgetName(bs[0].name) ? '' : bs[0].name,
       amount,
-      sharedWith: distinctGroups(same.map((u) => u.group)).length,
+      sharedWith: project ? Math.max(0, ...bs.map((b) => [...rootsWithEstimate(project, y, blockSum(b, 'estimate'))].filter((r) => r !== self).length)) : 0,
       funds: [...new Set(bs.flatMap((b) => b.rows.map((r) => fundOf(r.source || r.source_next))))],
       others: rowsOf(others),
     };
