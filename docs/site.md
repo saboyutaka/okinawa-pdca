@@ -79,6 +79,6 @@ SNS で共有されたリンクや検索エンジンの評価が切れないよ�
 URL を変えるとき（テストが落ちたとき）は、テストが挙げた古い URL ごとに、`site/public/_redirects` に「古い URL 新しい URL 301」の行を足す（Cloudflare の [_redirects](https://developers.cloudflare.com/workers/static-assets/redirects/)）。古い URL は一覧に残し、`make urls` で新しい URL を足す。
 
 - 新しい URL は、同じ取組・指標などの新しいページ。行き先の無くなったページ（取組の終了など）も、近いページ（施策のページなど）へ転送する。
-- `make test` は、状態コードが 301 であること（書かないと 302 になり、検索エンジンが新しい URL に評価を移さない）・新しい URL のページがあること・古い URL にページが無いこと（Cloudflare は転送をページより先に効かせるので、そのページが見えなくなる）も確かめる。`*` や `:name` は使わず、完全なパスで書く。
+- `make test` は、状態コードが 301 であること（書かないと 302 になり、検索エンジンが新しい URL に評価を移さない）・新しい URL のページがあること・古い URL にページが無いこと（Cloudflare は転送をページより先に効かせるので、そのページが見えなくなる）も確かめる。`*` や `:name` は使わず、完全なパスで書く。新しい URL には絞り込みのクエリを付けてよい（まとめたページを、前のページと同じ絞り込みの一覧へ転送するとき）。
 - Cloudflare の `_redirects` に書ける転送は 2,000 行まで。データの入れ直しで何百もの URL が変わるときは、転送を足す前に URL の決め方を見直す。
 - 確かめ方: `make build` のあと、`site` で `npx wrangler dev` を動かし（[deploy.md](deploy.md) の5章）、古い URL が 301 と新しい URL の `Location` を返すか。

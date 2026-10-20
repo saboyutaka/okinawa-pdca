@@ -1,5 +1,5 @@
 # 公開した後に URL を変えたページの、古い URL から新しい URL への転送（Cloudflare。docs/site.md の 8章）。
-# 1行に1つ「古い URL 新しい URL 301」と書く。* や :name は使わず、/ で始まり / で終わる完全なパスで書く（make test で確かめる）。
+# 1行に1つ「古い URL 新しい URL 301」と書く。* や :name は使わず、/ で始まり / で終わる完全なパスで書く（新しい URL には絞り込みのクエリを付けてよい。make test で確かめる）。
 # 古い URL は site/urls.txt に残したままにする
 # R7で名前が変わった成果指標を同じ指標としてまとめたため（2026-10-15、site/src/lib/renames.ts の SEIKA_RENAMES）、R4〜R6 の名前のページを新しい名前のページへ
 /shihyou/1-1-b-1/3e595a16/ /shihyou/1-1-b-1/67aec3dc/ 301
@@ -77,3 +77,5 @@
 /torikumi/3-2-d-4/b59884e5/ /torikumi/3-2-d-4/bdc27619/ 301
 /torikumi/3-9-a-1/a8c7ecda/ /torikumi/3-9-a-1/fa2a8b61/ 301
 /torikumi/3-9-b-1/8ea0feb5/ /torikumi/3-9-b-1/b552d9c8/ 301
+# 一括交付金の事業をさがすを、予算事業をさがすにまとめたため（一括交付金の事業だけを出した一覧へ）
+/yosan/ikkatsu/ /yosan/jigyo/?kind=ikkatsu 301

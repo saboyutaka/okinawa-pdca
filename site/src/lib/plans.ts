@@ -1,6 +1,6 @@
 // 沖縄県PDCA 以外の評価（data/extracted/kanko・ikkatsu・hyoka）をページで使う形にまとめる。
-// 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（/yosan/ikkatsu/）に、評価検証報告書は基本施策のページに出す
-import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, compareShisakuId, countBy, type Shisaku, type YearGroup } from './data.ts';
+// 観光ロードマップは「個別計画」のページ（/keikaku/）に、一括交付金の事後評価は施策のページと予算のページ（予算事業をさがす /yosan/jigyo/ にも）に、評価検証報告書は基本施策のページに出す
+import { load, getShisaku, getTorikumiGroups, torikumiPage, keySlug, seikaHrefByName, deptOf, sameKey, torikumiKey, compareShisakuId, countBy, yearLabel, type Shisaku, type YearGroup } from './data.ts';
 import { once, onceBy } from './memo.ts';
 import { isBlankCell } from './text.ts';
 import type { Shape, Tone } from './icons.ts';
@@ -223,8 +223,9 @@ const ikkatsuIndex = once(() => {
 export const ikkatsuOf = (shisakuId: string) => ikkatsuIndex().get(shisakuId) || [];
 export const ikkatsuRows = (year: number) => load('ikkatsu/jigyo').filter((j) => j.year === year);
 
-// 一括交付金の事業をさがす（/yosan/ikkatsu/）。事業には自分のページが無いので、施策のページの事業のカードを行き先にする
-export const IKKATSU_HREF = '/yosan/ikkatsu/';
+// 一括交付金の事業は、予算事業をさがす（/yosan/jigyo/）で種類を「一括交付金の事業」にしてさがす。s を渡すとその将来像の事業だけ。
+// 事業には自分のページが無いので、一覧の行は施策のページの事業のカードを行き先にする（ikkatsuHref）
+export const ikkatsuSearchHref = (s?: number) => `/yosan/jigyo/?kind=ikkatsu${s ? `&s=${s}` : ''}`;
 export const IKKATSU_LATEST = IKKATSU_YEARS[IKKATSU_YEARS.length - 1];
 // すべての事業（年度をまたいで同じ名前の事業を1行に）
 export const ikkatsuGroups = once(() => groupByKey(load('ikkatsu/jigyo')));
@@ -239,6 +240,25 @@ export function ikkatsuHref(g: YearGroup<IkkatsuJigyoRow>) {
 }
 // 担当部課の部局。教育委員会の課は、沖縄県PDCA の部局（教育庁）にそろえる
 export const ikkatsuDept = (dept: string | null | undefined) => (/^教育委員会/.test(dept || '') ? '教育庁' : deptOf(dept));
+// 評価の移り変わり（施策の判定の移り変わりと同じく、前の年度と比べて上がった・下がった）。予算事業をさがすの絞り込み
+const IKKATSU_PREV = IKKATSU_LATEST - 1;
+export const IKKATSU_TRENDS = [
+  { key: 'down', label: `${yearLabel(IKKATSU_PREV)}→${yearLabel(IKKATSU_LATEST)}で評価が下がった` },
+  { key: 'up', label: `${yearLabel(IKKATSU_PREV)}→${yearLabel(IKKATSU_LATEST)}で評価が上がった` },
+  { key: 'short2', label: '3年のうち2年以上、目標に届かなかった（△・未）' },
+  { key: 'all', label: '3年とも◎達成' },
+];
+const gradeRank = (label: string | undefined) => GRADES.findIndex((x) => x.key === label);
+export function ikkatsuTrends(g: YearGroup<IkkatsuJigyoRow>) {
+  const out: string[] = [];
+  const [a, b] = [gradeRank(g.years[IKKATSU_PREV]?.grade_label), gradeRank(g.years[IKKATSU_LATEST]?.grade_label)];
+  if (a >= 0 && b >= 0 && b > a) out.push('down');
+  if (a >= 0 && b >= 0 && b < a) out.push('up');
+  const labels = IKKATSU_YEARS.map((y) => g.years[y]?.grade_label);
+  if (labels.filter((l) => l && isShort(l)).length >= 2) out.push('short2');
+  if (labels.every((l) => l === '達成')) out.push('all');
+  return out;
+}
 
 // ---------------------------------------------------------------- 評価検証報告書
 

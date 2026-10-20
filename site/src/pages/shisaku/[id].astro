@@ -30,7 +30,7 @@ import ExtLink from '../../components/ExtLink.astro';
 import IkkatsuCard from '../../components/IkkatsuCard.astro';
 import Says from '../../components/Says.astro';
 import SecHead from '../../components/SecHead.astro';
-import { KANKO, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuOf, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
+import { KANKO, IKKATSU_LATEST, GRADES, ikkatsuOf, ikkatsuSearchHref, kankoOfPdcaShisaku, kankoShisakuHref, countGrades } from '../../lib/plans.ts';
 
 // URL は lib/routes.ts で決める（docs/site.md の 8章）
 export const getStaticPaths = ROUTES['shisaku/[id]'];
@@ -247,7 +247,7 @@ const rmShisaku = kankoOfPdcaShisaku(s);
           <div class="ikcards">{ikPast.map((g) => <IkkatsuCard g={g} />)}</div>
         </details>
       )}
-      <p class="small"><a href={`${IKKATSU_HREF}?s=${s.shouraizou}`}>将来像{s.shouraizou}の一括交付金の事業をさがす</a>・<a href={IKKATSU_HREF}>すべての事業をさがす</a></p>
+      <p class="small"><a href={ikkatsuSearchHref(s.shouraizou)}>将来像{s.shouraizou}の一括交付金の事業をさがす</a>・<a href={ikkatsuSearchHref()}>すべての事業をさがす</a></p>
       <p class="small secondary">主な取組と同じ事業のこともありますが、名前や単位が違うことがあり、取組とは結び付けていません。予算額は前の年度からの繰越を含む事業費（国が8割・県が2割）です。</p>
     </section>
   )}

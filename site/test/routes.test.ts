@@ -45,6 +45,9 @@ test('転送の書き方の誤りを見つける', () => {
   assert.equal(bad(r('/old/', '/nowhere/')), 1); // 行き先が無い
   assert.equal(bad(r('/torikumi/*', '/a/')), 1); // 完全なパスでない
   assert.equal(bad(r('/old', '/a/')), 1); // 末尾の / が無い
+  assert.equal(bad(r('/old/', '/a/?kind=x&s=1')), 0); // 新しい URL には絞り込みのクエリを付けてよい
+  assert.equal(bad(r('/old/', '/nowhere/?kind=x')), 1); // クエリの前のページが無い
+  assert.equal(bad(r('/old/?q=1', '/a/')), 1); // 古い URL にはクエリを付けない
   assert.equal(checkUrls([], pages, [r('/old/', '/a/', 301, 1), r('/old/', '/b/', 301, 2)]).problems.length, 1); // 同じ古い URL が2つ
   assert.equal(checkUrls(['about/'], pages, []).problems.length, 1);
 });
