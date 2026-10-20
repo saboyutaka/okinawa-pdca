@@ -913,7 +913,7 @@ export const sameNameElsewhere = (g: TorikumiGroup) => sameNameGroups(g).some((x
 // 同じ施策で、部局票に同じ予算事業名があるもの、または名前が似ているもの（文字の2つ組の一致率 0.5 以上）。年度をまたぐ照合は名前だけなので、その補い。
 // 別の施策のもの（施策の移動。R6まで 3-9-a-3、R7から 3-9-b-3 に載っている「スポーツイベント開催支援」→「スポーツイベント開催の支援」など）は、
 // 同じ予算事業名があり、境目の年度の活動指標も同じもの（katsudouNameKey）。この取組の施策にも同じ名前で載っている取組（再掲）は、同じ施策のほうを出すので除く
-const NO_BUDGET = /^([ー―\-－‐—]|なし|県事業なし|)$/;
+const NO_BUDGET = /^([ー―\-－‐—]|なし|県事業なし|予算事業なし|予算措置なし|)$/;
 // 予算事業の欄が「―」「なし」など、名前の無いもの（部局票の空欄の書き方）
 export const isNoBudgetName = (s: string | null | undefined) => NO_BUDGET.test(budgetKey(s));
 const budgetNamesOf = onceBy((g: TorikumiGroup) => {
@@ -970,44 +970,69 @@ export function relatedOf(g: TorikumiGroup) {
   const cs = renameCandidates(g);
   return { before: cs.filter((c) => !c.after), after: cs.filter((c) => c.after), repost: repostsOf(g) };
 }
-// その年度の部局票の予算事業の名前（「―」などは除く）
-const budgetNamesIn = (g: TorikumiGroup, y: number) =>
-  g.years[y] ? (budgetOf(y, g.shisaku.id, g.key)?.budgets || []).map((b) => b.name).filter((n) => !isNoBudgetName(n)) : [];
+// 予算事業の欄に、県の予算事業の名前ではなく、国や市町村の事業であることだけが書かれたもの（「国直轄」「市町村事業」）。同じ書き方でも同じ予算事業ではない
+const NOT_PREF_BUDGET = /^(国直轄|市町村)(事業)?$/;
+// その年度の部局票の予算の表のうち、県の予算事業の名前があるもの。名前は書き方の違い（子供・こども）をそろえた key（sameBudgetKey）で比べる
+const sameBudgetKey = (s: string) => sameKey(budgetKey(s));
+const budgetBlocksIn = (g: TorikumiGroup, y: number) =>
+  g.years[y] ? (budgetOf(y, g.shisaku.id, g.key)?.budgets || []).filter((b) => !isNoBudgetName(b.name) && !NOT_PREF_BUDGET.test(budgetKey(b.name))) : [];
 const groupsByBudget = once(() => {
   const m = new Map<string, TorikumiGroup[]>();
   for (const g of getTorikumiGroups()) {
-    for (const y of YEARS) for (const k of new Set(budgetNamesIn(g, y).map(budgetKey))) m.set(`${y}|${k}`, [...(m.get(`${y}|${k}`) ?? []), g]);
+    for (const y of YEARS) for (const k of new Set(budgetBlocksIn(g, y).map((b) => sameBudgetKey(b.name)))) m.set(`${y}|${k}`, [...(m.get(`${y}|${k}`) ?? []), g]);
   }
   return m;
 });
-// 同じ予算事業の取組（取組のページの予算の節）。同じ年度の報告の部局票に、同じ名前の予算事業が書かれている別の取組。年度をまたいだ照合はしない（前後の年度の取組は relatedOf）。
-// 複数の施策に載っている同じ取組（再掲）はページの頭に出すので除く。rows の years は同じ予算事業が書かれていた報告年度で、並びはその最後の年度の新しい順、同じなら報告書の順。
-// budgets はほかの取組と同じだったこの取組の予算事業の名前と、同じだった報告年度（新しい順）。partial はこの取組に予算事業の名前がある年度の一部だけのもの
-export interface SameBudget { group: TorikumiGroup; years: number[] }
-export function sameBudgetOf(g: TorikumiGroup) {
-  const reposts = new Set(repostsOf(g).map((r) => r.group));
-  const own = YEARS.filter((y) => budgetNamesIn(g, y).length);
-  const rows = new Map<TorikumiGroup, SameBudget>();
-  const budgets = new Map<string, { name: string; years: number[]; partial: boolean }>();
-  for (const y of own) {
-    for (const name of budgetNamesIn(g, y)) {
-      const others = (groupsByBudget().get(`${y}|${budgetKey(name)}`) ?? []).filter((o) => o !== g && !reposts.has(o));
-      if (!others.length) continue;
-      const b = budgets.get(budgetKey(name)) ?? { name, years: [], partial: false };
-      budgets.set(budgetKey(name), b);
-      if (!b.years.includes(y)) b.years.push(y);
-      for (const o of others) {
-        const x = rows.get(o) ?? { group: o, years: [] };
-        rows.set(o, x);
-        if (!x.years.includes(y)) x.years.push(y);
-      }
+// 取組の予算事業を年度をまたいでつないだもの。同じ名前か、前の年度の票の翌年度の予算事業名（name_next）で続くものを1つの予算事業とし（予算事業の名前の変更）、
+// つながらない名前は別の予算事業にする。at は年度ごとの予算事業の名前の key と翌年度の予算事業名の key、names は年度ごとの名前
+interface BudgetChain { at: Map<number, { keys: Set<string>; next: Set<string> }>; names: { name: string; y: number }[] }
+function budgetChainsOf(g: TorikumiGroup) {
+  const lines: BudgetChain[] = [];
+  for (const y of YEARS) {
+    for (const b of budgetBlocksIn(g, y)) {
+      const k = sameBudgetKey(b.name);
+      const at = (l: BudgetChain, yy: number) => l.at.get(yy) ?? { keys: new Set<string>(), next: new Set<string>() };
+      let l = lines.find((x) => at(x, y).keys.has(k))
+        ?? lines.find((x) => at(x, y - 1).keys.has(k) || at(x, y - 1).next.has(k))
+        ?? lines.find((x) => [...x.at.values()].some((a) => a.keys.has(k)));
+      if (!l) lines.push((l = { at: new Map(), names: [] }));
+      const a = at(l, y);
+      l.at.set(y, a);
+      if (!a.keys.has(k)) l.names.push({ name: b.name, y });
+      a.keys.add(k);
+      if (!isNoBudgetName(b.name_next)) a.next.add(sameBudgetKey(b.name_next));
     }
   }
-  for (const b of budgets.values()) b.partial = b.years.length < own.length;
-  return {
-    rows: getTorikumiGroups().flatMap((o) => rows.get(o) ?? []).sort((a, b) => b.years.at(-1)! - a.years.at(-1)!),
-    budgets: [...budgets.values()].sort((a, b) => b.years.at(-1)! - a.years.at(-1)!),
-  };
+  return lines;
+}
+// 同じ予算事業の取組（取組のページの予算の節）。この取組の予算事業ごとに（名前が変わったものは1つにまとめる。budgetChainsOf）、同じ年度の報告の部局票に同じ名前の予算事業が書かれている別の取組。
+// 前後の年度の取組とは結び付けない（relatedOf）。複数の施策に載っている同じ取組（再掲）はページの頭に出すので除く。
+// 予算事業の name は最後の年度の名前、formers は前の年度の名前、years はほかの取組と同じだった報告年度、partial はこの取組に予算事業の名前がある年度の一部だけのもの。
+// rows の years は同じ予算事業が書かれていた報告年度。予算事業も rows も、同じだった最後の年度の新しい順、同じなら報告書の順。count はほかの取組の数（予算事業をまたいで重ねない）
+export interface SameBudget { group: TorikumiGroup; years: number[] }
+export interface SameBudgetGroup { name: string; formers: { name: string; years: number[] }[]; years: number[]; partial: boolean; rows: SameBudget[] }
+export function sameBudgetOf(g: TorikumiGroup) {
+  const reposts = new Set(repostsOf(g).map((r) => r.group));
+  const own = YEARS.filter((y) => budgetBlocksIn(g, y).length);
+  const newest = (a: { years: number[] }, b: { years: number[] }) => b.years.at(-1)! - a.years.at(-1)!;
+  const budgets = budgetChainsOf(g).flatMap((l): SameBudgetGroup[] => {
+    const rows = new Map<TorikumiGroup, SameBudget>();
+    for (const [y, a] of l.at) {
+      for (const k of a.keys) {
+        for (const o of groupsByBudget().get(`${y}|${k}`) ?? []) {
+          if (o === g || reposts.has(o)) continue;
+          const x = rows.get(o) ?? { group: o, years: [] };
+          rows.set(o, x);
+          if (!x.years.includes(y)) x.years.push(y);
+        }
+      }
+    }
+    if (!rows.size) return [];
+    const years = [...new Set([...rows.values()].flatMap((x) => x.years))].sort((a, b) => a - b);
+    const name = l.names.at(-1)!.name;
+    return [{ name, formers: formersOf(l.names, name), years, partial: years.length < own.length, rows: getTorikumiGroups().flatMap((o) => rows.get(o) ?? []).sort(newest) }];
+  });
+  return { budgets: budgets.sort(newest), count: new Set(budgets.flatMap((b) => b.rows.map((x) => x.group))).size };
 }
 // この取組が載っている施策の数（「2施策に共通」。複数の施策に載っている取組＝再掲だけで、ほかは 0）。year を渡すと、その年度に再掲だったものだけ（目次は最新の年度）
 export function commonShisakuCount(g: TorikumiGroup, year?: number) {
