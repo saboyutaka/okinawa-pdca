@@ -21,7 +21,7 @@ import { themeIdsOf } from '../../../lib/themes.ts';
 import {
   YEARS, LATEST, yearLabel, yearLong, yearsLong, yearRuns, periodLabel, statusOf, toneOfStatus, statusStamps, budgetOf, fundOf,
   sectionHref, sourceLink, relatedOf, sameBudgetOf, commonShisakuCount, firstYearOf, formerNames, formerText, AMOUNT_KINDS, planPath,
-  isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell, type SameBudget,
+  isNoBudgetName, budgetSeriesOf, budgetTableOf, BUDGET_STAGES, type TorikumiGroup, type ReportBudgets, type BudgetCell,
 } from '../../../lib/data.ts';
 import { activityShares, activityAchievement, activityAchievements, type ActivityRun } from '../../../lib/katsudou.ts';
 import { yen } from '../../../lib/format.ts';
@@ -129,10 +129,10 @@ const budText = (c: BudgetCell | undefined) => {
 // 部局票が手に入っていない報告（総括報告書の決算見込額だけ）
 const noRecYears = present.filter((y) => !recs[y]?.budgets?.length).reverse();
 // 同じ予算事業の取組（lib/data.ts の sameBudgetOf）。札は ToriRow と同じく、最新の年度の報告に無い取組は最後の年度の進捗状況を年度つきで出す。
-// 同じ予算事業だった年度は、この取組に予算事業の名前がある年度の一部だけのときに、どの予算事業かは、この取組の予算事業が2つ以上あるときに書き添える
+// どの予算事業かは行ごとに書かず、節の頭の文の下に1回だけ書く（この取組に予算事業の名前がある年度の一部だけのものは年度を添える）
 const sameBudget = sameBudgetOf(g);
 const sameChip = (o: TorikumiGroup) => (o.latest.year === LATEST ? statusOf(o.latest) : `${yearLabel(o.latest.year)} ${statusOf(o.latest)}`);
-const sameNote = (x: SameBudget) => [x.partial && `${yearRuns(x.years)}の報告`, budgetNames.length > 1 && `予算事業「${x.names.join('」「')}」`].filter(Boolean).join('　');
+const sameBudgetText = sameBudget.budgets.map((b) => (b.partial ? `${b.name}（${yearRuns(b.years)}）` : b.name)).join('、');
 ---
 <Base {...torikumiMeta(g)} ogType="article">
   <Hierarchy items={planPath({ shisaku: s.id })} page={t.name} />
@@ -414,22 +414,17 @@ const sameNote = (x: SameBudget) => [x.partial && `${yearRuns(x.years)}の報告
         <p class="small secondary">この取組は、部局の検証票では別の施策に載っているため、名前で結び付けて表示しています。</p>
       )}
     </details>
-    {sameBudget.length > 0 && (
+    {sameBudget.rows.length > 0 && (
       <>
-        <h3>同じ予算事業の取組（{sameBudget.length}件）</h3>
-        <p class="small secondary lead">部局の検証票で、この取組と同じ年度の報告に同じ予算事業が書かれている取組です。</p>
+        <h3>同じ予算事業の取組（{sameBudget.rows.length}件）</h3>
+        <p class="small secondary lead">部局の検証票で、この取組と同じ年度の報告に同じ予算事業が書かれている取組です。<span class="same-b">予算: {sameBudgetText}</span></p>
         <ul class="row-list">
-          {sameBudget.map((x) => {
-            const o = x.group;
-            const note = sameNote(x);
-            return (
-              <li>
-                <div><Chip tone={toneOfStatus(statusOf(o.latest))} text={sameChip(o)} /> <a class="name-link" href={o.href}>{o.latest.name}</a></div>
-                <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${o.shisaku.id}/`}>{o.shisaku.name}</a> <span class="code-no">{o.shisaku.code}</span></div>
-                {note && <div class="small secondary">{note}</div>}
-              </li>
-            );
-          })}
+          {sameBudget.rows.map(({ group: o }) => (
+            <li>
+              <div><Chip tone={toneOfStatus(statusOf(o.latest))} text={sameChip(o)} /> <a class="name-link" href={o.href}>{o.latest.name}</a></div>
+              <div class="small secondary">施策 <a class="sub-link" href={`/shisaku/${o.shisaku.id}/`}>{o.shisaku.name}</a> <span class="code-no">{o.shisaku.code}</span></div>
+            </li>
+          ))}
         </ul>
       </>
     )}
@@ -545,6 +540,7 @@ const sameNote = (x: SameBudget) => [x.partial && `${yearRuns(x.years)}の報告
   .k-estimate { background: color-mix(in oklab, var(--pop) 55%, var(--paper)); }
   .k-initial { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--pop) 45%, var(--paper)) 0 2px, var(--paper) 2px 6px); }
   section details { margin-top: 10px; }
+  .same-b { display: block; }
   /* 活動指標の表（形は styles/global.css の .year-table）。目標・実績が行ごとに分かれた取組は改行を残す */
   .progress td.lines { white-space: pre; }
   .progress :global(.chip) { white-space: nowrap; }

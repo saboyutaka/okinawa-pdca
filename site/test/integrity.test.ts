@@ -375,19 +375,22 @@ test('再掲は、同じ年度に同じ名前で載っている別の施策の�
 test('同じ予算事業の取組は、同じ年度の部局票に同じ名前の予算事業がある別の取組で、互いに出る（再掲は除く）', () => {
   // 予算事業の名前が R4〜R5「文化資源を活用した沖縄観光の魅力アップ支援事業」→ R6「琉球歴史文化芸術興隆事業」→ R7「伝統文化活性化事業」と変わった取組
   const g = groupOf('1-4-a-2', '国立劇場おきなわの伝統芸能県外公演');
-  const xs = sameBudgetOf(g);
-  const kaigai = xs.find((x) => x.group === groupOf('1-4-a-2', '伝統芸能の海外公演'));
-  assert.ok(kaigai);
-  assert.deepEqual([kaigai.years, kaigai.names, kaigai.partial], [[2024, 2025], ['琉球歴史文化芸術興隆事業', '伝統文化活性化事業'], true]);
-  assert.ok(xs.some((x) => x.years.join() === '2022,2023' && x.names.join() === '文化資源を活用した沖縄観光の魅力アップ支援事業'));
+  const { rows, budgets } = sameBudgetOf(g);
+  assert.deepEqual(budgets.map((b) => [b.name, b.years, b.partial]), [
+    ['伝統文化活性化事業', [2025], true],
+    ['琉球歴史文化芸術興隆事業', [2024], true],
+    ['文化資源を活用した沖縄観光の魅力アップ支援事業', [2022, 2023], true],
+  ]);
+  assert.deepEqual(rows.find((x) => x.group === groupOf('1-4-a-2', '伝統芸能の海外公演'))?.years, [2024, 2025]);
   for (const g of getTorikumiGroups()) {
     const reposts = repostsOf(g).map((r) => r.group);
-    const xs = sameBudgetOf(g);
+    const { rows, budgets } = sameBudgetOf(g);
+    assert.equal(rows.length > 0, budgets.length > 0, g.href);
     // 同じ予算事業だった最後の年度の新しい順
-    assert.ok(xs.every((x, i) => i === 0 || xs[i - 1].years.at(-1)! >= x.years.at(-1)!), g.href);
-    for (const x of xs) {
+    assert.ok(rows.every((x, i) => i === 0 || rows[i - 1].years.at(-1)! >= x.years.at(-1)!), g.href);
+    for (const x of rows) {
       assert.ok(x.group !== g && !reposts.includes(x.group), `${g.href} → ${x.group.href}`);
-      assert.ok(sameBudgetOf(x.group).some((o) => o.group === g && o.years.join() === x.years.join()), `${g.href} → ${x.group.href}`);
+      assert.ok(sameBudgetOf(x.group).rows.some((o) => o.group === g && o.years.join() === x.years.join()), `${g.href} → ${x.group.href}`);
     }
   }
 });
