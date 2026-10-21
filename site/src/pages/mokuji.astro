@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Term from '../components/Term.astro';
 import ExtLink from '../components/ExtLink.astro';
-import { LATEST, yearLong, planTreeCounts } from '../lib/data.ts';
+import { LATEST, yearLong, getPlanTree } from '../lib/data.ts';
 import { TREE_DATA_FALLBACK, treeDataPath } from '../lib/tree-data.ts';
 import { LINKS } from '../lib/links.ts';
 import { fmt } from '../lib/format.ts';
@@ -22,7 +22,14 @@ import { fmt } from '../lib/format.ts';
 // 頭の「開く深さ」（セレクト）は、選んだ階層まで一度に開く。はじめは将来像だけを開いて、基本施策まで見せる（はじめに選んである深さ）。
 // キーワードは、施策・取組・成果指標（活動指標を出しているときは活動指標も）の名前（.qn）を部分一致でさがし、当たった行とその親だけを残して開く。
 // 開く深さ・指標・キーワードは小さく1行に並べ、キーワードを後ろに置く（キーワードの欄から Tab 1回で木に入れるように。スマホではキーワードだけ次の行にする）
-const n = planTreeCounts();
+const tree = getPlanTree();
+const kihonAll = tree.flatMap((v) => v.kihon);
+const tenkaiAll = kihonAll.flatMap((k) => k.tenkai);
+const shisakuAll = tenkaiAll.flatMap((t) => t.shisaku);
+const total = (xs: { length: number }[]) => xs.reduce((n, x) => n + x.length, 0);
+const nTorikumi = total(shisakuAll.map((s) => s.torikumi));
+const nShuyou = total(kihonAll.map((k) => k.shuyou));
+const nSeika = total(shisakuAll.map((s) => s.seika));
 // 「開く深さ」の選択肢。i 番目は、i より上の階層（details の data-level が i 未満）を開き、その下は閉じる
 const DEPTHS = ['将来像だけ', '基本施策まで', '施策展開まで', '施策まで', '主な取組まで'];
 const START = 1;
@@ -35,12 +42,12 @@ const SHOW = [
 // 目次のデータ。名前に中身のハッシュが付く（lib/tree-data.ts）
 const dataPath = treeDataPath();
 ---
-<Base title="計画の目次" description={`新・沖縄21世紀ビジョンの${n.shouraizou}つの将来像・${n.kihon}の基本施策・${n.tenkai}の施策展開・${n.shisaku}の施策・${fmt(n.torikumi)}件の主な取組（${yearLong(LATEST)}）を、主要指標・成果指標と一緒に、開け閉めできる目次の形で一覧できます。`}>
+<Base title="計画の目次" description={`新・沖縄21世紀ビジョンの5つの将来像・${kihonAll.length}の基本施策・${tenkaiAll.length}の施策展開・${shisakuAll.length}の施策・${fmt(nTorikumi)}件の主な取組（${yearLong(LATEST)}）を、主要指標・成果指標と一緒に、開け閉めできる目次の形で一覧できます。`}>
   {/* 目次のデータを、ページのスクリプトが届くのを待たずに読み始める（scripts/tree.ts の fetch がこれを使う。crossorigin は fetch の既定に合わせる） */}
   <link slot="head" rel="preload" href={dataPath} as="fetch" crossorigin="anonymous" />
   <h1>計画の目次</h1>
   <p class="secondary lead">
-    「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>の{n.shouraizou}つの<Term word="将来像" />から、{n.kihon}の<Term word="基本施策" />、{n.tenkai}の<Term word="施策展開" />、{n.shisaku}の<Term word="施策" />、{fmt(n.torikumi)}件の<Term word="主な取組" />までを、成果をはかる<Term word="主要指標" />（{n.shuyou}）・<Term word="成果指標" />（{n.seika}）と一緒にたどれます。
+    「<ExtLink href={LINKS.kihonKeikaku} after="」">新・沖縄21世紀ビジョン</ExtLink>の{tree.length}つの<Term word="将来像" />から、{kihonAll.length}の<Term word="基本施策" />、{tenkaiAll.length}の<Term word="施策展開" />、{shisakuAll.length}の<Term word="施策" />、{fmt(nTorikumi)}件の<Term word="主な取組" />までを、成果をはかる<Term word="主要指標" />（{nShuyou}）・<Term word="成果指標" />（{nSeika}）と一緒にたどれます。
   </p>
   <form class="filters tree-search" role="search" aria-label="目次の中をさがす" data-tree-search="plan-tree">
     <label class="tree-depth">開く深さ

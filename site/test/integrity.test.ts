@@ -436,7 +436,7 @@ test('予算事業は、名前の変更を翌年度の予算事業名でつな�
   }
 });
 
-test('予算の金額は、財源ごと・将来像ごとに分けて足すと全体の金額になる（トップの予算の全体像・予算と財源のページ）', () => {
+test('予算の金額は、財源ごと・将来像ごとに分けて足すと全体の金額になる（トップの予算の全体像・予算と財源・将来像のページ）', () => {
   for (const report of YEARS) {
     for (const kind of ['settled', 'estimate', 'initial'] as const) {
       const all = amountTotal(amountEntries(report, kind));
