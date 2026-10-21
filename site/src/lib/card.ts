@@ -4,24 +4,24 @@
 //
 // 見た目は docs/design.md に合わせる: ページの頭と同じ太い線と硬い影のステッカーに、名前と最新の年度の様子を入れる。
 // - 判定・進捗状況は県の区分の言葉で出し、内訳は区分の並びのまま0でない区分を全部同じ大きさで並べる（遅れだけを大きくしない）
-// - 状態は色だけで伝えず、形（lib/icons.ts）と文字でも出す。大きな丸いハンコは施策の判定だけに使う（取組は4年分のスタンプ）
+// - 状態は色だけで伝えず、形（lib/icons.ts）と文字でも出す。大きな丸いハンコは施策の判定だけに使う（取組は横長の札）
 // - 下の帯にサイトの名前・（非公式）・by Code for Okinawa を入れ、非公式で Code for Okinawa が作っていることが分かるようにする
 // 色は styles/global.css の :root（ライト）のトークンを読んで使う（CSS は効かないので値を直接書く）
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, statusOf, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
   type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
-import type { ActivityRun, ActivityShare } from './katsudou.ts';
+import { activityAchievement, activityAchievements, type ActivityRun, type ActivityShare } from './katsudou.ts';
 import { fmt } from './format.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total, type AreaHead } from './heads.ts';
 import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, type Tone } from './icons.ts';
 import { PROJECT, SITE } from './links.ts';
 import { once } from './memo.ts';
 import { ROUTES, routePath } from './routes.ts';
-import { isNumOnly, oneLine } from './text.ts';
+import { isBlankCell, isNumOnly, oneLine } from './text.ts';
 
 export const CARD_SIZE = { width: 1200, height: 630 };
 // 字の形は Noto Sans CJK JP の Bold だけ（src/fonts/card-bold.woff。使う字だけを切り出したもの）
@@ -44,8 +44,10 @@ function h(type: string, style: Style, kids: Kid[]): El {
 // 子を横か縦に並べる箱（satori は子が2つ以上の div に display: flex が要る）
 const box = (style: Style, ...kids: Kid[]) => h('div', { display: 'flex', ...style }, kids);
 // カードのフォント（Noto Sans CJK JP）に無い字を、ある字に置き換える。上付き・下付きの数字（CO₂ の ₂）は普通の数字にする。
+// ローマ数字の Ⅼ・Ⅽ・Ⅾ・Ⅿ も無いので、続くローマ数字ごと英字にする（活動概要の「ⅮⅤ被害者」→ DV）。
 // 無い字が出ると、フォントを切り出す make card-font が止まるので、ここに足す
-export const fold = (s: string) => s.replace(/[\u2070-\u209f]/g, (c) => c.normalize('NFKC'));
+export const fold = (s: string) =>
+  s.replace(/[\u2070-\u209f]|[\u2160-\u217f]*[\u216c-\u216f\u217c-\u217f][\u2160-\u217f]*/g, (c) => c.normalize('NFKC'));
 // 文字だけの箱。clamp は行数の上限（超えたら …。display: block が要り、そのときの子は配列でなく文字で渡す）
 const txt = (style: Style, s: string, clamp?: number): El =>
   ({ type: 'div', props: { style: clean(clamp ? { display: 'block', lineClamp: clamp, ...style } : { display: 'flex', ...style }), children: fold(s) } });
@@ -423,46 +425,67 @@ function areaCard(bg: string, head: El, name: string, rows: Row[]) {
   return frame(bg, heading(head, name, INNER_W, BODY_H - 12 - statsHeight(rows)), gap(12), stats(rows));
 }
 
-// 主な取組の4年分のスタンプ（components/Stamps.astro と同じく、線でつなぐ。報告の無い年度にかかる線は点線）
-function toriStamps(g: TorikumiGroup) {
-  const kids: El[] = [];
-  YEARS.forEach((y, i) => {
-    const st = g.statuses[i];
-    const tone = st ? toneOfStatus(st) : null;
-    if (i > 0) kids.push(box({ width: 40, marginTop: 52, borderTop: `4px ${st && g.statuses[i - 1] ? 'solid' : 'dashed'} ${color('line')}` }));
-    kids.push(box(
-      { flexDirection: 'column', alignItems: 'center', rowGap: 6, width: 104 },
-      txt({ fontSize: 20, color: color('ink-2') }, yearLabel(y)),
-      box({ width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, backgroundColor: mix(color(tone || 'blank'), color('paper'), 0.26) }, icon(tone, SHAPES[tone || 'blank'], 26)),
-      txt({ fontSize: 20 }, st || '報告なし'),
-    ));
-  });
-  return box({ alignItems: 'flex-start', flexShrink: 0 }, kids);
-}
-
+// 主な取組（取組のページの頭・一覧の行の詳細と同じ中身）。最後の報告の年度の進捗状況の札と、それを決めた活動指標の計画 → 実績・達成割合、
+// その年度にやったこと（総括報告書の活動概要）。年度は進捗状況の行に1回だけ書く。
+// やったことは3行まで。名前が1行に入らない取組は、名前を2行にできるよう2行まで（入らない分は …。全文は取組のページにある）
+const TORI = { status: 36, line: 30, vals: 40, label: 112 };
 function torikumiCard(g: TorikumiGroup) {
-  const last = g.statuses.at(-1);
-  const tone = last ? toneOfStatus(last) : null;
-  const INSET_H = 150;
+  const t = g.latest;
+  const status = statusOf(t);
+  const tone = toneOfStatus(status);
+  const ach = activityAchievement(g, t.year);
+  const achs = activityAchievements(g, t.year);
+  const achText = ach ? `${ach.text}${ach.pct >= 100 ? '　計画クリア' : ''}` : achs.map((x) => x.text || '—').join('・');
+  const did = isBlankCell(t.summary) ? '' : oneLine(t.summary);
+  const W = INNER_W - 2 * STATS_PAD.x - TORI.label - 16;
+  // 計画 → 実績の行が入らない値（かっこの中に内訳があるものなど）は、大きな数字にせず1行の文字で出す（短い値は縮めず、長い値のほうを …）。
+  // 数字の幅の見積もり（0.6em）は実際より広めなので、行の幅そのものと比べる
+  const plan = one(t.target);
+  const actual = one(t.actual);
+  const fits = widthOf('計画→ 実績', 20) + 3 * 8 + valueWidth(plan) + valueWidth(actual) + (achText ? 8 + 12 + widthOf(`達成割合 ${achText}`, 20) : 0) <= W;
+  const val = (raw: string) => (fits ? valueText(raw) : txt({ fontSize: 22, flexShrink: widthOf(raw, 22) > W * 0.3 ? 1 : 0, minWidth: 0 }, halfWidth(raw), 1));
+  const oneLineName = lines(pieces(t.name, 40, INNER_W * 0.95), 40, INNER_W * 0.95).length === 1;
+  const didLines = did ? Math.min(oneLineName ? 3 : 2, Math.ceil(widthOf(did, 22) / (W * 0.95))) : 0;
+  const valsH = fits ? TORI.vals : TORI.line;
+  const INSET_H = 2 * STATS_PAD.y + TORI.status + 8 + TORI.line + 2 + valsH + (did ? 10 + didLines * TORI.line : 0);
+  // 見出しの列（活動指標・やったこと）と中身の1行目の高さをそろえる
+  const lh = `${TORI.line}px`;
+  const row = (label: string, ...kids: Kid[]) => box(
+    { columnGap: 16, minWidth: 0, flexShrink: 0 },
+    txt({ fontSize: 20, lineHeight: lh, color: color('ink-2'), width: TORI.label, flexShrink: 0 }, label),
+    box({ flexDirection: 'column', rowGap: 2, flex: 1, minWidth: 0 }, ...kids),
+  );
+  const sub = (s: string) => txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, s);
   return frame(
     color('paper'),
     parent(g.shisaku, 'この取組が入っている施策'),
     gap(8),
-    heading(kicker('主な取組'), g.latest.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
+    heading(kicker('主な取組'), t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
     gap(12),
     inset(
-      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', columnGap: 24, height: INSET_H },
+      { height: INSET_H },
       box(
-        { flexDirection: 'column', rowGap: 6, minWidth: 0, flex: 1 },
+        { alignItems: 'center', columnGap: 14, height: TORI.status, flexShrink: 0, minWidth: 0 },
         box(
-          { alignItems: 'center', columnGap: 12, alignSelf: 'flex-start', padding: '4px 26px 6px 20px', borderRadius: 999, border: `3px solid ${color('line')}`, background: mix(color(tone || 'blank'), color('paper'), 0.26) },
-          icon(tone, null, 28),
-          txt({ fontSize: 32 }, last || '報告なし'),
+          { alignItems: 'center', columnGap: 10, flexShrink: 0, padding: '0 20px 2px 14px', borderRadius: 999, border: `3px solid ${color('line')}`, background: mix(color(tone), color('paper'), 0.26) },
+          icon(tone, null, 22),
+          txt({ fontSize: 24, lineHeight: 1.2 }, status),
         ),
-        txt({ fontSize: 20, color: color('ink-2') }, last ? `${yearLong(LATEST)}の進捗状況` : `${yearLong(LATEST)}の報告には無い取組`),
-        g.section ? txt({ fontSize: 20, color: color('ink-2'), whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, `所管 ${g.section}`, 1) : null,
+        txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, `${yearLong(t.year)}の進捗状況${t.year === LATEST ? '' : '（最後の報告）'}`),
+        g.section ? txt({ fontSize: 20, color: color('ink-2'), marginLeft: 'auto', paddingLeft: 12, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, `所管 ${g.section}`, 1) : null,
       ),
-      toriStamps(g),
+      gap(8),
+      row(
+        '活動指標',
+        txt({ fontSize: 22, lineHeight: lh }, oneLine(t.indicator), 1),
+        // 大きな数字の行の高さを詰め、数字の上と下（やったことの行まで）のあきをそろえる（行の高さは中の文字に受け継がれる）
+        box(
+          { alignItems: 'baseline', columnGap: 8, height: valsH, minWidth: 0, lineHeight: fits ? 1.1 : lh },
+          sub('計画'), val(plan), sub('→ 実績'), val(actual),
+          achText ? txt({ fontSize: 20, color: color('ink-2'), marginLeft: 12, flexShrink: 0 }, `達成割合 ${achText}`) : null,
+        ),
+      ),
+      did ? [gap(10), row('やったこと', txt({ fontSize: 22, lineHeight: lh }, did, didLines))] : null,
     ),
   );
 }
@@ -716,6 +739,14 @@ function valueText(raw: string, unit = ''): El {
   const ps = [...text.split(DIGITS).filter(Boolean), ...(unit ? [unit] : [])];
   return box({ alignItems: 'baseline', columnGap: 2, flexShrink: 1, minWidth: 0, overflow: 'hidden' }, ps.map((t) => txt({ fontSize: DIGITS.test(t) ? 34 : 20, flexShrink: 0, whiteSpace: 'nowrap' }, t)));
 }
+// valueText の幅の見積もり
+function valueWidth(raw: string) {
+  const text = halfWidth(raw);
+  if (!DIGITS.test(text)) return widthOf(text, 24);
+  return text.split(DIGITS).filter(Boolean).reduce((a, t) => a + widthOf(t, DIGITS.test(t) ? 34 : 20) + 2, 0);
+}
+// 計画・実績の欄が2行以上に分かれている値（総括報告書の lines）を1行にする
+const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
 function valueStep(label: string, value: El, sub: string) {
   return box(
     { alignItems: 'baseline', columnGap: 8, height: 42, minWidth: 0 },
@@ -791,7 +822,6 @@ function katsudouCard(a: ActivityShare) {
   // 最後の実績の札は、取組のページの図と同じ（いちばん新しい活動指標は「いまここ」、最新の報告に無い取組と前の活動指標は「最後の報告」）
   const here = run.group === 0 && last.y === LATEST ? 'いまここ' : '最後の報告';
   const chart = katsudouChart(run, INNER_W - 2 * STATS_PAD.x - STEPS_W - 20, INSET_H - 2 * STATS_PAD.y - 44, here);
-  const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
   return frame(
     color('paper'),
     parentBar(null, g.latest.name, 'この指標の取組'),
@@ -876,7 +906,7 @@ export const getCards = once((): Map<string, Card> => {
     })),
     ...ROUTES['torikumi/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
       page: routePath('torikumi/[shisaku]/[slug]', params),
-      alt: `主な取組「${g.latest.name}」の${yearsLong(YEARS[0], LATEST)}の進捗状況`,
+      alt: `主な取組「${g.latest.name}」の${yearLong(g.latest.year)}の進捗状況と、活動指標の計画・実績、活動概要`,
       node: () => torikumiCard(g),
     })),
     ...ROUTES['shihyou/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
