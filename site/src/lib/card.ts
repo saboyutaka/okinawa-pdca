@@ -425,34 +425,40 @@ function areaCard(bg: string, head: El, name: string, rows: Row[]) {
   return frame(bg, heading(head, name, INNER_W, BODY_H - 12 - statsHeight(rows)), gap(12), stats(rows));
 }
 
-// 主な取組。「主な取組」の行に最後の報告の年度の進捗状況の札を並べ、名前の下の箱に、それを決めた活動指標の計画 → 実績と、
-// その年度にやったこと（総括報告書の活動概要）。年度は進捗状況の札の横に1回だけ書く。SNS では小さく出るので文字は絞り、所管・達成割合は取組のページに任せる。
-// やったことは2行まで（入らない分は …。全文は取組のページにある）。名前は 52px まで（大きくすると、名前と下の箱が詰まって見える）。
-// 活動指標とやったことの間は広めにあけ、2つのまとまりに見えるようにする
-const TORI = { line: 30, vals: 40, label: 112, gap: 20, title: 52 };
+// 主な取組（取組のページの頭と同じ並び）。「主な取組」の行に最後の報告の年度の進捗状況の札を並べ、名前の下の箱に、それを決めた活動指標の計画 → 実績、
+// その下に県の吹き出しでその年度にやったこと（総括報告書の活動概要。県の資料の言葉なので吹き出し）。年度は進捗状況の札の横に1回だけ書く。
+// SNS では小さく出るので文字は絞り、所管・達成割合は取組のページに任せる。やったことは2行まで（入らない分は …。全文は取組のページにある）。
+// 名前は 52px まで（大きくすると、名前と下の箱が詰まって見える）
+const TORI = { line: 30, vals: 40, title: 52, avatar: 46, bubble: { y: 12, x: 18 }, foot: 10 };
 function torikumiCard(g: TorikumiGroup) {
   const t = g.latest;
   const status = statusOf(t);
   const tone = toneOfStatus(status);
   const did = isBlankCell(t.summary) ? '' : oneLine(t.summary);
-  const W = INNER_W - 2 * STATS_PAD.x - TORI.label - 16;
+  const W = INNER_W - 2 * STATS_PAD.x;
   // 計画 → 実績の行が入らない値（かっこの中に内訳があるものなど）は、大きな数字にせず1行の文字で出す（短い値は縮めず、長い値のほうを …）。
   // 数字の幅の見積もり（0.6em）は実際より広めなので、行の幅そのものと比べる
   const plan = one(t.target);
   const actual = one(t.actual);
   const fits = widthOf('計画→ 実績', 20) + 3 * 8 + valueWidth(plan) + valueWidth(actual) <= W;
   const val = (raw: string) => (fits ? valueText(raw) : txt({ fontSize: 22, flexShrink: widthOf(raw, 22) > W * 0.3 ? 1 : 0, minWidth: 0 }, halfWidth(raw), 1));
-  const didLines = did ? Math.min(2, Math.ceil(widthOf(did, 22) / (W * 0.95))) : 0;
   const valsH = fits ? TORI.vals : TORI.line;
-  const INSET_H = 2 * STATS_PAD.y + TORI.line + 2 + valsH + (did ? TORI.gap + didLines * TORI.line : 0);
-  // 見出しの列（活動指標・やったこと）と中身の1行目の高さをそろえる
+  const INSET_H = 2 * STATS_PAD.y + TORI.line + 2 + valsH;
+  const BUBBLE_W = INNER_W - TORI.avatar - 14 - 2 * TORI.bubble.x - 6;
+  const didLines = did ? Math.min(2, Math.ceil(widthOf(did, 22) / (BUBBLE_W * 0.95))) : 0;
+  const BUBBLE_H = 2 * TORI.bubble.y + 6 + didLines * TORI.line;
   const lh = `${TORI.line}px`;
-  const row = (label: string, ...kids: Kid[]) => box(
-    { columnGap: 16, minWidth: 0, flexShrink: 0 },
-    txt({ fontSize: 20, lineHeight: lh, color: color('ink-2'), width: TORI.label, flexShrink: 0 }, label),
-    box({ flexDirection: 'column', rowGap: 2, flex: 1, minWidth: 0 }, ...kids),
-  );
   const sub = (s: string) => txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, s);
+  // 県の吹き出し（components/Says.astro と同じ形。ステッカーの中なので影は付けない）。尾は線を2辺だけ引いた正方形を回したもの
+  const says = (text: string) => box(
+    { alignItems: 'flex-start', columnGap: 14, flexShrink: 0 },
+    box({ width: TORI.avatar, height: TORI.avatar, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, background: color('paper'), fontSize: 20 }, '県'),
+    box(
+      { position: 'relative', flex: 1, minWidth: 0, height: BUBBLE_H, padding: `${TORI.bubble.y}px ${TORI.bubble.x}px`, borderRadius: 18, border: `3px solid ${color('line')}`, background: color('paper') },
+      box({ position: 'absolute', left: -12, top: 13, width: 18, height: 18, background: color('paper'), borderLeft: `3px solid ${color('line')}`, borderBottom: `3px solid ${color('line')}`, transform: 'rotate(45deg)' }),
+      txt({ fontSize: 22, lineHeight: lh }, text, didLines),
+    ),
+  );
   return frame(
     color('paper'),
     parent(g.shisaku, 'この取組が入っている施策'),
@@ -467,22 +473,24 @@ function torikumiCard(g: TorikumiGroup) {
         ),
         txt({ fontSize: 20 }, `${yearLong(t.year)}の進捗状況${t.year === LATEST ? '' : '（最後の報告）'}`),
       ),
-      t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H, TORI.title,
+      // 残りの高さ（吹き出しと下の帯の間を TORI.foot だけ余分にあける）
+      t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H - (did ? 14 + BUBBLE_H : 0) - TORI.foot, TORI.title,
     ),
     gap(12),
     inset(
-      { height: INSET_H },
-      row(
-        '活動指標',
-        txt({ fontSize: 22, lineHeight: lh }, oneLine(t.indicator), 1),
-        // 大きな数字の行の高さを詰める（行の高さは中の文字に受け継がれる）
-        box(
-          { alignItems: 'baseline', columnGap: 8, height: valsH, minWidth: 0, lineHeight: fits ? 1.1 : lh },
-          sub('計画'), val(plan), sub('→ 実績'), val(actual),
-        ),
+      { height: INSET_H, rowGap: 2 },
+      box(
+        { alignItems: 'baseline', columnGap: 14, height: TORI.line, minWidth: 0 },
+        txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, '活動指標'),
+        txt({ fontSize: 22, lineHeight: lh, flex: 1, minWidth: 0 }, oneLine(t.indicator), 1),
       ),
-      did ? [gap(TORI.gap), row('やったこと', txt({ fontSize: 22, lineHeight: lh }, did, didLines))] : null,
+      // 大きな数字の行の高さを詰める（行の高さは中の文字に受け継がれる）
+      box(
+        { alignItems: 'baseline', columnGap: 8, height: valsH, minWidth: 0, lineHeight: fits ? 1.1 : lh },
+        sub('計画'), val(plan), sub('→ 実績'), val(actual),
+      ),
     ),
+    did ? [gap(14), says(did)] : null,
   );
 }
 
