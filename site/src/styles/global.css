@@ -32,17 +32,22 @@
   --link: #2a45d6;
   /* 報告書の番号などの薄い文字。ページの地（--bg）の上でも 4.5:1 以上にする */
   --muted: #646991;
-  /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。地（--paper・--bg）との差が 3:1 未満の色（ライトの黄・灰、ダークの赤・灰）は、
-     形と内訳の棒の区間に、地と 3:1 以上の差がある縁（--*-edge）を付ける（WCAG 1.4.11）。縁の要らない色は、縁を塗りと同じ色にする */
-  --good: #00927f;
-  --warning: #f0c52e;
-  --warning-edge: #8f6b00;
-  --serious: #e46b2b;
-  --critical: #b0243e;
-  --critical-edge: #b0243e;
-  --none: #898781;
-  --blank: #c3c2b7;
-  --blank-edge: #7d7c72;
+  /* 状態（良い〜悪い）の形・縁の色。意味が固定なので系列の色には使わない。地（--paper・--bg）との差が 3:1 未満の色（黄と、記載なしの灰）は、
+     形と内訳の棒の区間に、地と 3:1 以上の差がある縁（--*-edge）を付ける（WCAG 1.4.11）。縁の要らない色は、縁を塗りと同じ色にする。
+     灰は地と線の青紫に寄せる */
+  --good: #009589;
+  --warning: #efd03c;
+  --warning-edge: #926e10;
+  --serious: #d06829;
+  --critical: #d8516a;
+  --critical-edge: #d8516a;
+  --none: #7a7f96;
+  --blank: #c6cad8;
+  --blank-edge: #7b7f93;
+  /* 広い面（内訳の棒の区間・指標のマップのマス・メーター）の塗り。状態の色と同じ色相の明るいパステルにする。
+     色覚によらず見分けられるよう、色相が近く見える組（順調と未着手、やや遅れと大幅遅れなど）は明るさを離し、
+     順調〜大幅遅れは明るさを近づけて、どれかだけが濃く目立たないようにする。区間とマスには状態の色の縁（--*-edge か状態の色）を付ける */
+  --good-fill: #89e5d9; --warning-fill: #f0d86d; --serious-fill: #fba773; --critical-fill: #f2798f; --none-fill: #b1b6cb; --blank-fill: #f3f5fc;
   --on-fill: #0b0b0b;
   /* 将来像の色（新・沖縄21世紀ビジョン基本計画のパンフレットの色に合わせる。1 緑・2 青・3 橙・4 ピンク・5 青緑）。
      番号の印と見出しの帯だけに使い、状態の色（棒・印）には使わない。--sz-N-ink はその上の文字の色 */
@@ -51,8 +56,10 @@
   --sz-3: #f7941d; --sz-3-ink: #151a3d; --sz-3-wash: #fdeedb;
   --sz-4: #f0679f; --sz-4-ink: #151a3d; --sz-4-wash: #fde4ee;
   --sz-5: #00a88e; --sz-5-ink: #151a3d; --sz-5-wash: #dbf3ee;
-  /* 系列（財源など）の色。並び順が色覚多様性への配慮になっている（dataviz の検証済みの順） */
-  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300;
+  /* 系列（財源など）の線・縁の色と、広い面（積み上げの棒の区間・凡例の色見本）の塗り。1 青紫・2 ピーチ・3 ミント・4 レモン・5 ピンク・6 灰。
+     隣どうしで塗りの明るさを交互に変えて、色覚によらず見分けられるようにする（この並びで確かめてある）。区間には系列の色を濃くした縁を付ける */
+  --series-1: #4f69d7; --series-2: #d07940; --series-3: #2b9667; --series-4: #d7b43b; --series-5: #cc6490; --series-6: #75798d;
+  --series-1-fill: #8ba6fd; --series-2-fill: #ffcaa5; --series-3-fill: #6fbe95; --series-4-fill: #f9dd73; --series-5-fill: #fb9dc2; --series-6-fill: #818599;
   /* ロゴ（ヘッダーの印）。淡い紫の星空と丘で、まるい子がみらいの白い星を見上げる。中の絵はダークでも同じ色にする
      （ダークで変わるのはステッカーの縁と影だけ）。favicon（src/assets/favicon.svg）は同じ値を直接書いているので、変えたらそちらも直して make icons */
   --logo-sky: #b9a8ff; --logo-hill: #8a74f0; --logo-twinkle: #ffffff; --logo-body: #ffc2dc; --logo-star: #ffffff; --logo-eye: #ffffff; --logo-ink: #151a3d;
@@ -68,9 +75,11 @@
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
   --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
-  --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --critical-edge: #dc6178; --none: #898781;
-  --blank: #52514e; --blank-edge: #85847c;
-  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+  --good: #4dc8ba; --warning: #dec44c; --warning-edge: #dec44c; --serious: #eb9259; --critical: #e07081; --critical-edge: #e07081; --none: #8c91a5;
+  --blank: #434755; --blank-edge: #878b9c;
+  --good-fill: #70c3b8; --warning-fill: #d7c573; --serious-fill: #dc9a71; --critical-fill: #d07c87; --none-fill: #666872; --blank-fill: #2c2d34;
+  --series-1: #7d98f5; --series-2: #e99d6e; --series-3: #59b387; --series-4: #e0c262; --series-5: #df84a8; --series-6: #818599;
+  --series-1-fill: #859bdf; --series-2-fill: #d39e7a; --series-3-fill: #417d5e; --series-4-fill: #c4b168; --series-5-fill: #c87f9b; --series-6-fill: #4e5160;
   --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
   --sz-2: #4f9be0; --sz-2-ink: #0f1330; --sz-2-wash: #1b3058;
   --sz-3: #f7a24a; --sz-3-ink: #0f1330; --sz-3-wash: #3d2f2c;
@@ -338,12 +347,12 @@ details[open] > summary .tw::before { rotate: 90deg; translate: 0 1px; }
 summary:hover .tw { background: var(--sky); }
 
 /* 状態の印（形＋色＋文字）。色だけで意味を伝えない */
-.tone-good { --tone: var(--good); }
-.tone-warning { --tone: var(--warning); --tone-edge: var(--warning-edge); }
-.tone-serious { --tone: var(--serious); }
-.tone-critical { --tone: var(--critical); --tone-edge: var(--critical-edge); }
-.tone-none { --tone: var(--none); }
-.tone-blank { --tone: var(--blank); --tone-edge: var(--blank-edge); }
+.tone-good { --tone: var(--good); --tone-fill: var(--good-fill); }
+.tone-warning { --tone: var(--warning); --tone-edge: var(--warning-edge); --tone-fill: var(--warning-fill); }
+.tone-serious { --tone: var(--serious); --tone-fill: var(--serious-fill); }
+.tone-critical { --tone: var(--critical); --tone-edge: var(--critical-edge); --tone-fill: var(--critical-fill); }
+.tone-none { --tone: var(--none); --tone-fill: var(--none-fill); }
+.tone-blank { --tone: var(--blank); --tone-edge: var(--blank-edge); --tone-fill: var(--blank-fill); }
 .ic { flex: none; fill: var(--tone); stroke: var(--tone-edge, var(--tone)); stroke-width: 1; }
 .ic .ring { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 2 1.6; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
@@ -434,7 +443,7 @@ ol.stamps { list-style: none; padding: 0; margin: 0; }
 .small-stamps .seg-dash .cw::before { background: repeating-linear-gradient(90deg, var(--line) 0 4px, transparent 4px 8px); }
 /* 太いメーター（割合） */
 .chunk { height: 18px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); overflow: hidden; }
-.chunk > span { display: block; height: 100%; background: var(--tone); border-right: 2px solid var(--line); }
+.chunk > span { display: block; height: 100%; background: var(--tone-fill); border-right: 2px solid var(--line); }
 .chunk.thin { height: 12px; border-width: 1.5px; }
 .chunk.thin > span { border-right-width: 1.5px; }
 /* 吹き出し */
@@ -517,7 +526,7 @@ mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--po
 .cellpop .cp-term { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
 .cellpop .cp-year { font-family: var(--font-num); font-weight: 600; font-size: 0.875rem; color: var(--ink-2); }
 /* 主要指標の札は形を付けず、四角と同じ色の四角にする（docs/design.md の2章） */
-.cellpop .cp-sq { display: block; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--tone); box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
+.cellpop .cp-sq { display: block; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--tone-fill); box-shadow: inset 0 0 0 1px var(--tone-edge, var(--tone)); }
 .cellpop .cp-name { margin: 4px 0 0; font-size: 0.9375rem; line-height: 1.6; }
 .cellpop .cp-sub { margin: 2px 0 0; }
 /* 値は「基準値 45.2%」の組を横に流す（吹き出しを小さく保つ） */
@@ -664,14 +673,14 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 
 .prose { white-space: pre-line; }
 
-.series-1 { --series: var(--series-1); }
-.series-2 { --series: var(--series-2); }
-.series-3 { --series: var(--series-3); }
-.series-4 { --series: var(--series-4); }
-.series-5 { --series: var(--series-5); }
-.series-6 { --series: var(--series-6); }
+.series-1 { --series: var(--series-1); --series-fill: var(--series-1-fill); }
+.series-2 { --series: var(--series-2); --series-fill: var(--series-2-fill); }
+.series-3 { --series: var(--series-3); --series-fill: var(--series-3-fill); }
+.series-4 { --series: var(--series-4); --series-fill: var(--series-4-fill); }
+.series-5 { --series: var(--series-5); --series-fill: var(--series-5-fill); }
+.series-6 { --series: var(--series-6); --series-fill: var(--series-6-fill); }
 .swatch { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; white-space: nowrap; }
-.swatch::before { content: ""; width: 13px; height: 13px; border-radius: 4px; background: var(--series); border: 1.5px solid var(--line); flex: none; }
+.swatch::before { content: ""; width: 13px; height: 13px; border-radius: 4px; background: var(--series-fill); border: 1.5px solid var(--line); flex: none; }
 
 /* 図の題と、その下の補足（StatusChart・AmountChart・BarList・TrendFigure）。凡例（.legend）は題の下に横に並べて折り返す */
 .chart-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
