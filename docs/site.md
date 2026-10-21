@@ -5,7 +5,7 @@
 ## 1. データの読み込みと数え方
 
 - 全ページをビルドで静的な HTML に書き出す。`src/lib/data.ts` が `data/extracted` を読んでページ用の形にする（沖縄県PDCA 以外の評価は `lib/plans.ts`）。
-- 数え方は lib に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。主なものは `lib/data.ts` の `PATTERNS`・`JUDGE_TRENDS`・`JUDGE_CELLS`・`shisakuDepts`・`SHUYOU_BINS`・`relatedOf`、予算事業は `getBudgetProjects`・`budgetCardsOf`、活動指標は `lib/katsudou.ts` の `activityRuns`。ページの頭の数は `lib/heads.ts` で、ページの説明文と SNS のカードの画像（6章）も同じ数を使う。
+- 数え方は lib に1か所で決め、どのページもそれを使う（ページごとに書くと、数とリンク先の件数がずれる）。主なものは `lib/data.ts` の `PATTERNS`・`JUDGE_TRENDS`・`JUDGE_CELLS`・`shisakuDepts`・`SHUYOU_BINS`・`relatedOf`・`planTreeCounts`、予算の金額は `amountEntries`（財源・部局・将来像ごとは `fundAmounts`・`deptAmountEntries`・`visionAmountEntries`）、予算事業は `getBudgetProjects`・`budgetCardsOf`、活動指標は `lib/katsudou.ts` の `activityRuns`。ページの頭の数は `lib/heads.ts` で、ページの説明文と SNS のカードの画像（6章）も同じ数を使う。
 - 年度をまたいで同じ取組・成果指標・活動指標かは名前の key（`torikumiKey`・`seikaKey`・`katsudouKey`）で比べ、県が名前を変えたものは `lib/renames.ts` で読み替える。規則は [data.md](data.md) の8章。
 - 主な取組と成果指標を名前で結び付けて出さない。部局票の「対応する成果指標」には、どの取組にもその施策の成果指標すべてが書かれていて（`test/integrity.test.ts` で確かめている）、取組ごとには分かれていないため。成果指標は施策のページで、施策の取組と並べて見せる（`seikaNameMatches`）。
 - ブラウザにデータ全体は配らない。ブラウザが読む JSON は `lib/hashed.ts` に並べたものだけ（読み方は `scripts/fetch-json.ts`）。

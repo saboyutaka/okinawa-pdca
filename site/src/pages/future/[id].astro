@@ -19,7 +19,7 @@ import ShareBox from '../../components/ShareBox.astro';
 import Toc from '../../components/Toc.astro';
 import KihonRow from '../../components/KihonRow.astro';
 import SecHead from '../../components/SecHead.astro';
-import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, amountTotal, trendPoints } from '../../lib/data.ts';
+import { LATEST, yearLong, STATUSES, getKihonList, getShuyouStatus, amountEntries, amountTotal, visionAmountEntries, trendPoints } from '../../lib/data.ts';
 import { jigyoSearchHref } from '../../lib/jigyo-data.ts';
 import { pct, yen } from '../../lib/format.ts';
 import { futureMeta } from '../../lib/describe.ts';
@@ -58,9 +58,8 @@ const kihonRows = kihon.map((k) => {
 const toriUsed = statusKeys.filter((key) => kihonRows.some((k) => (k.tori.counts[key] || 0) > 0));
 
 // 予算（R7の決算見込額。同じ予算事業の重複を除いたもの）
-const estimate = amountEntries(LATEST, 'estimate');
-const budget = amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(pre)));
-const budgetAll = amountTotal(estimate);
+const budget = amountTotal(visionAmountEntries(LATEST, 'estimate', v.id));
+const budgetAll = amountTotal(amountEntries(LATEST, 'estimate'));
 ---
 <Base {...futureMeta(v.id, v.name, head)} ogType="article">
   <header class:list={['sticker', 'lift', 'badge-head', 'v-hero', `sz-${v.id}`]}>

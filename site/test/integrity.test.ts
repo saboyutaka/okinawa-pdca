@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   load, YEARS, LATEST, nameKey, sameKey, torikumiKey, formerNames, getShisakuList, getKihonList, getShuyou, shuyouRows, shuyouAnchor, getShuyouStatus, SHUYOU_BINS, getTorikumiGroups, getSeikaGroups, torikumiPage, budgetOf,
   getTorikumi, getSeika, trendPoints, seikaDept, deptHref, sectionHref, deptSourcePages, shisakuDepts, DEPTS, sourceLink,
-  amountEntries, budgetGroups, budgetKey, isNoBudgetName, sameAmount, budgetProjectSeries, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
+  amountEntries, fundAmounts, visionAmountEntries, FUNDS, budgetGroups, budgetKey, isNoBudgetName, sameAmount, budgetProjectSeries, judgeByGrid, seikaGroupsOf, seikaNameMatches, SEIKA_ALIASES, seikaAlias, getShouraizou, getPlanTree, SHUYOU_COUNT, planPath, planParents,
   countStatuses, seikaKey, seikaFormerNames, seikaHref, renameCandidates, repostsOf, budgetCardsOf, pastBudgetProjectsOf, budgetProjectOf, getBudgetProjects, budgetProjectEntries, amountTotal, commonShisakuCount, distinctTorikumiCount, indicatorOf, katsudouNameKey, firstYearOf, PATTERNS, statusesOf, torikumiRows, getShuyouGroups, shuyouStatusOfCard, type TorikumiGroup,
 } from '../src/lib/data.ts';
 import { activityRuns } from '../src/lib/katsudou.ts';
@@ -433,6 +433,18 @@ test('予算事業は、名前の変更を翌年度の予算事業名でつな�
   for (const report of YEARS) {
     const sum = projects.reduce((a, p) => a + amountTotal(budgetProjectEntries(p).filter((e) => e.report === report && e.kind === 'estimate')), 0);
     assert.ok(sum <= amountTotal(amountEntries(report, 'estimate')) && sum > 0, String(report));
+  }
+});
+
+test('予算の金額は、財源ごと・将来像ごとに分けて足すと全体の金額になる（トップの予算の全体像・予算と財源のページ）', () => {
+  for (const report of YEARS) {
+    for (const kind of ['settled', 'estimate', 'initial'] as const) {
+      const all = amountTotal(amountEntries(report, kind));
+      const byFund = fundAmounts(amountEntries(report, kind));
+      assert.deepEqual(Object.keys(byFund), FUNDS.map((f) => f.key));
+      assert.equal(Object.values(byFund).reduce((a, n) => a + n, 0), all, `${report} ${kind} 財源`);
+      assert.equal(getShouraizou().reduce((a, v) => a + amountTotal(visionAmountEntries(report, kind, v.id)), 0), all, `${report} ${kind} 将来像`);
+    }
   }
 });
 

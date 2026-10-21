@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { localNo, treeDataHash, treeDataJson, treeDataPath, type TreeData } from '../src/lib/tree-data.ts';
-import { getPlanTree } from '../src/lib/data.ts';
+import { getPlanTree, planTreeCounts } from '../src/lib/data.ts';
 
 const data = () => JSON.parse(treeDataJson()) as TreeData;
 
@@ -32,6 +32,12 @@ test('目次のデータは lib/data.ts の getPlanTree と同じ並び・同じ
   assert.equal(kihon.flatMap((k) => k.shuyou).length, planKihon.flatMap((k) => k.shuyou).length);
   assert.equal(shisaku.flatMap((s) => s.seika).length, planShisaku.flatMap((s) => s.seika).length);
   assert.equal(shisaku.flatMap((s) => s.torikumi).length, planShisaku.flatMap((s) => s.torikumi).length);
+  // 計画の目次の頭とトップに出す階層ごとの数も、木と同じ
+  const n = planTreeCounts();
+  assert.deepEqual(
+    [n.shouraizou, n.kihon, n.tenkai, n.shisaku, n.torikumi, n.shuyou, n.seika],
+    [d.visions.length, kihon.length, tenkai.length, shisaku.length, shisaku.flatMap((s) => s.torikumi).length, kihon.flatMap((k) => k.shuyou).length, shisaku.flatMap((s) => s.seika).length],
+  );
   const ids = [...kihon.map((k) => `k-${k.id}`), ...tenkai.map((t) => `t-${t.id}`), ...shisaku.map((s) => `s-${s.id}`)];
   assert.equal(new Set(ids).size, ids.length);
   // 取組のリンクは施策ごとに1つずつ（同じ取組がいくつかの施策に載るときも、施策ごとのページがある）。成果指標のリンクも重ならない

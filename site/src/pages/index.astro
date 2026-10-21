@@ -7,11 +7,18 @@ import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
 import JudgeSection from '../components/JudgeSection.astro';
 import TrendFigure from '../components/TrendFigure.astro';
+import AmountChart from '../components/AmountChart.astro';
+import BarList from '../components/BarList.astro';
 import Share from '../components/Share.astro';
-import { YEARS, LATEST, yearLong, yearsLong, getShouraizou, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount } from '../lib/data.ts';
+import {
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, getShouraizou, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount, planTreeCounts,
+  FUNDS, AMOUNT_KINDS, amountEntries, amountTotal, fundAmounts, visionAmountEntries, getBudgetProjects,
+} from '../lib/data.ts';
+import { MAP_KINDS, mapCounts, type MapKind } from '../lib/map-data.ts';
+import { jigyoSearchHref } from '../lib/jigyo-data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { allHead, futureHead } from '../lib/heads.ts';
-import { fmt } from '../lib/format.ts';
+import { fmt, toOku } from '../lib/format.ts';
 import { LINKS, SITE } from '../lib/links.ts';
 import ExtLink from '../components/ExtLink.astro';
 import SecHead from '../components/SecHead.astro';
@@ -31,8 +38,38 @@ const visions = getShouraizou().map((v) => ({
 }));
 
 
+// 計画の全体を見わたす2つのページへの入口。数はそれぞれのページの頭と同じ（最新の報告）。
+// 計画の目次は階層ごとの数を目次と同じ向きに1段ずつ下げて並べ、指標のマップは3つの段の指標の数と、何をはかるか（docs/design.md の1章の段）を並べる（値や区分の内訳は出さない）
+const plan = planTreeCounts();
+const PLAN_STEPS = [
+  { label: '将来像', n: plan.shouraizou, unit: '' },
+  { label: '基本施策', n: plan.kihon, unit: '' },
+  { label: '施策展開', n: plan.tenkai, unit: '' },
+  { label: '施策', n: plan.shisaku, unit: '' },
+  { label: '主な取組', n: plan.torikumi, unit: '件' },
+];
+const mapAt = YEARS.indexOf(LATEST);
+const MAP_NOTES: Record<MapKind, string> = { shuyou: '基本施策ごとに、沖縄の姿をはかる', seika: '施策ごとに、施策の成果をはかる', katsudou: '主な取組ごとに、県の活動をはかる' };
+const mapKinds = MAP_KINDS.map((k) => ({ term: k.term, unit: k.unit, note: MAP_NOTES[k.kind], n: mapCounts(k.kind)[mapAt] }));
+
 // 4年間の推移
 const trend = trendPoints();
+
+// 予算の全体像。予算と財源のページ（/yosan/）と同じ数え方で、最新の報告の3つの金額（前の年度の決算額・その年度の決算見込額・次の年度の当初予算額）を財源別に、
+// 決算見込額を将来像別に出す。将来像を押すと、その将来像で絞り込んだ予算事業をさがすへ
+const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
+  label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
+  sub: AMOUNT_KINDS[kind].label,
+  amounts: fundAmounts(amountEntries(LATEST, kind)),
+}));
+const budgetVisions = getShouraizou().map((s) => ({
+  label: `将来像${s.id}`,
+  sz: s.id,
+  note: s.name,
+  href: jigyoSearchHref({ s: s.id, latest: true }),
+  n: toOku(amountTotal(visionAmountEntries(LATEST, 'estimate', s.id))),
+}));
+const budgetCount = getBudgetProjects().length;
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -81,11 +118,50 @@ const boshu = boshuState();
     <p class="small more-link"><a href="/future/">将来像を一覧で見る<span aria-hidden="true"> →</span></a></p>
   </section>
 
+  <section aria-labelledby="zentai">
+    <SecHead id="zentai">計画の全体を見わたす</SecHead>
+    <p class="small secondary lead">計画のすべての施策・取組と、その成果をはかる指標を、1つのページにまとめて見られます。</p>
+    <div class="overview">
+      <article class="sticker ov-card">
+        <h3 class="ov-name"><a class="name-link" href="/mokuji/">計画の目次<span aria-hidden="true"> →</span></a></h3>
+        <p class="ov-text">{plan.shouraizou}つの将来像から主な取組までを、開け閉めできる目次でたどれます。</p>
+        <ol class="ov-steps inset" aria-label={`計画の階層（${yearLabel(LATEST)}）`}>
+          {PLAN_STEPS.map((x, i) => <li style={`--i:${i}`}><span>{x.label}</span><b class="num">{fmt(x.n)}{x.unit && <small>{x.unit}</small>}</b></li>)}
+        </ol>
+      </article>
+      <article class="sticker ov-card">
+        <h3 class="ov-name"><a class="name-link" href="/map/">指標のマップ<span aria-hidden="true"> →</span></a></h3>
+        <p class="ov-text">1マス＝1指標で将来像ごとに並べ、年度ごとの県の区分で色分けしました。</p>
+        <ul class="ov-kinds inset" aria-label={`指標の数（${yearLabel(LATEST)}）`}>
+          {mapKinds.map((k) => <li><span>{k.term}</span><b class="num">{fmt(k.n)}<small>{k.unit}</small></b><small class="ov-note">{k.note}</small></li>)}
+        </ul>
+      </article>
+    </div>
+  </section>
+
   <JudgeSection counts={head.judges} title="県の「判定」はこう決まる" />
 
   <section aria-labelledby="trend">
     <SecHead id="trend">4年間の推移</SecHead>
     <TrendFigure points={trend} />
+  </section>
+
+  <section aria-labelledby="yosan">
+    <SecHead id="yosan">予算の全体像</SecHead>
+    <p class="small secondary lead">主な取組に書かれた予算事業の金額が、どの財源でまかなわれ、どの将来像に使われているかが分かります。</p>
+    <AmountChart
+      title="取組に書かれた予算事業の金額（財源別）"
+      caption={`${yearLong(LATEST)}の報告の、前の年度の決算額・その年度の決算見込額・次の年度の当初予算額。`}
+      categories={FUNDS}
+      rows={budgetRows}
+    />
+    <BarList title={`将来像別（${yearLabel(LATEST)}の決算見込額）`} caption="名前を押すと、その将来像の予算事業を一覧で見られます。" items={budgetVisions} unit="億円" />
+    <p class="small secondary">県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています）。国が沖縄のために組む沖縄振興予算とも別のものです。</p>
+    <div class="actions">
+      <a class="pill-btn" href="/yosan/">予算と財源をくわしく見る<span aria-hidden="true">→</span></a>
+      <a class="button" href="/yosan/jigyo/">予算事業をさがす（{fmt(budgetCount)}件）</a>
+      <a class="button" href="/yosan/zaigen/">予算の財源のしくみ</a>
+    </div>
   </section>
 
   <section aria-labelledby="iken">
@@ -151,6 +227,28 @@ const boshu = boshuState();
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
   }
 
+
+  /* 計画の目次と指標のマップの入口。PC は2つを横に、スマホは縦に並べる。中の数は線も影も無い箱（.inset）に、名前と数を両端にそろえて並べる */
+  .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 12px; }
+  .ov-card { display: grid; grid-template-rows: auto auto 1fr; gap: 8px; }
+  .ov-name { margin: 0; font-size: 1.125rem; }
+  .ov-text { margin: 0; font-size: 0.9375rem; }
+  .ov-steps, .ov-kinds { list-style: none; margin: 4px 0 0; padding: 10px 14px; display: grid; gap: 4px; align-content: start; }
+  .ov-steps li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 0.9375rem; }
+  .ov-kinds { gap: 8px; }
+  .ov-kinds li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; font-size: 0.9375rem; }
+  .ov-note { grid-column: 1 / -1; font-size: 0.8125rem; color: var(--ink-2); line-height: 1.4; }
+  .ov-steps b, .ov-kinds b { font-family: var(--font-num); font-size: 1.125rem; font-weight: 600; }
+  .ov-steps b small, .ov-kinds b small { font-family: var(--font); font-size: 0.8125rem; font-weight: 700; margin-left: 2px; }
+  /* 目次は、階層を1段ずつ下げて、上の階層から細い線でつなぐ（計画の目次の木と同じ向き） */
+  .ov-steps li > span { position: relative; padding-left: calc(var(--i) * 14px); }
+  .ov-steps li:not(:first-child) > span::before {
+    content: ""; position: absolute; left: calc(var(--i) * 14px - 10px); top: -0.35em; width: 7px; height: 0.95em;
+    border-left: 1.5px solid var(--hair); border-bottom: 1.5px solid var(--hair);
+  }
+
+  /* 予算の全体像の終わりの、予算のページへ進むボタン */
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
 
   .iken { background: var(--lilac); }
   .iken p { margin-top: 0; }

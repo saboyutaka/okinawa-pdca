@@ -853,6 +853,23 @@ export function getPlanTree(): PlanTreeVision[] {
     kihon: kihon.filter((k) => k.shouraizou === vision.id).map((k) => ({ kihon: k, shuyou: shuyou.filter((r) => r.kihon_id === k.id), tenkai: tenkaiOf(k.id) })),
   }));
 }
+// 計画の目次の階層ごとの数（計画の目次の頭とトップで同じ）。主な取組は木と同じ延べ件数
+export const planTreeCounts = once(() => {
+  const tree = getPlanTree();
+  const kihon = tree.flatMap((v) => v.kihon);
+  const tenkai = kihon.flatMap((k) => k.tenkai);
+  const shisaku = tenkai.flatMap((t) => t.shisaku);
+  const total = (xs: { length: number }[]) => xs.reduce((n, x) => n + x.length, 0);
+  return {
+    shouraizou: tree.length,
+    kihon: kihon.length,
+    tenkai: tenkai.length,
+    shisaku: shisaku.length,
+    torikumi: total(shisaku.map((s) => s.torikumi)),
+    shuyou: total(kihon.map((k) => k.shuyou)),
+    seika: total(shisaku.map((s) => s.seika)),
+  };
+});
 
 // 最新の報告の名前が同じ取組（別の施策のものを含む）
 const groupsByKey = once(() => Map.groupBy(getTorikumiGroups(), (x) => sameKey(x.key)));
@@ -1375,8 +1392,12 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
 export const amountEntries = (report: number, kind: AmountKind) => amountEntriesOf(report)(kind);
 // 金額の合計（千円）
 export const amountTotal = (es: readonly { amount: number }[]) => es.reduce((s, e) => s + e.amount, 0);
+// 財源（FUNDS の key）ごとの金額の合計（千円）
+export const fundAmounts = (es: readonly AmountEntry[]): Record<string, number> => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(es.filter((e) => e.fund === f.key))]));
 // 部局の金額の一覧。部局は、予算事業を寄せた取組の最新の報告での所管部局（currentDeptOf。部局のページ・部局の一覧・予算と財源のページで同じ）
 export const deptAmountEntries = (report: number, kind: AmountKind, deptName: string) => amountEntries(report, kind).filter((e) => currentDeptOf(report, e.shisaku_id, e.key) === deptName);
+// 将来像の金額の一覧。将来像は、予算事業を寄せた取組の施策の将来像（将来像のページ・予算と財源のページ・トップで同じ）
+export const visionAmountEntries = (report: number, kind: AmountKind, visionId: number) => amountEntries(report, kind).filter((e) => e.shisaku_id.startsWith(`${visionId}-`));
 
 // 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
 // funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）
