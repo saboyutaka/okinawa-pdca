@@ -30,8 +30,10 @@
   --grid: #dfe3f3;
   --hair: #c4c9e6;
   --link: #2a45d6;
-  /* 報告書の番号などの薄い文字。ページの地（--bg）の上でも 4.5:1 以上にする */
-  --muted: #646991;
+  /* 報告書の番号などの薄い文字。ページの地（--bg）と地の波（--wave-*）の上でも 4.5:1 以上にする */
+  --muted: #5a5f87;
+  /* 地の波（下の「地の波」）。奥から 1・2・3。地（--bg）より少しだけ濃い、淡い紫と空の色。地の上に置く文字（--ink-2・--muted・--link）は、どの波の上でも 4.5:1 以上にする */
+  --wave-1: #e6e0fc; --wave-2: #dde8ff; --wave-3: #d3e1ff;
   /* 状態（良い〜悪い）。意味が固定なので系列の色には使わない。地（--paper・--bg）との差が 3:1 未満の色（ライトの黄・灰、ダークの赤・灰）は、
      形と内訳の棒の区間に、地と 3:1 以上の差がある縁（--*-edge）を付ける（WCAG 1.4.11）。縁の要らない色は、縁を塗りと同じ色にする */
   --good: #00927f;
@@ -68,6 +70,7 @@
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
   --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
+  --wave-1: #221d4e; --wave-2: #18234f; --wave-3: #1d2b5c;
   --good: #2fae9f; --warning: #e8bd3a; --warning-edge: #e8bd3a; --serious: #e07436; --critical: #b8384c; --critical-edge: #dc6178; --none: #898781;
   --blank: #52514e; --blank-edge: #85847c;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
@@ -126,6 +129,19 @@ small, .small { font-size: 0.875rem; }
 /* 本文へスキップ（キーボードで最初にフォーカスしたときだけ見える） */
 .skip { position: absolute; left: 8px; top: -60px; z-index: 50; background: var(--paper); color: var(--link); padding: 8px 14px; border-radius: 999px; border: 2.5px solid var(--line); font-weight: 700; }
 .skip:focus { top: 8px; }
+
+/* 地の波（layouts/Base.astro の .bg-waves。docs/design.md の8章の例外）。ページの地いっぱいに、淡い色の大きな波を3枚重ねる。
+   奥（w1）ほど高く、波の長さを長くする。画面に固定し（スクロールしても波は同じ所にある）、ステッカーとフッターの下に隠れる。
+   高さは 100vh で決め、スマホのアドレスバーが出入りしても波の位置を変えない。下の端は、上下に揺れても地がのぞかないよう少し下へはみ出させる。動きは下の「動き」 */
+.bg-waves { position: fixed; inset: 0 0 auto; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
+.bg-waves .wave { position: absolute; left: 0; bottom: -12px; display: block; }
+.bg-waves .wave stop { stop-color: var(--wave-c); }
+.bg-waves .w1 { width: 300%; height: 92%; --wave-c: var(--wave-1); }
+.bg-waves .w2 { width: 200%; height: 64%; --wave-c: var(--wave-2); }
+.bg-waves .w3 { width: 240%; height: 36%; --wave-c: var(--wave-3); }
+/* 波の形は、PC の幅（wide）とスマホの幅（narrow。谷を浅くした形）で切り替える（Base.astro の WAVE_SHAPES） */
+.bg-waves .narrow { display: none; }
+@media (max-width: 640px) { .bg-waves .wide { display: none; } .bg-waves .narrow { display: inline; } }
 
 /* ヘッダー・フッター */
 .site-header { padding-block: 12px 4px; }
@@ -724,6 +740,15 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
   html.vt-theme::view-transition-old(root), html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
   html.vt-theme::view-transition-new(root) { animation: m-reveal 0.4s ease-out; }
 
+  /* 地の波（上の「地の波」）: 8章の例外で、ずっと動き続ける唯一のもの。横にゆっくり流し（波を1つ分ずらすと元の形に戻るので、終わりが無い）、
+     呼吸のように少しだけ上下させる。よく見ると動いていると分かるくらいの速さにとどめる（気が散らないように）。3枚の速さと向きを変え、重なりの形がいつも少しずつ変わるようにする。
+     どこまで動いたかは、Base.astro の <head> のスクリプトが時計から入れる --wave-t（1時間の中の秒数）だけ先へ進めて始める（ページを移っても始まりに戻らない）。
+     1時間ごとにつながるよう、流れの長さと上下の往復（長さの2倍）は、どれも 3600秒を割り切れる長さにする */
+  .bg-waves { --wave-at: calc(var(--wave-t, 0) * -1s); }
+  .bg-waves .wave { animation: m-wave 180s linear infinite, m-breathe 8s ease-in-out infinite alternate; animation-delay: var(--wave-at); will-change: transform, translate; }
+  .bg-waves .w2 { animation-duration: 100s, 9s; animation-direction: reverse, alternate; animation-delay: calc(var(--wave-at) - 40s), calc(var(--wave-at) - 3s); }
+  .bg-waves .w3 { animation-duration: 120s, 10s; animation-delay: calc(var(--wave-at) - 70s), calc(var(--wave-at) - 5s); }
+
   /* 影のある押せるもの（ボタン・トップのテーマの札・判定のマス・絞り込みの条件のボタン）: 乗せると少し浮いて影が伸び、押すと沈む（沈む形は各部品の :active）。
      影の大きさは --sh（ボタンは 3px）。一覧の行は数が多くちらつくので浮かせない */
   .button, .pill-btn, .press { transition: transform 0.12s ease-out, box-shadow 0.12s ease-out; }
@@ -770,6 +795,8 @@ html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-marg
 @keyframes m-heart { 45% { transform: scale(1.35); } }
 @keyframes m-like-in { from { opacity: 0; transform: scale(0.75); } }
 @keyframes m-like-out { to { opacity: 0; transform: scale(0.94); } }
+@keyframes m-wave { to { transform: translateX(-50%); } }
+@keyframes m-breathe { to { translate: 0 -10px; } }
 
 /* 印刷（勉強会や会議の資料に）。scripts/print.ts が印刷の直前に畳んだ内容を開き、html.printing を付けてページの幅を紙の幅（A4 の余白の内側）にそろえ、図をその幅で描き直す。
    ナビ・年の書き方と配色のボタン・目次・絞り込み・シェアは出さない。タイトル（非公式の印）とフッターの出典の文は残す。
@@ -779,7 +806,7 @@ html.printing .wrap { max-width: 186mm; padding-inline: 0; }
   @page { margin: 12mm; }
   body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .wrap { max-width: none; padding-inline: 0; }
-  .skip, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, .share-menu, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
+  .skip, .bg-waves, .site-nav, .foot-toggles, .toc, form[role="search"], .share-box, .share-panel, .share-menu, [data-more-btn], .more-row, #more, .tooltip, .cellpop { display: none !important; }
   .site-footer { margin-top: 24px; padding: 12px 0 0; background: none; }
   .site-footer .foot-links { display: none; }
   .sticker, .row-list { box-shadow: none !important; }
