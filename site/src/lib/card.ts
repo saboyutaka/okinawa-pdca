@@ -76,6 +76,8 @@ function color(name: string) {
   if (!v) throw new Error(`styles/global.css の :root に --${name} が無い`);
   return v;
 }
+// 状態の縁の色（styles/global.css の --*-edge。無い状態は状態の色）
+const edge = (t: Tone) => (t === 'warning' || t === 'critical' || t === 'blank' ? color(`${t}-edge`) : color(t));
 // 2つの色を混ぜる（ページの color-mix の代わり。t は a の割合）
 function mix(a: string, b: string, t: number) {
   const ch = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
@@ -271,7 +273,11 @@ function bar(r: Row) {
   const end = (i: number) => (segs.length === 1 ? '999px' : i === 0 ? '999px 0 0 999px' : i === segs.length - 1 ? '0 999px 999px 0' : '0');
   return box(
     { height: ROW.bar, padding: 3, columnGap: 3, border: `3px solid ${color('line')}`, borderRadius: 999, background: color('paper') },
-    segs.map((c, i) => box({ flexGrow: r.counts[c.key], flexBasis: 0, minWidth: 6, borderRadius: end(i), backgroundColor: color(c.tone), backgroundImage: c.hatch ? hatch() : undefined })),
+    // ページの内訳の棒と同じく、区間は淡い塗りに状態の色の縁（--*-edge があればそれ）
+    segs.map((c, i) => box({
+      flexGrow: r.counts[c.key], flexBasis: 0, minWidth: 6, borderRadius: end(i), border: `2px solid ${edge(c.tone)}`,
+      backgroundColor: color(`${c.tone}-fill`), backgroundImage: c.hatch ? hatch() : undefined,
+    })),
   );
 }
 // 区分の並びのまま、0でない区分を全部同じ大きさで並べる（遅れだけを大きくしない）

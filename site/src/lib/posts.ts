@@ -67,29 +67,34 @@ export function indicatorTopic(name: string): { topic: string; note: string } {
 }
 
 // 投稿文。取組名、最新の年度にやったこと（総括報告書の活動概要）、活動指標の計画と実績とそれを踏まえた進捗状況（県の区分のまま）、
-// ページの URL を、話しかける言い方で短く書く（ハッシュタグは付けない）。280 に収まるように、やったこと → 活動指標の名前 → 計画と実績の順に省く
-// （やったことは didCandidates の短いものから試す。取組名・進捗状況・URL は省かない）
+// ページの URL を、話しかける言い方で短く書く（ハッシュタグは付けない）。280 に収まるように、かっこ（「（累計）」「（内訳）」や値の補い）→
+// やったこと → 活動指標の名前 → 計画と実績の順に省く（やったことは didCandidates の短いものから試す。取組名・進捗状況・URL は省かない）
+const PAREN = /\s*[（(][^（）()]*[）)]/g;
 export function postText(g: TorikumiGroup): string {
   const t = g.latest;
   const status = statusOf(t);
   const year = yearLong(t.year);
-  // 「令和7年度は、令和7年度は、…」と重ならないように、活動概要の頭の年度は除く
-  const summary = cell(t.summary).replace(new RegExp(`^${year}は、?`), '');
+  // 「県は令和7年度、令和7年度は、…」「県は令和7年度、県では、…」と重ならないように、活動概要の頭の年度と県は除く
+  const summary = cell(t.summary).replace(new RegExp(`^(${year}は|(本県|沖縄県|県)(では|は))、?`), '');
   const { topic, note } = indicatorTopic(cell(t.indicator));
   const [plan, actual] = [cell(t.target), cell(t.actual)];
-  // 計画と実績は1行で、どちらも数のあるものだけ（「集計中」などは書かない）
-  const nums = !t.lines && /\d/.test(plan) && /\d/.test(actual) ? `計画${plan}・実績${actual}${note}` : '';
+  // 計画と実績は1行で、どちらも数のあるものだけ（「集計中」などは書かない）。short はかっこを除いたもの（除くと数が無くなるときは除かない）
+  const hasNums = !t.lines && /\d/.test(plan) && /\d/.test(actual);
+  const [planShort, actualShort] = [plan.replace(PAREN, ''), actual.replace(PAREN, '')];
+  const canShort = /\d/.test(planShort) && /\d/.test(actualShort);
+  const numsOf = (short: boolean) => (short && canShort ? `計画${planShort}・実績${actualShort}` : `計画${plan}・実績${actual}${note}`);
   const said = status === '記載なし' ? '進捗は報告書に書かれていないみたい。' : `進捗は「${status}」。`;
-  // 進捗の行。やったことの行が無いときは、何年度の値かを頭に書く
-  const lines: ((withDid: boolean) => string)[] = [
-    ...(topic && nums ? [(w: boolean) => `${w ? '' : `${year}の`}${topic}は${nums}で、${said}`] : []),
-    ...(nums ? [(w: boolean) => `${w ? '' : `${year}は`}${nums}で、${said}`] : []),
+  // 進捗の行（省く順）。やったことの行が無いときは、何年度の値かを頭に書く
+  type Line = (withDid: boolean, short: boolean) => string;
+  const lines: Line[] = [
+    ...(topic && hasNums ? [(w: boolean, s: boolean) => `${w ? '' : `${year}の`}${topic}は${numsOf(s)}で、${said}`] : []),
+    ...(hasNums ? [(w: boolean, s: boolean) => `${w ? '' : `${year}は`}${numsOf(s)}で、${said}`] : []),
     (w: boolean) => `${w ? '' : `${year}の`}${said}`,
   ];
-  const compose = (did: string, line: (withDid: boolean) => string) =>
-    [`「${t.name}」を紹介するよ。`, did && `${year}は、${hearsay(did)}。`, line(!!did), new URL(g.href, SITE.url).href]
+  const compose = (did: string, line: Line, short: boolean) =>
+    [`「${t.name}」を紹介するよ。`, did && `県は${year}、${hearsay(did)}。`, line(!!did, short), new URL(g.href, SITE.url).href]
       .filter(Boolean).join('\n');
   const dids = didCandidates(summary);
-  const tries = lines.flatMap((l) => [...dids, ''].map((d) => compose(d, l)));
+  const tries = lines.flatMap((l) => [...dids, ''].flatMap((d) => [compose(d, l, false), compose(d, l, true)]));
   return tries.find((text) => xLength(text) <= X_MAX) ?? tries.at(-1)!;
 }

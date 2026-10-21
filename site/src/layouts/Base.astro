@@ -66,8 +66,10 @@ const SPECULATION_RULES = JSON.stringify(SPECULATION);
 // 選んだ配色を最初に反映する（scripts/theme.ts が切り替えと記憶を受け持つ）。
 // 年を西暦で表示すると選んでいれば、書き換えのスクリプト（lib/era.ts）を読み込む。読み終えるまでページを読み進めないので、最初の描画から西暦で出る
 // （和暦のままの人は読まない。書き換えは、ページを読みながらそのスクリプトが行う）。
-// あわせて html に js を付ける。スクリプトでしか動かない年の書き方と配色のボタン（フッター）を、最初の描画から出すため（あとから出すと、そのぶんずれる。styles/global.css の .foot-toggles）
+// あわせて html に js を付ける。スクリプトでしか動かない年の書き方と配色のボタン（フッター）を、最初の描画から出すため（あとから出すと、そのぶんずれる。styles/global.css の .foot-toggles）。
+// 地の波（styles/global.css の「地の波」）の位置は時計から決める（1時間の中の秒数を --wave-t に入れる）。同じ時刻ならどのページでも同じ位置なので、ページを移っても波が始まりに戻らない
 const THEME_INIT = `document.documentElement.classList.add('js');
+document.documentElement.style.setProperty('--wave-t', String(Date.now() / 1000 % 3600));
 try {
   const t = localStorage.getItem('theme');
   if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
@@ -107,6 +109,14 @@ const HEAD_SCROLL = `(() => {
   if (nav && nav.type !== 'navigate') return;
   scrollTo({ top: head.getBoundingClientRect().top + scrollY - 10, behavior: 'instant' });
 })();`;
+// 地の波（下の .bg-waves）の形。viewBox（2400×100）に、真ん中の高さ c・振れ幅 a の波を横に2つ分描き、下を塗る（山の頂は c - a、谷の底は c + a）。
+// 3次ベジェの2つの制御点を c から 4a/3 離すと、山と谷の高さがちょうど a になる。スマホの幅は1つの波が短く、山と谷が急に見えるので、
+// 山の頂は同じ高さのまま谷を浅くした形（narrow）を使う（切り替えは styles/global.css の「地の波」）。
+// 塗りのグラデーションは、山の頂で透明にし、谷の底より少し下で波の色になるようにする
+const WAVE_SHAPES = [{ fit: 'wide', c: 34, a: 24 }, { fit: 'narrow', c: 23, a: 13 }].map(({ fit, c, a }) => {
+  const up = c - (a * 4) / 3, down = c + (a * 4) / 3;
+  return { fit, top: c - a, fade: c + a + 9, d: `M0 ${c} C200 ${up} 400 ${up} 600 ${c} S1000 ${down} 1200 ${c} S1600 ${up} 1800 ${c} S2200 ${down} 2400 ${c} V100 H0 Z` };
+});
 // シェア用のページの移り先は、スクリプトの data-to に入れる（中身を同じにして、CSP のハッシュを1つにする）。戻るで戻ったときにまた移らないよう replace にする
 const JUMP = 'location.replace(document.currentScript.dataset.to);';
 for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES, ...(jump ? [JUMP] : [])]) Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(code).digest('base64')}`);
@@ -150,6 +160,24 @@ for (const code of [THEME_INIT, NAV_SCROLL, HEAD_SCROLL, SPECULATION_RULES, ...(
     <slot name="head" />
   </head>
   <body>
+    {/* 地の波（docs/design.md の8章の例外）。淡い色の大きな波を3枚重ね、画面いっぱいにゆっくり流す。どの波も横に2つ分の山と谷を描き、
+        半分（1つ分）ずらすと元の形に戻るので、つなぎ目なく流れ続ける。形は上の WAVE_SHAPES（PC とスマホの幅で2つ）。
+        塗りは、山の頂で透明、下へ行くほど波の色になるグラデーションにする（文字の行の後ろに、波の縁のくっきりした線を作らないため）。
+        色と動きは styles/global.css の「地の波」 */}
+    <div class="bg-waves" aria-hidden="true">
+      {[1, 2, 3].map((n) => (
+        <svg class={`wave w${n}`} viewBox="0 0 2400 100" preserveAspectRatio="none">
+          {WAVE_SHAPES.map((s) => (
+            <>
+              <linearGradient id={`wave-fade-${n}-${s.fit}`} gradientUnits="userSpaceOnUse" x1="0" y1={s.top} x2="0" y2={s.fade}>
+                <stop offset="0" stop-opacity="0" /><stop offset="1" />
+              </linearGradient>
+              <path class={s.fit} fill={`url(#wave-fade-${n}-${s.fit})`} d={s.d} />
+            </>
+          ))}
+        </svg>
+      ))}
+    </div>
     <a class="skip" href="#main">本文へスキップ</a>
     {/* 外部リンク（components/ExtLink.astro）が aria-describedby で指す、読み上げ用の説明。画面には出さず、コピーにも入らない */}
     <span id="newtab-note" hidden>別のタブで開きます</span>
