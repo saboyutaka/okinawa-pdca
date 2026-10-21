@@ -1,5 +1,5 @@
 # よく使うコマンド。Python の抽出も Astro もコンテナの中で動かす（ホストに入れない）
-.PHONY: help fetch extract cross-read check issues test test-py test-site urls site-install site-check dev build preview shot shot-typecheck icons og-image card-font down
+.PHONY: help fetch extract cross-read check issues test test-py test-site urls posts site-install site-check dev build preview shot shot-typecheck icons og-image card-font down
 
 # git worktree（.claude/worktrees/<名前>）の中では compose.worktree.yaml を重ね、
 # コンテナ・node_modules・開発サーバーのポートを worktree ごとに分ける。
@@ -28,6 +28,7 @@ help:
 	@echo "make issues        取れていないデータ・誤りの疑いの一覧（docs/issues.md）を作り直す"
 	@echo "make test          テスト（抽出スクリプトの test-py とサイトの test-site の両方）"
 	@echo "make urls          公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す"
+	@echo "make posts         X で紹介する主な取組の投稿文を紹介の順に tmp/posts.csv に書き出す（LIMIT=20 で先頭だけ）"
 	@echo "make site-install  サイトの依存パッケージを入れる"
 	@echo "make site-check    サイトの型を確かめるだけ（astro check。make build でも書き出しの前に行う）"
 	@echo "make dev           サイトの開発サーバー（http://localhost:$(SITE_PORT)/）"
@@ -79,6 +80,10 @@ test-site:
 # 公開した URL の一覧（site/urls.txt）に、いまの全ページの URL を足す（消えた URL は残す。docs/site.md の 8章）
 urls:
 	$(COMPOSE) run --rm site npm run urls
+
+# X の公式アカウントで紹介する主な取組の投稿文（site/scripts/posts.ts）。投稿のデータは git に入れず、スプレッドシートに貼って使う
+posts:
+	$(COMPOSE) run --rm site node scripts/posts.ts ../tmp/posts.csv $(LIMIT)
 
 site-install:
 	$(COMPOSE) run --rm site npm ci
