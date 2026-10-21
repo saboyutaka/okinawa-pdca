@@ -1375,8 +1375,12 @@ const amountEntriesOf = onceBy((report: number) => onceBy((kind: AmountKind) => 
 export const amountEntries = (report: number, kind: AmountKind) => amountEntriesOf(report)(kind);
 // 金額の合計（千円）
 export const amountTotal = (es: readonly { amount: number }[]) => es.reduce((s, e) => s + e.amount, 0);
+// 財源（FUNDS の key）ごとの金額の合計（千円）
+export const fundAmounts = (es: readonly AmountEntry[]): Record<string, number> => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(es.filter((e) => e.fund === f.key))]));
 // 部局の金額の一覧。部局は、予算事業を寄せた取組の最新の報告での所管部局（currentDeptOf。部局のページ・部局の一覧・予算と財源のページで同じ）
 export const deptAmountEntries = (report: number, kind: AmountKind, deptName: string) => amountEntries(report, kind).filter((e) => currentDeptOf(report, e.shisaku_id, e.key) === deptName);
+// 将来像の金額の一覧。将来像は、予算事業を寄せた取組の施策の将来像（将来像のページと予算と財源のページで同じ）
+export const visionAmountEntries = (report: number, kind: AmountKind, visionId: number) => amountEntries(report, kind).filter((e) => e.shisaku_id.startsWith(`${visionId}-`));
 
 // 予算事業ごと（同じ名前の予算事業をまとめたもの。予算と財源のページの一覧）。金額は amountEntries の重複を除いたもの。
 // funds は財源ごとの決算見込額、related はこの予算事業が書かれている取組（同じ取組は1回）

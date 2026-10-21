@@ -7,8 +7,12 @@ import ThemeTiles from '../components/ThemeTiles.astro';
 import Sz from '../components/Sz.astro';
 import JudgeSection from '../components/JudgeSection.astro';
 import TrendFigure from '../components/TrendFigure.astro';
+import AmountChart from '../components/AmountChart.astro';
 import Share from '../components/Share.astro';
-import { YEARS, LATEST, yearLong, yearsLong, getShouraizou, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount } from '../lib/data.ts';
+import {
+  YEARS, LATEST, yearLabel, yearLong, yearsLong, getShouraizou, getShuyouStatus, getPdfCount, trendPoints, distinctTorikumiCount,
+  FUNDS, AMOUNT_KINDS, amountEntries, fundAmounts, getBudgetProjects,
+} from '../lib/data.ts';
 import { getThemes } from '../lib/themes.ts';
 import { allHead, futureHead } from '../lib/heads.ts';
 import { fmt } from '../lib/format.ts';
@@ -33,6 +37,14 @@ const visions = getShouraizou().map((v) => ({
 
 // 4年間の推移
 const trend = trendPoints();
+
+// 予算の全体像。予算と財源のページ（/yosan/）と同じ数え方で、最新の報告の3つの金額（前の年度の決算額・その年度の決算見込額・次の年度の当初予算額）を財源別に出す
+const budgetRows = (['settled', 'estimate', 'initial'] as const).map((kind) => ({
+  label: yearLabel(LATEST + AMOUNT_KINDS[kind].offset),
+  sub: AMOUNT_KINDS[kind].label,
+  amounts: fundAmounts(amountEntries(LATEST, kind)),
+}));
+const budgetCount = getBudgetProjects().length;
 // 県民意見募集（パブリックコメント）の受付の状態（ビルドした日で決まる）
 const boshu = boshuState();
 ---
@@ -57,6 +69,7 @@ const boshu = boshuState();
       <button type="submit" class="button" formaction="/shihyou/">成果指標</button>
     </div>
   </form>
+  <p class="whole">計画の全体は、施策・取組を階層でたどれる<a href="/mokuji/">計画の目次</a>と、指標を1マス＝1指標で並べた<a href="/map/">指標のマップ</a>で見わたせます。</p>
 
   <section aria-labelledby="themes">
     {/* 「このサイト独自の分類」の印は、くらしのテーマの一覧と同じく、押すと分け方の説明が出る用語のボタン */}
@@ -86,6 +99,23 @@ const boshu = boshuState();
   <section aria-labelledby="trend">
     <SecHead id="trend">4年間の推移</SecHead>
     <TrendFigure points={trend} />
+  </section>
+
+  <section aria-labelledby="yosan">
+    <SecHead id="yosan">予算の全体像</SecHead>
+    <p class="small secondary lead">主な取組に書かれた予算事業の金額と、それがどの財源でまかなわれているかが分かります。</p>
+    <AmountChart
+      title="取組に書かれた予算事業の金額（財源別）"
+      caption={`${yearLong(LATEST)}の報告の、前の年度の決算額・その年度の決算見込額・次の年度の当初予算額。`}
+      categories={FUNDS}
+      rows={budgetRows}
+    />
+    <p class="small secondary">県の予算全体ではなく、主な取組に書かれた予算事業だけの金額です（同じ予算事業の重複は除いています）。国が沖縄のために組む沖縄振興予算とも別のものです。</p>
+    <div class="actions">
+      <a class="pill-btn" href="/yosan/">予算と財源をくわしく見る<span aria-hidden="true">→</span></a>
+      <a class="button" href="/yosan/jigyo/">予算事業をさがす（{fmt(budgetCount)}件）</a>
+      <a class="button" href="/yosan/zaigen/">予算の財源のしくみ</a>
+    </div>
   </section>
 
   <section aria-labelledby="iken">
@@ -137,6 +167,9 @@ const boshu = boshuState();
      入力する字は 16px のまま（小さくすると、iPhone で押したときに画面が拡大されるため） */
   @media (max-width: 560px) { .search-row input { flex-basis: 100%; } .search-row input::placeholder { font-size: 0.875rem; } }
 
+  /* さがす欄の後ろの、計画の全体を見わたす2つのページ（計画の目次・指標のマップ）へのリンク。ステッカーにせず、文の中のリンクにする */
+  .whole { margin: 12px 4px 0; font-size: 0.9375rem; }
+
   /* 節の終わりの、一覧へ進むリンク（ヒーローの3つの段の「取組をさがす →」と同じ太字） */
   .more-link { margin: 10px 0 0; font-weight: 700; }
 
@@ -151,6 +184,9 @@ const boshu = boshuState();
     .vision :global(.big-badge) { width: 32px; height: 32px; font-size: 0.95rem; align-self: start; }
   }
 
+
+  /* 予算の全体像の終わりの、予算のページへ進むボタン */
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
 
   .iken { background: var(--lilac); }
   .iken p { margin-top: 0; }

@@ -16,14 +16,12 @@ import SecHead from '../../components/SecHead.astro';
 import {
   YEARS, LATEST, yearLabel, yearLong, DEPTS, FUNDS, AMOUNT_KINDS, amountTotal,
   amountEntries, budgetGroups, getSuspects, budgetOf, getTorikumi, getShisaku, getShouraizou, sourceLink,
-  currentDeptOf, deptAmountEntries, torikumiPage, getBudgetProjects, type AmountEntry,
+  currentDeptOf, deptAmountEntries, visionAmountEntries, fundAmounts, torikumiPage, getBudgetProjects,
 } from '../../lib/data.ts';
 import { IKKATSU, IKKATSU_YEARS, IKKATSU_LATEST, IKKATSU_HREF, GRADES, ikkatsuGroups, ikkatsuShisakuIds, countGrades } from '../../lib/plans.ts';
 import { fmt, yen, pct, toOku } from '../../lib/format.ts';
 import { jigyoSearchHref } from '../../lib/jigyo-data.ts';
 import type { AmountKind } from '../../lib/types.ts';
-
-const byFund = (entries: AmountEntry[]) => Object.fromEntries(FUNDS.map((f) => [f.key, amountTotal(entries.filter((e) => e.fund === f.key))]));
 
 // 財源別の推移。各年度の報告に載っている金額のうち、確定に近いもの（決算額）を優先して並べる
 const SERIES: { report: number; kind: AmountKind }[] = [
@@ -36,15 +34,13 @@ const SERIES: { report: number; kind: AmountKind }[] = [
 ];
 const trendRows = SERIES.map(({ report, kind }) => {
   const y = report + AMOUNT_KINDS[kind].offset;
-  return { label: yearLabel(y), sub: `${AMOUNT_KINDS[kind].label}（${yearLabel(report)}報告）`, amounts: byFund(amountEntries(report, kind)) };
+  return { label: yearLabel(y), sub: `${AMOUNT_KINDS[kind].label}（${yearLabel(report)}報告）`, amounts: fundAmounts(amountEntries(report, kind)) };
 });
 
 const settled = amountEntries(LATEST, 'settled');
 const estimate = amountEntries(LATEST, 'estimate');
 const initial = amountEntries(LATEST, 'initial');
-const fundSum = (es: AmountEntry[], key: string) => amountTotal(es.filter((e) => e.fund === key));
-const soft = fundSum(estimate, '一括交付金（ソフト）');
-const hard = fundSum(estimate, '一括交付金（ハード）');
+const { '一括交付金（ソフト）': soft, '一括交付金（ハード）': hard } = fundAmounts(estimate);
 
 // 一括交付金（ソフト）の事後評価
 const ikGroups = ikkatsuGroups();
@@ -72,7 +68,7 @@ const visionItems = getShouraizou().map((s) => ({
   sz: s.id,
   note: s.name,
   href: jigyoSearchHref({ s: s.id, latest: true }),
-  n: toOku(amountTotal(estimate.filter((e) => e.shisaku_id.startsWith(`${s.id}-`)))),
+  n: toOku(amountTotal(visionAmountEntries(LATEST, 'estimate', s.id))),
 }));
 
 // 予算事業ごと（同じ名前をまとめる）。R7の決算見込額の大きい順。財源ごとの順位は、その財源の金額で決める
