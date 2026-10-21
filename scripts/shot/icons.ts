@@ -3,11 +3,12 @@
 //   site/src/assets/favicon.ico          … 16・32・48px（古いブラウザ・ブックマーク・Windows のショートカット）
 //   site/src/assets/apple-touch-icon.png … 180px（iPhone のホーム画面）。角は端末が丸めるので、縁（#edge）を消し、
 //                                          四角の角の丸み（rect の rx）を外して、絵を四隅まで広げる
+//   site/src/assets/sns-icon.png         … 1024px（X などの SNS のアカウントの画像）。丸く切り抜かれるので、地を広げて絵の周りを空ける
 //
 // コンテナ shot の Chromium で SVG を描いて撮る（ホストに画像のツールを入れないため）
 import { writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
-import { LOGO_SRC, fullBleed, readLogo, tileColor } from './logo.ts';
+import { LOGO_SRC, fullBleed, readLogo, roundSafe, tileColor } from './logo.ts';
 
 const svg = await readLogo();
 const tile = tileColor(svg);
@@ -48,6 +49,7 @@ await writeFile('site/src/assets/favicon.ico', ico(images));
 
 // 縁の内側だけを 180px に広げる
 await writeFile('site/src/assets/apple-touch-icon.png', await png(180, fullBleed(svg), tile));
+await writeFile('site/src/assets/sns-icon.png', await png(1024, roundSafe(svg), tile));
 
 await browser.close();
-console.log(`favicon.ico（${sizes.join('・')}px）と apple-touch-icon.png（180px）を ${LOGO_SRC} から書き出した`);
+console.log(`favicon.ico（${sizes.join('・')}px）・apple-touch-icon.png（180px）・sns-icon.png（1024px）を ${LOGO_SRC} から書き出した`);

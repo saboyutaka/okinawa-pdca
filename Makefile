@@ -35,7 +35,7 @@ help:
 	@echo "make preview       書き出したサイトを確認（http://localhost:$(SITE_PORT)/）"
 	@echo "make shot          書き出したサイトを PC 幅とスマホ幅で撮って tmp/shots に（PAGES=\"/ /shisaku/ --dark\"）"
 	@echo "make shot-typecheck  scripts/shot（TypeScript）の型を確かめる"
-	@echo "make icons         site/src/assets/favicon.svg から favicon.ico と apple-touch-icon.png を書き出す（ロゴを変えたら）"
+	@echo "make icons         site/src/assets/favicon.svg から favicon.ico・apple-touch-icon.png・sns-icon.png を書き出す（ロゴを変えたら）"
 	@echo "make og-image      SNS のカードの画像（site/public/og-image.png）を作り直す（サイトの名前を変えたとき）"
 	@echo "make card-font     ページごとのカードの画像で使う字だけをフォントから切り出す（新しい字が出て make test が落ちたとき）"
 	@echo "make down          コンテナを止めて消す（worktree では node_modules のボリュームも消す）"
@@ -105,7 +105,7 @@ shot:
 shot-typecheck:
 	$(COMPOSE) run --rm shot npm --prefix scripts/shot run typecheck
 
-# favicon の ICO と iPhone のホーム画面の PNG を、favicon.svg から書き出す（shot の Chromium で描く。scripts/shot/icons.ts）
+# favicon の ICO・iPhone のホーム画面の PNG・SNS のアカウントの画像を、favicon.svg から書き出す（shot の Chromium で描く。scripts/shot/icons.ts）
 icons:
 	$(COMPOSE) run --rm shot node scripts/shot/icons.ts
 

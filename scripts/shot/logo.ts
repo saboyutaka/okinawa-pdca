@@ -19,3 +19,13 @@ export const fullBleed = (svg: string) =>
     .replace(/viewBox="[^"]*"/, 'viewBox="1.2 1.2 33.6 33.6"')
     .replace(/<rect id="edge"[^>]*\/>/, '')
     .replace(/(<rect[^>]*?)\srx="[^"]*"/g, '$1');
+
+// 丸く切り抜かれるところ（SNS のアカウントの画像）向けに、地の四角を広げ、まるい子と白い星が丸の内側に収まるよう絵の周りを空ける。
+// 丘の path は favicon.svg で四角の外まで同じ曲線で長く描いてあるので、広げた端まで続く
+const ROUND_VIEW = { x: -1, y: -2, size: 41 };
+export const roundSafe = (svg: string) => {
+  const { x, y, size } = ROUND_VIEW;
+  return fullBleed(svg)
+    .replace(/viewBox="[^"]*"/, `viewBox="${x} ${y} ${size} ${size}"`)
+    .replace(/(<rect[^>]*?) x="[^"]*" y="[^"]*" width="[^"]*" height="[^"]*"/g, `$1 x="${x}" y="${y}" width="${size}" height="${size}"`);
+};
