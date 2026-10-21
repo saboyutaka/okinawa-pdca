@@ -34,7 +34,7 @@ make shot PAGES="/shisaku/1-1-a-1/ --click .like-btn --top"   # 押してから�
 - 端末で動きを減らす設定（`prefers-reduced-motion: reduce`）にして開くので、動き（[design.md](design.md) の8章）の途中ではなく、動き終わった形が写る。動きそのものはこの画像では確かめられない。
 - 一覧の行は画面の外を描かない（`content-visibility`。[site.md](site.md) の 7章）ので、撮るときはそれを外している。画面の外の行が空に写ることはないが、スクロールしたときの見え方はこの画像では確かめられない。
 - 中身は `scripts/shot/shot.ts`。Node が型を取り除いて動かすので `erasableSyntaxOnly` の書き方に限り、変えたら `make shot-typecheck`。TypeScript と `@types/node` の版はサイトにそろえ、Playwright の版は `docker/shot/Dockerfile` の FROM と `package.json` をそろえる。
-- `make icons` も同じコンテナの Chromium で、`site/src/assets/favicon.svg` から同じフォルダに `favicon.ico`（16・32・48px）と `apple-touch-icon.png`（180px）を書き出す（`scripts/shot/icons.ts`）。ロゴを変えたら動かしてコミットする。
+- `make icons` も同じコンテナの Chromium で、`site/src/assets/favicon.svg` から同じフォルダに `favicon.ico`（16・32・48px）と `apple-touch-icon.png`（180px）、X などの SNS のアカウントの画像 `sns-icon.png`（1024px。サイトでは使わない）を書き出す（`scripts/shot/icons.ts`）。ロゴを変えたら動かしてコミットする。
 - SNS のカードの画像（`site/public/og-image.png`）も同じコンテナで HTML から書き出す（`make og-image`。中身は `scripts/shot/og-image.ts` で、`make shot-typecheck` で一緒に型を確かめる。[site.md](site.md) の6章）。ロゴの絵は、`make icons` と同じく `site/src/assets/favicon.svg` から読む（`scripts/shot/logo.ts`）。
 - ページごとの SNS のカードの画像（ビルドで書き出す。[site.md](site.md) の6章）で使う字だけを、このコンテナの Noto Sans CJK JP の Bold から切り出すのも同じコンテナ（`make card-font`。中身は `scripts/shot/card-font.ts`）。字はカードの中身（`site/src/lib/card.ts`）から集め、`site/src/fonts/card-bold.woff` と字の一覧 `card-chars.txt` に書き出す（どちらもコミットする）。データや画面の言葉が変わって新しい字が出ると `make test` が落ちるので、そのときに動かす。書体に無い字があると止まるので、`card.ts` の `fold` で置き換える。
 - `make build` は、描いたカードの画像を node_modules のボリュームの `.astro/cards` に残し、中身が同じ画像は次から描き直さない（[site.md](site.md) の6章）。`make site-install`（`npm ci`）と worktree の `make down` で node_modules ごと消えるので、その次のビルドは全部を描く。
