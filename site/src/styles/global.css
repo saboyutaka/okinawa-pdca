@@ -638,13 +638,16 @@ mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--po
 /* ページ内の目次（components/Toc.astro）。画面の上に固定する。スマホではリンクの並び（.toc-links）だけを横にすべらせ、
    続きがある側の端をぼかす（地の色ごとぼかすと下の本文が透けるので、ぼかすのはリンクの並びだけ）。
    上に貼り付いたら（scripts/toc.ts の stuck）、リンクの上に何のページか（区分・名前・判定など）の1行（.toc-head）を出す。
-   その1行の高さだけ下の余白を負にして、本文の位置は変えない（目次が下の本文に重なるだけで、本文はずれない） */
+   その1行の高さだけ下の余白を負にして、本文の位置は変えない（目次が下の本文に重なるだけで、本文はずれない）。
+   アプリの中のブラウザでは、アプリが上を覆うと知らせる高さ（env(safe-area-inset-top)）の下に貼り付く。X はスクロールすると上のバーを隠すのに、
+   その高さを覆うと知らせたままにするので、貼り付いた目次の上から画面の上までを目次の地の色で埋め、本文が透けて見えないようにする */
 .toc-mark { height: 1px; margin-top: 17px; }
 .toc {
   --toc-head: 32px;
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   margin: 0 -16px; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--hair);
 }
+.toc.stuck::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: env(safe-area-inset-top, 0px); background: var(--bg); }
 .toc-head { height: 0; overflow: hidden; visibility: hidden; }
 .toc.stuck { margin-bottom: calc(-1 * var(--toc-head)); }
 .toc.stuck .toc-head { height: var(--toc-head); visibility: visible; }
@@ -673,8 +676,9 @@ mark { background: var(--sky); color: inherit; box-shadow: inset 0 -2px var(--po
 .toc + section > h2:first-child { margin-top: 1.2em; }
 /* # の行き先と、Tab でフォーカスした要素は、貼り付いた目次（何のページかの1行とリンク）の下に出す（WCAG 2.4.11）。
    目次のあるページはページ全体の scroll-padding で空ける（行き先の scroll-margin と足し合わされるので、そちらは付けない）。
+   アプリの中のブラウザで目次が下に貼り付くぶん（.toc の top）も空ける。
    目次の無いページの # の行き先は、前のとおり行き先の側で空ける */
-html:has(.toc) { scroll-padding-top: 104px; }
+html:has(.toc) { scroll-padding-top: calc(104px + env(safe-area-inset-top, 0px)); }
 html:not(:has(.toc)) :is(.anchor, [id^="seika-"], [id^="shuyou-"]) { scroll-margin-top: 104px; }
 
 
