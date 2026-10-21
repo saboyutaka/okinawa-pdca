@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { X_MAX, didCandidates, hearsay, indicatorTopic, postGroups, postOrder, postText, xLength } from '../src/lib/posts.ts';
-import { LATEST, getTorikumiGroups, statusOf } from '../src/lib/data.ts';
+import { LATEST, getTorikumiGroups, statusOf, type TorikumiGroup } from '../src/lib/data.ts';
 import { SITE } from '../src/lib/links.ts';
 
 test('X の文字数は日本語を2、ラテン文字を1、URL を長さによらず23と数える', () => {
@@ -59,6 +59,19 @@ test('順番はランダムで、作り直しても同じ。取組を除いて�
   assert.notDeepEqual(order.map((g) => g.href), groups.map((g) => g.href));
   const rest = groups.slice(1);
   assert.deepEqual(postOrder(rest), order.filter((g) => g !== groups[0]));
+});
+
+test('入らないときは、やったことより先に（累計）などのかっこを省く', () => {
+  const make = (n: number) => ({
+    href: '/torikumi/1-1-a-1/0123abcd/',
+    latest: { ...groups[0].latest, year: LATEST, name: 'あ'.repeat(n), summary: '研修会を5回開催した。', indicator: '研修会の開催数（累計）', target: '5回', actual: '6回（延べ120人）', lines: undefined, status: '順調' },
+  }) as unknown as TorikumiGroup;
+  assert.ok(postText(make(10)).includes('研修会の開催は計画5回・実績6回（延べ120人）（累計）で、進捗は「順調」。'));
+  const n = [...Array(100).keys()].find((k) => !postText(make(k)).includes('（累計）'));
+  assert.ok(n !== undefined);
+  const text = postText(make(n));
+  assert.ok(text.includes('県は令和7年度、研修会を5回開催したみたい。'), text);
+  assert.ok(text.includes('研修会の開催は計画5回・実績6回で、進捗は「順調」。'), text);
 });
 
 test('投稿文は X の上限に収まり、取組名・進捗状況・ページの URL を省かない', () => {
