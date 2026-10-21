@@ -73,7 +73,7 @@ export function postText(g: TorikumiGroup): string {
   const t = g.latest;
   const status = statusOf(t);
   const year = yearLong(t.year);
-  // 「沖縄県は令和7年度、令和7年度は、…」「沖縄県は令和7年度、県では、…」と重ならないように、活動概要の頭の年度と県は除く
+  // 「県は令和7年度、令和7年度は、…」「県は令和7年度、県では、…」と重ならないように、活動概要の頭の年度と県は除く
   const summary = cell(t.summary).replace(new RegExp(`^(${year}は|(本県|沖縄県|県)(では|は))、?`), '');
   const { topic, note } = indicatorTopic(cell(t.indicator));
   const [plan, actual] = [cell(t.target), cell(t.actual)];
@@ -87,7 +87,7 @@ export function postText(g: TorikumiGroup): string {
     (w: boolean) => `${w ? '' : `${year}の`}${said}`,
   ];
   const compose = (did: string, line: (withDid: boolean) => string) =>
-    [`「${t.name}」を紹介するよ。`, did && `沖縄県は${year}、${hearsay(did)}。`, line(!!did), new URL(g.href, SITE.url).href]
+    [`「${t.name}」を紹介するよ。`, did && `県は${year}、${hearsay(did)}。`, line(!!did), new URL(g.href, SITE.url).href]
       .filter(Boolean).join('\n');
   const dids = didCandidates(summary);
   const tries = lines.flatMap((l) => [...dids, ''].map((d) => compose(d, l)));
