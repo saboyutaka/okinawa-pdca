@@ -51,7 +51,7 @@
   /* 広い面（内訳の棒の区間・指標のマップのマス・メーター）の塗り。状態の色と同じ色相の明るいパステルにする。
      色覚によらず見分けられるよう、色相が近く見える組（順調と未着手、やや遅れと大幅遅れなど）は明るさを離し、
      順調〜大幅遅れは明るさを近づけて、どれかだけが濃く目立たないようにする。区間とマスには状態の色の縁（--*-edge か状態の色）を付ける */
-  --good-fill: #9dd9ca; --warning-fill: #f0d86d; --serious-fill: #fba773; --critical-fill: #f2798f; --none-fill: #b1b6cb; --blank-fill: #f3f5fc;
+  --good-fill: #9dd9ca; --warning-fill: #f7df74; --serious-fill: #f8a470; --critical-fill: #f2798f; --none-fill: #b1b6cb; --blank-fill: #f3f5fc;
   --on-fill: #0b0b0b;
   /* 将来像の色（新・沖縄21世紀ビジョン基本計画のパンフレットの色に合わせる。1 緑・2 青・3 橙・4 ピンク・5 青緑）。
      番号の印と見出しの帯だけに使い、状態の色（棒・印）には使わない。--sz-N-ink はその上の文字の色 */
@@ -82,7 +82,7 @@
   --wave-1: #221d4e; --wave-2: #18234f; --wave-3: #1d2b5c;
   --good: #4dc8ba; --warning: #dec44c; --warning-edge: #dec44c; --serious: #eb9259; --critical: #e07081; --critical-edge: #e07081; --none: #8c91a5;
   --blank: #434755; --blank-edge: #878b9c;
-  --good-fill: #70c3b8; --warning-fill: #d7c573; --serious-fill: #dc9a71; --critical-fill: #d07c87; --none-fill: #666872; --blank-fill: #2c2d34;
+  --good-fill: #70c3b8; --warning-fill: #decb79; --serious-fill: #dc9a71; --critical-fill: #d07c87; --none-fill: #666872; --blank-fill: #2c2d34;
   --series-1: #7d98f5; --series-2: #e99d6e; --series-3: #59b387; --series-4: #e0c262; --series-5: #df84a8; --series-6: #818599;
   --series-1-fill: #859bdf; --series-2-fill: #d39e7a; --series-3-fill: #417d5e; --series-4-fill: #c4b168; --series-5-fill: #c87f9b; --series-6-fill: #4e5160;
   --sz-1: #3dbb6c; --sz-1-ink: #0f1330; --sz-1-wash: #183a35;
