@@ -23,6 +23,8 @@
   --shadow: #151a3d;
   --pop: #3355ff;
   --pop-ink: #ffffff;
+  /* 押すボタン（.pill-btn）の塗り。--pop は線・点・フォーカスの枠に使い、広い面には塗らない */
+  --pop-fill: #bac6ff;
   --sky: #d6e4ff;
   --lilac: #e8defc;
   --pink: #ffe0ef;
@@ -73,7 +75,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f1330; --paper: #1a1f45; --ink: #f1f3ff; --ink-2: #b9bfe4; --line: #aab3ff; --shadow: #05071a;
-  --pop: #8197ff; --pop-ink: #0f1330; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
+  --pop: #8197ff; --pop-ink: #0f1330; --pop-fill: #4552a8; --sky: #1d2b5c; --lilac: #2a2257; --pink: #3d2240; --sand: #3a3324; --grid: #2c3260; --hair: #3a4280;
   --link: #a9b8ff; --muted: #8e94c0;
   --good: #4dc8ba; --warning: #dec44c; --warning-edge: #dec44c; --serious: #eb9259; --critical: #e07081; --critical-edge: #e07081; --none: #8c91a5;
   --blank: #434755; --blank-edge: #878b9c;
@@ -285,7 +287,7 @@ figure { margin: 0; }
   color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 999px; box-shadow: 3px 3px 0 var(--shadow);
   padding: 6px 18px; min-height: 44px; cursor: pointer; text-decoration: none;
 }
-.pill-btn { color: var(--pop-ink); background: var(--pop); font-size: 1rem; min-height: 48px; padding: 8px 22px; }
+.pill-btn { color: var(--ink); background: var(--pop-fill); font-size: 1rem; min-height: 48px; padding: 8px 22px; }
 .button:hover { background: var(--sky); }
 .pill-btn:hover { filter: brightness(1.06); }
 .button:active, .pill-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
