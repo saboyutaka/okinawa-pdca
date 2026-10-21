@@ -184,14 +184,14 @@ function lines(ps: string[], size: number, width: number): string[][] {
   return out;
 }
 
-// 名前（ページの題名）。高さ height に収まる一番大きな文字で、文節の箱を折り返して並べる（satori に text-wrap の文節の折り返しが無いため）。
+// 名前（ページの題名）。高さ height に収まる一番大きな文字（largest まで）で、文節の箱を折り返して並べる（satori に text-wrap の文節の折り返しが無いため）。
 // いちばん小さい文字でも入らないときは、入る行までにして … を付ける（全文は og:title にある）
 const SIZES = [64, 60, 56, 52, 48, 44, 40, 36, 32];
-function title(name: string, width: number, height: number) {
+function title(name: string, width: number, height: number, largest = SIZES[0]) {
   const fit = width * 0.95; // 見積もりの誤差の分
   let size = SIZES.at(-1)!;
   let ps = pieces(name, size, fit);
-  for (const s of SIZES) {
+  for (const s of SIZES.filter((x) => x <= largest)) {
     const p = pieces(name, s, fit);
     if (lines(p, s, fit).length * s * LH <= height) {
       size = s;
@@ -211,8 +211,8 @@ function title(name: string, width: number, height: number) {
   );
 }
 // 「何のページか」の行と名前。2つをまとめて、高さ height の中で上下の真ん中に置く
-const heading = (kick: El, name: string, width: number, height: number) =>
-  box({ flexDirection: 'column', justifyContent: 'center', height, flexShrink: 0 }, kick, title(name, width, height - KICK_H));
+const heading = (kick: El, name: string, width: number, height: number, largest?: number) =>
+  box({ flexDirection: 'column', justifyContent: 'center', height, flexShrink: 0 }, kick, title(name, width, height - KICK_H, largest));
 
 // ---------------------------------------------------------------- 部品
 
@@ -427,8 +427,9 @@ function areaCard(bg: string, head: El, name: string, rows: Row[]) {
 
 // 主な取組。「主な取組」の行に最後の報告の年度の進捗状況の札を並べ、名前の下の箱に、それを決めた活動指標の計画 → 実績と、
 // その年度にやったこと（総括報告書の活動概要）。年度は進捗状況の札の横に1回だけ書く。SNS では小さく出るので文字は絞り、所管・達成割合は取組のページに任せる。
-// やったことは2行まで（入らない分は …。全文は取組のページにある）
-const TORI = { line: 30, vals: 40, label: 112 };
+// やったことは2行まで（入らない分は …。全文は取組のページにある）。名前は 52px まで（大きくすると、名前と下の箱が詰まって見える）。
+// 活動指標とやったことの間は広めにあけ、2つのまとまりに見えるようにする
+const TORI = { line: 30, vals: 40, label: 112, gap: 20, title: 52 };
 function torikumiCard(g: TorikumiGroup) {
   const t = g.latest;
   const status = statusOf(t);
@@ -443,7 +444,7 @@ function torikumiCard(g: TorikumiGroup) {
   const val = (raw: string) => (fits ? valueText(raw) : txt({ fontSize: 22, flexShrink: widthOf(raw, 22) > W * 0.3 ? 1 : 0, minWidth: 0 }, halfWidth(raw), 1));
   const didLines = did ? Math.min(2, Math.ceil(widthOf(did, 22) / (W * 0.95))) : 0;
   const valsH = fits ? TORI.vals : TORI.line;
-  const INSET_H = 2 * STATS_PAD.y + TORI.line + 2 + valsH + (did ? 10 + didLines * TORI.line : 0);
+  const INSET_H = 2 * STATS_PAD.y + TORI.line + 2 + valsH + (did ? TORI.gap + didLines * TORI.line : 0);
   // 見出しの列（活動指標・やったこと）と中身の1行目の高さをそろえる
   const lh = `${TORI.line}px`;
   const row = (label: string, ...kids: Kid[]) => box(
@@ -466,7 +467,7 @@ function torikumiCard(g: TorikumiGroup) {
         ),
         txt({ fontSize: 20 }, `${yearLong(t.year)}の進捗状況${t.year === LATEST ? '' : '（最後の報告）'}`),
       ),
-      t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H,
+      t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H, TORI.title,
     ),
     gap(12),
     inset(
@@ -474,13 +475,13 @@ function torikumiCard(g: TorikumiGroup) {
       row(
         '活動指標',
         txt({ fontSize: 22, lineHeight: lh }, oneLine(t.indicator), 1),
-        // 大きな数字の行の高さを詰め、数字の上と下（やったことの行まで）のあきをそろえる（行の高さは中の文字に受け継がれる）
+        // 大きな数字の行の高さを詰める（行の高さは中の文字に受け継がれる）
         box(
           { alignItems: 'baseline', columnGap: 8, height: valsH, minWidth: 0, lineHeight: fits ? 1.1 : lh },
           sub('計画'), val(plan), sub('→ 実績'), val(actual),
         ),
       ),
-      did ? [gap(10), row('やったこと', txt({ fontSize: 22, lineHeight: lh }, did, didLines))] : null,
+      did ? [gap(TORI.gap), row('やったこと', txt({ fontSize: 22, lineHeight: lh }, did, didLines))] : null,
     ),
   );
 }
