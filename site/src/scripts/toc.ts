@@ -2,12 +2,12 @@
 //  - いま読んでいる節のリンクに aria-current="location" を付ける（styles/global.css）。節の見出しが画面の上（目次の下あたり）を過ぎたら、その節にいるとする。
 //    ページのいちばん下まで来たら最後の節にする（短い節の見出しは上まで届かないため）。スマホで目次のリンクが横にはみ出すときは、
 //    いまの節のリンクが見えるように目次だけを横にずらす（ページは動かさない）
-//  - 目次が画面の上に貼り付いたら stuck を付け、何のページかの1行（.toc-head）を出す。目次のすぐ前の目印（.toc-mark）が画面の上から出たかで決める。
+//  - 目次が画面の上に貼り付いたら stuck を付け、何のページかの1行（.toc-head）を出す。目次のすぐ前の目印（.toc-mark）が、目次の貼り付く位置より上に出たかで決める。
 //    IntersectionObserver は、# のリンクで画面の下から上へ一度に跳ぶと（目印が画面に入らないまま）知らせないので、スクロールのたびに位置を見る
 import { hashId } from './hash.ts';
 import { moving } from './motion.ts';
 
-// 見出しの上の端がここ（画面の上からの px）より上に来たら、その節にいる。# で跳んだ見出しの位置（目次のあるページの scroll-padding-top 104px）より少し下
+// 見出しの上の端がここ（目次の貼り付く位置からの px）より上に来たら、その節にいる。# で跳んだ見出しの位置（目次のあるページの scroll-padding-top 104px）より少し下
 const LINE = 120;
 for (const toc of document.querySelectorAll<HTMLElement>('.toc')) {
   const strip = toc.querySelector<HTMLElement>('.toc-links');
@@ -20,10 +20,12 @@ for (const toc of document.querySelectorAll<HTMLElement>('.toc')) {
   if (!links.length && !head) continue;
   let cur: HTMLAnchorElement | null = null;
   const update = () => {
-    if (head) toc.classList.toggle('stuck', head.getBoundingClientRect().top < 0);
+    // 目次の貼り付く位置（画面の上からの px）。ふつうは 0 で、アプリの中のブラウザではアプリが上を覆うと知らせる高さ（styles/global.css の .toc）
+    const top = parseFloat(getComputedStyle(toc).top) || 0;
+    if (head) toc.classList.toggle('stuck', head.getBoundingClientRect().top < top);
     if (!links.length) return;
     const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-    const hit = bottom ? links[links.length - 1] : links.filter(({ h }) => h.getBoundingClientRect().top <= LINE).pop();
+    const hit = bottom ? links[links.length - 1] : links.filter(({ h }) => h.getBoundingClientRect().top <= top + LINE).pop();
     const next = hit?.a ?? null;
     if (next === cur) return;
     cur?.removeAttribute('aria-current');
