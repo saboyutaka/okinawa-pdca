@@ -421,7 +421,11 @@ function shisakuCard(s: Shisaku) {
         why('成果指標', `${fmt(hd.reached)}/${fmt(seika.length)}`, 'が計画値に到達', 14,
           seika.map((v) => box({ alignItems: 'center', columnGap: 6, height: 30 }, icon(v.tone, null, 20), txt({ fontSize: 20 }, v.chip)))),
         why('主な取組', `${fmt(ok)}/${fmt(tori.length)}`, '件が順調', 4,
-          tori.map((t) => box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, background: color(STATUSES.find((x) => x.key === t.key)?.tone || 'blank') }))),
+          // ページの四角（components/StatusBar.astro の squares）と同じく、淡い塗りに状態の色の縁
+          tori.map((t) => {
+            const tone = STATUSES.find((x) => x.key === t.key)?.tone || 'blank';
+            return box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, border: `2px solid ${edge(tone)}`, background: color(`${tone}-fill`) });
+          })),
       ),
     ),
   );
