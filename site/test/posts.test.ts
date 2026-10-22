@@ -1,7 +1,7 @@
 // X の公式アカウントで紹介する主な取組の投稿文と順番（lib/posts.ts）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { X_MAX, didCandidates, hearsay, indicatorTopic, postGroups, postOrder, postText, xLength } from '../src/lib/posts.ts';
+import { X_MAX, didCandidates, hearsay, indicatorTopic, past, postGroups, postOrder, postText, xLength } from '../src/lib/posts.ts';
 import { LATEST, getTorikumiGroups, statusOf, type TorikumiGroup } from '../src/lib/data.ts';
 import { SITE } from '../src/lib/links.ts';
 
@@ -15,10 +15,20 @@ test('X の文字数は日本語を2、ラテン文字を1、URL を長さによ
 test('県の活動概要の文を「〜したみたい」にする', () => {
   assert.equal(hearsay('研修会を5回開催した。'), '研修会を5回開催したみたい');
   assert.equal(hearsay('パネル展を実施'), 'パネル展を実施したみたい');
-  assert.equal(hearsay('モニタリング調査を行う。'), 'モニタリング調査を行うみたい');
-  assert.equal(hearsay('対面サービスを提供します。'), '対面サービスを提供するみたい');
+  assert.equal(hearsay('モニタリング調査を行う。'), 'モニタリング調査を行ったみたい');
+  assert.equal(hearsay('対面サービスを提供します。'), '対面サービスを提供したみたい');
   assert.equal(hearsay('生産地案内ツアーを開催した（各1回）。'), '生産地案内ツアーを開催したみたい（各1回）');
   assert.equal(hearsay('研修事業を実施した.'), '研修事業を実施したみたい');
+});
+
+test('動詞の言い切りの形を過去の形にする', () => {
+  const cases: [string, string][] = [
+    ['導入を支援する', '導入を支援した'], ['調査を行う', '調査を行った'], ['検討を進めている', '検討を進めていた'], ['普及を図る', '普及を図った'],
+    ['課題がある', '課題があった'], ['研修会が開催される', '研修会が開催された'], ['増員に取り組む', '増員に取り組んだ'], ['機会を設ける', '機会を設けた'],
+    ['申請を行っていく', '申請を行っていった'], ['取組を促す', '取組を促した'], ['連絡会を開く', '連絡会を開いた'], ['対象としていない', '対象としていなかった'],
+    ['研修を実施しています', '研修を実施していた'], ['研修を開催した', '研修を開催した'], ['22件となった', '22件となった'],
+  ];
+  for (const [a, b] of cases) assert.equal(past(a), b, a);
 });
 
 test('やったことは初めの1文と、頭の目的を省いたもの、それぞれを動作の区切りで切って「〜した」の形にしたもの（長い順）', () => {
@@ -31,6 +41,8 @@ test('やったことは初めの1文と、頭の目的を省いたもの、そ�
   assert.deepEqual(didCandidates('事業者に対し、実証を支援した。'), ['事業者に対し、実証を支援した']);
   assert.deepEqual(didCandidates('国外への貢献として、研修員を受け入れた。'), ['国外への貢献として、研修員を受け入れた']);
   assert.deepEqual(didCandidates('経営者を対象とし、研修を行った。'), ['経営者を対象とし、研修を行った', '経営者を対象とした']);
+  assert.deepEqual(didCandidates('検討会は2回開催され実施日は以下のとおり。'), []);
+  assert.deepEqual(didCandidates('相談会を開催し、以下の支援を実施した。'), ['相談会を開催した']);
   assert.deepEqual(didCandidates(''), []);
 });
 
