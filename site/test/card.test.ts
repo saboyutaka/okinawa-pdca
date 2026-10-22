@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { cardChars, cardImage, cardMeta, getCards, phrases, textOf } from '../src/lib/card.ts';
+import { cardChars, cardImage, cardMeta, fold, getCards, phrases, textOf } from '../src/lib/card.ts';
 import { cacheFile, pruneCardCache, readCache } from '../src/lib/card-cache.ts';
 import { deptHead, futureHead, kihonHead, shisakuHead, themeHead, total } from '../src/lib/heads.ts';
-import { DEPTS, LATEST, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, seikaVerdict } from '../src/lib/data.ts';
+import { DEPTS, LATEST, getKihonList, getSeika, getShisakuList, getShouraizou, getTorikumi, getTorikumiGroups, seikaVerdict, yearLong } from '../src/lib/data.ts';
 import { getActivityShares } from '../src/lib/katsudou.ts';
 import { getThemes } from '../src/lib/themes.ts';
 import { pagePaths } from '../src/lib/routes.ts';
+import { oneLine } from '../src/lib/text.ts';
 
 test('カードの画像のフォントに、カードで使う字が全部入っている（足りなければ make card-font）', () => {
   const have = new Set(fs.readFileSync('src/fonts/card-chars.txt', 'utf-8').replace(/\n$/, ''));
@@ -32,6 +33,20 @@ test('活動指標のカードの値は、全角の数字を半角にそろえ�
   assert.ok(a);
   const text = textOf(getCards().get(a.share)!.node());
   assert.ok(text.includes('計画') && !/[０-９]/.test(text), text);
+});
+
+test('主な取組のカードには、最後の報告の年度の進捗状況と、活動指標の計画と実績、やったこと（活動概要）が入る', () => {
+  const now = getTorikumiGroups().find((g) => g.latest.year === LATEST && g.latest.status && !g.latest.lines)!;
+  const text = textOf(getCards().get(now.href)!.node());
+  for (const s of [now.latest.status, `${yearLong(LATEST)}の進捗状況`, fold(oneLine(now.latest.indicator)), '計画', '実績', fold(oneLine(now.latest.summary))]) assert.ok(text.includes(s), s);
+  // 最新の報告に無い取組は、最後の報告の年度の進捗状況
+  const ended = getTorikumiGroups().find((g) => g.latest.year !== LATEST)!;
+  assert.ok(textOf(getCards().get(ended.href)!.node()).includes(`${yearLong(ended.latest.year)}の進捗状況（最後の報告）`));
+});
+
+test('カードのフォントに無いローマ数字は、続くローマ数字ごと英字にする（フォントにある Ⅱ などはそのまま）', () => {
+  assert.equal(fold('一時保護したⅮⅤ被害者'), '一時保護したDV被害者');
+  assert.equal(fold('第Ⅱ期・CO₂'), '第Ⅱ期・CO2');
 });
 
 test('カードの画像の URL は、ページの URL の末尾の / を .png にして /og の下に置く', () => {

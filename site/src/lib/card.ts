@@ -4,14 +4,14 @@
 //
 // 見た目は docs/design.md に合わせる: ページの頭と同じ太い線と硬い影のステッカーに、名前と最新の年度の様子を入れる。
 // - 判定・進捗状況は県の区分の言葉で出し、内訳は区分の並びのまま0でない区分を全部同じ大きさで並べる（遅れだけを大きくしない）
-// - 状態は色だけで伝えず、形（lib/icons.ts）と文字でも出す。大きな丸いハンコは施策の判定だけに使う（取組は4年分のスタンプ）
+// - 状態は色だけで伝えず、形（lib/icons.ts）と文字でも出す。大きな丸いハンコは施策の判定だけに使う（取組は横長の札）
 // - 下の帯にサイトの名前・（非公式）・by Code for Okinawa を入れ、非公式で Code for Okinawa が作っていることが分かるようにする
 // 色は styles/global.css の :root（ライト）のトークンを読んで使う（CSS は効かないので値を直接書く）
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong, yearsLong,
+  JUDGES, LATEST, PLAN_PERIODS, RATE_BINS, STATUSES, YEARS, halfWidth, judgeOf, periodLabel, judgesOf, refText, seikaGroupsOf, shuyouSteps, seikaVerdict, statusOf, textGoalChartRow, toneOfJudgement, toneOfStatus, torikumiCells, yearLabel, yearLong,
   type ChartRow, type SeikaGroup, type SeikaGroupOfShisaku, type Shisaku, type ShuyouGroupOfKihon, type ShuyouPart, type TorikumiGroup,
 } from './data.ts';
 import type { ActivityRun, ActivityShare } from './katsudou.ts';
@@ -21,7 +21,7 @@ import { JUDGE_GROUPS, JUDGE_UI, SHAPES, shapeSvg, themeIconParts, type Shape, t
 import { PROJECT, SITE } from './links.ts';
 import { once } from './memo.ts';
 import { ROUTES, routePath } from './routes.ts';
-import { isNumOnly, oneLine } from './text.ts';
+import { isBlankCell, isNumOnly, oneLine } from './text.ts';
 
 export const CARD_SIZE = { width: 1200, height: 630 };
 // 字の形は Noto Sans CJK JP の Bold だけ（src/fonts/card-bold.woff。使う字だけを切り出したもの）
@@ -44,8 +44,10 @@ function h(type: string, style: Style, kids: Kid[]): El {
 // 子を横か縦に並べる箱（satori は子が2つ以上の div に display: flex が要る）
 const box = (style: Style, ...kids: Kid[]) => h('div', { display: 'flex', ...style }, kids);
 // カードのフォント（Noto Sans CJK JP）に無い字を、ある字に置き換える。上付き・下付きの数字（CO₂ の ₂）は普通の数字にする。
+// ローマ数字の Ⅼ・Ⅽ・Ⅾ・Ⅿ も無いので、続くローマ数字ごと英字にする（活動概要の「ⅮⅤ被害者」→ DV）。
 // 無い字が出ると、フォントを切り出す make card-font が止まるので、ここに足す
-export const fold = (s: string) => s.replace(/[\u2070-\u209f]/g, (c) => c.normalize('NFKC'));
+export const fold = (s: string) =>
+  s.replace(/[\u2070-\u209f]|[\u2160-\u217f]*[\u216c-\u216f\u217c-\u217f][\u2160-\u217f]*/g, (c) => c.normalize('NFKC'));
 // 文字だけの箱。clamp は行数の上限（超えたら …。display: block が要り、そのときの子は配列でなく文字で渡す）
 const txt = (style: Style, s: string, clamp?: number): El =>
   ({ type: 'div', props: { style: clean(clamp ? { display: 'block', lineClamp: clamp, ...style } : { display: 'flex', ...style }), children: fold(s) } });
@@ -184,14 +186,14 @@ function lines(ps: string[], size: number, width: number): string[][] {
   return out;
 }
 
-// 名前（ページの題名）。高さ height に収まる一番大きな文字で、文節の箱を折り返して並べる（satori に text-wrap の文節の折り返しが無いため）。
+// 名前（ページの題名）。高さ height に収まる一番大きな文字（largest まで）で、文節の箱を折り返して並べる（satori に text-wrap の文節の折り返しが無いため）。
 // いちばん小さい文字でも入らないときは、入る行までにして … を付ける（全文は og:title にある）
 const SIZES = [64, 60, 56, 52, 48, 44, 40, 36, 32];
-function title(name: string, width: number, height: number) {
+function title(name: string, width: number, height: number, largest = SIZES[0]) {
   const fit = width * 0.95; // 見積もりの誤差の分
   let size = SIZES.at(-1)!;
   let ps = pieces(name, size, fit);
-  for (const s of SIZES) {
+  for (const s of SIZES.filter((x) => x <= largest)) {
     const p = pieces(name, s, fit);
     if (lines(p, s, fit).length * s * LH <= height) {
       size = s;
@@ -211,8 +213,8 @@ function title(name: string, width: number, height: number) {
   );
 }
 // 「何のページか」の行と名前。2つをまとめて、高さ height の中で上下の真ん中に置く
-const heading = (kick: El, name: string, width: number, height: number) =>
-  box({ flexDirection: 'column', justifyContent: 'center', height, flexShrink: 0 }, kick, title(name, width, height - KICK_H));
+const heading = (kick: El, name: string, width: number, height: number, largest?: number) =>
+  box({ flexDirection: 'column', justifyContent: 'center', height, flexShrink: 0 }, kick, title(name, width, height - KICK_H, largest));
 
 // ---------------------------------------------------------------- 部品
 
@@ -419,7 +421,11 @@ function shisakuCard(s: Shisaku) {
         why('成果指標', `${fmt(hd.reached)}/${fmt(seika.length)}`, 'が計画値に到達', 14,
           seika.map((v) => box({ alignItems: 'center', columnGap: 6, height: 30 }, icon(v.tone, null, 20), txt({ fontSize: 20 }, v.chip)))),
         why('主な取組', `${fmt(ok)}/${fmt(tori.length)}`, '件が順調', 4,
-          tori.map((t) => box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, background: color(STATUSES.find((x) => x.key === t.key)?.tone || 'blank') }))),
+          // ページの四角（components/StatusBar.astro の squares）と同じく、淡い塗りに状態の色の縁
+          tori.map((t) => {
+            const tone = STATUSES.find((x) => x.key === t.key)?.tone || 'blank';
+            return box({ width: SQ, height: SQ, borderRadius: 5, flexShrink: 0, border: `2px solid ${edge(tone)}`, background: color(`${tone}-fill`) });
+          })),
       ),
     ),
   );
@@ -429,47 +435,72 @@ function areaCard(bg: string, head: El, name: string, rows: Row[]) {
   return frame(bg, heading(head, name, INNER_W, BODY_H - 12 - statsHeight(rows)), gap(12), stats(rows));
 }
 
-// 主な取組の4年分のスタンプ（components/Stamps.astro と同じく、線でつなぐ。報告の無い年度にかかる線は点線）
-function toriStamps(g: TorikumiGroup) {
-  const kids: El[] = [];
-  YEARS.forEach((y, i) => {
-    const st = g.statuses[i];
-    const tone = st ? toneOfStatus(st) : null;
-    if (i > 0) kids.push(box({ width: 40, marginTop: 52, borderTop: `4px ${st && g.statuses[i - 1] ? 'solid' : 'dashed'} ${color('line')}` }));
-    kids.push(box(
-      { flexDirection: 'column', alignItems: 'center', rowGap: 6, width: 104 },
-      txt({ fontSize: 20, color: color('ink-2') }, yearLabel(y)),
-      box({ width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, backgroundColor: mix(color(tone || 'blank'), color('paper'), 0.26) }, icon(tone, SHAPES[tone || 'blank'], 26)),
-      txt({ fontSize: 20 }, st || '報告なし'),
-    ));
-  });
-  return box({ alignItems: 'flex-start', flexShrink: 0 }, kids);
-}
-
+// 主な取組（取組のページの頭と同じ並び）。「主な取組」の行に最後の報告の年度の進捗状況の札を並べ、名前の下の箱に、それを決めた活動指標の計画 → 実績、
+// その下に県の吹き出しでその年度にやったこと（総括報告書の活動概要。県の資料の言葉なので吹き出し）。年度は進捗状況の札の横に1回だけ書く。
+// SNS では小さく出るので文字は絞り、所管・達成割合は取組のページに任せる。やったことは2行まで（入らない分は …。全文は取組のページにある）。
+// 名前は 52px まで（大きくすると、名前と下の箱が詰まって見える）
+const TORI = { line: 30, vals: 40, title: 52, avatar: 46, bubble: { y: 12, x: 18 }, foot: 10 };
 function torikumiCard(g: TorikumiGroup) {
-  const last = g.statuses.at(-1);
-  const tone = last ? toneOfStatus(last) : null;
-  const INSET_H = 150;
+  const t = g.latest;
+  const status = statusOf(t);
+  const tone = toneOfStatus(status);
+  const did = isBlankCell(t.summary) ? '' : oneLine(t.summary);
+  const W = INNER_W - 2 * STATS_PAD.x;
+  // 計画 → 実績の行が入らない値（かっこの中に内訳があるものなど）は、大きな数字にせず1行の文字で出す（短い値は縮めず、長い値のほうを …）。
+  // 数字の幅の見積もり（0.6em）は実際より広めなので、行の幅そのものと比べる
+  const plan = one(t.target);
+  const actual = one(t.actual);
+  const fits = widthOf('計画→ 実績', 20) + 3 * 8 + valueWidth(plan) + valueWidth(actual) <= W;
+  const val = (raw: string) => (fits ? valueText(raw) : txt({ fontSize: 22, flexShrink: widthOf(raw, 22) > W * 0.3 ? 1 : 0, minWidth: 0 }, halfWidth(raw), 1));
+  const valsH = fits ? TORI.vals : TORI.line;
+  const INSET_H = 2 * STATS_PAD.y + TORI.line + 2 + valsH;
+  const BUBBLE_W = INNER_W - TORI.avatar - 14 - 2 * TORI.bubble.x - 6;
+  const didLines = did ? Math.min(2, Math.ceil(widthOf(did, 22) / (BUBBLE_W * 0.95))) : 0;
+  const BUBBLE_H = 2 * TORI.bubble.y + 6 + didLines * TORI.line;
+  const lh = `${TORI.line}px`;
+  const sub = (s: string) => txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, s);
+  // 県の吹き出し（components/Says.astro と同じ形。ステッカーの中なので影は付けない）。尾は線を2辺だけ引いた正方形を回したもの
+  const says = (text: string) => box(
+    { alignItems: 'flex-start', columnGap: 14, flexShrink: 0 },
+    box({ width: TORI.avatar, height: TORI.avatar, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: `3px solid ${color('line')}`, background: color('paper'), fontSize: 20 }, '県'),
+    box(
+      { position: 'relative', flex: 1, minWidth: 0, height: BUBBLE_H, padding: `${TORI.bubble.y}px ${TORI.bubble.x}px`, borderRadius: 18, border: `3px solid ${color('line')}`, background: color('paper') },
+      box({ position: 'absolute', left: -12, top: 13, width: 18, height: 18, background: color('paper'), borderLeft: `3px solid ${color('line')}`, borderBottom: `3px solid ${color('line')}`, transform: 'rotate(45deg)' }),
+      txt({ fontSize: 22, lineHeight: lh }, text, didLines),
+    ),
+  );
   return frame(
     color('paper'),
     parent(g.shisaku, 'この取組が入っている施策'),
     gap(8),
-    heading(kicker('主な取組'), g.latest.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H),
+    heading(
+      kicker(
+        '主な取組',
+        box(
+          { alignItems: 'center', columnGap: 10, flexShrink: 0, marginLeft: 8, padding: '0 20px 2px 14px', borderRadius: 999, border: `3px solid ${color('line')}`, background: mix(color(tone), color('paper'), 0.26) },
+          icon(tone, null, 22),
+          txt({ fontSize: 24, lineHeight: 1.2, color: color('ink') }, status),
+        ),
+        txt({ fontSize: 20 }, `${yearLong(t.year)}の進捗状況${t.year === LATEST ? '' : '（最後の報告）'}`),
+      ),
+      // 残りの高さ（吹き出しと下の帯の間を TORI.foot だけ余分にあける）
+      t.name, INNER_W, BODY_H - PARENT_H - 8 - 12 - INSET_H - (did ? 14 + BUBBLE_H : 0) - TORI.foot, TORI.title,
+    ),
     gap(12),
     inset(
-      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', columnGap: 24, height: INSET_H },
+      { height: INSET_H, rowGap: 2 },
       box(
-        { flexDirection: 'column', rowGap: 6, minWidth: 0, flex: 1 },
-        box(
-          { alignItems: 'center', columnGap: 12, alignSelf: 'flex-start', padding: '4px 26px 6px 20px', borderRadius: 999, border: `3px solid ${color('line')}`, background: mix(color(tone || 'blank'), color('paper'), 0.26) },
-          icon(tone, null, 28),
-          txt({ fontSize: 32 }, last || '報告なし'),
-        ),
-        txt({ fontSize: 20, color: color('ink-2') }, last ? `${yearLong(LATEST)}の進捗状況` : `${yearLong(LATEST)}の報告には無い取組`),
-        g.section ? txt({ fontSize: 20, color: color('ink-2'), whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, `所管 ${g.section}`, 1) : null,
+        { alignItems: 'baseline', columnGap: 14, height: TORI.line, minWidth: 0 },
+        txt({ fontSize: 20, color: color('ink-2'), flexShrink: 0 }, '活動指標'),
+        txt({ fontSize: 22, lineHeight: lh, flex: 1, minWidth: 0 }, oneLine(t.indicator), 1),
       ),
-      toriStamps(g),
+      // 大きな数字の行の高さを詰める（行の高さは中の文字に受け継がれる）
+      box(
+        { alignItems: 'baseline', columnGap: 8, height: valsH, minWidth: 0, lineHeight: fits ? 1.1 : lh },
+        sub('計画'), val(plan), sub('→ 実績'), val(actual),
+      ),
     ),
+    did ? [gap(14), says(did)] : null,
   );
 }
 
@@ -722,6 +753,14 @@ function valueText(raw: string, unit = ''): El {
   const ps = [...text.split(DIGITS).filter(Boolean), ...(unit ? [unit] : [])];
   return box({ alignItems: 'baseline', columnGap: 2, flexShrink: 1, minWidth: 0, overflow: 'hidden' }, ps.map((t) => txt({ fontSize: DIGITS.test(t) ? 34 : 20, flexShrink: 0, whiteSpace: 'nowrap' }, t)));
 }
+// valueText の幅の見積もり
+function valueWidth(raw: string) {
+  const text = halfWidth(raw);
+  if (!DIGITS.test(text)) return widthOf(text, 24);
+  return text.split(DIGITS).filter(Boolean).reduce((a, t) => a + widthOf(t, DIGITS.test(t) ? 34 : 20) + 2, 0);
+}
+// 計画・実績の欄が2行以上に分かれている値（総括報告書の lines）を1行にする
+const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
 function valueStep(label: string, value: El, sub: string) {
   return box(
     { alignItems: 'baseline', columnGap: 8, height: 42, minWidth: 0 },
@@ -797,7 +836,6 @@ function katsudouCard(a: ActivityShare) {
   // 最後の実績の札は、取組のページの図と同じ（いちばん新しい活動指標は「いまここ」、最新の報告に無い取組と前の活動指標は「最後の報告」）
   const here = run.group === 0 && last.y === LATEST ? 'いまここ' : '最後の報告';
   const chart = katsudouChart(run, INNER_W - 2 * STATS_PAD.x - STEPS_W - 20, INSET_H - 2 * STATS_PAD.y - 44, here);
-  const one = (raw: string) => (raw || '—').replace(/\s*\n\s*/g, '・');
   return frame(
     color('paper'),
     parentBar(null, g.latest.name, 'この指標の取組'),
@@ -882,7 +920,7 @@ export const getCards = once((): Map<string, Card> => {
     })),
     ...ROUTES['torikumi/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
       page: routePath('torikumi/[shisaku]/[slug]', params),
-      alt: `主な取組「${g.latest.name}」の${yearsLong(YEARS[0], LATEST)}の進捗状況`,
+      alt: `主な取組「${g.latest.name}」の${yearLong(g.latest.year)}の進捗状況と、活動指標の計画・実績、活動概要`,
       node: () => torikumiCard(g),
     })),
     ...ROUTES['shihyou/[shisaku]/[slug]']().map(({ params, props: { g } }) => ({
