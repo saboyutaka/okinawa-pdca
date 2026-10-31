@@ -38,23 +38,42 @@ export function postOrder(groups: TorikumiGroup[]): TorikumiGroup[] {
 
 const cell = (v: string) => (isBlankCell(v) ? '' : halfWidth(oneLine(v)).trim());
 
-// 県の活動概要の文（「〜した。」「〜を実施。」「〜します。」）を「〜したみたい」の形にする（句点は付けない）。
+// 動詞の言い切りの形を過去の形にする（「支援する」→「支援した」、「行う」→「行った」、「進めている」→「進めていた」）。
+// 「る」で終わるものは、前がい段・え段のかなら一段（「進める」「いる」「される」）、それ以外は五段（「図る」「なる」「ある」）とみなす
+const PAST: [RegExp, string][] = [
+  [/ています$/, 'ていた'],
+  [/します$/, 'した'],
+  [/ます$/, 'ました'],
+  [/する$/, 'した'],
+  [/ない$/, 'なかった'],
+  [/(行|い)く$/, '$1った'],
+  [/く$/, 'いた'],
+  [/ぐ$/, 'いだ'],
+  [/す$/, 'した'],
+  [/[うつ]$/, 'った'],
+  [/[むぶぬ]$/, 'んだ'],
+  [/([いきしちにひみりぎじびぴけせてねへめれえげぜでべぺ])る$/, '$1た'],
+  [/る$/, 'った'],
+];
+export const past = (s: string) => (/[ただ]$/.test(s) ? s : PAST.reduce((t, [re, to]) => (t === s ? t.replace(re, to) : t), s));
+
+// 県の活動概要の文（「〜した。」「〜を支援する。」「〜を実施。」）を「〜したみたい」の形にする（令和7年度にやったことなので過去の形。句点は付けない）。
 // 終わりの「（各1回）」のような補いは「みたい」の後ろに置く
 export function hearsay(s: string): string {
   const [, body, note] = s.replace(/[。.．]$/, '').match(/^(.*?)((?:（[^（）]*）)?)$/)!;
-  const t = body.replace(/します$/, 'する');
-  return `${/\p{Script=Han}$/u.test(t) ? `${t}したみたい` : `${t}みたい`}${note}`;
+  return `${/\p{Script=Han}$/u.test(body) ? `${body}した` : past(body)}みたい${note}`;
 }
 
 // やったことの候補（長い順）。活動概要の初めの1文と、頭の目的（「〜のため、」「〜に向けて、」）を省いたもの、
-// それぞれを動作の区切り（「〜し、」「〜し（…）、」「〜を行い、」「〜するとともに、」など。「〜に対し、」「〜として、」は区切りでない）のところで切って「〜した」の形にしたもの
+// それぞれを動作の区切り（「〜し、」「〜し（…）、」「〜を行い、」「〜するとともに、」など。「〜に対し、」「〜として、」は区切りでない）のところで切って「〜した」の形にしたもの。
+// 「以下のとおり」「下記の支援」のように報告書の表を指すものは、投稿に表が無いので使わない
 const PURPOSE = /^.*?(ため|ために|に向け|に向けて)、/;
 const BREAKS: [RegExp, string][] = [[/するとともに、/g, 'した'], [/(?<![対関際通])(?:(?<!と)して|し)(?:（[^）]*）)?、/g, 'した'], [/行い、/g, '行った'], [/図り、/g, '図った'], [/たほか、/g, 'た']];
 export function didCandidates(summary: string): string[] {
   const first = firstSentence(summary).replace(/。$/, '');
   const bases = [first, first.replace(PURPOSE, '')].filter(Boolean);
   const cuts = (b: string) => BREAKS.flatMap(([re, to]) => [...b.matchAll(re)].map((m) => `${b.slice(0, m.index)}${to}`));
-  return [...new Set(bases.flatMap((b) => [b, ...cuts(b)]))].sort((a, b) => [...b].length - [...a].length);
+  return [...new Set(bases.flatMap((b) => [b, ...cuts(b)]))].filter((c) => !/以下|下記/.test(c)).sort((a, b) => [...b].length - [...a].length);
 }
 
 // 活動指標の名前を「〇〇は計画○・実績○」の主語の形にする。終わりの数え方（「開催箇所数」の「箇所数」、「協議回数」の「回数」など）を除き、
