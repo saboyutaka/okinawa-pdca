@@ -1,0 +1,13 @@
+# okinawa-pdca
+
+> 沖縄県PDCA（新・沖縄21世紀ビジョン実施計画の施策・主な取組の進捗評価）を県の報告書から読��取り、「おきなわ、みらい、いま」として見せる非公式サイト。Code for Okinawa のシビックテック
+
+## Core Resources
+
+- [GitHub Repository](https://github.com/saboyutaka/okinawa-pdca): Source code, documentation, and issue tracker.
+- [Website](https://okinawa-miraima.com/): Official website and documentation.
+
+## AI Agent & LLM Indexing
+
+- Structured following the standard /llms.txt specification for AI search engines and coding assistants.
+- Validated via [AccessGuard AI-Readiness Suite](https://ronanchnlps-bit.github.io/).
