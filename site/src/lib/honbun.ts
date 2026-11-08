@@ -2,9 +2,16 @@
 // 本文は全部を1つのページ（/21-seiki-vision/kihon/）に載せ、ブラウザのページ内検索で全文を探せるようにする
 import { load } from './data.ts';
 import { once } from './memo.ts';
+import { planSourceLink } from './plans.ts';
+import { absUrl } from './seo.ts';
+import { yearsLong } from './years.ts';
 import type { HonbunHeading, KihonHonbunRow } from './types.ts';
 
-export const KIHON_KEIKAKU = { name: '新・沖縄21世紀ビジョン基本計画', href: '/21-seiki-vision/kihon/', period: '令和4〜13年度', published: '令和4年5月' };
+// fy は計画の期間（年度）。date は策定した年月（構造化データの datePublished）
+const FY: [number, number] = [2022, 2031];
+export const KIHON_KEIKAKU = {
+  name: '新・沖縄21世紀ビジョン基本計画', href: '/21-seiki-vision/kihon/', fy: FY, period: yearsLong(...FY), published: '令和4年5月', date: '2022-05',
+};
 
 // 章（と「はじめに」）。blocks は章の見出しより後ろ
 export interface HonbunChapter { head: HonbunHeading; blocks: KihonHonbunRow[] }
@@ -29,6 +36,9 @@ const pdcaHrefs = once(() => {
 });
 export const honbunHrefOf = (pdcaId: string) => pdcaHrefs().get(pdcaId);
 
+// 段落の頭に出す印字のページ（「はじめに」には印字が無いので PDF のページ）
+export const printedPage = (b: { page: number; printed?: number }) => (b.printed ? `${b.printed}ページ` : `PDFの${b.page}ページ`);
+
 // 見出しの段（ページの題名が h1 なので、章が h2、「①」が h6）
 export const headingTag = (level: HonbunHeading['level']) => `h${level + 1}` as 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
@@ -52,4 +62,38 @@ export function headingTree(hs: HonbunHeading[]): HonbunNode[] {
     stack.push(n);
   }
   return root;
+}
+
+// ---------------------------------------------------------------- 章ごとの Markdown（AI とテキストで読む人向け。/llms.txt から並べる）
+
+// URL は /21-seiki-vision/kihon/1.md（「はじめに」は hajimeni.md）。ページからは読み込まない
+export const honbunMdSlug = (c: HonbunChapter) => (c.head.id === '0' ? 'hajimeni' : c.head.id);
+export const honbunMdPath = (c: HonbunChapter) => `${KIHON_KEIKAKU.href}${honbunMdSlug(c)}.md`;
+
+// 本文の文字を Markdown の書式として読まれないようにする（用語の注の「*」・「1) 」で始まる箇条など）
+export const mdText = (s: string) =>
+  s.replace(/[\\`*_[\]<]/g, '\\$&').replace(/^([#>+-])/, '\\$1').replace(/^(\d+)([.)])/, '$1\\$2');
+
+// 見出しの段は # の数に（章が #）。本文だけにし、印字のページと沖縄県PDCA のページへのリンクは入れない（出典の PDF は頭に書く）
+export function honbunMarkdown(c: HonbunChapter): string {
+  const src = planSourceLink('kihon', c.head.source);
+  const pdfPage = (page: number) => planSourceLink('kihon', c.head.source, page)?.href ?? '';
+  const out = [
+    `# ${mdText(headingText(c.head))}`,
+    [
+      `${KIHON_KEIKAKU.name}（沖縄県、${KIHON_KEIKAKU.published}策定。計画の期間は${KIHON_KEIKAKU.period}）の本文のうち「${mdText(headingText(c.head))}」です。`,
+      `県の PDF（[${src?.label}](${src?.href})）の文字を、非公式サイト「おきなわ、みらい、いま」（Code for Okinawa）が読み取りました。図とふりがなは省いています。`,
+      '「\\*」の付いた言葉は、県の資料編に用語の説明があります。',
+      '本文の著作権は沖縄県にあります。引用するときは PDF で確かめてください。',
+      `Web のページ: ${absUrl(`${KIHON_KEIKAKU.href}#${honbunAnchor(c.head.id)}`)}`,
+    ].map((l) => `> ${l}`).join('\n>\n'),
+  ];
+  for (const b of [c.head, ...c.blocks]) {
+    if (b.kind === 'h') {
+      if (b !== c.head) out.push(`${'#'.repeat(b.level)} ${mdText(headingText(b))}`);
+    } else if (b.kind === 'label') out.push(`**${mdText(b.text)}**`);
+    else if (b.kind === 'fig') out.push(`（図は省いています。[PDF の${printedPage(b)}](${pdfPage(b.page)})）`);
+    else out.push(mdText(b.text));
+  }
+  return `${out.join('\n\n')}\n`;
 }
